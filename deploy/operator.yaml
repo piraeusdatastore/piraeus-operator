@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linstor-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: linstor-operator
+  template:
+    metadata:
+      labels:
+        name: linstor-operator
+    spec:
+      serviceAccountName: linstor-operator
+      containers:
+        - name: linstor-operator
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          command:
+          - linstor-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "linstor-operator"
