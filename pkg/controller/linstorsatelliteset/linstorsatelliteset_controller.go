@@ -319,6 +319,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSatNodeWithController(satSet *li
 		}
 	}
 
+	// TODO: Update golinstor to provide node.ConnectionStatus.
 	wantedConnStatus := "ONLINE"
 	sat.ConnectionStatus = node.ConnectionStatus
 	if sat.ConnectionStatus != wantedConnStatus {
