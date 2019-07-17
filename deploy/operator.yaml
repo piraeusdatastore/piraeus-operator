@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: linstor-operator
+  name: piraeus-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: linstor-operator
+      name: piraeus-operator
   template:
     metadata:
       labels:
-        name: linstor-operator
+        name: piraeus-operator
     spec:
-      serviceAccountName: linstor-operator
+      serviceAccountName: piraeus-operator
       containers:
-        - name: linstor-operator
+        - name: piraeus-operator
           # Replace this with the built image name
           image: REPLACE_IMAGE
           command:
-          - linstor-operator
+          - piraeus-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -30,4 +30,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "linstor-operator"
+              value: "piraeus-operator"

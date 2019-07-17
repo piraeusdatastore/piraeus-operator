@@ -1,11 +1,11 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: linstor-operator
+  name: piraeus-operator
 subjects:
 - kind: ServiceAccount
-  name: linstor-operator
+  name: piraeus-operator
 roleRef:
   kind: Role
-  name: linstor-operator
+  name: piraeus-operator
   apiGroup: rbac.authorization.k8s.io

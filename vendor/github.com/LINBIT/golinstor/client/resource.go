@@ -93,8 +93,8 @@ type DrbdVolume struct {
 	// block device used by drbd
 	BackingDevice    string `json:"backing_device,omitempty"`
 	MetaDisk         string `json:"meta_disk,omitempty"`
-	AllocatedSizeKib uint64 `json:"allocated_size_kib,omitempty"`
-	UsableSizeKib    uint64 `json:"usable_size_kib,omitempty"`
+	AllocatedSizeKib int64  `json:"allocated_size_kib,omitempty"`
+	UsableSizeKib    int64  `json:"usable_size_kib,omitempty"`
 	// String describing current volume state
 	DiskState string `json:"disk_state,omitempty"`
 }
@@ -111,8 +111,8 @@ type LuksVolume struct {
 	DevicePath string `json:"device_path,omitempty"`
 	// block device used by luks
 	BackingDevice    string `json:"backing_device,omitempty"`
-	AllocatedSizeKib uint64 `json:"allocated_size_kib,omitempty"`
-	UsableSizeKib    uint64 `json:"usable_size_kib,omitempty"`
+	AllocatedSizeKib int64  `json:"allocated_size_kib,omitempty"`
+	UsableSizeKib    int64  `json:"usable_size_kib,omitempty"`
 	// String describing current volume state
 	DiskState string `json:"disk_state,omitempty"`
 	Opened    bool   `json:"opened,omitempty"`
@@ -128,8 +128,8 @@ type StorageVolume struct {
 	VolumeNumber int32 `json:"volume_number,omitempty"`
 	// block device path
 	DevicePath       string `json:"device_path,omitempty"`
-	AllocatedSizeKib uint64 `json:"allocated_size_kib,omitempty"`
-	UsableSizeKib    uint64 `json:"usable_size_kib,omitempty"`
+	AllocatedSizeKib int64  `json:"allocated_size_kib,omitempty"`
+	UsableSizeKib    int64  `json:"usable_size_kib,omitempty"`
 	// String describing current volume state
 	DiskState string `json:"disk_state,omitempty"`
 }
@@ -144,8 +144,8 @@ type NvmeVolume struct {
 	DevicePath string `json:"device_path,omitempty"`
 	// block device used by nvme
 	BackingDevice    string `json:"backing_device,omitempty"`
-	AllocatedSizeKib uint64 `json:"allocated_size_kib,omitempty"`
-	UsableSizeKib    uint64 `json:"usable_size_kib,omitempty"`
+	AllocatedSizeKib int64  `json:"allocated_size_kib,omitempty"`
+	UsableSizeKib    int64  `json:"usable_size_kib,omitempty"`
 	// String describing current volume state
 	DiskState string `json:"disk_state,omitempty"`
 }
@@ -161,8 +161,8 @@ type Volume struct {
 	StoragePool      string       `json:"storage_pool,omitempty"`
 	ProviderKind     ProviderKind `json:"provider_kind,omitempty"`
 	DevicePath       string       `json:"device_path,omitempty"`
-	AllocatedSizeKib uint64       `json:"allocated_size_kib,omitempty"`
-	UsableSizeKib    uint64       `json:"usable_size_kib,omitempty"`
+	AllocatedSizeKib int64        `json:"allocated_size_kib,omitempty"`
+	UsableSizeKib    int64        `json:"usable_size_kib,omitempty"`
 	// A string to string property map.
 	Props         map[string]string `json:"props,omitempty"`
 	Flags         []string          `json:"flags,omitempty"`
@@ -360,6 +360,13 @@ func (n *ResourceService) GetVolume(ctx context.Context, resName, nodeName strin
 
 	_, err := n.client.doGET(ctx, "/v1/resource-definitions/"+resName+"/resources/"+nodeName+"/volumes/"+strconv.Itoa(volNr), &vol, opts...)
 	return vol, err
+}
+
+// ModifyVolume modifies an existing volume with the given props
+func (n *ResourceService) ModifyVolume(ctx context.Context, resName, nodeName string, volNr int, props GenericPropsModify) error {
+	u := fmt.Sprintf("/v1/resource-definitions/%s/resources/%s/volumes/%d", resName, nodeName, volNr)
+	_, err := n.client.doPUT(ctx, u, props)
+	return err
 }
 
 // Diskless toggles a resource on a node to diskless - the parameter disklesspool can be set if its needed

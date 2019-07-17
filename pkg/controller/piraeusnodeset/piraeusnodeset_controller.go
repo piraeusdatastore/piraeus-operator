@@ -9,7 +9,7 @@ import (
 	"time"
 
 	lapi "github.com/LINBIT/golinstor/client"
-	piraeusv1alpha1 "github.com/LINBIT/linstor-operator/pkg/apis/piraeus/v1alpha1"
+	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

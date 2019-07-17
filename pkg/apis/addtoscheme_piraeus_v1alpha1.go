@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/LINBIT/linstor-operator/pkg/apis/piraeus/v1alpha1"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 )
 
 func init() {
