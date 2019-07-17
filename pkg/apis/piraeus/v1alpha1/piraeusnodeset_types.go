@@ -5,28 +5,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// LinstorSatelliteSetSpec defines the desired state of LinstorSatelliteSet
+// PiraeusNodeSetSpec defines the desired state of PiraeusNodeSet
 // +k8s:openapi-gen=true
-type LinstorSatelliteSetSpec struct {
+type PiraeusNodeSetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// ControllerEndpoint is the API endpoint for the LINSTOR controller associated
-	// With this LinstorSatelliteSet.
-	// TODO: USE a route with a containerized Controller.
+	// With this PiraeusNodeSet.
 	ControllerEndpoint string `json:"controllerEndpoint"`
-	// StoragePools is a list of StoragePools for LinstorSatelliteSet to manage.
+	// StoragePools is a list of StoragePools for PiraeusNodeSet to manage.
 	StoragePools *StoragePools `json:"storagePools"`
 }
 
 type StoragePools struct {
-	// LVMPools for LinstorSatelliteSet to manage.
+	// LVMPools for PiraeusNodeSet to manage.
 	LVMPools []*StoragePoolLVM `json:"lvmPools"`
-	// LVMThinPools for LinstorSatelliteSet to manage.
+	// LVMThinPools for PiraeusNodeSet to manage.
 	LVMThinPools []*StoragePoolLVMThin `json:"lvmThinPools"`
 }
 
@@ -35,7 +33,7 @@ type StoragePool interface {
 }
 
 // StoragePoolLVM represents LVM storage pool to be managed by a
-// LinstorSatelliteSet
+// PiraeusNodeSet
 type StoragePoolLVM struct {
 	// Name of the storage pool.
 	Name string `json:"name"`
@@ -54,7 +52,7 @@ func (s *StoragePoolLVM) ToLinstorStoragePool() lapi.StoragePool {
 }
 
 // StoragePoolLVMThin represents LVM Thin storage pool to be
-// managed by a LinstorSatelliteSet
+// managed by a PiraeusNodeSet
 type StoragePoolLVMThin struct {
 	StoragePoolLVM
 	// Name of underlying lvm thin volume
@@ -72,9 +70,9 @@ func (s *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
 	}
 }
 
-// LinstorSatelliteSetStatus defines the observed state of LinstorSatelliteSet
+// LinstorSatelliteSetStatus defines the observed state of PiraeusNodeSet
 // +k8s:openapi-gen=true
-type LinstorSatelliteSetStatus struct {
+type PiraeusNodeSetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
@@ -114,26 +112,26 @@ type StoragePoolStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// LinstorSatelliteSet is the Schema for the linstorsatellitesets API
+// PiraeusNodeSet is the Schema for the piraeusnodesets API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type LinstorSatelliteSet struct {
+type PiraeusNodeSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LinstorSatelliteSetSpec   `json:"spec,omitempty"`
-	Status LinstorSatelliteSetStatus `json:"status,omitempty"`
+	Spec   PiraeusNodeSetSpec   `json:"spec,omitempty"`
+	Status PiraeusNodeSetStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// LinstorSatelliteSetList contains a list of LinstorSatelliteSet
-type LinstorSatelliteSetList struct {
+// PiraeusNodeSetList contains a list of PiraeusNodeSet
+type PiraeusNodeSetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LinstorSatelliteSet `json:"items"`
+	Items           []PiraeusNodeSet `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&LinstorSatelliteSet{}, &LinstorSatelliteSetList{})
+	SchemeBuilder.Register(&PiraeusNodeSet{}, &PiraeusNodeSetList{})
 }

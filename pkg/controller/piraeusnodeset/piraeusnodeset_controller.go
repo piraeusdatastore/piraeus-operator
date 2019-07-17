@@ -1,4 +1,4 @@
-package linstorsatelliteset
+package piraeusnodeset
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	lapi "github.com/LINBIT/golinstor/client"
-	linstorv1alpha1 "github.com/LINBIT/linstor-operator/pkg/apis/linstor/v1alpha1"
+	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,12 +34,15 @@ func init() {
 }
 
 var log = logrus.WithFields(logrus.Fields{
-	"controller": "LinstorSatelliteSet",
+	"controller": "PiraeusNodeSet",
 })
 
+// linstorNodeFinalizer can only be removed if the linstor node containers are
+// ready to be shutdown. For now, this means that they have no resources assigned
+// to them.
 const linstorNodeFinalizer = "finalizer.linstor.linbit.com"
 
-// Add creates a new LinstorSatelliteSet Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new PiraeusNodeSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -47,26 +50,26 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileLinstorSatelliteSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcilePiraeusNodeSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("linstorsatelliteset-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("piraeusnodeset-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource LinstorSatelliteSet
-	err = c.Watch(&source.Kind{Type: &linstorv1alpha1.LinstorSatelliteSet{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource PiraeusNodeSet
+	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.PiraeusNodeSet{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	err = c.Watch(&source.Kind{Type: &apps.DaemonSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &linstorv1alpha1.LinstorSatelliteSet{},
+		OwnerType:    &piraeusv1alpha1.PiraeusNodeSet{},
 	})
 	if err != nil {
 		return err
@@ -75,11 +78,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileLinstorSatelliteSet implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileLinstorSatelliteSet{}
+// blank assignment to verify that ReconcilePiraeusNodeSet implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcilePiraeusNodeSet{}
 
-// ReconcileLinstorSatelliteSet reconciles a LinstorSatelliteSet object
-type ReconcileLinstorSatelliteSet struct {
+// ReconcilePiraeusNodeSet reconciles a PiraeusNodeSet object
+type ReconcilePiraeusNodeSet struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
@@ -99,16 +102,16 @@ func newCompoundErrorMsg(errs []error) []string {
 	return errStrs
 }
 
-// Reconcile reads that state of the cluster for a LinstorSatelliteSet object and makes changes based on the state read
-// and what is in the LinstorSatelliteSet.Spec
+// Reconcile reads that state of the cluster for a PiraeusNodeSet object and makes changes based on the state read
+// and what is in the PiraeusNodeSet.Spec
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	log.Debug("entering reconcile loop")
 
-	// Fetch the LinstorSatelliteSet instance
-	satSet := &linstorv1alpha1.LinstorSatelliteSet{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, satSet)
+	// Fetch the PiraeusNodeSet instance
+	pns := &piraeusv1alpha1.PiraeusNodeSet{}
+	err := r.client.Get(context.TODO(), request.NamespacedName, pns)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -121,37 +124,37 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 	}
 
 	log := logrus.WithFields(logrus.Fields{
-		"resquestName":        request.Name,
-		"resquestNamespace":   request.Namespace,
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
+		"resquestName":      request.Name,
+		"resquestNamespace": request.Namespace,
+		"PiraeusNodeSet":    fmt.Sprintf("%+v", pns),
 	})
-	log.Info("reconciling LinstorSatelliteSet")
+	log.Info("reconciling PiraeusNodeSet")
 
 	logrus.WithFields(logrus.Fields{
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
-	}).Debug("found LinstorSatelliteSet")
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+	}).Debug("found PiraeusNodeSet")
 
-	if satSet.Status.SatelliteStatuses == nil {
-		satSet.Status.SatelliteStatuses = make(map[string]*linstorv1alpha1.SatelliteStatus)
+	if pns.Status.SatelliteStatuses == nil {
+		pns.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
 	}
-	if satSet.Spec.StoragePools == nil {
-		satSet.Spec.StoragePools = &linstorv1alpha1.StoragePools{}
+	if pns.Spec.StoragePools == nil {
+		pns.Spec.StoragePools = &piraeusv1alpha1.StoragePools{}
 	}
-	if satSet.Spec.StoragePools.LVMPools == nil {
-		satSet.Spec.StoragePools.LVMPools = make([]*linstorv1alpha1.StoragePoolLVM, 0)
+	if pns.Spec.StoragePools.LVMPools == nil {
+		pns.Spec.StoragePools.LVMPools = make([]*piraeusv1alpha1.StoragePoolLVM, 0)
 	}
-	if satSet.Spec.StoragePools.LVMThinPools == nil {
-		satSet.Spec.StoragePools.LVMThinPools = make([]*linstorv1alpha1.StoragePoolLVMThin, 0)
+	if pns.Spec.StoragePools.LVMThinPools == nil {
+		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
 	}
 
-	r.linstorClient, err = newLinstorClientFromSatSet(satSet)
+	r.linstorClient, err = newLinstorClientFromPNS(pns)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	markedForDeletion := satSet.GetDeletionTimestamp() != nil
+	markedForDeletion := pns.GetDeletionTimestamp() != nil
 	if markedForDeletion {
-		errs := r.finalizeSatelliteSet(satSet)
+		errs := r.finalizeSatelliteSet(pns)
 
 		logrus.WithFields(logrus.Fields{
 			"errs": newCompoundErrorMsg(errs),
@@ -160,19 +163,19 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 		// Resouces need to be removed by human intervention, so we don't want to
 		// requeue the reconcile loop immediately. We can't return the error with
 		// the loop or it will automatically requeue, we log it above and it also
-		// appears in the satSet's Status.
+		// appears in the pns's Status.
 		return reconcile.Result{RequeueAfter: time.Minute * 1}, nil
 	}
 
-	if err := r.addFinalizer(satSet); err != nil {
+	if err := r.addFinalizer(pns); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Define a new DaemonSet
-	ds := newDaemonSetforSatSet(satSet)
+	ds := newDaemonSetforPNS(pns)
 
-	// Set LinstorSatelliteSet satSet as the owner and controller
-	if err := controllerutil.SetControllerReference(satSet, ds, r.scheme); err != nil {
+	// Set PiraeusNodeSet pns as the owner and controller
+	if err := controllerutil.SetControllerReference(pns, ds, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -198,12 +201,12 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 		"daemonSet": fmt.Sprintf("%+v", ds),
 	}).Debug("DaemonSet already exists")
 
-	errs := r.reconcileSatNodes(satSet)
+	errs := r.reconcileSatNodes(pns)
 	compoundErrorMsg := newCompoundErrorMsg(errs)
-	satSet.Status.Errors = compoundErrorMsg
+	pns.Status.Errors = compoundErrorMsg
 
-	if err := r.client.Status().Update(context.TODO(), satSet); err != nil {
-		logrus.Error(err, "Failed to update LinstorSatelliteSet status")
+	if err := r.client.Status().Update(context.TODO(), pns); err != nil {
+		logrus.Error(err, "Failed to update PiraeusNodeSet status")
 		return reconcile.Result{}, err
 	}
 
@@ -219,15 +222,15 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 	return reconcile.Result{}, compoundError
 }
 
-func (r *ReconcileLinstorSatelliteSet) reconcileSatNodes(satSet *linstorv1alpha1.LinstorSatelliteSet) []error {
+func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
 	log := logrus.WithFields(logrus.Fields{
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
 	})
-	log.Info("reconciling LinstorSatelliteSet Nodes")
+	log.Info("reconciling PiraeusNodeSet Nodes")
 
 	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(map[string]string{"app": satSet.Name})
-	listOps := &client.ListOptions{Namespace: satSet.Namespace, LabelSelector: labelSelector}
+	labelSelector := labels.SelectorFromSet(map[string]string{"app": pns.Name})
+	listOps := &client.ListOptions{Namespace: pns.Namespace, LabelSelector: labelSelector}
 	err := r.client.List(context.TODO(), listOps, pods)
 	if err != nil {
 		return []error{err}
@@ -238,19 +241,19 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSatNodes(satSet *linstorv1alpha1
 
 	var errs []error
 	for _, pod := range pods.Items {
-		errs = append(errs, r.reconcileSatNodeWithController(satSet, pod))
-		errs = append(errs, r.reconcileStoragePoolsOnNode(satSet, pod))
+		errs = append(errs, r.reconcileSatNodeWithController(pns, pod))
+		errs = append(errs, r.reconcileStoragePoolsOnNode(pns, pod))
 	}
 
 	return errs
 }
 
-func (r *ReconcileLinstorSatelliteSet) reconcileSatNodeWithController(satSet *linstorv1alpha1.LinstorSatelliteSet, pod corev1.Pod) error {
+func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1alpha1.PiraeusNodeSet, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
-		"podName":             pod.Name,
-		"podNameSpace":        pod.Namespace,
-		"podPase":             pod.Status.Phase,
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
+		"podName":        pod.Name,
+		"podNameSpace":   pod.Namespace,
+		"podPase":        pod.Status.Phase,
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
 	})
 	log.Debug("reconciling node")
 
@@ -258,10 +261,10 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSatNodeWithController(satSet *li
 		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Spec.NodeName)
 	}
 
-	sat, ok := satSet.Status.SatelliteStatuses[pod.Spec.NodeName]
+	sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	if !ok {
-		satSet.Status.SatelliteStatuses[pod.Spec.NodeName] = &linstorv1alpha1.SatelliteStatus{NodeName: pod.Spec.NodeName}
-		sat = satSet.Status.SatelliteStatuses[pod.Spec.NodeName]
+		pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{NodeName: pod.Spec.NodeName}
+		sat = pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	}
 
 	// Mark this true on successful exit from this function.
@@ -331,16 +334,16 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSatNodeWithController(satSet *li
 	return nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(satSet *linstorv1alpha1.LinstorSatelliteSet, pod corev1.Pod) error {
+func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alpha1.PiraeusNodeSet, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
-		"podName":             pod.Name,
-		"podNameSpace":        pod.Namespace,
-		"podPase":             pod.Status.Phase,
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
+		"podName":        pod.Name,
+		"podNameSpace":   pod.Namespace,
+		"podPase":        pod.Status.Phase,
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
 	})
 	log.Info("reconciling storagePools")
 
-	sat, ok := satSet.Status.SatelliteStatuses[pod.Spec.NodeName]
+	sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	if !ok {
 		return fmt.Errorf("expected %s to be present in Status, not able to reconcile storage pools", pod.Spec.NodeName)
 	}
@@ -348,16 +351,16 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(satSet *linst
 		return fmt.Errorf("waiting for %s to be registered on controller, not able to reconcile storage pools", pod.Spec.NodeName)
 	}
 	if sat.StoragePoolStatuses == nil {
-		sat.StoragePoolStatuses = make(map[string]*linstorv1alpha1.StoragePoolStatus)
+		sat.StoragePoolStatuses = make(map[string]*piraeusv1alpha1.StoragePoolStatus)
 	}
 
 	// Append all disperate StoragePool types together, so they can be processed together.
-	var pools = make([]linstorv1alpha1.StoragePool, 0)
-	for _, thickPool := range satSet.Spec.StoragePools.LVMPools {
+	var pools = make([]piraeusv1alpha1.StoragePool, 0)
+	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
 		pools = append(pools, thickPool)
 	}
 
-	for _, thinPool := range satSet.Spec.StoragePools.LVMThinPools {
+	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
 		pools = append(pools, thinPool)
 	}
 
@@ -381,7 +384,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(satSet *linst
 	return nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) getStatusOrCreateOnNode(ctx context.Context, pool lapi.StoragePool, nodeName string) (*linstorv1alpha1.StoragePoolStatus, error) {
+func (r *ReconcilePiraeusNodeSet) getStatusOrCreateOnNode(ctx context.Context, pool lapi.StoragePool, nodeName string) (*piraeusv1alpha1.StoragePoolStatus, error) {
 	foundPool, err := r.linstorClient.Nodes.GetStoragePool(ctx, nodeName, pool.StoragePoolName)
 	// StoragePool doesn't exists, create it.
 	if err != nil && err == lapi.NotFoundError {
@@ -398,7 +401,7 @@ func (r *ReconcileLinstorSatelliteSet) getStatusOrCreateOnNode(ctx context.Conte
 	return newStoragePoolStatus(foundPool), nil
 }
 
-func newDaemonSetforSatSet(satSet *linstorv1alpha1.LinstorSatelliteSet) *apps.DaemonSet {
+func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	var (
 		isPrivileged                  = true
 		directoryType                 = corev1.HostPathDirectory
@@ -412,11 +415,11 @@ func newDaemonSetforSatSet(satSet *linstorv1alpha1.LinstorSatelliteSet) *apps.Da
 	)
 
 	labels := map[string]string{
-		"app": satSet.Name,
+		"app": pns.Name,
 	}
 	return &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      satSet.Name + "-node",
+			Name:      pns.Name + "-node",
 			Namespace: "kube-system",
 			Labels:    labels,
 		},
@@ -424,7 +427,7 @@ func newDaemonSetforSatSet(satSet *linstorv1alpha1.LinstorSatelliteSet) *apps.Da
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      satSet.Name + "-node",
+					Name:      pns.Name + "-node",
 					Namespace: "kube-system",
 					Labels:    labels,
 				},
@@ -507,10 +510,10 @@ func newDaemonSetforSatSet(satSet *linstorv1alpha1.LinstorSatelliteSet) *apps.Da
 	}
 }
 
-func (r *ReconcileLinstorSatelliteSet) finalizeNode(satSet *linstorv1alpha1.LinstorSatelliteSet, nodeName string) error {
+func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeSet, nodeName string) error {
 	log := logrus.WithFields(logrus.Fields{
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
-		"node":                nodeName,
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+		"node":           nodeName,
 	})
 	log.Debug("finalizing node")
 	// Determine if any resources still remain on the node.
@@ -530,15 +533,15 @@ func (r *ReconcileLinstorSatelliteSet) finalizeNode(satSet *linstorv1alpha1.Lins
 		return fmt.Errorf("unable to delete node %s: %v", nodeName, err)
 	}
 
-	delete(satSet.Status.SatelliteStatuses, nodeName)
+	delete(pns.Status.SatelliteStatuses, nodeName)
 	return nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) addFinalizer(satSet *linstorv1alpha1.LinstorSatelliteSet) error {
-	if !contains(satSet.GetFinalizers(), linstorNodeFinalizer) {
-		satSet.SetFinalizers(append(satSet.GetFinalizers(), linstorNodeFinalizer))
+func (r *ReconcilePiraeusNodeSet) addFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
+	if !contains(pns.GetFinalizers(), linstorNodeFinalizer) {
+		pns.SetFinalizers(append(pns.GetFinalizers(), linstorNodeFinalizer))
 
-		err := r.client.Update(context.TODO(), satSet)
+		err := r.client.Update(context.TODO(), pns)
 		if err != nil {
 			return err
 		}
@@ -547,19 +550,19 @@ func (r *ReconcileLinstorSatelliteSet) addFinalizer(satSet *linstorv1alpha1.Lins
 	return nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(satSet *linstorv1alpha1.LinstorSatelliteSet) []error {
+func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
 	log := logrus.WithFields(logrus.Fields{
-		"LinstorSatelliteSet": fmt.Sprintf("%+v", satSet),
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
 	})
-	log.Info("found LinstorSatelliteSet marked for deletion, finalizing...")
+	log.Info("found PiraeusNodeSet marked for deletion, finalizing...")
 
-	if contains(satSet.GetFinalizers(), linstorNodeFinalizer) {
-		// Run finalization logic for LinstorSatelliteSet. If the
+	if contains(pns.GetFinalizers(), linstorNodeFinalizer) {
+		// Run finalization logic for PiraeusNodeSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
 		var errs = make([]error, 0)
-		for nodeName := range satSet.Status.SatelliteStatuses {
-			if err := r.finalizeNode(satSet, nodeName); err != nil {
+		for nodeName := range pns.Status.SatelliteStatuses {
+			if err := r.finalizeNode(pns, nodeName); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -568,15 +571,15 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(satSet *linstorv1alp
 		// removed, the object will be deleted.
 		if len(errs) == 0 {
 			log.Info("finalizing finished, removing finalizer")
-			satSet.SetFinalizers(remove(satSet.GetFinalizers(), linstorNodeFinalizer))
-			err := r.client.Update(context.TODO(), satSet)
+			pns.SetFinalizers(remove(pns.GetFinalizers(), linstorNodeFinalizer))
+			err := r.client.Update(context.TODO(), pns)
 			if err != nil {
 				return []error{err}
 			}
 			return nil
 		}
 
-		err := r.client.Status().Update(context.TODO(), satSet)
+		err := r.client.Status().Update(context.TODO(), pns)
 		if err != nil {
 			return []error{err}
 		}
@@ -586,11 +589,11 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(satSet *linstorv1alp
 	return nil
 }
 
-func newLinstorClientFromSatSet(satSet *linstorv1alpha1.LinstorSatelliteSet) (*lapi.Client, error) {
-	if satSet.Spec.ControllerEndpoint == "" {
+func newLinstorClientFromPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lapi.Client, error) {
+	if pns.Spec.ControllerEndpoint == "" {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
 	}
-	u, err := url.Parse(satSet.Spec.ControllerEndpoint)
+	u, err := url.Parse(pns.Spec.ControllerEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
 	}
@@ -605,8 +608,8 @@ func newLinstorClientFromSatSet(satSet *linstorv1alpha1.LinstorSatelliteSet) (*l
 	return c, nil
 }
 
-func newStoragePoolStatus(pool lapi.StoragePool) *linstorv1alpha1.StoragePoolStatus {
-	return &linstorv1alpha1.StoragePoolStatus{
+func newStoragePoolStatus(pool lapi.StoragePool) *piraeusv1alpha1.StoragePoolStatus {
+	return &piraeusv1alpha1.StoragePoolStatus{
 		Name:          pool.StoragePoolName,
 		NodeName:      pool.NodeName,
 		Provider:      string(pool.ProviderKind),

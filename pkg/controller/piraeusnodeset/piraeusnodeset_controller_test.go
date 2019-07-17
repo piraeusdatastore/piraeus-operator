@@ -1,4 +1,4 @@
-package linstorsatelliteset
+package piraeusnodeset
 
 import (
 	"reflect"

@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: linstor-operator
+  name: piraeus-operator
 rules:
 - apiGroups:
   - ""
@@ -35,13 +35,13 @@ rules:
 - apiGroups:
   - apps
   resourceNames:
-  - linstor-operator
+  - piraeus-operator
   resources:
   - deployments/finalizers
   verbs:
   - update
 - apiGroups:
-  - linstor.linbit.com
+  - piraeus.linbit.com
   resources:
   - '*'
   verbs:
