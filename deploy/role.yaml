@@ -41,7 +41,7 @@ rules:
   verbs:
   - update
 - apiGroups:
-  - linstor.linbit.com
+  - piraeus.linbit.com
   resources:
   - '*'
   verbs:
