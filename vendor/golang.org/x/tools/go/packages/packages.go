@@ -25,16 +25,24 @@ import (
 	"golang.org/x/tools/go/gcexportdata"
 )
 
-// A LoadMode controls the amount of detail to return when loading.
-// The bits below can be combined to specify which fields should be
-// filled in the result packages.
-// The zero value is a special case, equivalent to combining
-// the NeedName, NeedFiles, and NeedCompiledGoFiles bits.
-// ID and Errors (if present) will always be filled.
-// Load may return more information than requested.
+// A LoadMode specifies the amount of detail to return when loading.
+// Higher-numbered modes cause Load to return more information,
+// but may be slower. Load may return more information than requested.
 type LoadMode int
 
 const (
+	// The following constants are used to specify which fields of the Package
+	// should be filled when loading is done. As a special case to provide
+	// backwards compatibility, a LoadMode of 0 is equivalent to LoadFiles.
+	// For all other LoadModes, the bits below specify which fields will be filled
+	// in the result packages.
+	// WARNING: This part of the go/packages API is EXPERIMENTAL. It might
+	// be changed or removed up until April 15 2019. After that date it will
+	// be frozen.
+	// TODO(matloob): Remove this comment on April 15.
+
+	// ID and Errors (if present) will always be filled.
+
 	// NeedName adds Name and PkgPath.
 	NeedName LoadMode = 1 << iota
 
@@ -69,24 +77,30 @@ const (
 )
 
 const (
-	// Deprecated: LoadFiles exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadFiles finds the packages and computes their source file lists.
+	// Package fields: ID, Name, Errors, GoFiles, CompiledGoFiles, and OtherFiles.
 	LoadFiles = NeedName | NeedFiles | NeedCompiledGoFiles
 
-	// Deprecated: LoadImports exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadImports adds import information for each package
+	// and its dependencies.
+	// Package fields added: Imports.
 	LoadImports = LoadFiles | NeedImports | NeedDeps
 
-	// Deprecated: LoadTypes exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadTypes adds type information for package-level
+	// declarations in the packages matching the patterns.
+	// Package fields added: Types, TypesSizes, Fset, and IllTyped.
+	// This mode uses type information provided by the build system when
+	// possible, and may fill in the ExportFile field.
 	LoadTypes = LoadImports | NeedTypes | NeedTypesSizes
 
-	// Deprecated: LoadSyntax exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadSyntax adds typed syntax trees for the packages matching the patterns.
+	// Package fields added: Syntax, and TypesInfo, for direct pattern matches only.
 	LoadSyntax = LoadTypes | NeedSyntax | NeedTypesInfo
 
-	// Deprecated: LoadAllSyntax exists for historical compatibility
-	// and should not be used. Please directly specify the needed fields using the Need values.
+	// LoadAllSyntax adds typed syntax trees for the packages matching the patterns
+	// and all dependencies.
+	// Package fields added: Types, Fset, IllTyped, Syntax, and TypesInfo,
+	// for all packages in the import graph.
 	LoadAllSyntax = LoadSyntax
 )
 
@@ -261,9 +275,9 @@ type Package struct {
 	Imports map[string]*Package
 
 	// Types provides type information for the package.
-	// The NeedTypes LoadMode bit sets this field for packages matching the
-	// patterns; type information for dependencies may be missing or incomplete,
-	// unless NeedDeps and NeedImports are also set.
+	// Modes LoadTypes and above set this field for packages matching the
+	// patterns; type information for dependencies may be missing or incomplete.
+	// Mode LoadAllSyntax sets this field for all packages, including dependencies.
 	Types *types.Package
 
 	// Fset provides position information for Types, TypesInfo, and Syntax.
@@ -276,9 +290,8 @@ type Package struct {
 
 	// Syntax is the package's syntax trees, for the files listed in CompiledGoFiles.
 	//
-	// The NeedSyntax LoadMode bit populates this field for packages matching the patterns.
-	// If NeedDeps and NeedImports are also set, this field will also be populated
-	// for dependencies.
+	// Mode LoadSyntax sets this field for packages matching the patterns.
+	// Mode LoadAllSyntax sets this field for all packages, including dependencies.
 	Syntax []*ast.File
 
 	// TypesInfo provides type information about the package's syntax trees.
@@ -405,10 +418,8 @@ type loaderPackage struct {
 type loader struct {
 	pkgs map[string]*loaderPackage
 	Config
-	sizes        types.Sizes
-	parseCache   map[string]*parseValue
-	parseCacheMu sync.Mutex
-	exportMu     sync.Mutex // enforces mutual exclusion of exportdata operations
+	sizes    types.Sizes
+	exportMu sync.Mutex // enforces mutual exclusion of exportdata operations
 
 	// TODO(matloob): Add an implied mode here and use that instead of mode.
 	// Implied mode would contain all the fields we need the data for so we can
@@ -417,21 +428,13 @@ type loader struct {
 	// where we need certain modes right.
 }
 
-type parseValue struct {
-	f     *ast.File
-	err   error
-	ready chan struct{}
-}
-
 func newLoader(cfg *Config) *loader {
-	ld := &loader{
-		parseCache: map[string]*parseValue{},
-	}
+	ld := &loader{}
 	if cfg != nil {
 		ld.Config = *cfg
 	}
 	if ld.Config.Mode == 0 {
-		ld.Config.Mode = NeedName | NeedFiles | NeedCompiledGoFiles // Preserve zero behavior of Mode for backwards compatibility.
+		ld.Config.Mode = LoadFiles // Preserve zero behavior of Mode for backwards compatibility.
 	}
 	if ld.Config.Env == nil {
 		ld.Config.Env = os.Environ()
@@ -454,8 +457,12 @@ func newLoader(cfg *Config) *loader {
 		// because we load source if export data is missing.
 		if ld.ParseFile == nil {
 			ld.ParseFile = func(fset *token.FileSet, filename string, src []byte) (*ast.File, error) {
+				var isrc interface{}
+				if src != nil {
+					isrc = src
+				}
 				const mode = parser.AllErrors | parser.ParseComments
-				return parser.ParseFile(fset, filename, src, mode)
+				return parser.ParseFile(fset, filename, isrc, mode)
 			}
 		}
 	}
@@ -527,32 +534,28 @@ func (ld *loader) refine(roots []string, list ...*Package) ([]*Package, error) {
 		lpkg.color = grey
 		stack = append(stack, lpkg) // push
 		stubs := lpkg.Imports       // the structure form has only stubs with the ID in the Imports
-		// If NeedImports isn't set, the imports fields will all be zeroed out.
-		// If NeedDeps isn't also set we want to keep the stubs.
-		if ld.Mode&NeedImports != 0 && ld.Mode&NeedDeps != 0 {
-			lpkg.Imports = make(map[string]*Package, len(stubs))
-			for importPath, ipkg := range stubs {
-				var importErr error
-				imp := ld.pkgs[ipkg.ID]
-				if imp == nil {
-					// (includes package "C" when DisableCgo)
-					importErr = fmt.Errorf("missing package: %q", ipkg.ID)
-				} else if imp.color == grey {
-					importErr = fmt.Errorf("import cycle: %s", stack)
-				}
-				if importErr != nil {
-					if lpkg.importErrors == nil {
-						lpkg.importErrors = make(map[string]error)
-					}
-					lpkg.importErrors[importPath] = importErr
-					continue
-				}
-
-				if visit(imp) {
-					lpkg.needsrc = true
-				}
-				lpkg.Imports[importPath] = imp.Package
+		lpkg.Imports = make(map[string]*Package, len(stubs))
+		for importPath, ipkg := range stubs {
+			var importErr error
+			imp := ld.pkgs[ipkg.ID]
+			if imp == nil {
+				// (includes package "C" when DisableCgo)
+				importErr = fmt.Errorf("missing package: %q", ipkg.ID)
+			} else if imp.color == grey {
+				importErr = fmt.Errorf("import cycle: %s", stack)
 			}
+			if importErr != nil {
+				if lpkg.importErrors == nil {
+					lpkg.importErrors = make(map[string]error)
+				}
+				lpkg.importErrors[importPath] = importErr
+				continue
+			}
+
+			if visit(imp) {
+				lpkg.needsrc = true
+			}
+			lpkg.Imports[importPath] = imp.Package
 		}
 		if lpkg.needsrc {
 			srcPkgs = append(srcPkgs, lpkg)
@@ -678,7 +681,7 @@ func (ld *loader) loadRecursive(lpkg *loaderPackage) {
 // loadPackage loads the specified package.
 // It must be called only once per Package,
 // after immediate dependencies are loaded.
-// Precondition: ld.Mode & NeedTypes.
+// Precondition: ld.Mode >= LoadTypes.
 func (ld *loader) loadPackage(lpkg *loaderPackage) {
 	if lpkg.PkgPath == "unsafe" {
 		// Fill in the blanks to avoid surprises.
@@ -861,42 +864,6 @@ func (f importerFunc) Import(path string) (*types.Package, error) { return f(pat
 // the number of parallel I/O calls per process.
 var ioLimit = make(chan bool, 20)
 
-func (ld *loader) parseFile(filename string) (*ast.File, error) {
-	ld.parseCacheMu.Lock()
-	v, ok := ld.parseCache[filename]
-	if ok {
-		// cache hit
-		ld.parseCacheMu.Unlock()
-		<-v.ready
-	} else {
-		// cache miss
-		v = &parseValue{ready: make(chan struct{})}
-		ld.parseCache[filename] = v
-		ld.parseCacheMu.Unlock()
-
-		var src []byte
-		for f, contents := range ld.Config.Overlay {
-			if sameFile(f, filename) {
-				src = contents
-			}
-		}
-		var err error
-		if src == nil {
-			ioLimit <- true // wait
-			src, err = ioutil.ReadFile(filename)
-			<-ioLimit // signal
-		}
-		if err != nil {
-			v.err = err
-		} else {
-			v.f, v.err = ld.ParseFile(ld.Fset, filename, src)
-		}
-
-		close(v.ready)
-	}
-	return v.f, v.err
-}
-
 // parseFiles reads and parses the Go source files and returns the ASTs
 // of the ones that could be at least partially parsed, along with a
 // list of I/O and parse errors encountered.
@@ -917,7 +884,24 @@ func (ld *loader) parseFiles(filenames []string) ([]*ast.File, []error) {
 		}
 		wg.Add(1)
 		go func(i int, filename string) {
-			parsed[i], errors[i] = ld.parseFile(filename)
+			ioLimit <- true // wait
+			// ParseFile may return both an AST and an error.
+			var src []byte
+			for f, contents := range ld.Config.Overlay {
+				if sameFile(f, filename) {
+					src = contents
+				}
+			}
+			var err error
+			if src == nil {
+				src, err = ioutil.ReadFile(filename)
+			}
+			if err != nil {
+				parsed[i], errors[i] = nil, err
+			} else {
+				parsed[i], errors[i] = ld.ParseFile(ld.Fset, filename, src)
+			}
+			<-ioLimit // signal
 			wg.Done()
 		}(i, file)
 	}
