@@ -15,7 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains API Schema definitions for the piraeus v1alpha1 API group
-// +k8s:deepcopy-gen=package,register
-// +groupName=piraeus.linbit.com
-package v1alpha1
+package controller
+
+import (
+	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/piraeuscontrollerset"
+)
+
+func init() {
+	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
+	AddToManagerFuncs = append(AddToManagerFuncs, piraeuscontrollerset.Add)
+}

@@ -1,0 +1,15 @@
+apiVersion: piraeus.linbit.com/v1alpha1
+kind: PiraeusNodeSet
+metadata:
+  name: hello-piraeus
+  namespace: kube-system
+spec:
+  controllerEndpoint: "http://example.linstor.controller.com:3370"
+  storagePools:
+    lvmPools:
+    - name: "lvm-thick"
+      volumeGroup: "drbdpool"
+    lvmThinPools:
+    - name: "lvm-thin"
+      volumeGroup: "drbdpool"
+      thinVolume: "drbdthinpool"

@@ -14,6 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package v1alpha1
 
 import (
@@ -28,7 +29,7 @@ import (
 type PiraeusNodeSetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// ControllerEndpoint is the API endpoint for the LINSTOR controller associated
 	// With this PiraeusNodeSet.
@@ -86,12 +87,12 @@ func (s *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
 	}
 }
 
-// LinstorSatelliteSetStatus defines the observed state of PiraeusNodeSet
+// PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
 // +k8s:openapi-gen=true
 type PiraeusNodeSetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// Errors remaining that will trigger reconciliations.
 	Errors []string

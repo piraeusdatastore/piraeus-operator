@@ -14,6 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package piraeusnodeset
 
 import (
@@ -120,6 +121,9 @@ func newCompoundErrorMsg(errs []error) []string {
 
 // Reconcile reads that state of the cluster for a PiraeusNodeSet object and makes changes based on the state read
 // and what is in the PiraeusNodeSet.Spec
+// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
+// a Pod as an example
+// Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {

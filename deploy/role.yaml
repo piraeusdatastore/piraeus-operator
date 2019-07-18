@@ -41,8 +41,21 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - piraeus.linbit.com
   resources:
   - '*'
+  - piraeuscontrollersets
   verbs:
   - '*'
