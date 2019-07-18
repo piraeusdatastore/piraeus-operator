@@ -1,8 +1,11 @@
 module github.com/piraeusdatastore/piraeus-operator
 
 require (
+	github.com/LINBIT/golinstor v0.16.1
 	github.com/NYTimes/gziphandler v1.0.1 // indirect
 	github.com/operator-framework/operator-sdk v0.9.1-0.20190718153522-94084c4eb746
+	github.com/sirupsen/logrus v1.4.1
+	github.com/smartystreets/goconvey v0.0.0-20190710185942-9d28bd7c0945 // indirect
 	github.com/spf13/pflag v1.0.3
 	k8s.io/api v0.0.0-20190612125737-db0771252981
 	k8s.io/apimachinery v0.0.0-20190612125636-6a5db36e93ad
