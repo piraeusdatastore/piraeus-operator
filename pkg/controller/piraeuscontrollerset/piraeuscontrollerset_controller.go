@@ -45,6 +45,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const linstorControllerFinalizer = "finalizer.linstor-controller.linbit.com"
+
 func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{})
 	logrus.SetOutput(os.Stdout)
@@ -154,6 +156,18 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.CtrlSatelliteStatus)
 	}
 
+	markedForDeletion := pcs.GetDeletionTimestamp() != nil
+	if markedForDeletion {
+		err := r.finalizeControllerSet(pcs)
+
+		log.Debug("reconcile loop end")
+		return reconcile.Result{}, err
+	}
+
+	if err := r.addFinalizer(pcs); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	// Define a new Pod object
 	ctrlSet := newStatefulSetforPCS(pcs)
 
@@ -211,7 +225,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha
 	log.Info("reconciling PiraeusControllerSet Nodes")
 
 	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(map[string]string{"app": pcs.Name})
+	labelSelector := labels.SelectorFromSet(map[string]string{"app": pcs.Name, "role": "piraeus-controller"})
 	listOps := &client.ListOptions{Namespace: pcs.Namespace, LabelSelector: labelSelector}
 	err := r.client.List(context.TODO(), listOps, pods)
 	if err != nil {
@@ -305,7 +319,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 		}
 	}
 
-	// TODO: Exapand LINSTOR API for an all nodes plus storage pools view?
+	// TODO: Expand LINSTOR API for an all nodes plus storage pools view?
 	nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
 	if err != nil {
 		return fmt.Errorf("unable to get cluster nodes: %v", err)
@@ -341,6 +355,88 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	return nil
 }
 
+func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+	log := logrus.WithFields(logrus.Fields{
+		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+	})
+	log.Info("found PiraeusControllerSet marked for deletion, finalizing...")
+
+	if contains(pcs.GetFinalizers(), linstorControllerFinalizer) {
+		// Run finalization logic for PiraeusControllerSet. If the
+		// finalization logic fails, don't remove the finalizer so
+		// that we can retry during the next reconciliation.
+
+		// Right now we can't set the client until we've reconcilded at least
+		// once. This is a hack until we have proper networking.
+		if r.linstorClient == nil {
+			errs := r.reconcileControllers(pcs)
+			compoundErrorMsg := newCompoundErrorMsg(errs)
+			pcs.Status.Errors = compoundErrorMsg
+
+			if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
+				logrus.Error(err, "Failed to update PiraeusControllerSet status")
+				return err
+			}
+
+			logrus.WithFields(logrus.Fields{
+				"errs": compoundErrorMsg,
+			}).Debug("reconcile loop end")
+
+			var compoundError error
+			if len(compoundErrorMsg) != 0 {
+				compoundError = fmt.Errorf("requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
+			}
+			return compoundError
+		}
+
+		nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
+		if err != nil {
+			if err == lapi.NotFoundError {
+			}
+			return fmt.Errorf("unable to get cluster nodes: %v", err)
+		}
+
+		var nodeNames = make([]string, 0)
+		for _, node := range nodes {
+			if node.Type == "SATELLITE" {
+				nodeNames = append(nodeNames, node.Name)
+			}
+		}
+
+		if len(nodeNames) != 0 {
+			return fmt.Errorf("controller still has active satellites which must be cleared before deletion: %v", nodeNames)
+		}
+
+		// Remove finalizer. Once all finalizers have been
+		// removed, the object will be deleted.
+		log.Info("finalizing finished, removing finalizer")
+		pcs.SetFinalizers(remove(pcs.GetFinalizers(), linstorControllerFinalizer))
+		if err := r.client.Update(context.TODO(), pcs); err != nil {
+			return err
+		}
+
+		if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
+			return err
+		}
+
+		return nil
+	}
+	return nil
+}
+
+func (r *ReconcilePiraeusControllerSet) addFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+	if !contains(pcs.GetFinalizers(), linstorControllerFinalizer) {
+		pcs.SetFinalizers(append(pcs.GetFinalizers(), linstorControllerFinalizer))
+
+		err := r.client.Update(context.TODO(), pcs)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
 func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta2.StatefulSet {
 	var (
 		isPrivileged           = true
@@ -351,7 +447,8 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 	)
 
 	labels := map[string]string{
-		"app": pcs.Name,
+		"app":  pcs.Name,
+		"role": "piraeus-controller",
 	}
 	return &appsv1beta2.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -456,4 +553,22 @@ func newStoragePoolStatus(pool lapi.StoragePool) *piraeusv1alpha1.StoragePoolSta
 		FreeCapacity:  pool.FreeCapacity,
 		TotalCapacity: pool.TotalCapacity,
 	}
+}
+
+func remove(list []string, s string) []string {
+	for i, v := range list {
+		if v == s {
+			list = append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

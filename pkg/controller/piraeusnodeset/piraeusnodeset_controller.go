@@ -57,7 +57,7 @@ var log = logrus.WithFields(logrus.Fields{
 // linstorNodeFinalizer can only be removed if the linstor node containers are
 // ready to be shutdown. For now, this means that they have no resources assigned
 // to them.
-const linstorNodeFinalizer = "finalizer.linstor.linbit.com"
+const linstorNodeFinalizer = "finalizer.linstor-node.linbit.com"
 
 // Add creates a new PiraeusNodeSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -249,7 +249,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	log.Info("reconciling PiraeusNodeSet Nodes")
 
 	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(map[string]string{"app": pns.Name})
+	labelSelector := labels.SelectorFromSet(map[string]string{"app": pns.Name, "role": "piraeus-node"})
 	listOps := &client.ListOptions{Namespace: pns.Namespace, LabelSelector: labelSelector}
 	err := r.client.List(context.TODO(), listOps, pods)
 	if err != nil {
@@ -435,7 +435,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	)
 
 	labels := map[string]string{
-		"app": pns.Name,
+		"app":  pns.Name,
+		"role": "piraeus-node",
 	}
 	return &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
