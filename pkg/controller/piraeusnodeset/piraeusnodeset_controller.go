@@ -27,6 +27,7 @@ import (
 
 	lapi "github.com/LINBIT/golinstor/client"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -249,7 +250,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	log.Info("reconciling PiraeusNodeSet Nodes")
 
 	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(map[string]string{"app": pns.Name, "role": "piraeus-node"})
+	labelSelector := labels.SelectorFromSet(pnsLabels(pns))
 	listOps := &client.ListOptions{Namespace: pns.Namespace, LabelSelector: labelSelector}
 	err := r.client.List(context.TODO(), listOps, pods)
 	if err != nil {
@@ -410,10 +411,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 		mountPropagationBidirectional = corev1.MountPropagationBidirectional
 	)
 
-	labels := map[string]string{
-		"app":  pns.Name,
-		"role": "piraeus-node",
-	}
+	labels := pnsLabels(pns)
+
 	return &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -542,14 +541,21 @@ func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeS
 }
 
 func (r *ReconcilePiraeusNodeSet) addFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
-	if !contains(pns.GetFinalizers(), linstorNodeFinalizer) {
-		pns.SetFinalizers(append(pns.GetFinalizers(), linstorNodeFinalizer))
+	mdutil.AddFinalizer(pns, linstorNodeFinalizer)
 
-		err := r.client.Update(context.TODO(), pns)
-		if err != nil {
-			return err
-		}
-		return nil
+	err := r.client.Update(context.TODO(), pns)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcilePiraeusNodeSet) deleteFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
+	mdutil.DeleteFinalizer(pns, linstorNodeFinalizer)
+
+	err := r.client.Update(context.TODO(), pns)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -560,7 +566,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Pira
 	})
 	log.Info("found PiraeusNodeSet marked for deletion, finalizing...")
 
-	if contains(pns.GetFinalizers(), linstorNodeFinalizer) {
+	if mdutil.HasFinalizer(pns, linstorNodeFinalizer) {
 		// Run finalization logic for PiraeusNodeSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
@@ -575,9 +581,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Pira
 		// removed, the object will be deleted.
 		if len(errs) == 0 {
 			log.Info("finalizing finished, removing finalizer")
-			pns.SetFinalizers(remove(pns.GetFinalizers(), linstorNodeFinalizer))
-			err := r.client.Update(context.TODO(), pns)
-			if err != nil {
+			if err := r.deleteFinalizer(pns); err != nil {
 				return []error{err}
 			}
 			return nil
@@ -610,24 +614,6 @@ func newLinstorClientFromPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lapi.Client,
 	}
 
 	return c, nil
-}
-
-func remove(list []string, s string) []string {
-	for i, v := range list {
-		if v == s {
-			list = append(list[:i], list[i+1:]...)
-		}
-	}
-	return list
-}
-
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
 
 func filterNodes(resources []lapi.Resource, nodeName string) []lapi.Resource {

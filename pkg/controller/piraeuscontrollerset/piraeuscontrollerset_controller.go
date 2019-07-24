@@ -28,6 +28,7 @@ import (
 	lapi "github.com/LINBIT/golinstor/client"
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	"github.com/sirupsen/logrus"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -225,7 +226,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha
 	log.Info("reconciling PiraeusControllerSet Nodes")
 
 	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(map[string]string{"app": pcs.Name, "role": "piraeus-controller"})
+	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
 	listOps := &client.ListOptions{Namespace: pcs.Namespace, LabelSelector: labelSelector}
 	err := r.client.List(context.TODO(), listOps, pods)
 	if err != nil {
@@ -361,7 +362,7 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 	})
 	log.Info("found PiraeusControllerSet marked for deletion, finalizing...")
 
-	if contains(pcs.GetFinalizers(), linstorControllerFinalizer) {
+	if mdutil.HasFinalizer(pcs, linstorControllerFinalizer) {
 		// Run finalization logic for PiraeusControllerSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
@@ -410,8 +411,7 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 		// Remove finalizer. Once all finalizers have been
 		// removed, the object will be deleted.
 		log.Info("finalizing finished, removing finalizer")
-		pcs.SetFinalizers(remove(pcs.GetFinalizers(), linstorControllerFinalizer))
-		if err := r.client.Update(context.TODO(), pcs); err != nil {
+		if err := r.deleteFinalizer(pcs); err != nil {
 			return err
 		}
 
@@ -425,14 +425,21 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 }
 
 func (r *ReconcilePiraeusControllerSet) addFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
-	if !contains(pcs.GetFinalizers(), linstorControllerFinalizer) {
-		pcs.SetFinalizers(append(pcs.GetFinalizers(), linstorControllerFinalizer))
+	mdutil.AddFinalizer(pcs, linstorControllerFinalizer)
 
-		err := r.client.Update(context.TODO(), pcs)
-		if err != nil {
-			return err
-		}
-		return nil
+	err := r.client.Update(context.TODO(), pcs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+	mdutil.DeleteFinalizer(pcs, linstorControllerFinalizer)
+
+	err := r.client.Update(context.TODO(), pcs)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -446,10 +453,8 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 		replicas               = int32(1)
 	)
 
-	labels := map[string]string{
-		"app":  pcs.Name,
-		"role": "piraeus-controller",
-	}
+	labels := pcsLabels(pcs)
+
 	return &appsv1beta2.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
@@ -525,6 +530,13 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 	}
 }
 
+func pcsLabels(pcs *piraeusv1alpha1.PiraeusControllerSet) map[string]string {
+	return map[string]string{
+		"app":  pcs.Name,
+		"role": "piraeus-controller",
+	}
+}
+
 func newLinstorClientFromPod(pod corev1.Pod) (*lapi.Client, error) {
 	if pod.Spec.NodeName == "" {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
@@ -543,22 +555,4 @@ func newLinstorClientFromPod(pod corev1.Pod) (*lapi.Client, error) {
 	}
 
 	return c, nil
-}
-
-func remove(list []string, s string) []string {
-	for i, v := range list {
-		if v == s {
-			list = append(list[:i], list[i+1:]...)
-		}
-	}
-	return list
-}
-
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
