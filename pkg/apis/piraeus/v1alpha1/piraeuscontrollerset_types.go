@@ -44,38 +44,7 @@ type PiraeusControllerSetStatus struct {
 	// ControllerStatus information.
 	ControllerStatus *NodeStatus
 	// SatelliteStatuses by hostname.
-	SatelliteStatuses map[string]*CtrlSatelliteStatus `json:"satelliteStatuses"`
-}
-
-// NodeStatus simple status of the node in the linstor cluster.
-type NodeStatus struct {
-	// Indicates if the node has been created on the controller.
-	RegisteredOnController bool `json:"registeredOnController"`
-	// The hostname of the kubelet running the node
-	NodeName string `json:"nodeName"`
-}
-
-// SatelliteStatus should provide all the information that the reconsile loop
-// needs to manage the operation of the LINSTOR Satellite.
-type CtrlSatelliteStatus struct {
-	NodeStatus
-	// As indicated by Linstor
-	ConnectionStatus string `json:"connectionStatus"`
-	// StoragePoolStatuses by storage pool name.
-	StoragePoolStatuses map[string]*StoragePoolStatus `json:"storagePoolStatus"`
-}
-
-// StoragePoolStatus reports basic information about storage pool state.
-type CtrlStoragePoolStatus struct {
-	// The name of the storage pool.
-	Name string `json:"name"`
-	// The hostname of the kubelet hosting the storage pool.
-	NodeName string `json:"nodeName"`
-	// Provider is the underlying storage, lvm, zfs, etc.
-	Provider string `json:"provider"`
-	// Usage reporting
-	FreeCapacity  int64 `json:"freeCapacity"`
-	TotalCapacity int64 `json:"totalCapacity"`
+	SatelliteStatuses map[string]*SatelliteStatus `json:"satelliteStatuses"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

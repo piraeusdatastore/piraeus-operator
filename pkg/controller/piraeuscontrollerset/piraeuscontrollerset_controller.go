@@ -153,7 +153,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	}).Debug("found PiraeusNodeSet")
 
 	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.CtrlSatelliteStatus)
+		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
 	}
 
 	markedForDeletion := pcs.GetDeletionTimestamp() != nil
@@ -330,12 +330,12 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	}
 
 	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.CtrlSatelliteStatus, 0)
+		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus, 0)
 	}
 
 	for _, node := range nodes {
 		if node.Type == "SATELLITE" {
-			pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.CtrlSatelliteStatus{
+			pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
 				NodeStatus: piraeusv1alpha1.NodeStatus{
 					NodeName:               node.Name,
 					RegisteredOnController: true,
@@ -345,7 +345,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 			}
 			for _, pool := range pools {
 				if pool.NodeName == node.Name {
-					pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = newStoragePoolStatus(pool)
+					pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
 				}
 			}
 		}
@@ -543,16 +543,6 @@ func newLinstorClientFromPod(pod corev1.Pod) (*lapi.Client, error) {
 	}
 
 	return c, nil
-}
-
-func newStoragePoolStatus(pool lapi.StoragePool) *piraeusv1alpha1.StoragePoolStatus {
-	return &piraeusv1alpha1.StoragePoolStatus{
-		Name:          pool.StoragePoolName,
-		NodeName:      pool.NodeName,
-		Provider:      string(pool.ProviderKind),
-		FreeCapacity:  pool.FreeCapacity,
-		TotalCapacity: pool.TotalCapacity,
-	}
 }
 
 func remove(list []string, s string) []string {

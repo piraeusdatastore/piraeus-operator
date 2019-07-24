@@ -283,7 +283,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1a
 
 	sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	if !ok {
-		pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{NodeName: pod.Spec.NodeName}
+		pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{
+			NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
+		}
 		sat = pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	}
 
@@ -315,32 +317,6 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1a
 	log.WithFields(logrus.Fields{
 		"linstorNode": fmt.Sprintf("%+v", node),
 	}).Debug("found node")
-
-	// Make sure default network interface is to spec.
-	for _, nodeIf := range node.NetInterfaces {
-		ifLog := log.WithFields(logrus.Fields{
-			"foundInterface":  fmt.Sprintf("%+v", nodeIf),
-			"WantedInterface": fmt.Sprintf("%+v", wantedDefaultNetInterface),
-		})
-		if nodeIf.Name == wantedDefaultNetInterface.Name {
-
-			// TODO: Maybe we should error out here.
-			if nodeIf.Address != wantedDefaultNetInterface.Address ||
-				nodeIf.SatellitePort != wantedDefaultNetInterface.SatellitePort {
-				if err := r.linstorClient.Nodes.ModifyNetInterface(
-					context.TODO(), pod.Spec.NodeName, wantedDefaultNetInterface.Name, wantedDefaultNetInterface); err != nil {
-					return fmt.Errorf("unable to modify default network interface on %s: %v", pod.Spec.NodeName, err)
-				}
-			}
-			break
-		}
-
-		ifLog.Info("node doesn't have a default interface, creating it")
-		if err := r.linstorClient.Nodes.CreateNetInterface(
-			context.TODO(), pod.Spec.NodeName, wantedDefaultNetInterface); err != nil {
-			return fmt.Errorf("unable to create default network interface on %s: %v", pod.Spec.NodeName, err)
-		}
-	}
 
 	// TODO: Update golinstor to provide node.ConnectionStatus.
 	wantedConnStatus := "ONLINE"
@@ -409,16 +385,16 @@ func (r *ReconcilePiraeusNodeSet) getStatusOrCreateOnNode(ctx context.Context, p
 	// StoragePool doesn't exists, create it.
 	if err != nil && err == lapi.NotFoundError {
 		if err := r.linstorClient.Nodes.CreateStoragePool(ctx, nodeName, pool); err != nil {
-			return newStoragePoolStatus(pool), fmt.Errorf("unable to create storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
+			return piraeusv1alpha1.NewStoragePoolStatus(pool), fmt.Errorf("unable to create storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
 		}
-		return newStoragePoolStatus(foundPool), nil
+		return piraeusv1alpha1.NewStoragePoolStatus(foundPool), nil
 	}
 	// Other error.
 	if err != nil {
-		return newStoragePoolStatus(pool), fmt.Errorf("unable to get storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
+		return piraeusv1alpha1.NewStoragePoolStatus(pool), fmt.Errorf("unable to get storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
 	}
 
-	return newStoragePoolStatus(foundPool), nil
+	return piraeusv1alpha1.NewStoragePoolStatus(foundPool), nil
 }
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
@@ -531,6 +507,13 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	}
 }
 
+func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
+	return map[string]string{
+		"app":  pns.Name,
+		"role": "piraeus-node",
+	}
+}
+
 func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeSet, nodeName string) error {
 	log := logrus.WithFields(logrus.Fields{
 		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
@@ -627,16 +610,6 @@ func newLinstorClientFromPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lapi.Client,
 	}
 
 	return c, nil
-}
-
-func newStoragePoolStatus(pool lapi.StoragePool) *piraeusv1alpha1.StoragePoolStatus {
-	return &piraeusv1alpha1.StoragePoolStatus{
-		Name:          pool.StoragePoolName,
-		NodeName:      pool.NodeName,
-		Provider:      string(pool.ProviderKind),
-		FreeCapacity:  pool.FreeCapacity,
-		TotalCapacity: pool.TotalCapacity,
-	}
 }
 
 func remove(list []string, s string) []string {
