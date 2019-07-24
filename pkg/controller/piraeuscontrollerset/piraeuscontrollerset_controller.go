@@ -29,6 +29,7 @@ import (
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	"github.com/sirupsen/logrus"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -103,7 +104,7 @@ type ReconcilePiraeusControllerSet struct {
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
 	scheme        *runtime.Scheme
-	linstorClient *lapi.Client
+	linstorClient *lc.HighLevelClient
 }
 
 func newCompoundErrorMsg(errs []error) []string {
@@ -265,69 +266,33 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	// Mark this true on successful exit from this function.
 	ctrl.RegisteredOnController = false
 
-	wantedDefaultNetInterface := lapi.NetInterface{
-		Name:    "default",
-		Address: pod.Status.HostIP,
-	}
-
 	var err error
-	r.linstorClient, err = newLinstorClientFromPod(pod)
+	r.linstorClient, err = newHighLevelLinstorClientFromPod(pod)
 	if err != nil {
 		return err
 	}
 
-	node, err := r.linstorClient.Nodes.Get(context.TODO(), pod.Spec.NodeName)
+	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
+		Name: pod.Spec.NodeName,
+		Type: lc.Controller,
+		NetInterfaces: []lapi.NetInterface{
+			{
+				Name:    "default",
+				Address: pod.Status.HostIP,
+			},
+		},
+	})
 	if err != nil {
-		if err == lapi.NotFoundError {
-			if err := r.linstorClient.Nodes.Create(context.TODO(), lapi.Node{
-				Name:          pod.Spec.NodeName,
-				Type:          "Controller",
-				NetInterfaces: []lapi.NetInterface{wantedDefaultNetInterface},
-			}); err != nil {
-				return fmt.Errorf("unable to create node %s: %v", pod.Spec.NodeName, err)
-			}
-			return fmt.Errorf("node %s created, allowing controller time to configure it", pod.Spec.NodeName)
-		}
-		return fmt.Errorf("unable to get node %s: %v", pod.Spec.NodeName, err)
+		return err
 	}
 
 	log.WithFields(logrus.Fields{
 		"linstorNode": fmt.Sprintf("%+v", node),
 	}).Debug("found node")
 
-	// Make sure default network interface is to spec.
-	for _, nodeIf := range node.NetInterfaces {
-		ifLog := log.WithFields(logrus.Fields{
-			"foundInterface":  fmt.Sprintf("%+v", nodeIf),
-			"WantedInterface": fmt.Sprintf("%+v", wantedDefaultNetInterface),
-		})
-		if nodeIf.Name == wantedDefaultNetInterface.Name {
-
-			// TODO: Maybe we should error out here.
-			if nodeIf.Address != wantedDefaultNetInterface.Address {
-				if err := r.linstorClient.Nodes.ModifyNetInterface(
-					context.TODO(), pod.Spec.NodeName, wantedDefaultNetInterface.Name, wantedDefaultNetInterface); err != nil {
-					return fmt.Errorf("unable to modify default network interface on %s: %v", pod.Spec.NodeName, err)
-				}
-			}
-			break
-		}
-
-		ifLog.Info("node doesn't have a default interface, creating it")
-		if err := r.linstorClient.Nodes.CreateNetInterface(
-			context.TODO(), pod.Spec.NodeName, wantedDefaultNetInterface); err != nil {
-			return fmt.Errorf("unable to create default network interface on %s: %v", pod.Spec.NodeName, err)
-		}
-	}
-
-	// TODO: Expand LINSTOR API for an all nodes plus storage pools view?
-	nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
+	nodes, err := r.linstorClient.GetAllStorageNodes(context.TODO())
 	if err != nil {
-		return fmt.Errorf("unable to get cluster nodes: %v", err)
-	}
-	pools, err := r.linstorClient.Nodes.GetStoragePoolView(context.TODO())
-	if err != nil {
-		return fmt.Errorf("unable to get cluster storage pools: %v", err)
+		return fmt.Errorf("unable to get cluster storage nodes: %v", err)
 	}
 
 	if pcs.Status.SatelliteStatuses == nil {
@@ -335,20 +300,16 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	}
 
 	for _, node := range nodes {
-		if node.Type == "SATELLITE" {
-			pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
-				NodeStatus: piraeusv1alpha1.NodeStatus{
-					NodeName:               node.Name,
-					RegisteredOnController: true,
-				},
-				ConnectionStatus:    node.ConnectionStatus,
-				StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus, 0),
-			}
-			for _, pool := range pools {
-				if pool.NodeName == node.Name {
-					pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
-				}
-			}
+		pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
+			NodeStatus: piraeusv1alpha1.NodeStatus{
+				NodeName:               node.Name,
+				RegisteredOnController: true,
+			},
+			ConnectionStatus:    node.ConnectionStatus,
+			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus, 0),
+		}
+		for _, pool := range node.StoragePools {
+			pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
 		}
 	}
 
@@ -392,14 +353,14 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 
 		nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
 		if err != nil {
-			if err == lapi.NotFoundError {
+			if err != lapi.NotFoundError {
+				return fmt.Errorf("unable to get cluster nodes: %v", err)
 			}
-			return fmt.Errorf("unable to get cluster nodes: %v", err)
 		}
 
 		var nodeNames = make([]string, 0)
 		for _, node := range nodes {
-			if node.Type == "SATELLITE" {
+			if node.Type == lc.Satellite {
 				nodeNames = append(nodeNames, node.Name)
 			}
 		}
@@ -537,16 +498,15 @@ func pcsLabels(pcs *piraeusv1alpha1.PiraeusControllerSet) map[string]string {
 	}
 }
 
-func newLinstorClientFromPod(pod corev1.Pod) (*lapi.Client, error) {
+func newHighLevelLinstorClientFromPod(pod corev1.Pod) (*lc.HighLevelClient, error) {
 	if pod.Spec.NodeName == "" {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
 	}
 	u, err := url.Parse("http://" + pod.Spec.NodeName + ":3370")
-	//u, err := url.Parse("http://" + "localhost" + ":3370")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
 	}
-	c, err := lapi.NewClient(
+	c, err := lc.NewHighLevelClient(
 		lapi.BaseURL(u),
 		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
 	)
