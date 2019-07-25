@@ -14,7 +14,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package piraeusnodeset
+
+package client
 
 import (
 	"reflect"
@@ -117,55 +118,6 @@ func TestFilterNode(t *testing.T) {
 			// Structs are printed without field names for a more compact comparison.
 			t.Errorf("\nexpected\n\t%v\nto filter into\n\t%v\ngot\n\t%v",
 				tt.raw, tt.filtered, actual)
-		}
-	}
-}
-
-func TestContains(t *testing.T) {
-	var tableTest = []struct {
-		in       []string
-		has      string
-		expected bool
-	}{
-		{[]string{"foo", "bar", "baz"}, "bar", true},
-		{[]string{"foo", "bar", "baz"}, "foo", true},
-		{[]string{"foo", "bar", "baz"}, "baz", true},
-		{[]string{"foo", "bar", "baz"}, "banana", false},
-		{[]string{"foo", "bar", "baz"}, "", false},
-		{[]string{"foo", "bar", ""}, "", true},
-		{[]string{}, "banana", false},
-	}
-
-	for _, tt := range tableTest {
-		actual := contains(tt.in, tt.has)
-
-		if tt.expected != actual {
-			t.Errorf("\nexpected contains(%+v, %s)\nto be\n\t%t\ngot\n\t%t",
-				tt.in, tt.has, tt.expected, actual)
-		}
-	}
-}
-
-func TestRemove(t *testing.T) {
-	var tableTest = []struct {
-		in       []string
-		remove   string
-		expected []string
-	}{
-		{[]string{"foo", "bar", "baz"}, "bar", []string{"foo", "baz"}},
-		{[]string{"foo", "bar", "baz"}, "baz", []string{"foo", "bar"}},
-		{[]string{"foo", "bar", "baz"}, "foo", []string{"bar", "baz"}},
-		{[]string{"foo", "bar", "baz"}, "potato", []string{"foo", "bar", "baz"}},
-		{[]string{"foo", "bar", "baz"}, "", []string{"foo", "bar", "baz"}},
-		{[]string{}, "bar", []string{}},
-	}
-
-	for _, tt := range tableTest {
-		actual := remove(tt.in, tt.remove)
-
-		if !reflect.DeepEqual(tt.expected, actual) {
-			t.Errorf("\nexpected contains(%+v, %s)\nto be\n\t%+v\ngot\n\t%+v",
-				tt.in, tt.remove, tt.expected, actual)
 		}
 	}
 }

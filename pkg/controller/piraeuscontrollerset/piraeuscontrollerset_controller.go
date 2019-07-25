@@ -19,11 +19,23 @@ package piraeuscontrollerset
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"os"
+	"strings"
+	"time"
+
+	lapi "github.com/LINBIT/golinstor/client"
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+	"github.com/sirupsen/logrus"
+	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,16 +44,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("controller_piraeuscontrollerset")
+const linstorControllerFinalizer = "finalizer.linstor-controller.linbit.com"
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
+func init() {
+	logrus.SetFormatter(&logrus.TextFormatter{})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.DebugLevel)
+}
+
+var log = logrus.WithFields(logrus.Fields{
+	"controller": "PiraeusControllerSet",
+})
 
 // Add creates a new PiraeusControllerSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -68,9 +84,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner PiraeusControllerSet
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &appsv1beta2.StatefulSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &piraeusv1alpha1.PiraeusControllerSet{},
 	})
@@ -88,8 +102,21 @@ var _ reconcile.Reconciler = &ReconcilePiraeusControllerSet{}
 type ReconcilePiraeusControllerSet struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client        client.Client
+	scheme        *runtime.Scheme
+	linstorClient *lc.HighLevelClient
+}
+
+func newCompoundErrorMsg(errs []error) []string {
+	var errStrs = make([]string, 0)
+
+	for _, err := range errs {
+		if err != nil {
+			errStrs = append(errStrs, err.Error())
+		}
+	}
+
+	return errStrs
 }
 
 // Reconcile reads that state of the cluster for a PiraeusControllerSet object and makes changes based on the state read
@@ -100,12 +127,11 @@ type ReconcilePiraeusControllerSet struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling PiraeusControllerSet")
+	log.Debug("entering reconcile loop")
 
 	// Fetch the PiraeusControllerSet instance
-	instance := &piraeusv1alpha1.PiraeusControllerSet{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	pcs := &piraeusv1alpha1.PiraeusControllerSet{}
+	err := r.client.Get(context.TODO(), request.NamespacedName, pcs)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -117,54 +143,376 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	log := logrus.WithFields(logrus.Fields{
+		"resquestName":      request.Name,
+		"resquestNamespace": request.Namespace,
+		"PiraeusNodeSet":    fmt.Sprintf("%+v", pcs),
+	})
+	log.Info("reconciling PiraeusNodeSet")
 
-	// Set PiraeusControllerSet instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	logrus.WithFields(logrus.Fields{
+		"PiraeusNodeSet": fmt.Sprintf("%+v", pcs),
+	}).Debug("found PiraeusNodeSet")
+
+	if pcs.Status.SatelliteStatuses == nil {
+		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
+	}
+
+	markedForDeletion := pcs.GetDeletionTimestamp() != nil
+	if markedForDeletion {
+		err := r.finalizeControllerSet(pcs)
+
+		log.Debug("reconcile loop end")
 		return reconcile.Result{}, err
 	}
 
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	if err := r.addFinalizer(pcs); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Define a new Pod object
+	ctrlSet := newStatefulSetforPCS(pcs)
+
+	// Set PiraeusControllerSet instance as the owner and controller
+	if err := controllerutil.SetControllerReference(pcs, ctrlSet, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	found := &appsv1beta2.StatefulSet{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ctrlSet.Name, Namespace: ctrlSet.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		logrus.WithFields(logrus.Fields{
+			"controllerSet": fmt.Sprintf("%+v", ctrlSet),
+		}).Info("creating a new DaemonSet")
+		err = r.client.Create(context.TODO(), ctrlSet)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
+		// Pod created successfully - requeue for registration
+		return reconcile.Result{Requeue: true}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
+	logrus.WithFields(logrus.Fields{
+		"controllerSet": fmt.Sprintf("%+v", ctrlSet),
+	}).Debug("controllerSet already exists")
+
+	errs := r.reconcileControllers(pcs)
+	compoundErrorMsg := newCompoundErrorMsg(errs)
+	pcs.Status.Errors = compoundErrorMsg
+
+	if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
+		logrus.Error(err, "Failed to update PiraeusControllerSet status")
+		return reconcile.Result{}, err
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"errs": compoundErrorMsg,
+	}).Debug("reconcile loop end")
+
+	var compoundError error
+	if len(compoundErrorMsg) != 0 {
+		compoundError = fmt.Errorf("requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
+	}
+
+	return reconcile.Result{RequeueAfter: time.Minute * 1}, compoundError
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *piraeusv1alpha1.PiraeusControllerSet) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
+func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha1.PiraeusControllerSet) []error {
+	log := logrus.WithFields(logrus.Fields{
+		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+	})
+	log.Info("reconciling PiraeusControllerSet Nodes")
+
+	pods := &corev1.PodList{}
+	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
+	listOps := &client.ListOptions{Namespace: pcs.Namespace, LabelSelector: labelSelector}
+	err := r.client.List(context.TODO(), listOps, pods)
+	if err != nil {
+		return []error{err}
 	}
-	return &corev1.Pod{
+	logrus.WithFields(logrus.Fields{
+		"pods": fmt.Sprintf("%+v", pods),
+	}).Debug("found pods")
+
+	if len(pods.Items) != 1 {
+		return []error{fmt.Errorf("waiting until there is exactly one controller pod")}
+	}
+
+	return []error{r.reconcileControllerNodeWithControllers(pcs, pods.Items[0])}
+}
+
+func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(pcs *piraeusv1alpha1.PiraeusControllerSet, pod corev1.Pod) error {
+	log := logrus.WithFields(logrus.Fields{
+		"podName":              pod.Name,
+		"podNameSpace":         pod.Namespace,
+		"podPase":              pod.Status.Phase,
+		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+	})
+	log.Debug("reconciling node")
+
+	if pod.Status.Phase != corev1.PodRunning {
+		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Spec.NodeName)
+	}
+
+	ctrl := pcs.Status.ControllerStatus
+	if ctrl == nil {
+		pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName}
+		ctrl = pcs.Status.ControllerStatus
+	}
+
+	// Mark this true on successful exit from this function.
+	ctrl.RegisteredOnController = false
+
+	var err error
+	r.linstorClient, err = newHighLevelLinstorClientFromPod(pod)
+	if err != nil {
+		return err
+	}
+
+	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
+		Name: pod.Spec.NodeName,
+		Type: lc.Controller,
+		NetInterfaces: []lapi.NetInterface{
+			{
+				Name:    "default",
+				Address: pod.Status.HostIP,
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(logrus.Fields{
+		"linstorNode": fmt.Sprintf("%+v", node),
+	}).Debug("found node")
+
+	nodes, err := r.linstorClient.GetAllStorageNodes(context.TODO())
+	if err != nil {
+		return fmt.Errorf("unable to get cluster storage nodes: %v", err)
+	}
+
+	if pcs.Status.SatelliteStatuses == nil {
+		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus, 0)
+	}
+
+	for _, node := range nodes {
+		pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
+			NodeStatus: piraeusv1alpha1.NodeStatus{
+				NodeName:               node.Name,
+				RegisteredOnController: true,
+			},
+			ConnectionStatus:    node.ConnectionStatus,
+			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus, 0),
+		}
+		for _, pool := range node.StoragePools {
+			pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
+		}
+	}
+
+	ctrl.RegisteredOnController = true
+	return nil
+}
+
+func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+	log := logrus.WithFields(logrus.Fields{
+		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+	})
+	log.Info("found PiraeusControllerSet marked for deletion, finalizing...")
+
+	if mdutil.HasFinalizer(pcs, linstorControllerFinalizer) {
+		// Run finalization logic for PiraeusControllerSet. If the
+		// finalization logic fails, don't remove the finalizer so
+		// that we can retry during the next reconciliation.
+
+		// Right now we can't set the client until we've reconcilded at least
+		// once. This is a hack until we have proper networking.
+		if r.linstorClient == nil {
+			errs := r.reconcileControllers(pcs)
+			compoundErrorMsg := newCompoundErrorMsg(errs)
+			pcs.Status.Errors = compoundErrorMsg
+
+			if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
+				logrus.Error(err, "Failed to update PiraeusControllerSet status")
+				return err
+			}
+
+			logrus.WithFields(logrus.Fields{
+				"errs": compoundErrorMsg,
+			}).Debug("reconcile loop end")
+
+			var compoundError error
+			if len(compoundErrorMsg) != 0 {
+				compoundError = fmt.Errorf("requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
+			}
+			return compoundError
+		}
+
+		nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
+		if err != nil {
+			if err != lapi.NotFoundError {
+				return fmt.Errorf("unable to get cluster nodes: %v", err)
+			}
+		}
+
+		var nodeNames = make([]string, 0)
+		for _, node := range nodes {
+			if node.Type == lc.Satellite {
+				nodeNames = append(nodeNames, node.Name)
+			}
+		}
+
+		if len(nodeNames) != 0 {
+			return fmt.Errorf("controller still has active satellites which must be cleared before deletion: %v", nodeNames)
+		}
+
+		// Remove finalizer. Once all finalizers have been
+		// removed, the object will be deleted.
+		log.Info("finalizing finished, removing finalizer")
+		if err := r.deleteFinalizer(pcs); err != nil {
+			return err
+		}
+
+		if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
+			return err
+		}
+
+		return nil
+	}
+	return nil
+}
+
+func (r *ReconcilePiraeusControllerSet) addFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+	mdutil.AddFinalizer(pcs, linstorControllerFinalizer)
+
+	err := r.client.Update(context.TODO(), pcs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+	mdutil.DeleteFinalizer(pcs, linstorControllerFinalizer)
+
+	err := r.client.Update(context.TODO(), pcs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta2.StatefulSet {
+	var (
+		isPrivileged           = true
+		directoryType          = corev1.HostPathDirectory
+		linstorDatabaseDirName = "linstor-db"
+		linstorDatabaseDir     = "/var/lib/linstor"
+		replicas               = int32(1)
+	)
+
+	labels := pcsLabels(pcs)
+
+	return &appsv1beta2.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
+			Name:      pcs.Name + "-controller",
+			Namespace: "kube-system",
 			Labels:    labels,
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
+		Spec: appsv1beta2.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{MatchLabels: labels},
+			Replicas: &replicas,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pcs.Name + "-controller",
+					Namespace: "kube-system",
+					Labels:    labels,
+				},
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											corev1.NodeSelectorRequirement{
+												Key:      "linstor.linbit.com/linstor-node-type",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"controller"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					PriorityClassName: "system-node-critical",
+					HostNetwork:       true,
+					Containers: []corev1.Container{
+						{
+							Name:            "linstor-controller",
+							Image:           "quay.io/piraeusdatastore/piraeus-server:latest",
+							Args:            []string{"startController"}, // Run linstor-controller.
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							SecurityContext: &corev1.SecurityContext{Privileged: &isPrivileged},
+							Ports: []corev1.ContainerPort{
+								corev1.ContainerPort{
+									HostPort:      3376,
+									ContainerPort: 3376,
+								},
+								corev1.ContainerPort{
+									HostPort:      3370,
+									ContainerPort: 3370,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								corev1.VolumeMount{
+									Name:      linstorDatabaseDirName,
+									MountPath: linstorDatabaseDir,
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						corev1.Volume{
+							Name: linstorDatabaseDirName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: linstorDatabaseDir,
+									Type: &directoryType,
+								}}},
+					},
 				},
 			},
 		},
 	}
+}
+
+func pcsLabels(pcs *piraeusv1alpha1.PiraeusControllerSet) map[string]string {
+	return map[string]string{
+		"app":  pcs.Name,
+		"role": "piraeus-controller",
+	}
+}
+
+func newHighLevelLinstorClientFromPod(pod corev1.Pod) (*lc.HighLevelClient, error) {
+	if pod.Spec.NodeName == "" {
+		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
+	}
+	u, err := url.Parse("http://" + pod.Spec.NodeName + ":3370")
+	if err != nil {
+		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
+	}
+	c, err := lc.NewHighLevelClient(
+		lapi.BaseURL(u),
+		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
+	}
+
+	return c, nil
 }

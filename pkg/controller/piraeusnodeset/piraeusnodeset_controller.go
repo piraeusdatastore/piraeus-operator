@@ -27,6 +27,8 @@ import (
 
 	lapi "github.com/LINBIT/golinstor/client"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,7 +59,7 @@ var log = logrus.WithFields(logrus.Fields{
 // linstorNodeFinalizer can only be removed if the linstor node containers are
 // ready to be shutdown. For now, this means that they have no resources assigned
 // to them.
-const linstorNodeFinalizer = "finalizer.linstor.linbit.com"
+const linstorNodeFinalizer = "finalizer.linstor-node.linbit.com"
 
 // Add creates a new PiraeusNodeSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -104,7 +106,7 @@ type ReconcilePiraeusNodeSet struct {
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
 	scheme        *runtime.Scheme
-	linstorClient *lapi.Client
+	linstorClient *lc.HighLevelClient
 }
 
 func newCompoundErrorMsg(errs []error) []string {
@@ -167,7 +169,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
 	}
 
-	r.linstorClient, err = newLinstorClientFromPNS(pns)
+	r.linstorClient, err = newHighLevelLinstorClientForPNS(pns)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -249,7 +251,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	log.Info("reconciling PiraeusNodeSet Nodes")
 
 	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(map[string]string{"app": pns.Name})
+	labelSelector := labels.SelectorFromSet(pnsLabels(pns))
 	listOps := &client.ListOptions{Namespace: pns.Namespace, LabelSelector: labelSelector}
 	err := r.client.List(context.TODO(), listOps, pods)
 	if err != nil {
@@ -283,71 +285,39 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1a
 
 	sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	if !ok {
-		pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{NodeName: pod.Spec.NodeName}
+		pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{
+			NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
+		}
 		sat = pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	}
 
 	// Mark this true on successful exit from this function.
 	sat.RegisteredOnController = false
 
-	wantedDefaultNetInterface := lapi.NetInterface{
-		Name:                    "default",
-		Address:                 pod.Status.HostIP,
-		SatellitePort:           3366,
-		SatelliteEncryptionType: "plain",
-	}
-
-	node, err := r.linstorClient.Nodes.Get(context.TODO(), pod.Spec.NodeName)
+	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
+		Name: pod.Spec.NodeName,
+		Type: lc.Satellite,
+		NetInterfaces: []lapi.NetInterface{
+			{
+				Name:                    "default",
+				Address:                 pod.Status.HostIP,
+				SatellitePort:           3366,
+				SatelliteEncryptionType: "plain",
+			},
+		},
+	})
 	if err != nil {
-		if err == lapi.NotFoundError {
-			if err := r.linstorClient.Nodes.Create(context.TODO(), lapi.Node{
-				Name:          pod.Spec.NodeName,
-				Type:          "Satellite",
-				NetInterfaces: []lapi.NetInterface{wantedDefaultNetInterface},
-			}); err != nil {
-				return fmt.Errorf("unable to create node %s: %v", pod.Spec.NodeName, err)
-			}
-			return fmt.Errorf("node %s created, allowing controller time to configure it", pod.Spec.NodeName)
-		}
-		return fmt.Errorf("unable to get node %s: %v", pod.Spec.NodeName, err)
+		return err
 	}
 
 	log.WithFields(logrus.Fields{
 		"linstorNode": fmt.Sprintf("%+v", node),
 	}).Debug("found node")
 
-	// Make sure default network interface is to spec.
-	for _, nodeIf := range node.NetInterfaces {
-		ifLog := log.WithFields(logrus.Fields{
-			"foundInterface":  fmt.Sprintf("%+v", nodeIf),
-			"WantedInterface": fmt.Sprintf("%+v", wantedDefaultNetInterface),
-		})
-		if nodeIf.Name == wantedDefaultNetInterface.Name {
-
-			// TODO: Maybe we should error out here.
-			if nodeIf.Address != wantedDefaultNetInterface.Address ||
-				nodeIf.SatellitePort != wantedDefaultNetInterface.SatellitePort {
-				if err := r.linstorClient.Nodes.ModifyNetInterface(
-					context.TODO(), pod.Spec.NodeName, wantedDefaultNetInterface.Name, wantedDefaultNetInterface); err != nil {
-					return fmt.Errorf("unable to modify default network interface on %s: %v", pod.Spec.NodeName, err)
-				}
-			}
-			break
-		}
-
-		ifLog.Info("node doesn't have a default interface, creating it")
-		if err := r.linstorClient.Nodes.CreateNetInterface(
-			context.TODO(), pod.Spec.NodeName, wantedDefaultNetInterface); err != nil {
-			return fmt.Errorf("unable to create default network interface on %s: %v", pod.Spec.NodeName, err)
-		}
-	}
-
-	// TODO: Update golinstor to provide node.ConnectionStatus.
-	wantedConnStatus := "ONLINE"
 	sat.ConnectionStatus = node.ConnectionStatus
-	if sat.ConnectionStatus != wantedConnStatus {
+	if sat.ConnectionStatus != lc.Online {
 		return fmt.Errorf("waiting for node %s ConnectionStatus to be %s, current ConnectionStatus: %s",
-			pod.Spec.NodeName, wantedConnStatus, sat.ConnectionStatus)
+			pod.Spec.NodeName, lc.Online, sat.ConnectionStatus)
 	}
 
 	sat.RegisteredOnController = true
@@ -386,10 +356,12 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alph
 
 	// Get status for all pools.
 	for _, pool := range pools {
-		status, err := r.getStatusOrCreateOnNode(context.TODO(), pool.ToLinstorStoragePool(), pod.Spec.NodeName)
+		p, err := r.linstorClient.GetStoragePoolOrCreateOnNode(context.TODO(), pool.ToLinstorStoragePool(), pod.Spec.NodeName)
 		if err != nil {
 			return err
 		}
+
+		status := piraeusv1alpha1.NewStoragePoolStatus(p)
 
 		log.WithFields(logrus.Fields{
 			"storagePool": fmt.Sprintf("%+v", status),
@@ -402,23 +374,6 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alph
 	}
 
 	return nil
-}
-
-func (r *ReconcilePiraeusNodeSet) getStatusOrCreateOnNode(ctx context.Context, pool lapi.StoragePool, nodeName string) (*piraeusv1alpha1.StoragePoolStatus, error) {
-	foundPool, err := r.linstorClient.Nodes.GetStoragePool(ctx, nodeName, pool.StoragePoolName)
-	// StoragePool doesn't exists, create it.
-	if err != nil && err == lapi.NotFoundError {
-		if err := r.linstorClient.Nodes.CreateStoragePool(ctx, nodeName, pool); err != nil {
-			return newStoragePoolStatus(pool), fmt.Errorf("unable to create storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
-		}
-		return newStoragePoolStatus(foundPool), nil
-	}
-	// Other error.
-	if err != nil {
-		return newStoragePoolStatus(pool), fmt.Errorf("unable to get storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
-	}
-
-	return newStoragePoolStatus(foundPool), nil
 }
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
@@ -434,9 +389,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 		mountPropagationBidirectional = corev1.MountPropagationBidirectional
 	)
 
-	labels := map[string]string{
-		"app": pns.Name,
-	}
+	labels := pnsLabels(pns)
+
 	return &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -530,6 +484,13 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	}
 }
 
+func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
+	return map[string]string{
+		"app":  pns.Name,
+		"role": "piraeus-node",
+	}
+}
+
 func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeSet, nodeName string) error {
 	log := logrus.WithFields(logrus.Fields{
 		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
@@ -537,12 +498,10 @@ func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeS
 	})
 	log.Debug("finalizing node")
 	// Determine if any resources still remain on the node.
-	resList, err := r.linstorClient.Resources.GetResourceView(context.TODO()) //, &lapi.ListOpts{Node: []string{nodeName}}) : not working
-	if err != nil && err != lapi.NotFoundError {
-		return fmt.Errorf("unable to check for resources on node %s: %v", nodeName, err)
+	resList, err := r.linstorClient.GetAllResourcesOnNode(context.TODO(), nodeName)
+	if err != nil {
+		return err
 	}
-
-	resList = filterNodes(resList, nodeName)
 
 	if len(resList) != 0 {
 		return fmt.Errorf("unable to remove node %s: all resources must be removed before deletion", nodeName)
@@ -558,14 +517,21 @@ func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeS
 }
 
 func (r *ReconcilePiraeusNodeSet) addFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
-	if !contains(pns.GetFinalizers(), linstorNodeFinalizer) {
-		pns.SetFinalizers(append(pns.GetFinalizers(), linstorNodeFinalizer))
+	mdutil.AddFinalizer(pns, linstorNodeFinalizer)
 
-		err := r.client.Update(context.TODO(), pns)
-		if err != nil {
-			return err
-		}
-		return nil
+	err := r.client.Update(context.TODO(), pns)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcilePiraeusNodeSet) deleteFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
+	mdutil.DeleteFinalizer(pns, linstorNodeFinalizer)
+
+	err := r.client.Update(context.TODO(), pns)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -576,7 +542,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Pira
 	})
 	log.Info("found PiraeusNodeSet marked for deletion, finalizing...")
 
-	if contains(pns.GetFinalizers(), linstorNodeFinalizer) {
+	if mdutil.HasFinalizer(pns, linstorNodeFinalizer) {
 		// Run finalization logic for PiraeusNodeSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
@@ -591,9 +557,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Pira
 		// removed, the object will be deleted.
 		if len(errs) == 0 {
 			log.Info("finalizing finished, removing finalizer")
-			pns.SetFinalizers(remove(pns.GetFinalizers(), linstorNodeFinalizer))
-			err := r.client.Update(context.TODO(), pns)
-			if err != nil {
+			if err := r.deleteFinalizer(pns); err != nil {
 				return []error{err}
 			}
 			return nil
@@ -609,7 +573,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Pira
 	return nil
 }
 
-func newLinstorClientFromPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lapi.Client, error) {
+func newHighLevelLinstorClientForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lc.HighLevelClient, error) {
 	if pns.Spec.ControllerEndpoint == "" {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
 	}
@@ -617,7 +581,7 @@ func newLinstorClientFromPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lapi.Client,
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
 	}
-	c, err := lapi.NewClient(
+	c, err := lc.NewHighLevelClient(
 		lapi.BaseURL(u),
 		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
 	)
@@ -626,42 +590,4 @@ func newLinstorClientFromPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lapi.Client,
 	}
 
 	return c, nil
-}
-
-func newStoragePoolStatus(pool lapi.StoragePool) *piraeusv1alpha1.StoragePoolStatus {
-	return &piraeusv1alpha1.StoragePoolStatus{
-		Name:          pool.StoragePoolName,
-		NodeName:      pool.NodeName,
-		Provider:      string(pool.ProviderKind),
-		FreeCapacity:  pool.FreeCapacity,
-		TotalCapacity: pool.TotalCapacity,
-	}
-}
-
-func remove(list []string, s string) []string {
-	for i, v := range list {
-		if v == s {
-			list = append(list[:i], list[i+1:]...)
-		}
-	}
-	return list
-}
-
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
-func filterNodes(resources []lapi.Resource, nodeName string) []lapi.Resource {
-	var nodeRes = make([]lapi.Resource, 0)
-	for _, r := range resources {
-		if r.NodeName == nodeName {
-			nodeRes = append(nodeRes, r)
-		}
-	}
-	return nodeRes
 }
