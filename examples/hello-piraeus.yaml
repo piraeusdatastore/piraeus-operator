@@ -1,0 +1,33 @@
+---
+apiVersion: piraeus.linbit.com/v1alpha1
+kind: PiraeusControllerSet
+metadata:
+  name: hello-piraeus
+  namespace: kube-system
+---
+apiVersion: piraeus.linbit.com/v1alpha1
+kind: PiraeusNodeSet
+metadata:
+  name: hello-piraeus
+  namespace: kube-system
+spec:
+  # This is the REST endpoint for the Piraeus controller,
+  # the operator must be able to reach this endpoint.
+  # substitute `kubelet-a` with the kubelet the Piraeus
+  # controller is scheduled on.
+  controllerEndpoint: "http://kubelet-a:3370"
+  # StoragePools for the NodeSet to manage.
+  storagePools:
+    lvmPools:
+    - name: "lvm-thick"
+      # piraeuspool must be an already existing lvm
+      # volume group on the kubelet each Piraeus
+      # node is scheduled on.
+      volumeGroup: "piraeuspool"
+    lvmThinPools:
+    - name: "lvm-thin"
+      volumeGroup: "piraeuspool"
+      # piraeusthinpool must be an already existing
+      # lvm thin volume backed piraeuspool on the
+      # kubelet each Piraeus node is scheduled on.
+      thinVolume: "piraeusthinpool"
