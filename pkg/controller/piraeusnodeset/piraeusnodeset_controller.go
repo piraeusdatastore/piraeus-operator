@@ -391,7 +391,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 
 	labels := pnsLabels(pns)
 
-	return &apps.DaemonSet{
+	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
 			Namespace: "kube-system",
@@ -482,6 +482,58 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 			},
 		},
 	}
+
+	if pns.Spec.DisableDRBDKernelModuleInjection {
+		return ds
+	}
+
+	return daemonSetWithDRBDKernelModuleInjection(ds)
+}
+
+func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet {
+	var (
+		isPrivileged   = true
+		directoryType  = corev1.HostPathDirectory
+		modulesDirName = "modules-dir"
+		modulesDir     = "/usr/lib/modules/"
+		srcDirName     = "src-dir"
+		srcDir         = "/usr/src"
+	)
+
+	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
+		{
+			Name:            "drbd-kernel-module-injector",
+			Image:           "quay.io/piraeusdatastore/drbd9-centos7:latest",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			SecurityContext: &corev1.SecurityContext{Privileged: &isPrivileged},
+			VolumeMounts: []corev1.VolumeMount{
+				corev1.VolumeMount{
+					Name:      srcDirName,
+					MountPath: srcDir,
+					ReadOnly:  true,
+				},
+				// VolumumeSource for this directory is already present on the base
+				// daemonset.
+				corev1.VolumeMount{
+					Name:      modulesDirName,
+					MountPath: modulesDir,
+					ReadOnly:  true,
+				},
+			},
+		},
+	}
+
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, []corev1.Volume{
+		corev1.Volume{
+			Name: srcDirName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: srcDir,
+					Type: &directoryType,
+				}}},
+	}...)
+
+	return ds
 }
 
 func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
