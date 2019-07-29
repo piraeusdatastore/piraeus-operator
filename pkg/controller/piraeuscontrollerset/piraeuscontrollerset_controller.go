@@ -29,7 +29,9 @@ import (
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+
 	"github.com/sirupsen/logrus"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -407,11 +409,7 @@ func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.Pir
 
 func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta2.StatefulSet {
 	var (
-		isPrivileged           = true
-		directoryType          = corev1.HostPathDirectory
-		linstorDatabaseDirName = "linstor-db"
-		linstorDatabaseDir     = "/var/lib/linstor"
-		replicas               = int32(1)
+		replicas = int32(1)
 	)
 
 	labels := pcsLabels(pcs)
@@ -439,7 +437,7 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 									corev1.NodeSelectorTerm{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											corev1.NodeSelectorRequirement{
-												Key:      "linstor.linbit.com/linstor-node-type",
+												Key:      kubeSpec.NodeSelectorKey,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"controller"},
 											},
@@ -457,7 +455,7 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							Image:           "quay.io/piraeusdatastore/piraeus-server:latest",
 							Args:            []string{"startController"}, // Run linstor-controller.
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							SecurityContext: &corev1.SecurityContext{Privileged: &isPrivileged},
+							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
 								corev1.ContainerPort{
 									HostPort:      3376,
@@ -470,19 +468,19 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								corev1.VolumeMount{
-									Name:      linstorDatabaseDirName,
-									MountPath: linstorDatabaseDir,
+									Name:      kubeSpec.LinstorDatabaseDirName,
+									MountPath: kubeSpec.LinstorDatabaseDir,
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						corev1.Volume{
-							Name: linstorDatabaseDirName,
+							Name: kubeSpec.LinstorDatabaseDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: linstorDatabaseDir,
-									Type: &directoryType,
+									Path: kubeSpec.LinstorDatabaseDir,
+									Type: &kubeSpec.HostPathDirectoryType,
 								}}},
 					},
 				},
