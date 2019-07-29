@@ -35,6 +35,9 @@ type PiraeusNodeSetSpec struct {
 	ControllerEndpoint string `json:"controllerEndpoint"`
 	// StoragePools is a list of StoragePools for PiraeusNodeSet to manage.
 	StoragePools *StoragePools `json:"storagePools"`
+	//DisableDRBDKernelModuleInjection turns off automatic injection of the DRBD
+	// kernel module on the host system when set to true.
+	DisableDRBDKernelModuleInjection bool `json:"disableDRBDKernelModuleInjection"`
 }
 
 // PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet

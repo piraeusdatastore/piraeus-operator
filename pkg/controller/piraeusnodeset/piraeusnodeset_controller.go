@@ -28,7 +28,9 @@ import (
 	lapi "github.com/LINBIT/golinstor/client"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -377,21 +379,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alph
 }
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
-	var (
-		isPrivileged                  = true
-		directoryType                 = corev1.HostPathDirectory
-		devDirName                    = "device-dir"
-		devDir                        = "/dev/"
-		modulesDirName                = "modules-dir"
-		modulesDir                    = "/usr/lib/modules/"
-		udevDirName                   = "udev"
-		udevDir                       = "/run/udev"
-		mountPropagationBidirectional = corev1.MountPropagationBidirectional
-	)
-
 	labels := pnsLabels(pns)
 
-	return &apps.DaemonSet{
+	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
 			Namespace: "kube-system",
@@ -413,7 +403,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 									corev1.NodeSelectorTerm{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											corev1.NodeSelectorRequirement{
-												Key:      "linstor.linbit.com/linstor-node-type",
+												Key:      kubeSpec.NodeSelectorKey,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"storage"},
 											},
@@ -431,7 +421,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							Image:           "quay.io/piraeusdatastore/piraeus-server:latest",
 							Args:            []string{"startSatellite"}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							SecurityContext: &corev1.SecurityContext{Privileged: &isPrivileged},
+							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
 								corev1.ContainerPort{
 									HostPort:      3366,
@@ -440,48 +430,91 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								corev1.VolumeMount{
-									Name:      devDirName,
-									MountPath: devDir,
+									Name:      kubeSpec.DevDirName,
+									MountPath: kubeSpec.DevDir,
 								},
 								corev1.VolumeMount{
-									Name:      udevDirName,
-									MountPath: udevDir,
+									Name:      kubeSpec.UdevDirName,
+									MountPath: kubeSpec.UdevDir,
 									ReadOnly:  true,
 								},
 								corev1.VolumeMount{
-									Name:             modulesDirName,
-									MountPath:        modulesDir,
-									MountPropagation: &mountPropagationBidirectional,
+									Name:             kubeSpec.ModulesDirName,
+									MountPath:        kubeSpec.ModulesDir,
+									MountPropagation: &kubeSpec.MountPropagationBidirectional,
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						corev1.Volume{
-							Name: devDirName,
+							Name: kubeSpec.DevDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: devDir,
+									Path: kubeSpec.DevDir,
 								}}},
 						corev1.Volume{
-							Name: modulesDirName,
+							Name: kubeSpec.ModulesDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: modulesDir,
-									Type: &directoryType,
+									Path: kubeSpec.ModulesDir,
+									Type: &kubeSpec.HostPathDirectoryType,
 								}}},
 						corev1.Volume{
-							Name: udevDirName,
+							Name: kubeSpec.UdevDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: udevDir,
-									Type: &directoryType,
+									Path: kubeSpec.UdevDir,
+									Type: &kubeSpec.HostPathDirectoryType,
 								}}},
 					},
 				},
 			},
 		},
 	}
+
+	if pns.Spec.DisableDRBDKernelModuleInjection {
+		return ds
+	}
+
+	return daemonSetWithDRBDKernelModuleInjection(ds)
+}
+
+func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet {
+	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
+		{
+			Name:            "drbd-kernel-module-injector",
+			Image:           "quay.io/piraeusdatastore/drbd9-centos7:latest",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
+			VolumeMounts: []corev1.VolumeMount{
+				corev1.VolumeMount{
+					Name:      kubeSpec.SrcDirName,
+					MountPath: kubeSpec.SrcDir,
+					ReadOnly:  true,
+				},
+				// VolumumeSource for this directory is already present on the base
+				// daemonset.
+				corev1.VolumeMount{
+					Name:      kubeSpec.ModulesDirName,
+					MountPath: kubeSpec.ModulesDir,
+					ReadOnly:  true,
+				},
+			},
+		},
+	}
+
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, []corev1.Volume{
+		corev1.Volume{
+			Name: kubeSpec.SrcDirName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: kubeSpec.SrcDir,
+					Type: &kubeSpec.HostPathDirectoryType,
+				}}},
+	}...)
+
+	return ds
 }
 
 func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
