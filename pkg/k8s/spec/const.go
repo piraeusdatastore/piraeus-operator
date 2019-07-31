@@ -37,6 +37,7 @@ const (
 // are addressible.
 var (
 	HostPathDirectoryType         = corev1.HostPathDirectory
+	HostPathDirectoryOrCreateType = corev1.HostPathDirectoryOrCreate
 	MountPropagationBidirectional = corev1.MountPropagationBidirectional
 )
 
