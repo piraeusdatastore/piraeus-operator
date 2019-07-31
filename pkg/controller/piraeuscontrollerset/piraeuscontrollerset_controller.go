@@ -480,7 +480,7 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.LinstorDatabaseDir,
-									Type: &kubeSpec.HostPathDirectoryType,
+									Type: &kubeSpec.HostPathDirectoryOrCreateType,
 								}}},
 					},
 				},
