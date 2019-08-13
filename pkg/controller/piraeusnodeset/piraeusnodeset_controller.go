@@ -418,7 +418,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",
-							Image:           "quay.io/piraeusdatastore/piraeus-server:latest",
+							Image:           "quay.io/piraeusdatastore/piraeus-server:v0.9.12.0.2",
 							Args:            []string{"startSatellite"}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
@@ -484,7 +484,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet 
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "drbd-kernel-module-injector",
-			Image:           "quay.io/piraeusdatastore/drbd9-centos7:latest",
+			Image:           "quay.io/piraeusdatastore/drbd9-centos7:v9.0.19",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			VolumeMounts: []corev1.VolumeMount{
