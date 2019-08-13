@@ -20,7 +20,6 @@ package piraeusnodeset
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -171,7 +170,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
 	}
 
-	r.linstorClient, err = newHighLevelLinstorClientForPNS(pns)
+	r.linstorClient, err = lc.NewHighLevelLinstorClientForObject(pns)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -604,23 +603,4 @@ func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Pira
 		return errs
 	}
 	return nil
-}
-
-func newHighLevelLinstorClientForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) (*lc.HighLevelClient, error) {
-	if pns.Spec.ControllerEndpoint == "" {
-		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
-	}
-	u, err := url.Parse(pns.Spec.ControllerEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
-	}
-	c, err := lc.NewHighLevelClient(
-		lapi.BaseURL(u),
-		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
-	}
-
-	return c, nil
 }

@@ -23,12 +23,12 @@ the [documentation for the sdk](https://github.com/operator-framework/operator-s
 
 ## Usage
 
-The operator must currently be ran locally, via `operator-sdk up local --namespace=kube-system`
-and the local machine must be able to access the kubelet that hosts the Piraeus
-controller.
+The operator must be deployed within the cluster in order for it it to have access
+to the controller endpoint, which is a kubernetes service. See the operator-sdk
+guide.
 
 Controllers nodes will only run on kubelets labeled with `linstor.linbit.com/linstor-node-type=controller`
-and node will only run on kubelets labeled with `linstor.linbit.com/linstor-node-type=storage`
+and nodes will only run on kubelets labeled with `linstor.linbit.com/linstor-node-type=storage`
 
 ## License
 
