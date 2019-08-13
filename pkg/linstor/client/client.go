@@ -3,8 +3,12 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"os"
 
 	lapi "github.com/LINBIT/golinstor/client"
+	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Various lapi consts yet to be defined in golinstor.
@@ -23,6 +27,24 @@ type StorageNode struct {
 // HighLevelClient is a golinstor client with convience fucntions.
 type HighLevelClient struct {
 	lapi.Client
+}
+
+// NewHighLevelLinstorClientForObject configures a HighLevelClient with an
+// in-cluster url based on the controller's service naming convention.
+func NewHighLevelLinstorClientForObject(obj metav1.Object) (*HighLevelClient, error) {
+	u, err := url.Parse(fmt.Sprintf("http://%s.%s.svc:3370", obj.GetName(), obj.GetNamespace()))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
+	}
+	c, err := NewHighLevelClient(
+		lapi.BaseURL(u),
+		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
+	}
+
+	return c, nil
 }
 
 // NewHighLevelClient returns a pointer to a golinstor client with convience.
