@@ -30,9 +30,6 @@ type PiraeusNodeSetSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// ControllerEndpoint is the API endpoint for the LINSTOR controller associated
-	// With this PiraeusNodeSet.
-	ControllerEndpoint string `json:"controllerEndpoint"`
 	// StoragePools is a list of StoragePools for PiraeusNodeSet to manage.
 	StoragePools *StoragePools `json:"storagePools"`
 	//DisableDRBDKernelModuleInjection turns off automatic injection of the DRBD

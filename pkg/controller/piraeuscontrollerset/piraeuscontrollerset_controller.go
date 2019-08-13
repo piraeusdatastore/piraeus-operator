@@ -20,7 +20,6 @@ package piraeuscontrollerset
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -40,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -160,6 +160,11 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
 	}
 
+	r.linstorClient, err = lc.NewHighLevelLinstorClientForObject(pcs)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	markedForDeletion := pcs.GetDeletionTimestamp() != nil
 	if markedForDeletion {
 		err := r.finalizeControllerSet(pcs)
@@ -172,8 +177,33 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	ctrlSet := newStatefulSetforPCS(pcs)
+	// Define a service for the controller.
+	ctrlService := newServiceForPCS(pcs)
+	// Set PiraeusControllerSet instance as the owner and controller
+	if err := controllerutil.SetControllerReference(pcs, ctrlService, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	foundSrv := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ctrlService.Name, Namespace: ctrlService.Namespace}, foundSrv)
+	if err != nil && errors.IsNotFound(err) {
+		logrus.WithFields(logrus.Fields{
+			"controllerService": fmt.Sprintf("%+v", ctrlService),
+		}).Info("creating a new Service")
+		err = r.client.Create(context.TODO(), ctrlService)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"controllerService": fmt.Sprintf("%+v", ctrlService),
+	}).Debug("controllerSet already exists")
+
+	// Define a new StatefulSet object
+	ctrlSet := newStatefulSetForPCS(pcs)
 
 	// Set PiraeusControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pcs, ctrlSet, r.scheme); err != nil {
@@ -256,7 +286,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	log.Debug("reconciling node")
 
 	if pod.Status.Phase != corev1.PodRunning {
-		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Spec.NodeName)
+		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Name)
 	}
 
 	ctrl := pcs.Status.ControllerStatus
@@ -268,19 +298,13 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	// Mark this true on successful exit from this function.
 	ctrl.RegisteredOnController = false
 
-	var err error
-	r.linstorClient, err = newHighLevelLinstorClientFromPod(pod)
-	if err != nil {
-		return err
-	}
-
 	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
-		Name: pod.Spec.NodeName,
+		Name: pod.Name,
 		Type: lc.Controller,
 		NetInterfaces: []lapi.NetInterface{
 			{
 				Name:    "default",
-				Address: pod.Status.HostIP,
+				Address: pod.Status.PodIP,
 			},
 		},
 	})
@@ -329,29 +353,6 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 		// Run finalization logic for PiraeusControllerSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
-
-		// Right now we can't set the client until we've reconcilded at least
-		// once. This is a hack until we have proper networking.
-		if r.linstorClient == nil {
-			errs := r.reconcileControllers(pcs)
-			compoundErrorMsg := newCompoundErrorMsg(errs)
-			pcs.Status.Errors = compoundErrorMsg
-
-			if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
-				logrus.Error(err, "Failed to update PiraeusControllerSet status")
-				return err
-			}
-
-			logrus.WithFields(logrus.Fields{
-				"errs": compoundErrorMsg,
-			}).Debug("reconcile loop end")
-
-			var compoundError error
-			if len(compoundErrorMsg) != 0 {
-				compoundError = fmt.Errorf("requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
-			}
-			return compoundError
-		}
 
 		nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
 		if err != nil {
@@ -407,7 +408,7 @@ func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.Pir
 	return nil
 }
 
-func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta2.StatefulSet {
+func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta2.StatefulSet {
 	var (
 		replicas = int32(1)
 	)
@@ -448,7 +449,6 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 						},
 					},
 					PriorityClassName: "system-node-critical",
-					HostNetwork:       true,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
@@ -489,28 +489,31 @@ func newStatefulSetforPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 	}
 }
 
+func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pcs.Name,
+			Namespace: pcs.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: "None",
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Name:       "rest-http",
+					Port:       3370,
+					Protocol:   "TCP",
+					TargetPort: intstr.FromInt(3370),
+				},
+			},
+			Selector: pcsLabels(pcs),
+			Type:     "ClusterIP",
+		},
+	}
+}
+
 func pcsLabels(pcs *piraeusv1alpha1.PiraeusControllerSet) map[string]string {
 	return map[string]string{
 		"app":  pcs.Name,
 		"role": "piraeus-controller",
 	}
-}
-
-func newHighLevelLinstorClientFromPod(pod corev1.Pod) (*lc.HighLevelClient, error) {
-	if pod.Spec.NodeName == "" {
-		return nil, fmt.Errorf("unable to create LINSTOR API client: ControllerIP cannot be empty")
-	}
-	u, err := url.Parse("http://" + pod.Spec.NodeName + ":3370")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
-	}
-	c, err := lc.NewHighLevelClient(
-		lapi.BaseURL(u),
-		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
-	}
-
-	return c, nil
 }
