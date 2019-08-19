@@ -418,7 +418,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 	return &appsv1beta2.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
-			Namespace: "kube-system",
+			Namespace: pcs.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1beta2.StatefulSetSpec{
@@ -427,7 +427,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pcs.Name + "-controller",
-					Namespace: "kube-system",
+					Namespace: pcs.Namespace,
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
@@ -448,7 +448,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							},
 						},
 					},
-					PriorityClassName: "system-node-critical",
+					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
