@@ -383,7 +383,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
-			Namespace: "kube-system",
+			Namespace: pns.Namespace,
 			Labels:    labels,
 		},
 		Spec: apps.DaemonSetSpec{
@@ -391,7 +391,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pns.Name + "-node",
-					Namespace: "kube-system",
+					Namespace: pns.Namespace,
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
@@ -412,8 +412,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							},
 						},
 					},
-					PriorityClassName: "system-node-critical",
 					HostNetwork:       true,
+					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",
