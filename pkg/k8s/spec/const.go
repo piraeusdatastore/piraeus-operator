@@ -57,3 +57,7 @@ const (
 	// PiraeusSatelliteNode label to mark node eligible to run piraeus-node pods.
 	PiraeusNode = selectorPrefix + "piraeus-node"
 )
+
+// PiraeusPriorityClassName is the name of the PriorityClass set up in the
+// example yaml used by important piraeus components.
+const PiraeusPriorityClassName = "piraeus-priority-class"

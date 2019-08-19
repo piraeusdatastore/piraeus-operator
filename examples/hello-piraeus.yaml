@@ -3,13 +3,11 @@ apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusControllerSet
 metadata:
   name: hello-piraeus
-  namespace: kube-system
 ---
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusNodeSet
 metadata:
   name: hello-piraeus
-  namespace: kube-system
 spec:
   # This is the REST endpoint for the Piraeus controller,
   # the operator must be able to reach this endpoint.

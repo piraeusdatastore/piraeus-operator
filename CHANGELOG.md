@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- examples/operator-intra.yaml file to bundle all the rbac, crds, etc to run the
+  operator
+
 ### Removed
 - `ControllerEndpoint` from the PiraeusNodeSet spec
 
@@ -16,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opt-in node labels for controllers and nodes are now
 `linstor.linbit.com/piraeus-controller=true` and
 `linstor.linbit.com/piraeus-node=true` respectively
+- Remove requirement for `kube-system` namespace
 
 ## [v0.0.1] - 2019-07-19
 ### Added
