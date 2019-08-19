@@ -438,9 +438,9 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 									corev1.NodeSelectorTerm{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											corev1.NodeSelectorRequirement{
-												Key:      kubeSpec.NodeSelectorKey,
+												Key:      kubeSpec.PiraeusControllerNode,
 												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{"controller"},
+												Values:   []string{"true"},
 											},
 										},
 									},

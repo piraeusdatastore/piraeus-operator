@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as the ControllerSet. The NodeSet must have the same name as the ControllerSet
   for networking to work properly.
 - Controller Nodes now do not use HostNetwork
+- Opt-in node labels for controllers and nodes are now
+`linstor.linbit.com/piraeus-controller=true` and
+`linstor.linbit.com/piraeus-node=true` respectively
 
 ## [v0.0.1] - 2019-07-19
 ### Added
