@@ -47,6 +47,13 @@ var (
 	Privileged = true
 )
 
-// NodeSelectorKey corresponds to a kubernetes node label that is an opt-in
-// selector to run piraeus pods.
-const NodeSelectorKey = "linstor.linbit.com/linstor-node-type"
+const selectorPrefix = "linstor.linbit.com/"
+
+// Kubernetes node labels that are an opt-in selector to run piraeus pods when
+// set to "true".
+const (
+	// PiraeusControllerNode label to mark node eligible to run piraeus-controller pods.
+	PiraeusControllerNode = selectorPrefix + "piraeus-controller"
+	// PiraeusSatelliteNode label to mark node eligible to run piraeus-node pods.
+	PiraeusNode = selectorPrefix + "piraeus-node"
+)

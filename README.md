@@ -27,8 +27,9 @@ The operator must be deployed within the cluster in order for it it to have acce
 to the controller endpoint, which is a kubernetes service. See the operator-sdk
 guide.
 
-Controllers nodes will only run on kubelets labeled with `linstor.linbit.com/linstor-node-type=controller`
-and nodes will only run on kubelets labeled with `linstor.linbit.com/linstor-node-type=storage`
+Controllers nodes will only run on kubelets labeled with
+`linstor.linbit.com/piraeus-controller=true` and nodes will only run on
+kubelets labeled with `linstor.linbit.com/piraeus-node=true`
 
 ## License
 

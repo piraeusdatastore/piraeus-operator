@@ -402,9 +402,9 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 									corev1.NodeSelectorTerm{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											corev1.NodeSelectorRequirement{
-												Key:      kubeSpec.NodeSelectorKey,
+												Key:      kubeSpec.PiraeusNode,
 												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{"storage"},
+												Values:   []string{"true"},
 											},
 										},
 									},
