@@ -24,7 +24,7 @@ type StorageNode struct {
 	StoragePools []lapi.StoragePool
 }
 
-// HighLevelClient is a golinstor client with convience fucntions.
+// HighLevelClient is a golinstor client with convience functions.
 type HighLevelClient struct {
 	lapi.Client
 }
@@ -136,7 +136,9 @@ func (c *HighLevelClient) GetAllResourcesOnNode(ctx context.Context, nodeName st
 
 func filterNodes(resources []lapi.Resource, nodeName string) []lapi.Resource {
 	var nodeRes = make([]lapi.Resource, 0)
-	for _, r := range resources {
+	for i := range resources {
+		r := resources[i]
+
 		if r.NodeName == nodeName {
 			nodeRes = append(nodeRes, r)
 		}
@@ -162,7 +164,9 @@ func (c *HighLevelClient) GetAllStorageNodes(ctx context.Context) ([]StorageNode
 	for _, node := range nodes {
 		if node.Type == Satellite {
 			sn := StorageNode{node, make([]lapi.StoragePool, 0)}
-			for _, pool := range pools {
+			for i := range pools {
+				pool := pools[i]
+
 				if pool.NodeName == sn.Name {
 					sn.StoragePools = append(sn.StoragePools, pool)
 				}

@@ -128,6 +128,9 @@ func newCompoundErrorMsg(errs []error) []string {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
+// This function is a mini-main function and has a lot of boilerplate code
+// that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
+// nolint:gocyclo
 func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	log.Debug("entering reconcile loop")
 
@@ -322,19 +325,24 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	}
 
 	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus, 0)
+		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
 	}
 
-	for _, node := range nodes {
+	for i := range nodes {
+		node := &nodes[i]
+
 		pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
 			NodeStatus: piraeusv1alpha1.NodeStatus{
 				NodeName:               node.Name,
 				RegisteredOnController: true,
 			},
 			ConnectionStatus:    node.ConnectionStatus,
-			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus, 0),
+			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus),
 		}
-		for _, pool := range node.StoragePools {
+
+		for i := range node.StoragePools {
+			pool := node.StoragePools[i]
+
 			pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
 		}
 	}

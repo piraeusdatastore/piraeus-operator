@@ -124,11 +124,11 @@ func newCompoundErrorMsg(errs []error) []string {
 
 // Reconcile reads that state of the cluster for a PiraeusNodeSet object and makes changes based on the state read
 // and what is in the PiraeusNodeSet.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
+// This function is a mini-main function and has a lot of boilerplate code
+// that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
+// nolint:gocyclo
 func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	log.Debug("entering reconcile loop")
 
@@ -262,10 +262,12 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 		"pods": fmt.Sprintf("%+v", pods),
 	}).Debug("found pods")
 
-	var errs []error
-	for _, pod := range pods.Items {
-		errs = append(errs, r.reconcileSatNodeWithController(pns, pod))
-		errs = append(errs, r.reconcileStoragePoolsOnNode(pns, pod))
+	var errs = make([]error, 0)
+	for i := range pods.Items {
+		pod := pods.Items[i]
+
+		errs = append(errs, r.reconcileSatNodeWithController(pns, pod),
+			r.reconcileStoragePoolsOnNode(pns, pod))
 	}
 
 	return errs
