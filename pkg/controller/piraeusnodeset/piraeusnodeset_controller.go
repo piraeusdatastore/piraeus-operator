@@ -399,9 +399,9 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 						NodeAffinity: &corev1.NodeAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									corev1.NodeSelectorTerm{
+									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
-											corev1.NodeSelectorRequirement{
+											{
 												Key:      kubeSpec.PiraeusNode,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"true"},
@@ -422,22 +422,22 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
-								corev1.ContainerPort{
+								{
 									HostPort:      3366,
 									ContainerPort: 3366,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								corev1.VolumeMount{
+								{
 									Name:      kubeSpec.DevDirName,
 									MountPath: kubeSpec.DevDir,
 								},
-								corev1.VolumeMount{
+								{
 									Name:      kubeSpec.UdevDirName,
 									MountPath: kubeSpec.UdevDir,
 									ReadOnly:  true,
 								},
-								corev1.VolumeMount{
+								{
 									Name:             kubeSpec.ModulesDirName,
 									MountPath:        kubeSpec.ModulesDir,
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
@@ -446,20 +446,20 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 						},
 					},
 					Volumes: []corev1.Volume{
-						corev1.Volume{
+						{
 							Name: kubeSpec.DevDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.DevDir,
 								}}},
-						corev1.Volume{
+						{
 							Name: kubeSpec.ModulesDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.ModulesDir,
 									Type: &kubeSpec.HostPathDirectoryOrCreateType,
 								}}},
-						corev1.Volume{
+						{
 							Name: kubeSpec.UdevDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -487,14 +487,14 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet 
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			VolumeMounts: []corev1.VolumeMount{
-				corev1.VolumeMount{
+				{
 					Name:      kubeSpec.SrcDirName,
 					MountPath: kubeSpec.SrcDir,
 					ReadOnly:  true,
 				},
 				// VolumumeSource for this directory is already present on the base
 				// daemonset.
-				corev1.VolumeMount{
+				{
 					Name:      kubeSpec.ModulesDirName,
 					MountPath: kubeSpec.ModulesDir,
 					ReadOnly:  true,
@@ -504,7 +504,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet 
 	}
 
 	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, []corev1.Volume{
-		corev1.Volume{
+		{
 			Name: kubeSpec.SrcDirName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{

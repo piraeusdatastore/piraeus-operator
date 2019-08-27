@@ -435,9 +435,9 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 						NodeAffinity: &corev1.NodeAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									corev1.NodeSelectorTerm{
+									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
-											corev1.NodeSelectorRequirement{
+											{
 												Key:      kubeSpec.PiraeusControllerNode,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"true"},
@@ -457,17 +457,17 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
-								corev1.ContainerPort{
+								{
 									HostPort:      3376,
 									ContainerPort: 3376,
 								},
-								corev1.ContainerPort{
+								{
 									HostPort:      3370,
 									ContainerPort: 3370,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								corev1.VolumeMount{
+								{
 									Name:      kubeSpec.LinstorDatabaseDirName,
 									MountPath: kubeSpec.LinstorDatabaseDir,
 								},
@@ -475,7 +475,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 						},
 					},
 					Volumes: []corev1.Volume{
-						corev1.Volume{
+						{
 							Name: kubeSpec.LinstorDatabaseDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -498,7 +498,7 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
 			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
+				{
 					Name:       "rest-http",
 					Port:       3370,
 					Protocol:   "TCP",
