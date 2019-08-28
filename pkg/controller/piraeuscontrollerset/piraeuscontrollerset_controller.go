@@ -128,6 +128,9 @@ func newCompoundErrorMsg(errs []error) []string {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
+// This function is a mini-main function and has a lot of boilerplate code
+// that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
+// nolint:gocyclo
 func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	log.Debug("entering reconcile loop")
 
@@ -322,19 +325,24 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	}
 
 	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus, 0)
+		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
 	}
 
-	for _, node := range nodes {
+	for i := range nodes {
+		node := &nodes[i]
+
 		pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
 			NodeStatus: piraeusv1alpha1.NodeStatus{
 				NodeName:               node.Name,
 				RegisteredOnController: true,
 			},
 			ConnectionStatus:    node.ConnectionStatus,
-			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus, 0),
+			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus),
 		}
-		for _, pool := range node.StoragePools {
+
+		for i := range node.StoragePools {
+			pool := node.StoragePools[i]
+
 			pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
 		}
 	}
@@ -435,9 +443,9 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 						NodeAffinity: &corev1.NodeAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									corev1.NodeSelectorTerm{
+									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
-											corev1.NodeSelectorRequirement{
+											{
 												Key:      kubeSpec.PiraeusControllerNode,
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   []string{"true"},
@@ -457,17 +465,17 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
-								corev1.ContainerPort{
+								{
 									HostPort:      3376,
 									ContainerPort: 3376,
 								},
-								corev1.ContainerPort{
+								{
 									HostPort:      3370,
 									ContainerPort: 3370,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								corev1.VolumeMount{
+								{
 									Name:      kubeSpec.LinstorDatabaseDirName,
 									MountPath: kubeSpec.LinstorDatabaseDir,
 								},
@@ -475,7 +483,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 						},
 					},
 					Volumes: []corev1.Volume{
-						corev1.Volume{
+						{
 							Name: kubeSpec.LinstorDatabaseDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -498,7 +506,7 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
 			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
+				{
 					Name:       "rest-http",
 					Port:       3370,
 					Protocol:   "TCP",
