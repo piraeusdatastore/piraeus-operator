@@ -26,88 +26,88 @@ import (
 
 func TestFilterNode(t *testing.T) {
 	var tableTest = []struct {
-		raw        []lapi.Resource
+		raw        []lapi.ResourceWithVolumes
 		filterNode string
-		filtered   []lapi.Resource
+		filtered   []lapi.ResourceWithVolumes
 	}{
 		{
-			[]lapi.Resource{
-				{Name: "test4", NodeName: "node4"},
-				{Name: "test3", NodeName: "node3"},
-				{Name: "test2", NodeName: "node2"},
-				{Name: "test1", NodeName: "node1"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test4", NodeName: "node4"}},
+				{Resource: lapi.Resource{Name: "test3", NodeName: "node3"}},
+				{Resource: lapi.Resource{Name: "test2", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
 			},
 			"node4",
-			[]lapi.Resource{
-				{Name: "test4", NodeName: "node4"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test4", NodeName: "node4"}},
 			},
 		},
 		{
-			[]lapi.Resource{
-				{Name: "test4", NodeName: "node4"},
-				{Name: "test3", NodeName: "node3"},
-				{Name: "test2", NodeName: "node2"},
-				{Name: "test1", NodeName: "node1"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test4", NodeName: "node4"}},
+				{Resource: lapi.Resource{Name: "test3", NodeName: "node3"}},
+				{Resource: lapi.Resource{Name: "test2", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
 			},
 			"node1",
-			[]lapi.Resource{
-				{Name: "test1", NodeName: "node1"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
 			},
 		},
 		{
-			[]lapi.Resource{
-				{Name: "test4", NodeName: "node2"},
-				{Name: "test3", NodeName: "node2"},
-				{Name: "test2", NodeName: "node2"},
-				{Name: "test1", NodeName: "node2"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test4", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test3", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test2", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node2"}},
 			},
 			"node2",
-			[]lapi.Resource{
-				{Name: "test4", NodeName: "node2"},
-				{Name: "test3", NodeName: "node2"},
-				{Name: "test2", NodeName: "node2"},
-				{Name: "test1", NodeName: "node2"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test4", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test3", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test2", NodeName: "node2"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node2"}},
 			},
 		},
 		{
-			[]lapi.Resource{
-				{Name: "test0", NodeName: "node0"},
-				{Name: "test0", NodeName: "node1"},
-				{Name: "test1", NodeName: "node1"},
-				{Name: "test0", NodeName: "node2"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node0"}},
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node2"}},
 			},
 			"node1",
-			[]lapi.Resource{
-				{Name: "test0", NodeName: "node1"},
-				{Name: "test1", NodeName: "node1"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
 			},
 		},
 		{
-			[]lapi.Resource{},
+			[]lapi.ResourceWithVolumes{},
 			"node4",
-			[]lapi.Resource{},
+			[]lapi.ResourceWithVolumes{},
 		},
 		{
-			[]lapi.Resource{
-				{Name: "test0", NodeName: "node0"},
-				{Name: "test0", NodeName: "node1"},
-				{Name: "test1", NodeName: "node1"},
-				{Name: "test0", NodeName: "node2"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node0"}},
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node2"}},
 			},
 			"node0",
-			[]lapi.Resource{
-				{Name: "test0", NodeName: "node0"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node0"}},
 			},
 		},
 		{
-			[]lapi.Resource{
-				{Name: "test0", NodeName: "node0"},
-				{Name: "test0", NodeName: "node1"},
-				{Name: "test1", NodeName: "node1"},
-				{Name: "test0", NodeName: "node2"},
+			[]lapi.ResourceWithVolumes{
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node0"}},
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test1", NodeName: "node1"}},
+				{Resource: lapi.Resource{Name: "test0", NodeName: "node2"}},
 			},
 			"fake-node",
-			[]lapi.Resource{},
+			[]lapi.ResourceWithVolumes{},
 		},
 	}
 

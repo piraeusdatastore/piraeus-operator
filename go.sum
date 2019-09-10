@@ -14,8 +14,8 @@ github.com/Azure/go-autorest v11.1.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSW
 github.com/Azure/go-autorest v11.7.0+incompatible h1:gzma19dc9ejB75D90E5S+/wXouzpZyA+CV+/MJPSD/k=
 github.com/Azure/go-autorest v11.7.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/LINBIT/golinstor v0.16.1 h1:xx0uH6GwyGPdVA3ufO6j/NywferhCDUW9nOCdD17/cg=
-github.com/LINBIT/golinstor v0.16.1/go.mod h1:p2V1Y5ppce3isjO7IBiZGOwY8R8oIm+nYZqOa77bpXM=
+github.com/LINBIT/golinstor v0.16.4 h1:1v/AEuzdCDGf8JHFF9MKgCzkG7OB+V5w+nEUJorzZOE=
+github.com/LINBIT/golinstor v0.16.4/go.mod h1:p2V1Y5ppce3isjO7IBiZGOwY8R8oIm+nYZqOa77bpXM=
 github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver v1.4.2/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=

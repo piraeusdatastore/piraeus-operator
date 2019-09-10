@@ -125,7 +125,7 @@ func (c *HighLevelClient) insureWantedInterface(ctx context.Context, node lapi.N
 }
 
 // GetAllResourcesOnNode returns a list of all resources on the specified node.
-func (c *HighLevelClient) GetAllResourcesOnNode(ctx context.Context, nodeName string) ([]lapi.Resource, error) {
+func (c *HighLevelClient) GetAllResourcesOnNode(ctx context.Context, nodeName string) ([]lapi.ResourceWithVolumes, error) {
 	resList, err := c.Resources.GetResourceView(ctx) //, &lapi.ListOpts{Node: []string{nodeName}}) : not working
 	if err != nil && err != lapi.NotFoundError {
 		return resList, fmt.Errorf("unable to check for resources on node %s: %v", nodeName, err)
@@ -134,8 +134,8 @@ func (c *HighLevelClient) GetAllResourcesOnNode(ctx context.Context, nodeName st
 	return filterNodes(resList, nodeName), nil
 }
 
-func filterNodes(resources []lapi.Resource, nodeName string) []lapi.Resource {
-	var nodeRes = make([]lapi.Resource, 0)
+func filterNodes(resources []lapi.ResourceWithVolumes, nodeName string) []lapi.ResourceWithVolumes {
+	var nodeRes = make([]lapi.ResourceWithVolumes, 0)
 	for i := range resources {
 		r := resources[i]
 
