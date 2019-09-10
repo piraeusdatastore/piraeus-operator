@@ -460,7 +460,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
-							Image:           "quay.io/piraeusdatastore/piraeus-server:v0.9.12.0.2",
+							Image:           kubeSpec.PiraeusServerImage + ":" + kubeSpec.PiraeusVersion,
 							Args:            []string{"startController"}, // Run linstor-controller.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},

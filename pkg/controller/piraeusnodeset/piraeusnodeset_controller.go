@@ -419,7 +419,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",
-							Image:           "quay.io/piraeusdatastore/piraeus-server:v0.9.12.0.2",
+							Image:           kubeSpec.PiraeusServerImage + ":" + kubeSpec.PiraeusVersion,
 							Args:            []string{"startSatellite"}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
