@@ -1,32 +1,18 @@
 image: golang:latest
 
-cache:
-  untracked: true
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-  - _GO/
-
-after_script:
-  - cp -R $GOPATH ./_GO
-
-before_script:
-  - mkdir -p _GO/
-  - cp -R _GO $GOPATH
+variables:
+  GOFLAGS: "-mod=vendor"
 
 stages:
-  - test
-  - lint
+  - check
 
 test:
-  stage: test
+  stage: check
   script:
-    - go get ./...
-    - go fmt -x ./...
     - go test -v -race ./...
 
 golangcli:
-  stage: lint
+  stage: check
   image: golangci/golangci-lint:v1.17.1
   script:
-    - go get ./...
-    - golangci-lint run --enable-all --disable=lll,gochecknoglobals,gochecknoinits ./...
+    - golangci-lint run -v
