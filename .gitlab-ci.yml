@@ -4,16 +4,15 @@ variables:
   GOFLAGS: "-mod=vendor"
 
 stages:
-  - test
-  - lint
+  - check
 
 test:
-  stage: test
+  stage: check
   script:
     - go test -v -race ./...
 
 golangcli:
-  stage: lint
+  stage: check
   image: golangci/golangci-lint:v1.17.1
   script:
     - go fmt -x ./...
