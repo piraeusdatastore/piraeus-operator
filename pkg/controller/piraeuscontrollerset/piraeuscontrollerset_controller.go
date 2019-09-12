@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	lapiconst "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
@@ -306,8 +307,10 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 		Type: lc.Controller,
 		NetInterfaces: []lapi.NetInterface{
 			{
-				Name:    "default",
-				Address: pod.Status.PodIP,
+				Name:                    "default",
+				Address:                 pod.Status.PodIP,
+				SatellitePort:           lapiconst.DfltStltPortPlain,
+				SatelliteEncryptionType: lapiconst.ValNetcomTypePlain,
 			},
 		},
 	})

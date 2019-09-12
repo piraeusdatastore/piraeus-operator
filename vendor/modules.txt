@@ -11,6 +11,7 @@ github.com/Azure/go-autorest/tracing
 github.com/Azure/go-autorest/autorest/date
 # github.com/LINBIT/golinstor v0.16.4
 github.com/LINBIT/golinstor/client
+github.com/LINBIT/golinstor
 # github.com/PuerkitoBio/purell v1.1.1
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
@@ -154,6 +155,8 @@ github.com/prometheus/procfs
 github.com/rogpeppe/go-internal/modfile
 github.com/rogpeppe/go-internal/module
 github.com/rogpeppe/go-internal/semver
+# github.com/satori/go.uuid v1.2.0
+github.com/satori/go.uuid
 # github.com/sirupsen/logrus v1.4.1
 github.com/sirupsen/logrus
 # github.com/spf13/afero v1.2.2
