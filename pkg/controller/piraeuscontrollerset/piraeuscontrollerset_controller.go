@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	lapiconst "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
@@ -306,8 +307,10 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 		Type: lc.Controller,
 		NetInterfaces: []lapi.NetInterface{
 			{
-				Name:    "default",
-				Address: pod.Status.PodIP,
+				Name:                    "default",
+				Address:                 pod.Status.PodIP,
+				SatellitePort:           lapiconst.DfltStltPortPlain,
+				SatelliteEncryptionType: lapiconst.ValNetcomTypePlain,
 			},
 		},
 	})
@@ -460,7 +463,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
-							Image:           "quay.io/piraeusdatastore/piraeus-server:v0.9.12.0.2",
+							Image:           kubeSpec.PiraeusServerImage + ":" + kubeSpec.PiraeusVersion,
 							Args:            []string{"startController"}, // Run linstor-controller.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},

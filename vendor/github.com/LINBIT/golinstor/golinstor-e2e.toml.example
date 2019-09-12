@@ -1,0 +1,46 @@
+ResourceDefinitionCreateLimit = 10
+
+[ClientConf]
+  Endpoint = "http://my.node.com:3370"
+  LogLevel = "debug"
+  LogFile = "/tmp/e2e-test-logs"
+
+[[Nodes]]
+  Name = "worker1.example.com"
+  Type = "Combined"
+
+  [[Nodes.NetInterfaces]]
+    Name = "default"
+    Address = "192.168.100.101"
+
+[[Nodes]]
+  Name = "worker2.example.com"
+  Type = "Satellite"
+
+  [[Nodes.NetInterfaces]]
+    Name = "default"
+    Address = "192.168.100.102"
+    SatelliteEncryptionType = ""
+
+[[StoragePools]]
+  StoragePoolName = "pool0"
+  NodeName = "worker1.example.com"
+  ProviderKind = "LVM_THIN"
+  [StoragePools.Props]
+    "StorDriver/LvmVg" = "drbdpool"
+    "StorDriver/ThinPool" = "drbdthinpool"
+
+[[StoragePools]]
+  StoragePoolName = "pool1"
+  NodeName = "worker1.example.com"
+  ProviderKind = "LVM"
+  [StoragePools.Props]
+    "StorDriver/LvmVg" = "drbdpool"
+
+[[StoragePools]]
+  StoragePoolName = "pool0"
+  NodeName = "worker2.example.com"
+  ProviderKind = "LVM_THIN"
+  [StoragePools.Props]
+    "StorDriver/LvmVg" = "drbdpool"
+    "StorDriver/ThinPool" = "drbdthinpool"

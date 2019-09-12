@@ -42,9 +42,13 @@ type Resource struct {
 	Flags       []string          `json:"flags,omitempty"`
 	LayerObject ResourceLayer     `json:"layer_object,omitempty"`
 	State       ResourceState     `json:"state,omitempty"`
-	Volumes     []Volume          `json:"volumes,omitempty"`
 	// unique object id
 	Uuid string `json:"uuid,omitempty"`
+}
+
+type ResourceWithVolumes struct {
+	Resource
+	Volumes []Volume `json:"volumes,omitempty"`
 }
 
 type ResourceDefinitionModify struct {
@@ -97,6 +101,8 @@ type DrbdVolume struct {
 	UsableSizeKib    int64  `json:"usable_size_kib,omitempty"`
 	// String describing current volume state
 	DiskState string `json:"disk_state,omitempty"`
+	// Storage pool name used for external meta data; null for internal
+	ExtMetaStorPool string `json:"ext_meta_stor_pool,omitempty"`
 }
 
 // LuksResource is a struct to store storage-volumes for a luks-resource
@@ -198,6 +204,9 @@ type AutoSelectFilter struct {
 	NotPlaceWithRscRegex string   `json:"not_place_with_rsc_regex,omitempty"`
 	ReplicasOnSame       []string `json:"replicas_on_same,omitempty"`
 	ReplicasOnDifferent  []string `json:"replicas_on_different,omitempty"`
+	LayerStack           []string `json:"layer_stack,omitempty"`
+	ProviderList         []string `json:"provider_list,omitempty"`
+	DisklessOnRemaining  bool     `json:"diskless_on_remaining,omitempty"`
 }
 
 // ResourceConnection is a struct which holds information about a connection between to nodes
@@ -267,26 +276,34 @@ func (v *VolumeLayer) UnmarshalJSON(b []byte) error {
 	switch v.Type {
 	case DRBD:
 		dst := new(DrbdVolume)
-		if err := json.Unmarshal(vIn.Data, &dst); err != nil {
-			return err
+		if vIn.Data != nil {
+			if err := json.Unmarshal(vIn.Data, &dst); err != nil {
+				return err
+			}
 		}
 		v.Data = dst
 	case LUKS:
 		dst := new(LuksVolume)
-		if err := json.Unmarshal(vIn.Data, &dst); err != nil {
-			return err
+		if vIn.Data != nil {
+			if err := json.Unmarshal(vIn.Data, &dst); err != nil {
+				return err
+			}
 		}
 		v.Data = dst
 	case STORAGE:
 		dst := new(StorageVolume)
-		if err := json.Unmarshal(vIn.Data, &dst); err != nil {
-			return err
+		if vIn.Data != nil {
+			if err := json.Unmarshal(vIn.Data, &dst); err != nil {
+				return err
+			}
 		}
 		v.Data = dst
 	case NVME:
 		dst := new(NvmeVolume)
-		if err := json.Unmarshal(vIn.Data, &dst); err != nil {
-			return err
+		if vIn.Data != nil {
+			if err := json.Unmarshal(vIn.Data, &dst); err != nil {
+				return err
+			}
 		}
 		v.Data = dst
 	default:
@@ -308,8 +325,8 @@ func (d *StorageVolume) isOneOfDrbdVolumeLuksVolumeStorageVolumeNvmeVolume() {}
 func (d *NvmeVolume) isOneOfDrbdVolumeLuksVolumeStorageVolumeNvmeVolume()    {}
 
 // GetResourceView returns all resources in the cluster. Filters can be set via ListOpts.
-func (n *ResourceService) GetResourceView(ctx context.Context, opts ...*ListOpts) ([]Resource, error) {
-	var reses []Resource
+func (n *ResourceService) GetResourceView(ctx context.Context, opts ...*ListOpts) ([]ResourceWithVolumes, error) {
+	var reses []ResourceWithVolumes
 	_, err := n.client.doGET(ctx, "/v1/view/resources", &reses, opts...)
 	return reses, err
 }

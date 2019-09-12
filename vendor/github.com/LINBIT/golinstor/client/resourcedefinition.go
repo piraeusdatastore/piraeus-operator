@@ -42,6 +42,8 @@ type ResourceDefinition struct {
 	LayerData []ResourceDefinitionLayer `json:"layer_data,omitempty"`
 	// unique object id
 	Uuid string `json:"uuid,omitempty"`
+	// name of the linked resource group, if there is a link
+	ResourceGroupName string `json:"resource_group_name,omitempty"`
 }
 
 // ResourceDefinitionCreate is a struct for holding the data needed to create a resource-defintion
@@ -140,8 +142,10 @@ func (rd *ResourceDefinitionLayer) UnmarshalJSON(b []byte) error {
 	switch rd.Type {
 	case DRBD:
 		dst := new(DrbdResourceDefinitionLayer)
-		if err := json.Unmarshal(rdIn.Data, &dst); err != nil {
-			return err
+		if rdIn.Data != nil {
+			if err := json.Unmarshal(rdIn.Data, &dst); err != nil {
+				return err
+			}
 		}
 		rd.Data = dst
 	case LUKS, STORAGE, NVME: // valid types, but do not set data
@@ -177,8 +181,10 @@ func (vd *VolumeDefinitionLayer) UnmarshalJSON(b []byte) error {
 	switch vd.Type {
 	case DRBD:
 		dst := new(DrbdVolumeDefinition)
-		if err := json.Unmarshal(vdIn.Data, &dst); err != nil {
-			return err
+		if vdIn.Data != nil {
+			if err := json.Unmarshal(vdIn.Data, &dst); err != nil {
+				return err
+			}
 		}
 		vd.Data = dst
 	case LUKS, STORAGE, NVME: // valid types, but do not set data

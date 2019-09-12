@@ -61,3 +61,12 @@ const (
 // PiraeusPriorityClassName is the name of the PriorityClass set up in the
 // example yaml used by important piraeus components.
 const PiraeusPriorityClassName = "piraeus-priority-class"
+
+const (
+	// PiraeusServerImage is the repo/tag for piraeus-server. The controller
+	// and node use the same image with different commands.
+	PiraeusServerImage = "quay.io/piraeusdatastore/piraeus-server"
+	// PiraeusVersion must must match exactly in the ControllerSet and the NodeSet
+	// since the linstor controller and satellite versions must also match exactly.
+	PiraeusVersion = "v1.1.1"
+)

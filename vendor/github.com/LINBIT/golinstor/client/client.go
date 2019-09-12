@@ -41,12 +41,14 @@ type Client struct {
 	httpClient *http.Client
 	baseURL    *url.URL
 	logCfg     *LogCfg
+	basicAuth  *BasicAuthCfg
 	lim        *rate.Limiter
 	log        *logrus.Entry
 
 	Nodes               *NodeService
 	ResourceDefinitions *ResourceDefinitionService
 	Resources           *ResourceService
+	ResourceGroups      *ResourceGroupService
 	Encryption          *EncryptionService
 }
 
@@ -55,6 +57,10 @@ type LogCfg struct {
 	Out       io.Writer
 	Formatter logrus.Formatter
 	Level     string
+}
+
+type BasicAuthCfg struct {
+	Username, Password string
 }
 
 // const errors as in https://dave.cheney.net/2016/04/07/constant-errors
@@ -98,6 +104,7 @@ func NewClient(options ...func(*Client) error) (*Client, error) {
 	c := &Client{
 		httpClient: httpClient,
 		baseURL:    baseURL,
+		basicAuth:  &BasicAuthCfg{},
 		lim:        rate.NewLimiter(rate.Inf, 0),
 		log:        logrus.NewEntry(logrus.New()),
 	}
@@ -112,6 +119,7 @@ func NewClient(options ...func(*Client) error) (*Client, error) {
 	c.ResourceDefinitions = &ResourceDefinitionService{client: c}
 	c.Resources = &ResourceService{client: c}
 	c.Encryption = &EncryptionService{client: c}
+	c.ResourceGroups = &ResourceGroupService{client: c}
 
 	for _, opt := range options {
 		if err := opt(c); err != nil {
@@ -131,6 +139,14 @@ func NewClient(options ...func(*Client) error) (*Client, error) {
 func BaseURL(URL *url.URL) func(*Client) error {
 	return func(c *Client) error {
 		c.baseURL = URL
+		return nil
+	}
+}
+
+// BasicAuth is a client's option to set username and password for the REST client.
+func BasicAuth(basicauth *BasicAuthCfg) func(*Client) error {
+	return func(c *Client) error {
+		c.basicAuth = basicauth
 		return nil
 	}
 }
@@ -176,7 +192,10 @@ func Limit(r rate.Limit, b int) func(*Client) error {
 }
 
 func (c *Client) newRequest(method, path string, body interface{}) (*http.Request, error) {
-	rel := &url.URL{Path: path}
+	rel, err := url.Parse(path)
+	if err != nil {
+		return nil, err
+	}
 	u := c.baseURL.ResolveReference(rel)
 
 	var buf io.ReadWriter
@@ -198,6 +217,10 @@ func (c *Client) newRequest(method, path string, body interface{}) (*http.Reques
 	}
 	req.Header.Set("Accept", "application/json")
 	// req.Header.Set("User-Agent", c.UserAgent)
+	username := c.basicAuth.Username
+	if username != "" {
+		req.SetBasicAuth(username, c.basicAuth.Password)
+	}
 
 	return req, nil
 }
