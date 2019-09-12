@@ -15,5 +15,4 @@ golangcli:
   stage: check
   image: golangci/golangci-lint:v1.17.1
   script:
-    - go fmt -x ./...
     - golangci-lint run -v
