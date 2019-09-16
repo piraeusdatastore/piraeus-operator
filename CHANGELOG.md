@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - examples/operator-intra.yaml file to bundle all the rbac, crds, etc to run the
   operator
+- EtcdURL field to controllersetcontroller spec. default: etcd-piraeus:2379
 
 ### Removed
 - `ControllerEndpoint` from the PiraeusNodeSet spec
 
 ### Changed
+- Controller persistence is now handled by etcd. There must be a reachable and
+  operable etcd cluster for this operator to work.
 - Networking is now handled by a kubernetes service with the same name
   as the ControllerSet. The NodeSet must have the same name as the ControllerSet
   for networking to work properly.

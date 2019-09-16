@@ -31,6 +31,9 @@ Controllers nodes will only run on kubelets labeled with
 `linstor.linbit.com/piraeus-controller=true` and nodes will only run on
 kubelets labeled with `linstor.linbit.com/piraeus-node=true`
 
+An etcd cluster must be running and reachable to use this operator. By default,
+the controller will try to connect to `etcd-piraeus` on port `2379`
+
 ## License
 
 Apache 2.0
