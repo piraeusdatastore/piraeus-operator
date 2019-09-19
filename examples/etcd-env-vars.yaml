@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-env-vars
+data:
+  ETCD_MAX_TXN_OPS: "1024"
