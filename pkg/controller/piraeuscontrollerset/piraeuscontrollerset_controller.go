@@ -467,23 +467,6 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: []corev1.NodeSelectorRequirement{
-											{
-												Key:      kubeSpec.PiraeusControllerNode,
-												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{"true"},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
 					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
 					Containers: []corev1.Container{
 						{
