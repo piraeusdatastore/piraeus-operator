@@ -1,0 +1,6 @@
+persistence:
+  enabled: false
+auth:
+  rbac:
+    enabled: false
+envVarsConfigMap: "etcd-env-vars"

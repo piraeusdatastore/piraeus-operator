@@ -21,16 +21,16 @@ import corev1 "k8s.io/api/core/v1"
 
 // Shared consts common to container volumes.
 const (
-	DevDir                 = "/dev/"
-	DevDirName             = "device-dir"
-	LinstorDatabaseDir     = "/var/lib/linstor"
-	LinstorDatabaseDirName = "linstor-db"
-	ModulesDir             = "/usr/lib/modules/"
-	ModulesDirName         = "modules-dir"
-	SrcDir                 = "/usr/src"
-	SrcDirName             = "src-dir"
-	UdevDir                = "/run/udev"
-	UdevDirName            = "udev"
+	DevDir             = "/dev/"
+	DevDirName         = "device-dir"
+	LinstorConfDir     = "/etc/linstor"
+	LinstorConfDirName = "linstor-conf"
+	ModulesDir         = "/usr/lib/modules/"
+	ModulesDirName     = "modules-dir"
+	SrcDir             = "/usr/src"
+	SrcDirName         = "src-dir"
+	UdevDir            = "/run/udev"
+	UdevDirName        = "udev"
 )
 
 // Shared consts common to container volumes. These need to be vars, so they
@@ -52,8 +52,6 @@ const selectorPrefix = "linstor.linbit.com/"
 // Kubernetes node labels that are an opt-in selector to run piraeus pods when
 // set to "true".
 const (
-	// PiraeusControllerNode label to mark node eligible to run piraeus-controller pods.
-	PiraeusControllerNode = selectorPrefix + "piraeus-controller"
 	// PiraeusSatelliteNode label to mark node eligible to run piraeus-node pods.
 	PiraeusNode = selectorPrefix + "piraeus-node"
 )

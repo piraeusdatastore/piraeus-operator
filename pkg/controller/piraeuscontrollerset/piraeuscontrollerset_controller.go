@@ -206,6 +206,31 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		"controllerService": fmt.Sprintf("%+v", ctrlService),
 	}).Debug("controllerSet already exists")
 
+	// Define a configmap for the controller.
+	configMap := newConfigMapForPCS(pcs)
+	// Set PiraeusControllerSet instance as the owner and controller
+	if err := controllerutil.SetControllerReference(pcs, configMap, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	foundConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
+	if err != nil && errors.IsNotFound(err) {
+		logrus.WithFields(logrus.Fields{
+			"controllerConfigMap": fmt.Sprintf("%+v", configMap),
+		}).Info("creating a new ConfigMap")
+		err = r.client.Create(context.TODO(), configMap)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"controllerConfigMap": fmt.Sprintf("%+v", configMap),
+	}).Debug("controllerConfigMap already exists")
+
 	// Define a new StatefulSet object
 	ctrlSet := newStatefulSetForPCS(pcs)
 
@@ -442,23 +467,6 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: []corev1.NodeSelectorRequirement{
-											{
-												Key:      kubeSpec.PiraeusControllerNode,
-												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{"true"},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
 					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
 					Containers: []corev1.Container{
 						{
@@ -479,19 +487,20 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      kubeSpec.LinstorDatabaseDirName,
-									MountPath: kubeSpec.LinstorDatabaseDir,
+									Name:      kubeSpec.LinstorConfDirName,
+									MountPath: kubeSpec.LinstorConfDir,
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kubeSpec.LinstorDatabaseDirName,
+							Name: kubeSpec.LinstorConfDirName,
 							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kubeSpec.LinstorDatabaseDir,
-									Type: &kubeSpec.HostPathDirectoryOrCreateType,
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: pcs.Name + "-config",
+									},
 								}}},
 					},
 				},
@@ -520,6 +529,28 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 			Type:     "ClusterIP",
 		},
 	}
+}
+
+func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.ConfigMap {
+
+	if pcs.Spec.EtcdURL == "" {
+		pcs.Spec.EtcdURL = "etcd-piraeus:2379"
+	}
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pcs.Name + "-config",
+			Namespace: pcs.Namespace,
+		},
+		Data: map[string]string{
+			"linstor.toml": fmt.Sprintf(
+				`
+				[db]
+					connection_url = "%s"
+				`, pcs.Spec.EtcdURL)},
+	}
+
+	return cm
 }
 
 func pcsLabels(pcs *piraeusv1alpha1.PiraeusControllerSet) map[string]string {
