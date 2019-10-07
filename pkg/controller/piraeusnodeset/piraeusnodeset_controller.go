@@ -466,7 +466,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.UdevDir,
-									Type: &kubeSpec.HostPathDirectoryType,
+									Type: &kubeSpec.HostPathDirectoryOrCreateType,
 								}}},
 					},
 				},
