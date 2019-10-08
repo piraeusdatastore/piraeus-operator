@@ -152,12 +152,15 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	log := logrus.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
-		"PiraeusNodeSet":    fmt.Sprintf("%+v", pcs),
+		"name":              pcs.Name,
+		"namespace":         pcs.Namespace,
 	})
 	log.Info("reconciling PiraeusNodeSet")
 
 	logrus.WithFields(logrus.Fields{
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pcs),
+		"name":      pcs.Name,
+		"namespace": pcs.Namespace,
+		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	}).Debug("found PiraeusNodeSet")
 
 	if pcs.Status.SatelliteStatuses == nil {
@@ -192,7 +195,8 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ctrlService.Name, Namespace: ctrlService.Namespace}, foundSrv)
 	if err != nil && errors.IsNotFound(err) {
 		logrus.WithFields(logrus.Fields{
-			"controllerService": fmt.Sprintf("%+v", ctrlService),
+			"name":      ctrlService.Name,
+			"namespace": ctrlService.Namespace,
 		}).Info("creating a new Service")
 		err = r.client.Create(context.TODO(), ctrlService)
 		if err != nil {
@@ -203,7 +207,8 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"controllerService": fmt.Sprintf("%+v", ctrlService),
+		"name":      ctrlService.Name,
+		"namespace": ctrlService.Namespace,
 	}).Debug("controllerSet already exists")
 
 	// Define a configmap for the controller.
@@ -217,7 +222,8 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		logrus.WithFields(logrus.Fields{
-			"controllerConfigMap": fmt.Sprintf("%+v", configMap),
+			"name":      configMap.Name,
+			"namespace": configMap.Namespace,
 		}).Info("creating a new ConfigMap")
 		err = r.client.Create(context.TODO(), configMap)
 		if err != nil {
@@ -228,7 +234,8 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"controllerConfigMap": fmt.Sprintf("%+v", configMap),
+		"name":      configMap.Name,
+		"namespace": configMap.Namespace,
 	}).Debug("controllerConfigMap already exists")
 
 	// Define a new StatefulSet object
@@ -243,8 +250,9 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ctrlSet.Name, Namespace: ctrlSet.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		logrus.WithFields(logrus.Fields{
-			"controllerSet": fmt.Sprintf("%+v", ctrlSet),
-		}).Info("creating a new DaemonSet")
+			"name":      ctrlSet.Name,
+			"namespace": ctrlSet.Namespace,
+		}).Info("creating a new StatefulSet")
 		err = r.client.Create(context.TODO(), ctrlSet)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -257,8 +265,9 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"controllerSet": fmt.Sprintf("%+v", ctrlSet),
-	}).Debug("controllerSet already exists")
+		"name":      ctrlSet.Name,
+		"namespace": ctrlSet.Namespace,
+	}).Debug("StatefulSet already exists")
 
 	errs := r.reconcileControllers(pcs)
 	compoundErrorMsg := newCompoundErrorMsg(errs)
@@ -283,7 +292,9 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 
 func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha1.PiraeusControllerSet) []error {
 	log := logrus.WithFields(logrus.Fields{
-		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+		"name":      pcs.Name,
+		"namespace": pcs.Namespace,
+		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
 	log.Info("reconciling PiraeusControllerSet Nodes")
 
@@ -294,12 +305,9 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha
 	if err != nil {
 		return []error{err}
 	}
-	logrus.WithFields(logrus.Fields{
-		"pods": fmt.Sprintf("%+v", pods),
-	}).Debug("found pods")
 
 	if len(pods.Items) != 1 {
-		return []error{fmt.Errorf("waiting until there is exactly one controller pod")}
+		return []error{fmt.Errorf("waiting until there is exactly one controller pod, found %d pods instead", len(pods.Items))}
 	}
 
 	return []error{r.reconcileControllerNodeWithControllers(pcs, pods.Items[0])}
@@ -307,10 +315,9 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha
 
 func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(pcs *piraeusv1alpha1.PiraeusControllerSet, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
-		"podName":              pod.Name,
-		"podNameSpace":         pod.Namespace,
-		"podPase":              pod.Status.Phase,
-		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+		"podName":      pod.Name,
+		"podNameSpace": pod.Namespace,
+		"podPase":      pod.Status.Phase,
 	})
 	log.Debug("reconciling node")
 
@@ -344,7 +351,8 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	}
 
 	log.WithFields(logrus.Fields{
-		"linstorNode": fmt.Sprintf("%+v", node),
+		"nodeName": node.Name,
+		"nodeType": node.Type,
 	}).Debug("found node")
 
 	nodes, err := r.linstorClient.GetAllStorageNodes(context.TODO())
@@ -381,7 +389,9 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 
 func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
 	log := logrus.WithFields(logrus.Fields{
-		"PiraeusControllerSet": fmt.Sprintf("%+v", pcs),
+		"name":      pcs.Name,
+		"namespace": pcs.Namespace,
+		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
 	log.Info("found PiraeusControllerSet marked for deletion, finalizing...")
 

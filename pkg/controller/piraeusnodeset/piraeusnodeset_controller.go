@@ -149,12 +149,13 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	log := logrus.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
-		"PiraeusNodeSet":    fmt.Sprintf("%+v", pns),
 	})
 	log.Info("reconciling PiraeusNodeSet")
 
 	logrus.WithFields(logrus.Fields{
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+		"name":      pns.Name,
+		"namespace": pns.Namespace,
+		"spec":      fmt.Sprintf("%+v", pns.Spec),
 	}).Debug("found PiraeusNodeSet")
 
 	if pns.Status.SatelliteStatuses == nil {
@@ -207,7 +208,8 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ds.Name, Namespace: ds.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		logrus.WithFields(logrus.Fields{
-			"daemonSet": fmt.Sprintf("%+v", ds),
+			"name":      ds.Name,
+			"namespace": ds.Namespace,
 		}).Info("creating a new DaemonSet")
 		err = r.client.Create(context.TODO(), ds)
 		if err != nil {
@@ -221,7 +223,8 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"daemonSet": fmt.Sprintf("%+v", ds),
+		"name":      ds.Name,
+		"namespace": ds.Namespace,
 	}).Debug("DaemonSet already exists")
 
 	errs := r.reconcileSatNodes(pns)
@@ -247,7 +250,9 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 
 func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
 	log := logrus.WithFields(logrus.Fields{
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+		"name":      pns.Name,
+		"namespace": pns.Namespace,
+		"spec":      fmt.Sprintf("%+v", pns.Spec),
 	})
 	log.Info("reconciling PiraeusNodeSet Nodes")
 
@@ -258,9 +263,6 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	if err != nil {
 		return []error{err}
 	}
-	logrus.WithFields(logrus.Fields{
-		"pods": fmt.Sprintf("%+v", pods),
-	}).Debug("found pods")
 
 	var errs = make([]error, 0)
 	for i := range pods.Items {
@@ -275,10 +277,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 
 func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1alpha1.PiraeusNodeSet, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
-		"podName":        pod.Name,
-		"podNameSpace":   pod.Namespace,
-		"podPase":        pod.Status.Phase,
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+		"podName":      pod.Name,
+		"podNameSpace": pod.Namespace,
+		"podPase":      pod.Status.Phase,
 	})
 	log.Debug("reconciling node")
 
@@ -314,7 +315,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1a
 	}
 
 	log.WithFields(logrus.Fields{
-		"linstorNode": fmt.Sprintf("%+v", node),
+		"nodeName":         node.Name,
+		"nodeType":         node.Type,
+		"connectionStatus": node.ConnectionStatus,
 	}).Debug("found node")
 
 	sat.ConnectionStatus = node.ConnectionStatus
@@ -329,10 +332,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1a
 
 func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alpha1.PiraeusNodeSet, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
-		"podName":        pod.Name,
-		"podNameSpace":   pod.Namespace,
-		"podPase":        pod.Status.Phase,
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+		"podName":      pod.Name,
+		"podNameSpace": pod.Namespace,
+		"podPase":      pod.Status.Phase,
 	})
 	log.Info("reconciling storagePools")
 
@@ -527,8 +529,10 @@ func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
 
 func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeSet, nodeName string) error {
 	log := logrus.WithFields(logrus.Fields{
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
-		"node":           nodeName,
+		"name":      pns.Name,
+		"namespace": pns.Namespace,
+		"spec":      fmt.Sprintf("%+v", pns.Spec),
+		"node":      nodeName,
 	})
 	log.Debug("finalizing node")
 	// Determine if any resources still remain on the node.
@@ -572,7 +576,9 @@ func (r *ReconcilePiraeusNodeSet) deleteFinalizer(pns *piraeusv1alpha1.PiraeusNo
 
 func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
 	log := logrus.WithFields(logrus.Fields{
-		"PiraeusNodeSet": fmt.Sprintf("%+v", pns),
+		"name":      pns.Name,
+		"namespace": pns.Namespace,
+		"spec":      fmt.Sprintf("%+v", pns.Spec),
 	})
 	log.Info("found PiraeusNodeSet marked for deletion, finalizing...")
 
