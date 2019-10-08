@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	lapi "github.com/LINBIT/golinstor/client"
@@ -228,6 +229,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}).Debug("DaemonSet already exists")
 
 	errs := r.reconcileSatNodes(pns)
+
 	compoundErrorMsg := newCompoundErrorMsg(errs)
 	pns.Status.Errors = compoundErrorMsg
 
@@ -264,35 +266,93 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 		return []error{err}
 	}
 
-	var errs = make([]error, 0)
+	// Append all disperate StoragePool types together, so they can be processed together.
+	var pools = make([]piraeusv1alpha1.StoragePool, 0)
+	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
+		pools = append(pools, thickPool)
+	}
+
+	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
+		pools = append(pools, thinPool)
+	}
+
+	type satStat struct {
+		sat *piraeusv1alpha1.SatelliteStatus
+		err error
+	}
+
+	satelliteStatusIn := make(chan satStat)
+	satelliteStatusOut := make(chan satStat)
+
+	var wg sync.WaitGroup
+
 	for i := range pods.Items {
+		wg.Add(1)
 		pod := pods.Items[i]
 
-		errs = append(errs, r.reconcileSatNodeWithController(pns, pod),
-			r.reconcileStoragePoolsOnNode(pns, pod))
+		log := logrus.WithFields(logrus.Fields{
+			"podName":      pod.Name,
+			"podNameSpace": pod.Namespace,
+			"podPase":      pod.Status.Phase,
+			"podNumber":    i,
+		})
+		log.Debug("reconciling node")
+
+		sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
+		if !ok {
+			pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{
+				NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
+			}
+			sat = pns.Status.SatelliteStatuses[pod.Spec.NodeName]
+		}
+		if sat.StoragePoolStatuses == nil {
+			sat.StoragePoolStatuses = make(map[string]*piraeusv1alpha1.StoragePoolStatus)
+		}
+
+		go func() {
+			err := r.reconcileSatNodeWithController(sat, pod)
+			satelliteStatusIn <- satStat{sat, err}
+
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			aaaaah := <-satelliteStatusIn
+			if aaaaah.err != nil {
+				satelliteStatusOut <- satStat{aaaaah.sat, aaaaah.err}
+				return
+			}
+
+			err := r.reconcileStoragePoolsOnNode(in.sat, pools, pod)
+			satelliteStatusOut <- satStat{sat, err}
+		}()
 	}
 
-	return errs
+	go func() {
+		wg.Wait()
+		close(satelliteStatusOut)
+	}()
+
+	var compoundError []error
+
+	for out := range satelliteStatusOut {
+		if out.err != nil {
+			compoundError = append(compoundError, out.err)
+		}
+
+		// Guard against empty statuses.
+		if out.sat == nil || out.sat.NodeName != "" {
+			pns.Status.SatelliteStatuses[out.sat.NodeName] = out.sat
+		}
+	}
+
+	return compoundError
 }
 
-func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1alpha1.PiraeusNodeSet, pod corev1.Pod) error {
-	log := logrus.WithFields(logrus.Fields{
-		"podName":      pod.Name,
-		"podNameSpace": pod.Namespace,
-		"podPase":      pod.Status.Phase,
-	})
-	log.Debug("reconciling node")
-
+func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod) error {
 	if pod.Status.Phase != corev1.PodRunning {
 		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Spec.NodeName)
-	}
-
-	sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
-	if !ok {
-		pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{
-			NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
-		}
-		sat = pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 	}
 
 	// Mark this true on successful exit from this function.
@@ -330,7 +390,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(pns *piraeusv1a
 	return nil
 }
 
-func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alpha1.PiraeusNodeSet, pod corev1.Pod) error {
+func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alpha1.SatelliteStatus, pools []piraeusv1alpha1.StoragePool, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
@@ -338,25 +398,8 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(pns *piraeusv1alph
 	})
 	log.Info("reconciling storagePools")
 
-	sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
-	if !ok {
-		return fmt.Errorf("expected %s to be present in Status, not able to reconcile storage pools", pod.Spec.NodeName)
-	}
 	if !sat.RegisteredOnController {
 		return fmt.Errorf("waiting for %s to be registered on controller, not able to reconcile storage pools", pod.Spec.NodeName)
-	}
-	if sat.StoragePoolStatuses == nil {
-		sat.StoragePoolStatuses = make(map[string]*piraeusv1alpha1.StoragePoolStatus)
-	}
-
-	// Append all disperate StoragePool types together, so they can be processed together.
-	var pools = make([]piraeusv1alpha1.StoragePool, 0)
-	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
-		pools = append(pools, thickPool)
-	}
-
-	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
-		pools = append(pools, thinPool)
 	}
 
 	// Get status for all pools.
