@@ -282,6 +282,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	satelliteStatusIn := make(chan satStat)
 	satelliteStatusOut := make(chan satStat)
 
+	maxConcurrentNodes := 5
+	tokens := make(chan struct{}, maxConcurrentNodes)
+
 	var wg sync.WaitGroup
 
 	for i := range pods.Items {
@@ -289,10 +292,11 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 		pod := pods.Items[i]
 
 		log := logrus.WithFields(logrus.Fields{
-			"podName":      pod.Name,
-			"podNameSpace": pod.Namespace,
-			"podPase":      pod.Status.Phase,
-			"podNumber":    i,
+			"podName":                        pod.Name,
+			"podNameSpace":                   pod.Namespace,
+			"podPase":                        pod.Status.Phase,
+			"podNumber":                      i,
+			"maxConcurrentNodeRegistrations": maxConcurrentNodes,
 		})
 		log.Debug("reconciling node")
 
@@ -308,17 +312,27 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 		}
 
 		go func() {
+			l := log
+			l.Debug("waiting to acquire token...")
+			tokens <- struct{}{} // Acquire a token
+			l.Debug("token acquired, registering node")
+
 			err := r.reconcileSatNodeWithController(sat, pod)
 			satelliteStatusIn <- satStat{sat, err}
 
 		}()
 
 		go func() {
-			defer wg.Done()
+			l := log
+			defer func() {
+				<-tokens // Work done, release token.
+				l.Debug("token released")
+				wg.Done()
+			}()
 
-			aaaaah := <-satelliteStatusIn
-			if aaaaah.err != nil {
-				satelliteStatusOut <- satStat{aaaaah.sat, aaaaah.err}
+			in := <-satelliteStatusIn
+			if in.err != nil {
+				satelliteStatusOut <- satStat{in.sat, in.err}
 				return
 			}
 
