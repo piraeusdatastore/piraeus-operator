@@ -264,16 +264,6 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 		return []error{err}
 	}
 
-	// Append all disperate StoragePool types together, so they can be processed together.
-	var pools = make([]piraeusv1alpha1.StoragePool, 0)
-	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
-		pools = append(pools, thickPool)
-	}
-
-	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
-		pools = append(pools, thinPool)
-	}
-
 	type satStat struct {
 		sat *piraeusv1alpha1.SatelliteStatus
 		err error
@@ -321,6 +311,8 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 			satelliteStatusIn <- satStat{sat, err}
 
 		}()
+
+		pools := r.agregateStoragePools(pns)
 
 		go func() {
 			l := log
@@ -580,6 +572,20 @@ func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
 		"app":  pns.Name,
 		"role": "piraeus-node",
 	}
+}
+
+// agregateStoragePools appends all disperate StoragePool types together, so they can be processed together.
+func (r *ReconcilePiraeusNodeSet) agregateStoragePools(pns *piraeusv1alpha1.PiraeusNodeSet) []piraeusv1alpha1.StoragePool {
+	var pools = make([]piraeusv1alpha1.StoragePool, 0)
+	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
+		pools = append(pools, thickPool)
+	}
+
+	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
+		pools = append(pools, thinPool)
+	}
+
+	return pools
 }
 
 func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeSet, nodeName string) error {
