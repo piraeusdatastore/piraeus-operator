@@ -115,9 +115,7 @@ func newCompoundErrorMsg(errs []error) []string {
 	var errStrs = make([]string, 0)
 
 	for _, err := range errs {
-		if err != nil {
-			errStrs = append(errStrs, err.Error())
-		}
+		errStrs = append(errStrs, err.Error())
 	}
 
 	return errStrs
