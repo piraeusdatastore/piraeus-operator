@@ -355,8 +355,10 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 }
 
 func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod) error {
-	if pod.Status.Phase != corev1.PodRunning {
-		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Spec.NodeName)
+
+	// TODO: Add Context w/ an infinite loop
+	if len(pod.Status.ContainerStatuses) != 0 && !pod.Status.ContainerStatuses[0].Ready {
+		return fmt.Errorf("pod %s is not ready, delaying registration on controller", pod.Spec.NodeName)
 	}
 
 	// Mark this true on successful exit from this function.
@@ -493,6 +495,23 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 									MountPath:        kubeSpec.ModulesDir,
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
 								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LS_CONTROLLERS",
+									Value: "http://" + pns.Name + ":" + "3370", // TODO: fix this
+								},
+							},
+							// TODO: Move to kubeSpec later
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"linstor", "node", "list"},
+									},
+								},
+								TimeoutSeconds:   10,
+								PeriodSeconds:    20,
+								FailureThreshold: 7,
 							},
 						},
 					},
