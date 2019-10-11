@@ -465,7 +465,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							},
 						},
 					},
-					HostNetwork:       true,
+					HostNetwork:       false,
 					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
 					Containers: []corev1.Container{
 						{
