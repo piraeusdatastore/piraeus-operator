@@ -164,3 +164,36 @@ value: 1000000
 globalDefault: false
 description: "Priority class for piraeus components"
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: piraeus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: piraeus-operator
+  template:
+    metadata:
+      labels:
+        name: piraeus-operator
+    spec:
+      serviceAccountName: piraeus-operator
+      containers:
+        - name: piraeus-operator
+          image: "quay.io/piraeusdatastore/piraeus-operator"
+          command:
+          - piraeus-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "piraeus-operator"
+---
