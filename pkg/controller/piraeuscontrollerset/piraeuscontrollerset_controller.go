@@ -544,7 +544,7 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.ConfigMap {
 
 	if pcs.Spec.EtcdURL == "" {
-		pcs.Spec.EtcdURL = "etcd-piraeus:2379"
+		pcs.Spec.EtcdURL = "etcd://etcd-piraeus:2379"
 	}
 
 	cm := &corev1.ConfigMap{
