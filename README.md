@@ -18,7 +18,7 @@ project's gitlab page.
 
 ## Building and Deployment
 
-This project is managed via the operator-skd (version 0.9.0). Please refer to
+This project is managed via the operator-sdk (version 0.9.0). Please refer to
 the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.9.x)
 
 ## Usage
