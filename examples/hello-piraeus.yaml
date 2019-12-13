@@ -9,12 +9,6 @@ kind: PiraeusNodeSet
 metadata:
   name: hello-piraeus
 spec:
-  # This is the REST endpoint for the Piraeus controller,
-  # the operator must be able to reach this endpoint.
-  # substitute `kubelet-a` with the kubelet the Piraeus
-  # controller is scheduled on.
-  controllerEndpoint: "http://kubelet-a:3370"
-
   # etcdURL url for controller persistence.
   etcdURL: "etcd-piraeus:2379"
 

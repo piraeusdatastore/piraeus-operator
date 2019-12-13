@@ -77,6 +77,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
+	log.Debug("Adding a PNS controller ")
 	c, err := controller.New("piraeusnodeset-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
@@ -121,15 +122,15 @@ func newCompoundErrorMsg(errs []error) []string {
 	return errStrs
 }
 
-// Reconcile reads that state of the cluster for a PiraeusNodeSet object and makes changes based on the state read
-// and what is in the PiraeusNodeSet.Spec
+// Reconcile reads that state of the cluster for a PiraeusNodeSet object and makes changes based on
+// the state read and what is in the PiraeusNodeSet.Spec
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 // This function is a mini-main function and has a lot of boilerplate code
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Debug("entering reconcile loop")
+	log.Debug("NS entering Node set reconcile loop")
 
 	// Fetch the PiraeusNodeSet instance
 	pns := &piraeusv1alpha1.PiraeusNodeSet{}
@@ -149,13 +150,13 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
 	})
-	log.Info("reconciling PiraeusNodeSet")
+	log.Info("NS reconciling PiraeusNodeSet")
 
 	logrus.WithFields(logrus.Fields{
 		"name":      pns.Name,
 		"namespace": pns.Namespace,
 		"spec":      fmt.Sprintf("%+v", pns.Spec),
-	}).Debug("found PiraeusNodeSet")
+	}).Debug("NS found PiraeusNodeSet")
 
 	if pns.Status.SatelliteStatuses == nil {
 		pns.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
@@ -183,7 +184,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 			"errs": newCompoundErrorMsg(errs),
 		}).Debug("reconcile loop end")
 
-		// Resouces need to be removed by human intervention, so we don't want to
+		// Resources need to be removed by human intervention, so we don't want to
 		// requeue the reconcile loop immediately. We can't return the error with
 		// the loop or it will automatically requeue, we log it above and it also
 		// appears in the pns's Status.
@@ -242,7 +243,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 
 	var compoundError error
 	if len(compoundErrorMsg) != 0 {
-		compoundError = fmt.Errorf("requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
+		compoundError = fmt.Errorf("requeuing NodeSet reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
 	}
 
 	return reconcile.Result{}, compoundError
@@ -284,11 +285,11 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 		log := logrus.WithFields(logrus.Fields{
 			"podName":                        pod.Name,
 			"podNameSpace":                   pod.Namespace,
-			"podPase":                        pod.Status.Phase,
+			"podPhase":                       pod.Status.Phase,
 			"podNumber":                      i,
 			"maxConcurrentNodeRegistrations": maxConcurrentNodes,
 		})
-		log.Debug("reconciling node")
+		log.Debug("NS reconciling node")
 
 		sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
 		if !ok {
@@ -308,6 +309,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 			l.Debug("token acquired, registering node")
 
 			err := r.reconcileSatNodeWithController(sat, pod)
+			if err != nil {
+				l.Debug("NS error with reconcileSatNodeWithController")
+			}
 			satelliteStatusIn <- satStat{sat, err}
 
 		}()
@@ -329,6 +333,9 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 			}
 
 			err := r.reconcileStoragePoolsOnNode(in.sat, pools, pod)
+			if err != nil {
+				l.Debug("NS error with reconcileStoragePoolsOnNode")
+			}
 			satelliteStatusOut <- satStat{sat, err}
 		}()
 	}
@@ -356,13 +363,13 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 
 func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod) error {
 
-	// TODO: Add Context w/ an infinite loop
-	if len(pod.Status.ContainerStatuses) != 0 && !pod.Status.ContainerStatuses[0].Ready {
-		return fmt.Errorf("pod %s is not ready, delaying registration on controller", pod.Spec.NodeName)
-	}
-
 	// Mark this true on successful exit from this function.
 	sat.RegisteredOnController = false
+
+	// TODO: Add Context w/ an infinite loop
+	if len(pod.Status.ContainerStatuses) != 0 && !pod.Status.ContainerStatuses[0].Ready {
+		return fmt.Errorf("Nodeset pod %s is not ready, delaying registration on controller", pod.Spec.NodeName)
+	}
 
 	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
 		Name: pod.Spec.NodeName,
@@ -384,11 +391,11 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(sat *piraeusv1a
 		"nodeName":         node.Name,
 		"nodeType":         node.Type,
 		"connectionStatus": node.ConnectionStatus,
-	}).Debug("found node")
+	}).Debug("NS Found / Added a Satellite Node")
 
 	sat.ConnectionStatus = node.ConnectionStatus
 	if sat.ConnectionStatus != lc.Online {
-		return fmt.Errorf("waiting for node %s ConnectionStatus to be %s, current ConnectionStatus: %s",
+		return fmt.Errorf("NS waiting for node %s ConnectionStatus to be %s, current ConnectionStatus: %s",
 			pod.Spec.NodeName, lc.Online, sat.ConnectionStatus)
 	}
 
@@ -400,12 +407,12 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 	log := logrus.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
-		"podPase":      pod.Status.Phase,
+		"podPhase":     pod.Status.Phase,
 	})
-	log.Info("reconciling storagePools")
+	log.Info("NS reconciling storagePools")
 
 	if !sat.RegisteredOnController {
-		return fmt.Errorf("waiting for %s to be registered on controller, not able to reconcile storage pools", pod.Spec.NodeName)
+		return fmt.Errorf("NS waiting for %s to be registered on controller, not able to reconcile storage pools", pod.Spec.NodeName)
 	}
 
 	// Get status for all pools.
@@ -419,7 +426,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 
 		log.WithFields(logrus.Fields{
 			"storagePool": fmt.Sprintf("%+v", status),
-		}).Debug("found storage pool")
+		}).Debug("NS found storage pool")
 
 		// Guard against empty statuses.
 		if status == nil || status.Name != "" {
@@ -465,8 +472,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							},
 						},
 					},
-					HostNetwork:       false,
-					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
+					HostNetwork:       true, // INFO: Per Roland, set to true
+					PriorityClassName: kubeSpec.PiraeusNSPriorityClassName,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",
@@ -479,6 +486,30 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 									HostPort:      3366,
 									ContainerPort: 3366,
 								},
+								{
+									HostPort:      3367,
+									ContainerPort: 3367,
+								},
+								// {
+								// 	HostPort:      7000,
+								// 	ContainerPort: 7000,
+								// },
+								// {
+								// 	HostPort:      7001,
+								// 	ContainerPort: 7001,
+								// },
+								// {
+								// 	HostPort:      7002,
+								// 	ContainerPort: 7002,
+								// },
+								// {
+								// 	HostPort:      7003,
+								// 	ContainerPort: 7003,
+								// },
+								// {
+								// 	HostPort:      7004,
+								// 	ContainerPort: 7004,
+								// },
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -499,9 +530,15 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "LS_CONTROLLERS",
-									Value: "http://" + pns.Name + ":" + "3370", // TODO: fix this
+									Value: "http://" + kubeSpec.DefaultController + ":" + "3370",
+									// Value: "http://" + "worker-2" + ":" + "3370", // TODO: fix this (pcs.Name)  pns.Name
 								},
+								// {
+								// 	Name: "LB_BUILD",
+								// 	Value: "yes",
+								// },
 							},
+
 							// TODO: Move to kubeSpec later
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
@@ -552,8 +589,16 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet {
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
+			Name:            "hostnetwork-adjuster",
+			Image:           "alpine:latest",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
+			Command:	[]string{"/bin/sh", "-c"},
+			Args: []string{"printf '%s\n%s\n%s\n%s\n' ',s/nameserver/nameserver 10.43.0.10' ',s/search/search default.svc.cluster.local svc.cluster.local cluster.local/' 'w' 'q' | ed /etc/resolv.conf"},
+		},
+		{
 			Name:            "drbd-kernel-module-injector",
-			Image:           "quay.io/piraeusdatastore/drbd9-centos7:v9.0.19",
+			Image:           kubeSpec.PiraeusKernelModImage + ":" + kubeSpec.PiraeusKernelModVersion,  // bionic
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			VolumeMounts: []corev1.VolumeMount{
@@ -567,7 +612,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet 
 				{
 					Name:      kubeSpec.ModulesDirName,
 					MountPath: kubeSpec.ModulesDir,
-					ReadOnly:  true,
+					// ReadOnly:  true,  // TODO: Test
 				},
 			},
 		},
@@ -593,9 +638,10 @@ func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
 	}
 }
 
-// agregateStoragePools appends all disperate StoragePool types together, so they can be processed together.
+// aggregateStoragePools appends all disparate StoragePool types together, so they can be processed together.
 func (r *ReconcilePiraeusNodeSet) agregateStoragePools(pns *piraeusv1alpha1.PiraeusNodeSet) []piraeusv1alpha1.StoragePool {
 	var pools = make([]piraeusv1alpha1.StoragePool, 0)
+
 	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
 		pools = append(pools, thickPool)
 	}
@@ -603,6 +649,13 @@ func (r *ReconcilePiraeusNodeSet) agregateStoragePools(pns *piraeusv1alpha1.Pira
 	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
 		pools = append(pools, thinPool)
 	}
+
+	log := logrus.WithFields(logrus.Fields{
+		"name":      pns.Name,
+		"namespace": pns.Namespace,
+		"SPs":       fmt.Sprintf("%+v", pns.Spec.StoragePools),
+	})
+	log.Debug("NS Aggregate storage pools")
 
 	return pools
 }
@@ -614,7 +667,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeS
 		"spec":      fmt.Sprintf("%+v", pns.Spec),
 		"node":      nodeName,
 	})
-	log.Debug("finalizing node")
+	log.Debug("NS finalizing node")
 	// Determine if any resources still remain on the node.
 	resList, err := r.linstorClient.GetAllResourcesOnNode(context.TODO(), nodeName)
 	if err != nil {

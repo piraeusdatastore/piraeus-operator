@@ -60,6 +60,7 @@ func NewHighLevelClient(options ...func(*lapi.Client) error) (*HighLevelClient, 
 // node if it is not already present.
 func (c *HighLevelClient) GetStoragePoolOrCreateOnNode(ctx context.Context, pool lapi.StoragePool, nodeName string) (lapi.StoragePool, error) {
 	foundPool, err := c.Nodes.GetStoragePool(ctx, nodeName, pool.StoragePoolName)
+
 	// StoragePool doesn't exists, create it.
 	if err != nil && err == lapi.NotFoundError {
 		if err := c.Nodes.CreateStoragePool(ctx, nodeName, pool); err != nil {
@@ -79,15 +80,16 @@ func (c *HighLevelClient) GetStoragePoolOrCreateOnNode(ctx context.Context, pool
 func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (lapi.Node, error) {
 	n, err := c.Nodes.Get(context.TODO(), node.Name)
 	if err != nil {
+		// For 404
 		if err != lapi.NotFoundError {
 			return n, fmt.Errorf("unable to get node %s: %v", node.Name, err)
 		}
 
-		// Node doesn't exist, create it.
 		if len(node.NetInterfaces) != 1 {
 			return n, fmt.Errorf("only able to create a new node with a single interface")
 		}
 
+		// Node doesn't exist, create it.
 		if err := c.Nodes.Create(context.TODO(), node); err != nil {
 			return n, fmt.Errorf("unable to create node %s: %v", node.Name, err)
 		}

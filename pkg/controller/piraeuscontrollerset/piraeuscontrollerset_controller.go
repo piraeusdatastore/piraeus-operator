@@ -317,7 +317,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	log := logrus.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
-		"podPase":      pod.Status.Phase,
+		"podPhase":     pod.Status.Phase,
 	})
 	log.Debug("reconciling node")
 
@@ -477,7 +477,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					PriorityClassName: kubeSpec.PiraeusPriorityClassName,
+					PriorityClassName: kubeSpec.PiraeusCSPriorityClassName,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
@@ -491,8 +491,16 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 									ContainerPort: 3376,
 								},
 								{
+									HostPort:      3377,
+									ContainerPort: 3377,
+								},
+								{
 									HostPort:      3370,
 									ContainerPort: 3370,
+								},
+								{
+									HostPort:      3371,
+									ContainerPort: 3371,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -529,14 +537,14 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 			ClusterIP: "None",
 			Ports: []corev1.ServicePort{
 				{
-					Name:       "rest-http",
+					Name:       "piraeus-rest-http",
 					Port:       3370,
 					Protocol:   "TCP",
 					TargetPort: intstr.FromInt(3370),
 				},
 			},
 			Selector: pcsLabels(pcs),
-			Type:     "ClusterIP",
+			Type:     corev1.ServiceTypeClusterIP, //"ClusterIP",
 		},
 	}
 }

@@ -1,7 +1,7 @@
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusControllerSet
 metadata:
-  name: example-piraeuscontrollerset
+  name: your-piraeus-cs
 spec:
   # Add fields here
   size: 3

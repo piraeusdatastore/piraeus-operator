@@ -25,7 +25,7 @@ const (
 	DevDirName         = "device-dir"
 	LinstorConfDir     = "/etc/linstor"
 	LinstorConfDirName = "linstor-conf"
-	ModulesDir         = "/usr/lib/modules/"
+	ModulesDir         = "/lib/modules/" // "/usr/lib/modules/"
 	ModulesDirName     = "modules-dir"
 	SrcDir             = "/usr/src"
 	SrcDirName         = "src-dir"
@@ -58,7 +58,8 @@ const (
 
 // PiraeusPriorityClassName is the name of the PriorityClass set up in the
 // example yaml used by important piraeus components.
-const PiraeusPriorityClassName = "piraeus-priority-class"
+const PiraeusCSPriorityClassName = "piraeus-cs-priority-class"
+const PiraeusNSPriorityClassName = "piraeus-ns-priority-class"
 
 const (
 	// PiraeusServerImage is the repo/tag for piraeus-server. The controller
@@ -66,5 +67,12 @@ const (
 	PiraeusServerImage = "quay.io/piraeusdatastore/piraeus-server"
 	// PiraeusVersion must must match exactly in the ControllerSet and the NodeSet
 	// since the linstor controller and satellite versions must also match exactly.
-	PiraeusVersion = "v1.1.1"
+	PiraeusVersion = "v1.2.1"
+	// PiraeusKernelModImage is the worker (aka satellite) image for each node
+	PiraeusKernelModImage = "quay.io/piraeusdatastore/drbd9-centos7"
+	// PiraeusKernelModVersion is the release tag for the above image
+	PiraeusKernelModVersion = "v9.0.21"
 )
+
+// DefaultController is the default controller URL
+const DefaultController = "my-piraeus-cs"
