@@ -1,0 +1,7 @@
+apiVersion: pireaus.linbit.com/v1alpha1
+kind: PiraeusNodeSet
+metadata:
+  name: example-piraeusnodeset
+spec:
+  # Add fields here
+  size: 3

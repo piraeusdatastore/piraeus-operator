@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains API Schema definitions for the piraeus v1alpha1 API group
+// Package v1alpha1 contains API Schema definitions for the pireaus v1alpha1 API group
 // +k8s:deepcopy-gen=package,register
 // +groupName=piraeus.linbit.com
 package v1alpha1

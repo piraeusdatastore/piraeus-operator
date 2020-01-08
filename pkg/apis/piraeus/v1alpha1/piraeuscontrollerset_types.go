@@ -25,7 +25,6 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
-// +k8s:openapi-gen=true
 type PiraeusControllerSetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -35,7 +34,6 @@ type PiraeusControllerSetSpec struct {
 }
 
 // PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
-// +k8s:openapi-gen=true
 type PiraeusControllerSetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -56,8 +54,8 @@ type PiraeusControllerSetStatus struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PiraeusControllerSet is the Schema for the piraeuscontrollersets API
-// +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:path=piraeuscontrollersets,scope=Namespaced
 type PiraeusControllerSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

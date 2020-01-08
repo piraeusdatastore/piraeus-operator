@@ -38,13 +38,14 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
+	version "github.com/piraeusdatastore/piraeus-operator/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -56,6 +57,7 @@ var (
 var log = logf.Log.WithName("cmd")
 
 func printVersion() {
+	log.Info(fmt.Sprintf("Operator Version: %s", version.Version))
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
@@ -143,6 +145,23 @@ func main() {
 	_, err = metrics.CreateMetricsService(ctx, cfg, servicePorts)
 	if err != nil {
 		log.Info(err.Error())
+
+		//	service, err := metrics.CreateMetricsService(ctx, cfg, servicePorts)
+		//	if err != nil {
+		//		log.Info("Could not create metrics Service", "error", err.Error())
+		//	}
+		//
+		//	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
+		//	// necessary to configure Prometheus to scrape metrics from this operator.
+		//	services := []*v1.Service{service}
+		//	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
+		//	if err != nil {
+		//		log.Info("Could not create ServiceMonitor object", "error", err.Error())
+		//		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
+		//		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
+		//		if err == metrics.ErrServiceMonitorNotPresent {
+		//			log.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
+		//		}
 	}
 
 	log.Info("Starting the Cmd.")

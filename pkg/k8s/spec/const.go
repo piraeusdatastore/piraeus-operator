@@ -74,5 +74,6 @@ const (
 	PiraeusKernelModVersion = "v9.0.21"
 )
 
-// DefaultController is the default controller URL
+// DefaultController is the default controller URL and also used by the
+// Piraeus Nodeset controller to identify the cluster's LINSTOR controller.
 const DefaultController = "my-piraeus-cs"

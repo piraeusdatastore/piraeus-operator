@@ -9,13 +9,20 @@ rules:
   resources:
   - pods
   - services
+  - services/finalizers
   - endpoints
   - persistentvolumeclaims
   - events
   - configmaps
   - secrets
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -24,7 +31,13 @@ rules:
   - replicasets
   - statefulsets
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -50,6 +63,7 @@ rules:
   - apps
   resources:
   - replicasets
+  - deployments
   verbs:
   - get
 - apiGroups:
@@ -59,3 +73,16 @@ rules:
   - piraeuscontrollersets
   verbs:
   - '*'
+- apiGroups:
+  - pireaus.linbit.com
+  resources:
+  - '*'
+  - piraeusnodesets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

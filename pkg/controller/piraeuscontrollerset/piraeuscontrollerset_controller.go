@@ -33,7 +33,7 @@ import (
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 
 	"github.com/sirupsen/logrus"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,6 +51,8 @@ import (
 )
 
 const linstorControllerFinalizer = "finalizer.linstor-controller.linbit.com"
+
+// var log = logf.Log.WithName("controller_piraeuscontrollerset")
 
 func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{})
@@ -87,7 +89,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &appsv1beta2.StatefulSet{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &piraeusv1alpha1.PiraeusControllerSet{},
 	})
@@ -133,7 +135,13 @@ func newCompoundErrorMsg(errs []error) []string {
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Debug("entering reconcile loop")
+
+	reqLogger := logrus.WithFields(logrus.Fields{
+		"resquestName":      request.Name,
+		"resquestNamespace": request.Namespace,
+	})
+
+	reqLogger.Info("CS Reconcile: Entering")
 
 	// Fetch the PiraeusControllerSet instance
 	pcs := &piraeusv1alpha1.PiraeusControllerSet{}
@@ -155,13 +163,13 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		"name":              pcs.Name,
 		"namespace":         pcs.Namespace,
 	})
-	log.Info("reconciling PiraeusNodeSet")
+	log.Info("reconciling PiraeusControllerSet")
 
 	logrus.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
-	}).Debug("found PiraeusNodeSet")
+	}).Debug("found PiraeusControllerSet")
 
 	if pcs.Status.SatelliteStatuses == nil {
 		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
@@ -176,7 +184,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	if markedForDeletion {
 		err := r.finalizeControllerSet(pcs)
 
-		log.Debug("reconcile loop end")
+		log.Debug("CS Reconcile: reconcile loop end")
 		return reconcile.Result{}, err
 	}
 
@@ -197,7 +205,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		logrus.WithFields(logrus.Fields{
 			"name":      ctrlService.Name,
 			"namespace": ctrlService.Namespace,
-		}).Info("creating a new Service")
+		}).Info("CS Reconcile: creating a new Service")
 		err = r.client.Create(context.TODO(), ctrlService)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -209,7 +217,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	logrus.WithFields(logrus.Fields{
 		"name":      ctrlService.Name,
 		"namespace": ctrlService.Namespace,
-	}).Debug("controllerSet already exists")
+	}).Debug("CS Reconcile: CS already exists")
 
 	// Define a configmap for the controller.
 	configMap := newConfigMapForPCS(pcs)
@@ -224,7 +232,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		logrus.WithFields(logrus.Fields{
 			"name":      configMap.Name,
 			"namespace": configMap.Namespace,
-		}).Info("creating a new ConfigMap")
+		}).Info("CS Reconcile: creating a new ConfigMap")
 		err = r.client.Create(context.TODO(), configMap)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -236,7 +244,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	logrus.WithFields(logrus.Fields{
 		"name":      configMap.Name,
 		"namespace": configMap.Namespace,
-	}).Debug("controllerConfigMap already exists")
+	}).Debug("CS Reconcile: controllerConfigMap already exists")
 
 	// Define a new StatefulSet object
 	ctrlSet := newStatefulSetForPCS(pcs)
@@ -246,13 +254,13 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	found := &appsv1beta2.StatefulSet{}
+	found := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ctrlSet.Name, Namespace: ctrlSet.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		logrus.WithFields(logrus.Fields{
 			"name":      ctrlSet.Name,
 			"namespace": ctrlSet.Namespace,
-		}).Info("creating a new StatefulSet")
+		}).Info("CS Reconcile: creating a new StatefulSet")
 		err = r.client.Create(context.TODO(), ctrlSet)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -267,14 +275,14 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	logrus.WithFields(logrus.Fields{
 		"name":      ctrlSet.Name,
 		"namespace": ctrlSet.Namespace,
-	}).Debug("StatefulSet already exists")
+	}).Debug("CS Reconcile: StatefulSet already exists")
 
 	errs := r.reconcileControllers(pcs)
 	compoundErrorMsg := newCompoundErrorMsg(errs)
 	pcs.Status.Errors = compoundErrorMsg
 
 	if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
-		logrus.Error(err, "Failed to update PiraeusControllerSet status")
+		logrus.Error(err, "CS Reconcile: Failed to update PiraeusControllerSet status")
 		return reconcile.Result{}, err
 	}
 
@@ -284,7 +292,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 
 	var compoundError error
 	if len(compoundErrorMsg) != 0 {
-		compoundError = fmt.Errorf("requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
+		compoundError = fmt.Errorf("CS Reconcile: requeuing reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
 	}
 
 	return reconcile.Result{RequeueAfter: time.Minute * 1}, compoundError
@@ -296,18 +304,20 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
-	log.Info("reconciling PiraeusControllerSet Nodes")
+	log.Info("CS Reconcile: reconciling CS Nodes")
 
 	pods := &corev1.PodList{}
 	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
-	listOps := &client.ListOptions{Namespace: pcs.Namespace, LabelSelector: labelSelector}
-	err := r.client.List(context.TODO(), listOps, pods)
+	listOpts := []client.ListOption{
+		// Namespace: pns.Namespace, LabelSelector: labelSelector}
+		client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{labelSelector}}
+	err := r.client.List(context.TODO(), pods, listOpts...)
 	if err != nil {
 		return []error{err}
 	}
 
 	if len(pods.Items) != 1 {
-		return []error{fmt.Errorf("waiting until there is exactly one controller pod, found %d pods instead", len(pods.Items))}
+		return []error{fmt.Errorf("CS Reconcile: waiting until there is exactly one controller pod, found %d pods instead", len(pods.Items))}
 	}
 
 	return []error{r.reconcileControllerNodeWithControllers(pcs, pods.Items[0])}
@@ -319,10 +329,10 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 		"podNameSpace": pod.Namespace,
 		"podPhase":     pod.Status.Phase,
 	})
-	log.Debug("reconciling node")
+	log.Debug("CS reconcileControllerNodeWithControllers: reconciling node")
 
 	if pod.Status.Phase != corev1.PodRunning {
-		return fmt.Errorf("pod %s not running, delaying registration on controller", pod.Name)
+		return fmt.Errorf("CS pod %s not running, delaying registration on controller", pod.Name)
 	}
 
 	ctrl := pcs.Status.ControllerStatus
@@ -353,11 +363,11 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	log.WithFields(logrus.Fields{
 		"nodeName": node.Name,
 		"nodeType": node.Type,
-	}).Debug("found node")
+	}).Debug("CS reconcileControllerNodeWithControllers: found node")
 
 	nodes, err := r.linstorClient.GetAllStorageNodes(context.TODO())
 	if err != nil {
-		return fmt.Errorf("unable to get cluster storage nodes: %v", err)
+		return fmt.Errorf("CS unable to get cluster storage nodes: %v", err)
 	}
 
 	if pcs.Status.SatelliteStatuses == nil {
@@ -393,7 +403,7 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
-	log.Info("found PiraeusControllerSet marked for deletion, finalizing...")
+	log.Info("CS finalizeControllerSet: found PiraeusControllerSet marked for deletion, finalizing...")
 
 	if mdutil.HasFinalizer(pcs, linstorControllerFinalizer) {
 		// Run finalization logic for PiraeusControllerSet. If the
@@ -403,7 +413,7 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 		nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
 		if err != nil {
 			if err != lapi.NotFoundError {
-				return fmt.Errorf("unable to get cluster nodes: %v", err)
+				return fmt.Errorf("CS unable to get cluster nodes: %v", err)
 			}
 		}
 
@@ -415,12 +425,12 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 		}
 
 		if len(nodeNames) != 0 {
-			return fmt.Errorf("controller still has active satellites which must be cleared before deletion: %v", nodeNames)
+			return fmt.Errorf("CS controller still has active satellites which must be cleared before deletion: %v", nodeNames)
 		}
 
 		// Remove finalizer. Once all finalizers have been
 		// removed, the object will be deleted.
-		log.Info("finalizing finished, removing finalizer")
+		log.Info("CS finalizing finished, removing finalizer")
 		if err := r.deleteFinalizer(pcs); err != nil {
 			return err
 		}
@@ -454,20 +464,20 @@ func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.Pir
 	return nil
 }
 
-func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta2.StatefulSet {
+func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.StatefulSet {
 	var (
 		replicas = int32(1)
 	)
 
 	labels := pcsLabels(pcs)
 
-	return &appsv1beta2.StatefulSet{
+	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
 			Namespace: pcs.Namespace,
 			Labels:    labels,
 		},
-		Spec: appsv1beta2.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Replicas: &replicas,
 			Template: corev1.PodTemplateSpec{
@@ -509,6 +519,23 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1beta
 									MountPath: kubeSpec.LinstorConfDir,
 								},
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "LS_CONTROLLERS",
+									Value: "http://" + kubeSpec.DefaultController + ":" + "3370",
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"linstor", "node", "list"},
+									},
+								},
+								TimeoutSeconds:      10,
+								PeriodSeconds:       20,
+								FailureThreshold:    10,
+								InitialDelaySeconds: 5,
+							},
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -537,14 +564,14 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 			ClusterIP: "None",
 			Ports: []corev1.ServicePort{
 				{
-					Name:       "piraeus-rest-http",
+					Name:       kubeSpec.DefaultController,
 					Port:       3370,
 					Protocol:   "TCP",
 					TargetPort: intstr.FromInt(3370),
 				},
 			},
 			Selector: pcsLabels(pcs),
-			Type:     corev1.ServiceTypeClusterIP, //"ClusterIP",
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
