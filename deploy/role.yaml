@@ -74,7 +74,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - pireaus.linbit.com
+  - piraeus.linbit.com
   resources:
   - '*'
   - piraeusnodesets

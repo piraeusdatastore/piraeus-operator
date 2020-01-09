@@ -285,6 +285,9 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	return reconcile.Result{}, compoundError
 }
 
+// This function is a mini-main function and has a lot of boilerplate code that doesn't make a lot of
+// sense to put elsewhere, so don't lint it for cyclomatic complexity.
+// nolint:gocyclo
 func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
 
 	pods := &corev1.PodList{}
@@ -305,7 +308,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	satelliteStatusIn := make(chan satStat)
 	satelliteStatusOut := make(chan satStat)
 
-	maxConcurrentNodes := 1
+	maxConcurrentNodes := 5
 	tokens := make(chan struct{}, maxConcurrentNodes)
 
 	var wg sync.WaitGroup
@@ -348,7 +351,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 
 		}()
 
-		pools := r.agregateStoragePools(pns)
+		pools := r.aggregateStoragePools(pns)
 
 		go func() {
 			l := log
@@ -664,7 +667,7 @@ func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
 }
 
 // aggregateStoragePools appends all disparate StoragePool types together, so they can be processed together.
-func (r *ReconcilePiraeusNodeSet) agregateStoragePools(pns *piraeusv1alpha1.PiraeusNodeSet) []piraeusv1alpha1.StoragePool {
+func (r *ReconcilePiraeusNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.PiraeusNodeSet) []piraeusv1alpha1.StoragePool {
 	var pools = make([]piraeusv1alpha1.StoragePool, 0)
 
 	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
