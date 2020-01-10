@@ -15,4 +15,4 @@ golangcli:
   stage: check
   image: golangci/golangci-lint:v1.17.1
   script:
-    - golangci-lint run -v
+    - golangci-lint run -v -D govet
