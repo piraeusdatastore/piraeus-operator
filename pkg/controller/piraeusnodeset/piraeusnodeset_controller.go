@@ -475,7 +475,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	labels := pnsLabels(pns)
-
+	// controllerName := pns.Name[0:len(pns.Name)-3] + "-cs-controller-0"
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -548,6 +548,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 								{
 									Name:  "LS_CONTROLLERS",
 									Value: "http://" + kubeSpec.DefaultController + ":" + "3370",
+									// Value: "http://" + controllerName + ":" + "3370",
 								},
 							},
 
@@ -602,7 +603,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pns.Name,
+			// Name:      pns.Name,
+			Name:      kubeSpec.DefaultController,
 			Namespace: pns.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
