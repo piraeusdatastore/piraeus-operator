@@ -475,7 +475,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	labels := pnsLabels(pns)
-	// controllerName := pns.Name[0:len(pns.Name)-3] + "-cs-controller-0"
+	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -547,7 +547,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "LS_CONTROLLERS",
-									Value: "http://" + kubeSpec.DefaultController + ":" + "3370",
+									Value: "http://" + controllerName + ":" + "3370",
 									// Value: "http://" + controllerName + ":" + "3370",
 								},
 							},
@@ -601,24 +601,25 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 }
 
 func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
+	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			// Name:      pns.Name,
-			Name:      kubeSpec.DefaultController,
+			Name:      pns.Name,
 			Namespace: pns.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
 			Ports: []corev1.ServicePort{
 				{
-					Name:       kubeSpec.DefaultController,
+					Name:       controllerName,
 					Port:       3370,
 					Protocol:   "TCP",
 					TargetPort: intstr.FromInt(3370),
 				},
 			},
 			Selector: map[string]string{
-				"app": kubeSpec.DefaultController,
+				"app": controllerName,
 			},
 			Type: corev1.ServiceTypeClusterIP,
 		},

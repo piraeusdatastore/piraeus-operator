@@ -522,7 +522,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 							Env: []corev1.EnvVar{
 								{
 									Name:  "LS_CONTROLLERS",
-									Value: "http://" + kubeSpec.DefaultController + ":" + "3370",
+									Value: "http://" + pcs.Name + ":" + "3370",
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
@@ -564,7 +564,7 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 			ClusterIP: "None",
 			Ports: []corev1.ServicePort{
 				{
-					Name:       kubeSpec.DefaultController,
+					Name:       pcs.Name,
 					Port:       3370,
 					Protocol:   "TCP",
 					TargetPort: intstr.FromInt(3370),
@@ -579,7 +579,8 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.ConfigMap {
 
 	if pcs.Spec.EtcdURL == "" {
-		pcs.Spec.EtcdURL = "etcd://etcd-piraeus:2379"
+		// pcs.Spec.EtcdURL = "etcd://etcd-piraeus:2379"
+		pcs.Spec.EtcdURL = "etcd://" + pcs.Name + "-etcd:2379"
 	}
 
 	cm := &corev1.ConfigMap{
