@@ -1,0 +1,103 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ template "piraeus-operator.fullname" . }}-csi-node
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "piraeus-operator.fullname" . }}-csi-node
+  template:
+    metadata:
+      labels:
+        app: {{ template "piraeus-operator.fullname" . }}-csi-node
+        role: {{ template "piraeus-operator.fullname" . }}-csi
+    spec:
+      priorityClassName: {{ template "piraeus-operator.fullname" . }}-csi-priority-class
+      serviceAccount: {{ template "piraeus-operator.fullname" . }}-csi-node-sa
+      containers:
+        - name: csi-node-driver-registrar
+          image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.1
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/linstor.csi.linbit.com /registration/linstor.csi.linbit.com-reg.sock"]
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+            #hostNetwork: true  # TODO: test
+            #dnsPolicy: ClusterFirstWithHostNet
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi/
+            - name: registration-dir
+              mountPath: /registration/
+        - name: linstor-csi-plugin
+          image: quay.io/piraeusdatastore/piraeus-csi:v0.7.3
+          # imagePullSecrets:
+          #   - name: {{ .Values.repoCreds }}
+          args:
+            - "--csi-endpoint=$(CSI_ENDPOINT)"
+            - "--node=$(KUBE_NODE_NAME)"
+            - "--linstor-endpoint=$(LINSTOR_IP)"
+            - "--log-level=debug"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: LINSTOR_IP
+              #value: http://{{ template "piraeus-operator.fullname" . }}:3370
+              value: http://{{ .Release.Name }}-cs:3370
+            - name: LS_CONTROLLERS
+              value: http://{{ .Release.Name }}-cs:3370
+          imagePullPolicy: "Always"
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+            #hostNetwork: true
+            #dnsPolicy: ClusterFirstWithHostNet
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet
+              mountPropagation: "Bidirectional"
+            - name: device-dir
+              mountPath: /dev
+      volumes:
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: DirectoryOrCreate
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/linstor.csi.linbit.com/
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: device-dir
+          hostPath:
+            path: /dev
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet

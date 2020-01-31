@@ -1,0 +1,15 @@
+apiVersion: piraeus.linbit.com/v1alpha1
+kind: PiraeusNodeSet
+metadata:
+  name: {{ template "piraeus-operator.fullname" . }}-ns
+spec:
+  disableDRBDKernelModuleInjection: {{ .Values.operator.nodeSet.spec.disableDRBDKernelModuleInjection }}
+  storagePools:
+    lvmPools:
+    - name: "lvm-thick"
+      volumeGroup: "drbdpool"
+    lvmThinPools:
+    - name: "lvm-thin"
+      volumeGroup: "drbdpool" 
+      thinVolume: "thinpool"
+

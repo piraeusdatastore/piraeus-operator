@@ -1,0 +1,23 @@
+etcd:
+  persistence:
+    enabled: true
+  auth:
+    rbac:
+      enabled: false
+  statefulset:
+    replicaCount: 1
+  envVarsConfigMap: "etcd-env-vars"
+csi:
+  image:
+    repo: "quay.io/piraeusdatastore"
+    name: "linstor-csi"
+    version: "v0.7.3"
+# repoCreds: drbdcreds
+operator:
+  image:
+    repo: "quay.io/piraeusdatastore"
+    name: "piraeus-operator"
+    version: "v0.1.0"
+  nodeSet:
+    spec:
+      disableDRBDKernelModuleInjection: false
