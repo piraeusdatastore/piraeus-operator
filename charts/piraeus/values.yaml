@@ -1,6 +1,6 @@
 etcd:
   persistence:
-    enabled: true
+    enabled: false
   auth:
     rbac:
       enabled: false
