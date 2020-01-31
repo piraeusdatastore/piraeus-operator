@@ -5,14 +5,13 @@ etcd:
     rbac:
       enabled: false
   statefulset:
-    replicaCount: 1
+    replicaCount: 3
   envVarsConfigMap: "etcd-env-vars"
 csi:
   image:
     repo: "quay.io/piraeusdatastore"
     name: "linstor-csi"
     version: "v0.7.3"
-# repoCreds: drbdcreds
 operator:
   image:
     repo: "quay.io/piraeusdatastore"
@@ -22,7 +21,7 @@ operator:
     spec:
       disableDRBDKernelModuleInjection: false
       lvmPoolName: "lvm-thick"
-      lvmPoolVgName: "drbdpool"
+      lvmPoolVgName: "drbdpool"      # <- Volume Group name of the thick storage pool
       lvmThinPoolName: "lvm-thin"
-      lvmThinPoolVgName: "drbdpool"
-      lvmThinPoolLvName: "thinpool"
+      lvmThinPoolVgName: "drbdpool"  # <- Volume Group name of the thin storage pool
+      lvmThinPoolLvName: "thinpool"  # <- Logical Volume name of the thin pool

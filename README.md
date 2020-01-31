@@ -21,13 +21,20 @@ project's gitlab page.
 This project is managed via the operator-skd (version 0.9.0). Please refer to
 the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.9.x)
 
+## Deployment with Helm v3 Chart
+
+The operator can be deployed with Helm v3 chart in /charts.
+- Label the worker nodes with `linstor.linbit.com/piraeus-node=true`
+- Configure the LVM VG and LV names in charts/piraeus/values.yaml 
+- Run helm install linstor-op ./charts/piraeus -f ./charts/piraeus/values.yaml
+
 ## Deployment
 
 ### Operator
 
 The operator must be deployed within the cluster in order for it it to have access
 to the controller endpoint, which is a kubernetes service. See the operator-sdk
-guide.
+guide on the Operator Framework for more information.
 
 Worker nodes will only run on kubelets labeled with `linstor.linbit.com/piraeus-node=true`
 
