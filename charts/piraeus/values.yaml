@@ -21,3 +21,8 @@ operator:
   nodeSet:
     spec:
       disableDRBDKernelModuleInjection: false
+      lvmPoolName: "lvm-thick"
+      lvmPoolVgName: "drbdpool"
+      lvmThinPoolName: "lvm-thin"
+      lvmThinPoolVgName: "drbdpool"
+      lvmThinPoolLvName: "thinpool"

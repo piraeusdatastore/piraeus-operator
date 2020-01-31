@@ -6,10 +6,10 @@ spec:
   disableDRBDKernelModuleInjection: {{ .Values.operator.nodeSet.spec.disableDRBDKernelModuleInjection }}
   storagePools:
     lvmPools:
-    - name: "lvm-thick"
-      volumeGroup: "drbdpool"
+    - name: {{ .Values.operator.nodeSet.spec.lvmPoolName }}
+      volumeGroup: {{ .Values.operator.nodeSet.spec.lvmPoolVgName }}
     lvmThinPools:
-    - name: "lvm-thin"
-      volumeGroup: "drbdpool" 
-      thinVolume: "thinpool"
+    - name: {{ .Values.operator.nodeSet.spec.lvmThinPoolName }}
+      volumeGroup: {{ .Values.operator.nodeSet.spec.lvmThinPoolVgName }}
+      thinVolume: {{ .Values.operator.nodeSet.spec.lvmThinPoolLvName }}
 
