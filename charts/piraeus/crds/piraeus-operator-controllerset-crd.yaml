@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   name: piraeuscontrollersets.piraeus.linbit.com
   #annotations:
-    #"helm.sh/hook": "crd-install"
     #"helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   group: piraeus.linbit.com

@@ -25,3 +25,4 @@ operator:
       lvmThinPoolName: "lvm-thin"
       lvmThinPoolVgName: "drbdpool"  # <- Volume Group name of the thin storage pool
       lvmThinPoolLvName: "thinpool"  # <- Logical Volume name of the thin pool
+    
