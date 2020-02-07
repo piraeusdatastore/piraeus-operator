@@ -31,6 +31,20 @@ The operator can be deployed with Helm v3 chart in /charts.
     kubectl label no my-worker-node linstor.linbit.com/piraeus-node=true
     ```
 
+- If you are deploying with images from private repositories, create
+  a kubernetes secret to allow obtaining the images.  This example will create
+  a secret named `drbdcred`:
+
+    ```
+    kubectl create secret docker-registry drbdcred --docker-server=<SERVER> --docker-username=<YOUR LOGIN> --docker-email=<YOUR EMAIL> --docker-password=<YOUR PASSWORD>
+    ```
+
+    Then this secret name must be specified in the charts/piraeus/values.yaml.
+
+    ```
+    repoCreds: drbdcred  # <- Specify the kubernetes secret name
+    ```
+
 - Configure the LVM VG and LV names in charts/piraeus/values.yaml.
 
     ```
@@ -110,11 +124,11 @@ kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"templat
 ### Kubernetes Secret for Repo Access
 
 If you are deploying with images from a private repository, create a kubernetes
-secret to allow obtaining the images.  Create a secret named `drbdcreds` like
+secret to allow obtaining the images.  Create a secret named `drbdcred` like
 this:
 
 ```
-kubectl create secret docker-registry drbdcreds --docker-server=<SERVER> --docker-username=<YOUR LOGIN> --docker-email=<YOUR EMAIL> --docker-password=<YOUR PASSWORD>
+kubectl create secret docker-registry drbdcred --docker-server=<SERVER> --docker-username=<YOUR LOGIN> --docker-email=<YOUR EMAIL> --docker-password=<YOUR PASSWORD>
 ```
 
 ### Deploy Operator

@@ -75,5 +75,5 @@ const (
 
 	// DrbdRepoCred is the name of the kubernetes secret that holds the repo
 	// credentials for the DRBD related repositories
-	DrbdRepoCred = "drbdcreds"
+	DrbdRepoCred = "drbdcred"
 )

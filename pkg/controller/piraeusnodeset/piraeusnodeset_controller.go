@@ -688,7 +688,8 @@ func (r *ReconcilePiraeusNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.Pir
 	}
 
 	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
-        pools = append(pools, thinPool)
+		pools = append(pools, thinPool)
+	}
 
 	log := logrus.WithFields(logrus.Fields{
 		"name":      pns.Name,
