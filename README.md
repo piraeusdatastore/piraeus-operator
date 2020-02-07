@@ -81,17 +81,21 @@ guide on the Operator Framework for more information.
 
 Worker nodes will only run on kubelets labeled with `linstor.linbit.com/piraeus-node=true`
 
+```
+kubectl label no my-worker-node linstor.linbit.com/piraeus-node=true
+```
+
 ### Etcd
 
 An etcd cluster must be running and reachable to use this operator. By default,
-the controller will try to connect to `etcd-piraeus` on port `2379`
+the controller will try to connect to `piraeus-etcd` on port `2379`
 
 A simple in-memory etcd cluster can be set up using helm:
 
 ```
 kubectl create -f examples/etcd-env-vars.yaml
 helm repo add bitnami https://charts.bitnami.com/bitnami
-helm install bitnami/etcd --name=etcd-piraeus --set statefulset.replicaCount=3 -f examples/etcd-values.yaml
+helm install piraeus-etcd bitnami/etcd --set statefulset.replicaCount=3 -f examples/etcd-values.yaml
 ```
 
 If you are using Helm 2 and encountering difficulties with the above steps, you
@@ -101,6 +105,16 @@ may need to set RBAC rules for the tiller component of helm:
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+```
+
+### Kubernetes Secret for Repo Access
+
+If you are deploying with images from a private repository, create a kubernetes
+secret to allow obtaining the images.  Create a secret named `drbdcreds` like
+this:
+
+```
+kubectl create secret docker-registry drbdcreds --docker-server=<SERVER> --docker-username=<YOUR LOGIN> --docker-email=<YOUR EMAIL> --docker-password=<YOUR PASSWORD>
 ```
 
 ### Deploy Operator

@@ -31,6 +31,16 @@ spec:
           type: object
         spec:
           description: PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
+          properties:
+            etcdURL:
+              type: string
+            drbdRepoCred:
+              description: DrbdRepoCred is the name of the kubernetes secret that
+                holds the credential for the DRBD repositories
+              type: string
+          required:
+          - etcdURL
+          - drbdRepoCred
           type: object
         status:
           description: PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet

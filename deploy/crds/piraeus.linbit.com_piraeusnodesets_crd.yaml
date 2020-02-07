@@ -30,6 +30,57 @@ spec:
           type: object
         spec:
           description: PiraeusNodeSetSpec defines the desired state of PiraeusNodeSet
+          properties:
+            disableDRBDKernelModuleInjection:
+              description: DisableDRBDKernelModuleInjection turns off automatic injection
+                of the DRBD kernel module on the host system when set to true.
+              type: boolean
+            storagePools:
+              description: StoragePools is a list of StoragePools for PiraeusNodeSet
+                to manage.
+              properties:
+                lvmPools:
+                  description: LVMPools for PiraeusNodeSet to manage.
+                  items:
+                    description: StoragePoolLVM represents LVM storage pool to be
+                      managed by a PiraeusNodeSet
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      volumeGroup:
+                        description: Name of underlying lvm group
+                        type: string
+                    required:
+                    - name
+                    - volumeGroup
+                    type: object
+                  type: array
+                lvmThinPools:
+                  description: LVMThinPools for PiraeusNodeSet to manage.
+                  items:
+                    description: StoragePoolLVMThin represents LVM Thin storage pool
+                      to be managed by a PiraeusNodeSet
+                    properties:
+                      thinVolume:
+                        description: Name of underlying lvm thin volume
+                        type: string
+                    required:
+                    - thinVolume
+                    type: object
+                  type: array
+              required:
+              - lvmPools
+              - lvmThinPools
+              type: object
+            drbdRepoCred:
+              description: DrbdRepoCred is the name of the kubernetes secret that
+                holds credential for the DRBD repositories
+              type: string
+          required:
+          - disableDRBDKernelModuleInjection
+          - storagePools
+          - drbdRepoCred
           type: object
         status:
           description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
