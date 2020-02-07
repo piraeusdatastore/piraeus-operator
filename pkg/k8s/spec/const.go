@@ -72,4 +72,8 @@ const (
 	PiraeusKernelModImage = "quay.io/piraeusdatastore/drbd9-centos7"
 	// PiraeusKernelModVersion is the release tag for the above image
 	PiraeusKernelModVersion = "v9.0.21"
+
+	// DrbdRepoCred is the name of the kubernetes secret that holds the repo
+	// credentials for the DRBD related repositories
+	DrbdRepoCred = "drbdcred"
 )

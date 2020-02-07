@@ -7,3 +7,4 @@ spec:
   # etcdURL: etcd://{{ template "piraeus-operator.name" . }}:2379
   etcdURL: etcd://{{ .Release.Name }}-etcd:2379  # TODO: Fix
   # etcdURL: etcd://{{ .Release.Name }}.{{ .Release.Namespace }}.{{ .Values.etcd.service.dnsBase }}:{{ .Values.etcd.service.port }}
+  drbdRepoCred: {{ .Values.repoCreds }}

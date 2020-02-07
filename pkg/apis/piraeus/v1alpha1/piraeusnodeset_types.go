@@ -34,7 +34,8 @@ type PiraeusNodeSetSpec struct {
 	StoragePools *StoragePools `json:"storagePools"`
 	//DisableDRBDKernelModuleInjection turns off automatic injection of the DRBD
 	// kernel module on the host system when set to true.
-	DisableDRBDKernelModuleInjection bool `json:"disableDRBDKernelModuleInjection"`
+	DisableDRBDKernelModuleInjection bool   `json:"disableDRBDKernelModuleInjection"`
+	DrbdRepoCred                     string `json:"drbdRepoCred"`
 }
 
 // PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet

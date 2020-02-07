@@ -157,6 +157,10 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
+	if pcs.Spec.DrbdRepoCred == "" {
+		pcs.Spec.DrbdRepoCred = kubeSpec.DrbdRepoCred
+	}
+
 	log := logrus.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
@@ -547,6 +551,11 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 										Name: pcs.Name + "-config",
 									},
 								}}},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{
+							Name: pcs.Spec.DrbdRepoCred,
+						},
 					},
 				},
 			},

@@ -25,11 +25,12 @@ import (
 	"sync"
 	"time"
 
-	lapi "github.com/LINBIT/golinstor/client"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+
+	lapi "github.com/LINBIT/golinstor/client"
 
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
@@ -171,6 +172,10 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}
 	if pns.Spec.StoragePools.LVMThinPools == nil {
 		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
+	}
+
+	if pns.Spec.DrbdRepoCred == "" {
+		pns.Spec.DrbdRepoCred = kubeSpec.DrbdRepoCred
 	}
 
 	r.linstorClient, err = lc.NewHighLevelLinstorClientForObject(pns)
@@ -588,6 +593,11 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 									Type: &kubeSpec.HostPathDirectoryOrCreateType,
 								}}},
 					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{
+							Name: kubeSpec.DrbdRepoCred,
+						},
+					},
 				},
 			},
 		},
@@ -675,10 +685,6 @@ func (r *ReconcilePiraeusNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.Pir
 
 	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
 		pools = append(pools, thickPool)
-	}
-
-	for _, thinPool := range pns.Spec.StoragePools.LVMThinPools {
-		pools = append(pools, thinPool)
 	}
 
 	log := logrus.WithFields(logrus.Fields{

@@ -12,3 +12,4 @@ spec:
     - name: {{ .Values.operator.nodeSet.spec.lvmThinPoolName }}
       volumeGroup: {{ .Values.operator.nodeSet.spec.lvmThinPoolVgName }}
       thinVolume: {{ .Values.operator.nodeSet.spec.lvmThinPoolLvName }}
+  drbdRepoCred: {{ .Values.repoCreds }}
