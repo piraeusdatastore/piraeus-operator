@@ -2,30 +2,29 @@
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusControllerSet
 metadata:
-  name: hello-piraeus
+  name: piraeus-cs
+  # etcdURL url for controller persistence.
+  etcdURL: "etcd://linstor-etcd.default.svc.cluster.local:2379"
 ---
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusNodeSet
 metadata:
-  name: hello-piraeus
+  name: piraeus-ns
 spec:
-  # etcdURL url for controller persistence.
-  etcdURL: "etcd-piraeus:2379"
-
   # StoragePools for the NodeSet to manage.
   storagePools:
     lvmPools:
     - name: "lvm-thick"
 
-      # piraeuspool must be an already existing lvm
+      # drbdpool must be an already existing lvm
       # volume group on the kubelet each Piraeus
       # node is scheduled on.
-      volumeGroup: "piraeuspool"
+      volumeGroup: "drbdpool"
     lvmThinPools:
     - name: "lvm-thin"
-      volumeGroup: "piraeuspool"
+      volumeGroup: "drbdpool"
 
-      # piraeusthinpool must be an already existing
-      # lvm thin volume backed piraeuspool on the
+      # thinpool must be an already existing
+      # lvm thin volume backed pool on the
       # kubelet each Piraeus node is scheduled on.
-      thinVolume: "piraeusthinpool"
+      thinVolume: "thinpool"
