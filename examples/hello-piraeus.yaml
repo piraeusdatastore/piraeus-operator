@@ -5,12 +5,23 @@ metadata:
   name: piraeus-cs
   # etcdURL url for controller persistence.
   etcdURL: "etcd://linstor-etcd.default.svc.cluster.local:2379"
+  # K8s secret for repo credential
+  drbdRepoCred: "drbdiocred"
 ---
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusNodeSet
 metadata:
   name: piraeus-ns
 spec:
+  disableDRBDKernelModuleInjection: false
+
+  # K8s secret for repo credential
+  drbdRepoCred: "drbdiocred"
+
+  # LINSTOR Satellite image source and tag/version
+  satelliteImage: "quay.io/piraeusdatastore/piraeus-server"
+  satelliteVersion: "v1.4.2"
+
   # StoragePools for the NodeSet to manage.
   storagePools:
     lvmPools:
