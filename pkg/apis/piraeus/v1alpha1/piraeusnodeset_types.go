@@ -41,10 +41,10 @@ type PiraeusNodeSetSpec struct {
 	DrbdRepoCred string `json:"drbdRepoCred"`
 
 	//SatelliteImage is the LINSTOR Satellite image location
-	SatelliteImage string `json:"satelliteimage"`
+	SatelliteImage string `json:"satelliteImage"`
 
 	//SatelliteVersion is the LINSTOR Satellite image location
-	SatelliteVersion string `json:"satelliteversion"`
+	SatelliteVersion string `json:"satelliteVersion"`
 }
 
 // PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet

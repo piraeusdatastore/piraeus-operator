@@ -90,6 +90,7 @@ spec:
           - storagePools
           - drbdRepoCred
           - satelliteImage
+          - satelliteVersion
           type: object
         status:
           description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet

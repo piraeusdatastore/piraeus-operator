@@ -496,7 +496,6 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 						{
 							Name:            "linstor-controller",
 							Image:           kubeSpec.PiraeusServerImage + ":" + kubeSpec.PiraeusVersion,
-							Args:            []string{"startController"}, // Run linstor-controller.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
@@ -588,7 +587,6 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.ConfigMap {
 
 	if pcs.Spec.EtcdURL == "" {
-		// pcs.Spec.EtcdURL = "etcd://etcd-piraeus:2379"
 		pcs.Spec.EtcdURL = "etcd://" + pcs.Name + "-etcd:2379"
 	}
 

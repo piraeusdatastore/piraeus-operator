@@ -529,7 +529,6 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 						{
 							Name:            "linstor-satellite",
 							Image:           pns.Spec.SatelliteImage + ":" + pns.Spec.SatelliteVersion,
-							Args:            []string{"startSatellite"}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
@@ -570,7 +569,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"linstor", "node", "list"},
+										Command: []string{"curl", "http://" + controllerName + ":" + "3370"},
 									},
 								},
 								TimeoutSeconds:      5,
