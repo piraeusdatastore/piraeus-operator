@@ -113,14 +113,25 @@ spec:
           description: PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
           properties:
             etcdURL:
+              description: EtcdURL is the URL of the ETCD endpoint for LINSTOR Controller
               type: string
             drbdRepoCred:
               description: DrbdRepoCred is the name of the kubernetes secret that
                 holds credential for the DRBD repositories
               type: string
+            controllerImage:
+              description: controllerImage is the image location for the LINSTOR
+                controller/server container
+              type: string
+            controllerVersion:
+              description: controllerVersion is the image tag/version for the LINSTOR
+                controller/server container
+              type: string
           required:
           - etcdURL
           - drbdRepoCred
+          - controllerImage
+          - controllerVersion
           type: object
         status:
           description: PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
@@ -156,7 +167,6 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
-
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -245,12 +255,22 @@ spec:
               description: SatelliteVersion is the image tag/version for the LINSTOR
                 satellite container
               type: string
+            kernelModImage:
+              description: kernelModImage is the image location for the LINSTOR/
+                DRBD kernel module injector container
+              type: string
+            kernelModVersion:
+              description: kernelModVersion is the image tag/version for the LINSTOR/
+                DRBD kernel module injector container
+              type: string
           required:
           - disableDRBDKernelModuleInjection
           - storagePools
           - drbdRepoCred
           - satelliteImage
           - satelliteVersion
+          - kernelModImage
+          - kernelModVersion
           type: object
         status:
           description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
@@ -272,7 +292,6 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
-
 ---
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
