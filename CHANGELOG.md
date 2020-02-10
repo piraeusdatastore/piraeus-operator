@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Changed
+- CRDs contain additional Spec parameters that allow customizing image repo and
+  tag/version of the image.
+- Another Spec parameter 'drbdRepoCred' can specify the name of the k8s secret
+  used to access the container images.
+- LINSTOR Controller image now contains the LINSTOR client, away from the
+  Satellite images as it was previously the case.  Hence, the readiness probe
+  is changed to use `curl` instead of `linstor` client command.
 
 ## [v0.1.0] - 2020-01-27
 ### Added
