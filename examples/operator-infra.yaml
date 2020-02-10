@@ -94,28 +94,69 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: PiraeusControllerSet is the Schema for the piraeuscontrollersets
+        API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
             of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
+          description: PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
+          properties:
+            etcdURL:
+              type: string
+            drbdRepoCred:
+              description: DrbdRepoCred is the name of the kubernetes secret that
+                holds credential for the DRBD repositories
+              type: string
+          required:
+          - etcdURL
+          - drbdRepoCred
           type: object
         status:
+          description: PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
+          properties:
+            ControllerStatus:
+              description: ControllerStatus information.
+              properties:
+                nodeName:
+                  description: The hostname of the kubelet running the node
+                  type: string
+                registeredOnController:
+                  description: Indicates if the node has been created on the controller.
+                  type: boolean
+              required:
+              - nodeName
+              - registeredOnController
+              type: object
+            SatelliteStatuses:
+              description: SatelliteStatuses by hostname.
+            errors:
+              description: Errors remaining that will trigger reconciliations.
+              items:
+                type: string
+              type: array
+          required:
+          - ControllerStatus
+          - SatelliteStatuses
+          - errors
           type: object
+      type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
     served: true
     storage: true
+
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -133,28 +174,105 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: PiraeusNodeSet is the Schema for the piraeusnodesets API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
             of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
+          description: PiraeusNodeSetSpec defines the desired state of PiraeusNodeSet
+          properties:
+            disableDRBDKernelModuleInjection:
+              description: DisableDRBDKernelModuleInjection turns off automatic injection
+                of the DRBD kernel module on the host system when set to true.
+              type: boolean
+            storagePools:
+              description: StoragePools is a list of StoragePools for PiraeusNodeSet
+                to manage.
+              properties:
+                lvmPools:
+                  description: LVMPools for PiraeusNodeSet to manage.
+                  items:
+                    description: StoragePoolLVM represents LVM storage pool to be
+                      managed by a PiraeusNodeSet
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      volumeGroup:
+                        description: Name of underlying lvm group
+                        type: string
+                    required:
+                    - name
+                    - volumeGroup
+                    type: object
+                  type: array
+                lvmThinPools:
+                  description: LVMThinPools for PiraeusNodeSet to manage.
+                  items:
+                    description: StoragePoolLVMThin represents LVM Thin storage pool
+                      to be managed by a PiraeusNodeSet
+                    properties:
+                      thinVolume:
+                        description: Name of underlying lvm thin volume
+                        type: string
+                    required:
+                    - thinVolume
+                    type: object
+                  type: array
+              required:
+              - lvmPools
+              - lvmThinPools
+              type: object
+            drbdRepoCred:
+              description: DrbdRepoCred is the name of the kubernetes secret that
+                holds the credential for the DRBD repositories
+              type: string
+            satelliteImage:
+              description: SatelliteImage is the image location for the LINSTOR
+                satellite container
+              type: string
+            satelliteVersion:
+              description: SatelliteVersion is the image tag/version for the LINSTOR
+                satellite container
+              type: string
+          required:
+          - disableDRBDKernelModuleInjection
+          - storagePools
+          - drbdRepoCred
+          - satelliteImage
+          - satelliteVersion
           type: object
         status:
+          description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
+          properties:
+            SatelliteStatuses:
+              description: SatelliteStatuses by hostname.
+            errors:
+              description: Errors remaining that will trigger reconciliations.
+              items:
+                type: string
+              type: array
+          required:
+          - SatelliteStatuses
+          - errors
           type: object
+      type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
     served: true
     storage: true
+
 ---
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
