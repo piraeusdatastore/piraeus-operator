@@ -490,6 +490,14 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 		pns.Spec.SatelliteVersion = kubeSpec.PiraeusSatelliteVersion
 	}
 
+	if pns.Spec.KernelModImage == "" {
+		pns.Spec.KernelModImage = kubeSpec.PiraeusKernelModImage
+	}
+
+	if pns.Spec.KernelModVersion == "" {
+		pns.Spec.KernelModVersion = kubeSpec.PiraeusKernelModVersion
+	}
+
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -615,7 +623,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 		return ds
 	}
 
-	return daemonSetWithDRBDKernelModuleInjection(ds)
+	return daemonSetWithDRBDKernelModuleInjection(ds, pns)
 }
 
 func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
@@ -644,11 +652,11 @@ func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
 	}
 }
 
-func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet) *apps.DaemonSet {
+func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "drbd-kernel-module-injector",
-			Image:           kubeSpec.PiraeusKernelModImage + ":" + kubeSpec.PiraeusKernelModVersion, // bionic
+			Image:           pns.Spec.KernelModImage + ":" + pns.Spec.KernelModVersion,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			VolumeMounts: []corev1.VolumeMount{

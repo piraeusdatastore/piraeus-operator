@@ -5,3 +5,5 @@ metadata:
 spec:
   etcdURL: etcd://{{ .Release.Name }}-etcd:2379  # TODO: Fix
   drbdRepoCred: {{ .Values.drbdRepoCred }}
+  controllerImage: {{ .Values.operator.controllerSet.spec.controllerImage }}
+  controllerVersion: {{ .Values.operator.controllerSet.spec.controllerVersion }}

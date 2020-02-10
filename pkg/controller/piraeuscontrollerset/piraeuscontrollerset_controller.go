@@ -475,6 +475,14 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 
 	labels := pcsLabels(pcs)
 
+	if pcs.Spec.ControllerImage == "" {
+		pcs.Spec.ControllerImage = kubeSpec.PiraeusControllerImage
+	}
+
+	if pcs.Spec.ControllerVersion == "" {
+		pcs.Spec.ControllerVersion = kubeSpec.PiraeusControllerVersion
+	}
+
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
@@ -495,7 +503,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
-							Image:           kubeSpec.PiraeusServerImage + ":" + kubeSpec.PiraeusVersion,
+							Image:           pcs.Spec.ControllerImage + ":" + pcs.Spec.ControllerVersion,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{

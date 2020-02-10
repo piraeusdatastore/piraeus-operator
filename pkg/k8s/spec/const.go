@@ -62,12 +62,11 @@ const PiraeusCSPriorityClassName = "piraeus-cs-priority-class"
 const PiraeusNSPriorityClassName = "piraeus-ns-priority-class"
 
 const (
-	// PiraeusServerImage is the repo/tag for piraeus-server. The controller
-	// and node use the same image with different commands.
-	PiraeusServerImage = "quay.io/piraeusdatastore/piraeus-server"
-	// PiraeusVersion must must match exactly in the ControllerSet and the NodeSet
-	// since the linstor controller and satellite versions must also match exactly.
-	PiraeusVersion = "v1.4.2"
+	// PiraeusControllerImage is the repo/tag for linstor-server
+	PiraeusControllerImage = "quay.io/piraeusdatastore/piraeus-server"
+	// PiraeusControllerVersion must match PiraeusSatelliteVersion since the
+	// linstor controller and satellite versions must also match exactly
+	PiraeusControllerVersion = "v1.4.2"
 
 	// PiraeusSatelliteImage is the repo/tag for LINSTOR Satellite contaier.
 	PiraeusSatelliteImage = "quay.io/piraeusdatastore/piraeus-server"

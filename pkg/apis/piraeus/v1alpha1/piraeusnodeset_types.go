@@ -45,6 +45,10 @@ type PiraeusNodeSetSpec struct {
 
 	//SatelliteVersion is the LINSTOR Satellite image location
 	SatelliteVersion string `json:"satelliteVersion"`
+
+	//KernelModImage & Version  is the DRBD Kernel injection image location and version/tag
+	KernelModImage   string `json:"kernelModImage"`
+	KernelModVersion string `json:"kernelModVersion"`
 }
 
 // PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet

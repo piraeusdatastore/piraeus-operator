@@ -7,6 +7,8 @@ spec:
   drbdRepoCred: {{ .Values.repoCreds }}
   satelliteImage: {{ .Values.operator.nodeSet.spec.satelliteImage }}
   satelliteVersion: {{ .Values.operator.nodeSet.spec.satelliteVersion }}
+  kernelModImage: {{ .Values.operator.nodeSet.spec.kernelModImage }}
+  kernelModVersion: {{ .Values.operator.nodeSet.spec.kernelModVersion }}
   storagePools:
     lvmPools:
     - name: {{ .Values.operator.nodeSet.spec.lvmPoolName }}

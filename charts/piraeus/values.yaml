@@ -18,11 +18,17 @@ operator:
     repo: "quay.io/piraeusdatastore"
     name: "piraeus-operator"
     version: "v0.1.0"
+  controllerSet:
+    spec:
+      controllerImage: "quay.io/piraeusdatastore/piraeus-server"
+      controllerVersion: "v1.4.2"
   nodeSet:
     spec:
       disableDRBDKernelModuleInjection: false
       satelliteImage: "quay.io/piraeusdatastore/piraeus-server"
       satelliteVersion: "v1.4.2"
+      kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic"
+      kernelModVersion: "v9.0.21"
       lvmPoolName: "lvm-thick"
       lvmPoolVgName: "drbdpool"      # <- Volume Group name of the thick storage pool
       lvmThinPoolName: "lvm-thin"

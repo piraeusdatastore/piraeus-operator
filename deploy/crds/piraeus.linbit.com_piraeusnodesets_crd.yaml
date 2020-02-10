@@ -85,12 +85,22 @@ spec:
               description: satelliteVersion is the image tag/version for the LINSTOR
                 satellite container
               type: string
+            kernelModImage:
+              description: LinstorKernelModImage is the image location for the LINSTOR/
+                DRBD kernel module injector container
+              type: string
+            kernelModVersion:
+              description: LinstorKernelModVersion is the image tag/version for the LINSTOR/
+                DRBD kernel module injector container
+              type: string
           required:
           - disableDRBDKernelModuleInjection
           - storagePools
           - drbdRepoCred
           - satelliteImage
           - satelliteVersion
+          - kernelModImage
+          - kernelModVersion
           type: object
         status:
           description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
