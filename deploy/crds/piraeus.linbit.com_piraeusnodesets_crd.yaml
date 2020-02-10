@@ -77,10 +77,19 @@ spec:
               description: DrbdRepoCred is the name of the kubernetes secret that
                 holds credential for the DRBD repositories
               type: string
+            satelliteImage:
+              description: satelliteImage is the image location for the LINSTOR
+                satellite container
+              type: string
+            satelliteVersion:
+              description: satelliteVersion is the image tag/version for the LINSTOR
+                satellite container
+              type: string
           required:
           - disableDRBDKernelModuleInjection
           - storagePools
           - drbdRepoCred
+          - satelliteImage
           type: object
         status:
           description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet

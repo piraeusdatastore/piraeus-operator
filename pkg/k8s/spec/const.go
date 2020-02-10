@@ -67,7 +67,13 @@ const (
 	PiraeusServerImage = "quay.io/piraeusdatastore/piraeus-server"
 	// PiraeusVersion must must match exactly in the ControllerSet and the NodeSet
 	// since the linstor controller and satellite versions must also match exactly.
-	PiraeusVersion = "v1.2.1"
+	PiraeusVersion = "v1.4.2"
+
+	// PiraeusSatelliteImage is the repo/tag for LINSTOR Satellite contaier.
+	PiraeusSatelliteImage = "quay.io/piraeusdatastore/piraeus-server"
+	// PiraeusSatelliteVersion is the release tag for the above image
+	PiraeusSatelliteVersion = "v1.4.2"
+
 	// PiraeusKernelModImage is the worker (aka satellite) image for each node
 	PiraeusKernelModImage = "quay.io/piraeusdatastore/drbd9-centos7"
 	// PiraeusKernelModVersion is the release tag for the above image

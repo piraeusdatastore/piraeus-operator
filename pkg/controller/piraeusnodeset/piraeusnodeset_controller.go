@@ -481,6 +481,15 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	labels := pnsLabels(pns)
 	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
+
+	if pns.Spec.SatelliteImage == "" {
+		pns.Spec.SatelliteImage = kubeSpec.PiraeusSatelliteImage
+	}
+
+	if pns.Spec.SatelliteVersion == "" {
+		pns.Spec.SatelliteVersion = kubeSpec.PiraeusSatelliteVersion
+	}
+
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -519,7 +528,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",
-							Image:           kubeSpec.PiraeusServerImage + ":" + kubeSpec.PiraeusVersion,
+							Image:           pns.Spec.SatelliteImage + ":" + pns.Spec.SatelliteVersion,
 							Args:            []string{"startSatellite"}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},

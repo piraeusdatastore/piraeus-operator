@@ -32,10 +32,19 @@ type PiraeusNodeSetSpec struct {
 
 	// StoragePools is a list of StoragePools for PiraeusNodeSet to manage.
 	StoragePools *StoragePools `json:"storagePools"`
+
 	//DisableDRBDKernelModuleInjection turns off automatic injection of the DRBD
 	// kernel module on the host system when set to true.
-	DisableDRBDKernelModuleInjection bool   `json:"disableDRBDKernelModuleInjection"`
-	DrbdRepoCred                     string `json:"drbdRepoCred"`
+	DisableDRBDKernelModuleInjection bool `json:"disableDRBDKernelModuleInjection"`
+
+	//DrbdRepoCred is the name of the k8s secret with the repo credential
+	DrbdRepoCred string `json:"drbdRepoCred"`
+
+	//SatelliteImage is the LINSTOR Satellite image location
+	SatelliteImage string `json:"satelliteimage"`
+
+	//SatelliteVersion is the LINSTOR Satellite image location
+	SatelliteVersion string `json:"satelliteversion"`
 }
 
 // PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
