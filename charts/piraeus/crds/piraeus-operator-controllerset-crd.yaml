@@ -2,8 +2,6 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: piraeuscontrollersets.piraeus.linbit.com
-  #annotations:
-    #"helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   group: piraeus.linbit.com
   names:
@@ -16,24 +14,63 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      type: object
+      description: PiraeusControllerSet is the Schema for the piraeuscontrollersets
+        API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
             of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
+          description: PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
+          properties:
+            etcdURL:
+              type: string
+            drbdRepoCred:
+              description: DrbdRepoCred is the name of the kubernetes secret that
+                holds the credential for the DRBD repositories
+              type: string
+          required:
+          - etcdURL
+          - drbdRepoCred
           type: object
         status:
+          description: PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
+          properties:
+            ControllerStatus:
+              description: ControllerStatus information.
+              properties:
+                nodeName:
+                  description: The hostname of the kubelet running the node
+                  type: string
+                registeredOnController:
+                  description: Indicates if the node has been created on the controller.
+                  type: boolean
+              required:
+              - nodeName
+              - registeredOnController
+              type: object
+            SatelliteStatuses:
+              description: SatelliteStatuses by hostname.
+            errors:
+              description: Errors remaining that will trigger reconciliations.
+              items:
+                type: string
+              type: array
+          required:
+          - ControllerStatus
+          - SatelliteStatuses
+          - errors
           type: object
+      type: object
   version: v1alpha1
   versions:
   - name: v1alpha1

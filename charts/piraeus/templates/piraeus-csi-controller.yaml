@@ -94,6 +94,8 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+      imagePullSecrets:
+        - name: {{ .Values.drbdRepoCred }}
       volumes:
         - name: socket-dir
           emptyDir: {}

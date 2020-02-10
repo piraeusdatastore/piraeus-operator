@@ -32,3 +32,5 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "piraeus-operator"
+      imagePullSecrets:
+      - name: {{ .Values.drbdRepoCred }}

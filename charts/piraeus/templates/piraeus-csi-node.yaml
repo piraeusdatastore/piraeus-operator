@@ -101,3 +101,5 @@ spec:
             path: /dev
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        - name: {{ .Values.drbdRepoCred }}

@@ -12,7 +12,7 @@ csi:
     repo: "quay.io/piraeusdatastore"
     name: "linstor-csi"
     version: "v0.7.3"
-repoCreds: drbdcred     # <- Specify the kubernetes secret name here
+repoCreds: drbdiocred     # <- Specify the kubernetes secret name here
 operator:
   image:
     repo: "quay.io/piraeusdatastore"
@@ -21,6 +21,8 @@ operator:
   nodeSet:
     spec:
       disableDRBDKernelModuleInjection: false
+      satelliteImage: "quay.io/piraeusdatastore/piraeus-server"
+      satelliteVersion: "v1.4.2"
       lvmPoolName: "lvm-thick"
       lvmPoolVgName: "drbdpool"      # <- Volume Group name of the thick storage pool
       lvmThinPoolName: "lvm-thin"
