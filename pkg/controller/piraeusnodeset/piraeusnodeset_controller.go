@@ -555,11 +555,6 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 									MountPath: kubeSpec.DevDir,
 								},
 								{
-									Name:      kubeSpec.UdevDirName,
-									MountPath: kubeSpec.UdevDir,
-									ReadOnly:  true,
-								},
-								{
 									Name:             kubeSpec.ModulesDirName,
 									MountPath:        kubeSpec.ModulesDir,
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
@@ -599,13 +594,6 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.ModulesDir,
-									Type: &kubeSpec.HostPathDirectoryOrCreateType,
-								}}},
-						{
-							Name: kubeSpec.UdevDirName,
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: kubeSpec.UdevDir,
 									Type: &kubeSpec.HostPathDirectoryOrCreateType,
 								}}},
 					},

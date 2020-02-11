@@ -29,8 +29,6 @@ const (
 	ModulesDirName     = "modules-dir"
 	SrcDir             = "/usr/src"
 	SrcDirName         = "src-dir"
-	UdevDir            = "/run/udev"
-	UdevDirName        = "udev"
 )
 
 // Shared consts common to container volumes. These need to be vars, so they
