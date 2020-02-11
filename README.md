@@ -42,7 +42,7 @@ The operator can be deployed with Helm v3 chart in /charts.
     Then this secret name must be specified in the charts/piraeus/values.yaml.
 
     ```
-    repoCreds: drbdiocred  # <- Specify the kubernetes secret name
+    drbdRepoCred: drbdiocred  # <- Specify the kubernetes secret name
     ```
 
 - Configure the LVM VG and LV names in charts/piraeus/values.yaml.

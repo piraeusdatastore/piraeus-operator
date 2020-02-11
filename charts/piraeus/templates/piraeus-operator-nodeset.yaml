@@ -4,7 +4,7 @@ metadata:
   name: {{ template "piraeus-operator.fullname" . }}-ns
 spec:
   disableDRBDKernelModuleInjection: {{ .Values.operator.nodeSet.spec.disableDRBDKernelModuleInjection }}
-  drbdRepoCred: {{ .Values.repoCreds }}
+  drbdRepoCred: {{ .Values.drbdRepoCred }}
   satelliteImage: {{ .Values.operator.nodeSet.spec.satelliteImage }}
   satelliteVersion: {{ .Values.operator.nodeSet.spec.satelliteVersion }}
   kernelModImage: {{ .Values.operator.nodeSet.spec.kernelModImage }}
@@ -17,4 +17,3 @@ spec:
     - name: {{ .Values.operator.nodeSet.spec.lvmThinPoolName }}
       volumeGroup: {{ .Values.operator.nodeSet.spec.lvmThinPoolVgName }}
       thinVolume: {{ .Values.operator.nodeSet.spec.lvmThinPoolLvName }}
-  

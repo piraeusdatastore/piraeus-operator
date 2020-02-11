@@ -12,7 +12,7 @@ csi:
     repo: "quay.io/piraeusdatastore"
     name: "linstor-csi"
     version: "v0.7.3"
-repoCreds: drbdiocred     # <- Specify the kubernetes secret name here
+drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 operator:
   image:
     repo: "quay.io/piraeusdatastore"
