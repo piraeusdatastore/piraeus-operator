@@ -71,10 +71,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: linstor-csi-plugin
-          image: quay.io/piraeusdatastore/piraeus-csi:v0.7.3
-          # image: drbd.io/linstor-csi:v0.7.2
-          # imagePullSecrets:
-          #   - name: {{ .Values.repoCreds }}
+          image: {{ .Values.csi.image.repo }}/{{ .Values.csi.image.name }}:{{ .Values.csi.image.version }}
           args:
             - "--csi-endpoint=$(CSI_ENDPOINT)"
             - "--node=$(KUBE_NODE_NAME)"
