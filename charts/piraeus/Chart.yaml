@@ -3,7 +3,7 @@ name: piraeus
 description: A Helm chart for Piraeus Operator
 type: application
 version: 0.1.1     # Chart Version 
-appVersion: 0.1.0  # Application Vertion
+appVersion: 0.1.1  # Application Vertion
 
 dependencies:
   - name: "etcd"
