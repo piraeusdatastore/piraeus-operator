@@ -6,6 +6,7 @@ spec:
   selector:
     matchLabels:
       app: {{ template "piraeus-operator.fullname" . }}-csi-node
+      role: {{ template "piraeus-operator.fullname" . }}-csi
   template:
     metadata:
       labels:
