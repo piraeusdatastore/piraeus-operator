@@ -595,7 +595,11 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.ConfigMap {
 
 	if pcs.Spec.EtcdURL == "" {
-		pcs.Spec.EtcdURL = "etcd://" + pcs.Name + "-etcd:2379"
+		if pcs.Name[len(pcs.Name)-3:len(pcs.Name)] == "-cs" {
+			pcs.Spec.EtcdURL = "etcd://" + pcs.Name[0:len(pcs.Name)-3] + "-etcd:2379"
+		} else {
+			pcs.Spec.EtcdURL = "etcd://" + pcs.Name + "-etcd:2379"
+		}
 	}
 
 	cm := &corev1.ConfigMap{

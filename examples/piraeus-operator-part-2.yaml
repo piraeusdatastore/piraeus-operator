@@ -3,6 +3,7 @@ apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusControllerSet
 metadata:
   name: piraeus-cs
+spec:
   # etcdURL url for controller persistence.
   etcdURL: "etcd://linstor-etcd.default.svc.cluster.local:2379"
   # K8s secret for repo credential
