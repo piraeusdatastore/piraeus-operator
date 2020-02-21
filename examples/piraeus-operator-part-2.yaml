@@ -18,7 +18,7 @@ kind: PiraeusNodeSet
 metadata:
   name: piraeus-ns
 spec:
-  disableDRBDKernelModuleInjection: false
+  drbdKernelModuleInjectionMode: Compile
 
   # K8s secret for repo credential
   drbdRepoCred: "drbdiocred"

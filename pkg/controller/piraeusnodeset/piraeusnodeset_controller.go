@@ -607,10 +607,6 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 		},
 	}
 
-	if pns.Spec.DisableDRBDKernelModuleInjection {
-		return ds
-	}
-
 	return daemonSetWithDRBDKernelModuleInjection(ds, pns)
 }
 
@@ -641,12 +637,35 @@ func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
 }
 
 func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
+	var kernelModHow string
+
+	mode := pns.Spec.DRBDKernelModuleInjectionMode
+	switch mode {
+	case piraeusv1alpha1.ModuleInjectionNone:
+		return ds
+	case piraeusv1alpha1.ModuleInjectionCompile:
+		kernelModHow = kubeSpec.LinstorKernelModCompile
+	case piraeusv1alpha1.ModuleInjectionShippedModules:
+		kernelModHow = kubeSpec.LinstorKernelModShippedModules
+	default:
+		logrus.WithFields(logrus.Fields{
+			"mode": mode,
+		}).Warn("Unknown kernel module injection mode; skipping")
+		return ds
+	}
+
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "drbd-kernel-module-injector",
 			Image:           pns.Spec.KernelModImage + ":" + pns.Spec.KernelModVersion,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
+			Env: []corev1.EnvVar{
+				{
+					Name:  kubeSpec.LinstorKernelModHow,
+					Value: kernelModHow,
+				},
+			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      kubeSpec.SrcDirName,

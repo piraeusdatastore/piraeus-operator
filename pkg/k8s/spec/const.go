@@ -31,6 +31,13 @@ const (
 	SrcDirName         = "src-dir"
 )
 
+// Special strings for communicating with the module injector
+const (
+	LinstorKernelModHow            = "LB_HOW"
+	LinstorKernelModCompile        = "compile"
+	LinstorKernelModShippedModules = "shipped_modules"
+)
+
 // Shared consts common to container volumes. These need to be vars, so they
 // are addressible.
 var (

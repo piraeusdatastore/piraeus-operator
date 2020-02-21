@@ -201,10 +201,16 @@ spec:
         spec:
           description: PiraeusNodeSetSpec defines the desired state of PiraeusNodeSet
           properties:
-            disableDRBDKernelModuleInjection:
-              description: DisableDRBDKernelModuleInjection turns off automatic injection
-                of the DRBD kernel module on the host system when set to true.
-              type: boolean
+            drbdKernelModuleInjectionMode:
+              description: drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
+              type: string
+              enum:
+              # No module will be injected
+              - None
+              # The module will be compiled from sources available on the host
+              - Compile
+              # A module included in the injector image will be used
+              - ShippedModules
             storagePools:
               description: StoragePools is a list of StoragePools for PiraeusNodeSet
                 to manage.
@@ -264,7 +270,7 @@ spec:
                 DRBD kernel module injector container
               type: string
           required:
-          - disableDRBDKernelModuleInjection
+          - drbdKernelModuleInjectionMode
           - storagePools
           - drbdRepoCred
           - satelliteImage

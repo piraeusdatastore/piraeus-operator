@@ -24,7 +24,7 @@ operator:
       controllerVersion: "v1.4.2"
   nodeSet:
     spec:
-      disableDRBDKernelModuleInjection: false
+      drbdKernelModuleInjectionMode: Compile
       satelliteImage: "quay.io/piraeusdatastore/piraeus-server"
       satelliteVersion: "v1.4.2"
       kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic"

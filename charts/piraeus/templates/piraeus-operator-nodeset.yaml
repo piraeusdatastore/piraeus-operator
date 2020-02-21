@@ -3,7 +3,7 @@ kind: PiraeusNodeSet
 metadata:
   name: {{ template "piraeus-operator.fullname" . }}-ns
 spec:
-  disableDRBDKernelModuleInjection: {{ .Values.operator.nodeSet.spec.disableDRBDKernelModuleInjection }}
+  drbdKernelModuleInjectionMode: {{ .Values.operator.nodeSet.spec.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   satelliteImage: {{ .Values.operator.nodeSet.spec.satelliteImage }}
   satelliteVersion: {{ .Values.operator.nodeSet.spec.satelliteVersion }}

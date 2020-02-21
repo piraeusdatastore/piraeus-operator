@@ -33,9 +33,8 @@ type PiraeusNodeSetSpec struct {
 	// StoragePools is a list of StoragePools for PiraeusNodeSet to manage.
 	StoragePools *StoragePools `json:"storagePools"`
 
-	//DisableDRBDKernelModuleInjection turns off automatic injection of the DRBD
-	// kernel module on the host system when set to true.
-	DisableDRBDKernelModuleInjection bool `json:"disableDRBDKernelModuleInjection"`
+	// DRBDKernelModuleInjectionMode selects the source for the DRBD kernel module
+	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 
 	//DrbdRepoCred is the name of the k8s secret with the repo credential
 	DrbdRepoCred string `json:"drbdRepoCred"`
@@ -50,6 +49,18 @@ type PiraeusNodeSetSpec struct {
 	KernelModImage   string `json:"kernelModImage"`
 	KernelModVersion string `json:"kernelModVersion"`
 }
+
+// KernelModuleInjectionMode describes the source for injecting a kernel module
+type KernelModuleInjectionMode string
+
+const (
+	// ModuleInjectionNone means that no module will be injected
+	ModuleInjectionNone = "None"
+	// ModuleInjectionCompile means that the module will be compiled from sources available on the host
+	ModuleInjectionCompile = "Compile"
+	// ModuleInjectionShippedModules means that a module included in the injector image will be used
+	ModuleInjectionShippedModules = "ShippedModules"
+)
 
 // PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
 type PiraeusNodeSetStatus struct {
