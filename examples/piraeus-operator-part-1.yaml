@@ -9,7 +9,7 @@ rules:
   - ""
   resources:
   - pods
-  - services/finalizers
+  - services
   - endpoints
   - persistentvolumeclaims
   - events
@@ -47,22 +47,19 @@ rules:
   - pods
   verbs:
   - get
-# - apiGroups:
-#   - apps
-#   resources:
-#   - replicasets
-#   - deployments
-#   verbs:
-#   - get
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - piraeus.linbit.com
   resources:
   - '*'
-  - piraeusnodesets
   - piraeuscontrollersets
   verbs:
   - '*'
-
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
