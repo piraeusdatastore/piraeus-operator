@@ -3,7 +3,7 @@ kind: PiraeusControllerSet
 metadata:
   name: {{ template "piraeus-operator.fullname" . }}-cs
 spec:
-  etcdURL: etcd://{{ .Release.Name }}-etcd:2379  # TODO: Fix
+  etcdURL: etcd://{{ .Release.Name }}-etcd:2379 
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   controllerImage: {{ .Values.operator.controllerSet.spec.controllerImage }}
   controllerVersion: {{ .Values.operator.controllerSet.spec.controllerVersion }}

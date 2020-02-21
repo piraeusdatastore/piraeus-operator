@@ -1,14 +1,11 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  #name: {{ template "piraeus-operator.fullname" . }}-binding
   name: {{ template "piraeus-operator.fullname" . }}-operator
 subjects:
 - kind: ServiceAccount
-  #name: {{ template "piraeus-operator.fullname" . }}-sa
   name: {{ template "piraeus-operator.fullname" . }}-operator
 roleRef:
   kind: Role
-  #name: {{ template "piraeus-operator.fullname" . }}-role
   name: {{ template "piraeus-operator.fullname" . }}-operator
   apiGroup: rbac.authorization.k8s.io

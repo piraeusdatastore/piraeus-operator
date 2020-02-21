@@ -1,16 +1,14 @@
 apiVersion: scheduling.k8s.io/v1 # v1beta1 for 1.13
 kind: PriorityClass
 metadata:
-  # Hard coded in the operator code, for now.
   name: "piraeus-cs-priority-class"
 value: 1000010
 globalDefault: false
-description: "Priority class for piraeus controller(s)"
+description: "Priority class for piraeus controller"
 ---
 apiVersion: scheduling.k8s.io/v1 # v1beta1 for 1.13
 kind: PriorityClass
 metadata:
-  # Hard coded in the operator code, for now.
   name: "piraeus-ns-priority-class"
 value: 1000000
 globalDefault: false

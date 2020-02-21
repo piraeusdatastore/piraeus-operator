@@ -39,8 +39,13 @@ spec:
       # volume group on the kubelet each Piraeus
       # node is scheduled on.
       volumeGroup: "drbdpool"
+
     lvmThinPools:
     - name: "lvm-thin"
+
+      # drbdpool must be an already existing lvm
+      # volume group on the kubelet each Piraeus
+      # node is scheduled on.
       volumeGroup: "drbdpool"
 
       # thinpool must be an already existing
