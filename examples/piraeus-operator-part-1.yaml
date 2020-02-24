@@ -334,7 +334,7 @@ spec:
       serviceAccountName: piraeus-operator
       containers:
         - name: piraeus-operator
-          image: "quay.io/piraeusdatastore/piraeus-operator"
+          image: "quay.io/piraeusdatastore/piraeus-operator:v0.1.3"
           command:
           - piraeus-operator
           imagePullPolicy: Always
