@@ -504,6 +504,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 						{
 							Name:            "linstor-controller",
 							Image:           pcs.Spec.ControllerImage + ":" + pcs.Spec.ControllerVersion,
+							Args:            []string{"startController"}, // Run linstor-controller.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
