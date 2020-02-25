@@ -10,7 +10,7 @@ etcd:
 csi:
   image:
     repo: "quay.io/piraeusdatastore"
-    name: "linstor-csi"
+    name: "piraeus-csi"
     version: "v0.7.3"
 drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 operator:
