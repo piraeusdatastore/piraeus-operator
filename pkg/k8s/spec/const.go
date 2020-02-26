@@ -52,6 +52,10 @@ var (
 	Privileged = true
 )
 
+// APIGroup specifies the group for the custom resource definition APIs. It
+// needs to be a var, so that it can be overridden at build time.
+var APIGroup = "piraeus.linbit.com"
+
 const selectorPrefix = "linstor.linbit.com/"
 
 // Kubernetes node labels that are an opt-in selector to run piraeus pods when
