@@ -18,8 +18,6 @@ spec:
       containers:
         - name: piraeus-operator
           image: {{ .Values.operator.image.repo }}/{{ .Values.operator.image.name }}:{{ .Values.operator.image.version }}
-          command:
-          - piraeus-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
