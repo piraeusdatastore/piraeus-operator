@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace | default "default" }}
+spec:
+  capacity:
+    storage: {{ required "A valid .Values.size entry required!" .Values.size }}
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: {{ required "A valid .Values.size entry required!" .Values.path }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ required "A valid .Values.node entry required!" .Values.node }}

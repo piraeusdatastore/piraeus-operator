@@ -60,6 +60,42 @@ The operator can be deployed with Helm v3 chart in /charts.
     helm install piraeus-op ./charts/piraeus
     ```
 
+### LINSTOR etcd persistence
+
+The operator can be deployed with persistence for it's etcd database.
+
+- If you intend to persist LINSTOR's etcd cluster (recommended), you'll either
+  need to have an existing storage provisioner setup, with a storageclass
+  set as the default storageclass, or you can use the included helm templates
+  to create hostpath persistent volumes. Create as many PVs as needed to
+  satisfy your configured etcd replicaCount.
+
+    Creating the hostpath persistent volumes, substituting cluster node names
+    accordingly in the `--node=` option:
+
+    ```
+    helm template linstor-etcd-pv-0 charts/pv-hostpath \
+         --set node=NODE-0 > linstor-etcd-pv-0.yaml
+    helm template linstor-etcd-pv-1 charts/pv-hostpath \
+         --set node=NODE-1 > linstor-etcd-pv-1.yaml
+    helm template linstor-etcd-pv-2 charts/pv-hostpath \
+         --set node=NODE-2 > linstor-etcd-pv-2.yaml
+    kubectl create -f linstor-etcd-pv-0.yaml
+    kubectl create -f linstor-etcd-pv-1.yaml
+    kubectl create -f linstor-etcd-pv-2.yaml
+    ```
+
+    You can enable/disable etcd persistence by changing the following values in
+    charts/piraeus/values.yaml:
+
+    ```
+    etcd:
+      persistence:
+        enabled: true
+      volumePermissions:
+        enabled: true
+    ```
+
 ### Terminating Helm release/deployment
 
 ```

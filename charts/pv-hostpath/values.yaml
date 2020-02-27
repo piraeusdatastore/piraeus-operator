@@ -1,0 +1,2 @@
+size: 8Gi
+path: /var/lib/linstor-etcd
