@@ -6,7 +6,7 @@ subjects:
   - kind: ServiceAccount
     name: {{ template "operator.fullname" . }}-csi-controller-sa
     # You must change this to the current context
-    namespace: default
+    namespace: {{ .Release.Namespace | default "default" }}
 roleRef:
   kind: ClusterRole
   name: {{ template "operator.fullname" . }}-csi-provisioner-role

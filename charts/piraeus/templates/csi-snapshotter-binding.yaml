@@ -5,7 +5,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ template "operator.fullname" . }}-csi-controller-sa
-    namespace: default
+    namespace: {{ .Release.Namespace | default "default" }}
 roleRef:
   kind: ClusterRole
   name: {{ template "operator.fullname" . }}-csi-snapshotter-role
