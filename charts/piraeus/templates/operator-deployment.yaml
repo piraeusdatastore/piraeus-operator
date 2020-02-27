@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "piraeus-operator.fullname" . }}-operator
+  name: {{ template "operator.fullname" . }}-operator
   labels:
-    name: {{ template "piraeus-operator.fullname" . }}-operator
+    name: {{ template "operator.fullname" . }}-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: {{ template "piraeus-operator.fullname" . }}-operator
+      name: {{ template "operator.fullname" . }}-operator
   template:
     metadata:
       labels:
-        name: {{ template "piraeus-operator.fullname" . }}-operator
+        name: {{ template "operator.fullname" . }}-operator
     spec:
-      serviceAccountName: {{ template "piraeus-operator.fullname" . }}-operator
+      serviceAccountName: {{ template "operator.fullname" . }}-operator
       containers:
         - name: piraeus-operator
           image: {{ .Values.operator.image.repo }}/{{ .Values.operator.image.name }}:{{ .Values.operator.image.version }}

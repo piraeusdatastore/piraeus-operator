@@ -1,7 +1,7 @@
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusNodeSet
 metadata:
-  name: {{ template "piraeus-operator.fullname" . }}-ns
+  name: {{ template "operator.fullname" . }}-ns
 spec:
   drbdKernelModuleInjectionMode: {{ .Values.operator.nodeSet.spec.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}

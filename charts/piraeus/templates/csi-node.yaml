@@ -1,20 +1,20 @@
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: {{ template "piraeus-operator.fullname" . }}-csi-node
+  name: {{ template "operator.fullname" . }}-csi-node
 spec:
   selector:
     matchLabels:
-      app: {{ template "piraeus-operator.fullname" . }}-csi-node
-      role: {{ template "piraeus-operator.fullname" . }}-csi
+      app: {{ template "operator.fullname" . }}-csi-node
+      role: {{ template "operator.fullname" . }}-csi
   template:
     metadata:
       labels:
-        app: {{ template "piraeus-operator.fullname" . }}-csi-node
-        role: {{ template "piraeus-operator.fullname" . }}-csi
+        app: {{ template "operator.fullname" . }}-csi-node
+        role: {{ template "operator.fullname" . }}-csi
     spec:
-      priorityClassName: {{ template "piraeus-operator.fullname" . }}-csi-priority-class
-      serviceAccount: {{ template "piraeus-operator.fullname" . }}-csi-node-sa
+      priorityClassName: {{ template "operator.fullname" . }}-csi-priority-class
+      serviceAccount: {{ template "operator.fullname" . }}-csi-node-sa
       containers:
         - name: csi-node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.2.0
@@ -62,7 +62,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: LINSTOR_IP
-              #value: http://{{ template "piraeus-operator.fullname" . }}:3370
+              #value: http://{{ template "operator.fullname" . }}:3370
               value: http://{{ .Release.Name }}-cs:3370
             - name: LS_CONTROLLERS
               value: http://{{ .Release.Name }}-cs:3370

@@ -1,7 +1,7 @@
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: PiraeusControllerSet
 metadata:
-  name: {{ template "piraeus-operator.fullname" . }}-cs
+  name: {{ template "operator.fullname" . }}-cs
 spec:
   etcdURL: etcd://{{ .Release.Name }}-etcd:2379 
   drbdRepoCred: {{ .Values.drbdRepoCred }}

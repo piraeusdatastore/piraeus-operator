@@ -1,7 +1,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "piraeus-operator.fullname" . }}-csi-cluster-driver-registrar-role
+  name: {{ template "operator.fullname" . }}-csi-cluster-driver-registrar-role
 rules:
   - apiGroups: ["csi.storage.k8s.io"]
     resources: ["csidrivers"]

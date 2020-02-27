@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "piraeus-operator.fullname" . }}-csi-controller
+  name: {{ template "operator.fullname" . }}-csi-controller
 spec:
   selector:
     matchLabels:
-      app: {{ template "piraeus-operator.fullname" . }}-csi-controller
-      role: {{ template "piraeus-operator.fullname" . }}-csi
-  serviceName: {{ template "piraeus-operator.fullname" . }}
+      app: {{ template "operator.fullname" . }}-csi-controller
+      role: {{ template "operator.fullname" . }}-csi
+  serviceName: {{ template "operator.fullname" . }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ template "piraeus-operator.fullname" . }}-csi-controller
-        role: {{ template "piraeus-operator.fullname" . }}-csi
+        app: {{ template "operator.fullname" . }}-csi-controller
+        role: {{ template "operator.fullname" . }}-csi
     spec:
-      priorityClassName: {{ template "piraeus-operator.fullname" . }}-csi-priority-class
-      serviceAccount: {{ template "piraeus-operator.fullname" . }}-csi-controller-sa
+      priorityClassName: {{ template "operator.fullname" . }}-csi-priority-class
+      serviceAccount: {{ template "operator.fullname" . }}-csi-controller-sa
       containers:
         - name: csi-provisioner
           image: quay.io/k8scsi/csi-provisioner:v1.5.0
@@ -86,7 +86,7 @@ spec:
                   fieldPath: spec.nodeName
             - name: LINSTOR_IP
               value: http://{{ .Release.Name }}-cs:3370
-              # value: http://{{ .Release.Name }}-{{ template "piraeus-operator.fullname" . }}:3370
+              # value: http://{{ .Release.Name }}-{{ template "operator.fullname" . }}:3370
           imagePullPolicy: "Always"
           volumeMounts:
             - name: socket-dir
