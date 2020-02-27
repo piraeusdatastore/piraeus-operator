@@ -1,6 +1,8 @@
 etcd:
   persistence:
     enabled: true
+  volumePermissions:
+    enabled: true
   auth:
     rbac:
       enabled: false
