@@ -14,5 +14,5 @@ spec:
         env:
         - name: TESTENV
           value: "TESTVAL"
-        command: ["sh", "-c", "wget {{ .Release.Name }}-piraeus-cs:3370"]
+        command: ["sh", "-c", "wget {{ .Release.Name }}-cs:3370"]
       restartPolicy: Never
