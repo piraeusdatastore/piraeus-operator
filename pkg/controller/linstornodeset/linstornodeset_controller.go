@@ -703,7 +703,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 func pnsLabels(pns *piraeusv1alpha1.LinstorNodeSet) map[string]string {
 	return map[string]string{
 		"app":  pns.Name,
-		"role": "piraeus-node",
+		"role": kubeSpec.NodeRole,
 	}
 }
 

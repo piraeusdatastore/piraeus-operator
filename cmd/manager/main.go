@@ -30,6 +30,8 @@ import (
 
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	version "github.com/piraeusdatastore/piraeus-operator/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -38,7 +40,6 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	version "github.com/piraeusdatastore/piraeus-operator/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -101,7 +102,7 @@ func main() {
 
 	ctx := context.TODO()
 	// Become the leader before proceeding
-	err = leader.Become(ctx, "piraeus-operator-lock")
+	err = leader.Become(ctx, kubeSpec.LockName)
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

@@ -626,6 +626,6 @@ func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Confi
 func pcsLabels(pcs *piraeusv1alpha1.LinstorControllerSet) map[string]string {
 	return map[string]string{
 		"app":  pcs.Name,
-		"role": "piraeus-controller",
+		"role": kubeSpec.ControllerRole,
 	}
 }
