@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package piraeusnodeset
+package linstornodeset
 
 import (
 	"context"
@@ -59,7 +59,7 @@ func init() {
 }
 
 var log = logrus.WithFields(logrus.Fields{
-	"controller": "PiraeusNodeSet",
+	"controller": "LinstorNodeSet",
 })
 
 // linstorNodeFinalizer can only be removed if the linstor node containers are
@@ -67,7 +67,7 @@ var log = logrus.WithFields(logrus.Fields{
 // to them.
 const linstorNodeFinalizer = "finalizer.linstor-node.linbit.com"
 
-// Add creates a new PiraeusNodeSet Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new LinstorNodeSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -75,27 +75,27 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcilePiraeusNodeSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileLinstorNodeSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	log.Debug("NS add: Adding a PNS controller ")
-	c, err := controller.New("piraeusnodeset-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("linstornodeset-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource PiraeusNodeSet
-	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.PiraeusNodeSet{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource LinstorNodeSet
+	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.LinstorNodeSet{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	err = c.Watch(&source.Kind{Type: &apps.DaemonSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &piraeusv1alpha1.PiraeusNodeSet{},
+		OwnerType:    &piraeusv1alpha1.LinstorNodeSet{},
 	})
 	if err != nil {
 		return err
@@ -104,11 +104,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcilePiraeusNodeSet implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcilePiraeusNodeSet{}
+// blank assignment to verify that ReconcileLinstorNodeSet implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileLinstorNodeSet{}
 
-// ReconcilePiraeusNodeSet reconciles a PiraeusNodeSet object
-type ReconcilePiraeusNodeSet struct {
+// ReconcileLinstorNodeSet reconciles a LinstorNodeSet object
+type ReconcileLinstorNodeSet struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
@@ -126,17 +126,17 @@ func newCompoundErrorMsg(errs []error) []string {
 	return errStrs
 }
 
-// Reconcile reads that state of the cluster for a PiraeusNodeSet object and makes changes based on
-// the state read and what is in the PiraeusNodeSet.Spec
+// Reconcile reads that state of the cluster for a LinstorNodeSet object and makes changes based on
+// the state read and what is in the LinstorNodeSet.Spec
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 // This function is a mini-main function and has a lot of boilerplate code
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
-func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
-	// Fetch the PiraeusNodeSet instance
-	pns := &piraeusv1alpha1.PiraeusNodeSet{}
+	// Fetch the LinstorNodeSet instance
+	pns := &piraeusv1alpha1.LinstorNodeSet{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, pns)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -157,13 +157,13 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
 	})
-	log.Info("NS Reconcile: reconciling PiraeusNodeSet")
+	log.Info("NS Reconcile: reconciling LinstorNodeSet")
 
 	logrus.WithFields(logrus.Fields{
 		"name":      pns.Name,
 		"namespace": pns.Namespace,
 		"spec":      fmt.Sprintf("%+v", pns.Spec),
-	}).Debug("NS Reconcile: found PiraeusNodeSet")
+	}).Debug("NS Reconcile: found LinstorNodeSet")
 
 	if pns.Status.SatelliteStatuses == nil {
 		pns.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
@@ -205,7 +205,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	// Define a service for the controller.
 	ctrlService := newServiceForPNS(pns)
 
-	// Set PiraeusControllerSet instance as the owner and controller
+	// Set LinstorControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pns, ctrlService, r.scheme); err != nil {
 		logrus.Debug("NS SVC Controller did not set correctly")
 		return reconcile.Result{}, err
@@ -230,7 +230,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	// Define a new DaemonSet
 	ds := newDaemonSetforPNS(pns)
 
-	// Set PiraeusNodeSet pns as the owner and controller for the daemon set
+	// Set LinstorNodeSet pns as the owner and controller for the daemon set
 	if err := controllerutil.SetControllerReference(pns, ds, r.scheme); err != nil {
 		logrus.Debug("NS DS Controller did not set correctly")
 		return reconcile.Result{}, err
@@ -274,7 +274,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 	pns.Status.Errors = compoundErrorMsg
 
 	if err := r.client.Status().Update(context.TODO(), pns); err != nil {
-		logrus.Error(err, "NS Reconcile: Failed to update PiraeusNodeSet status")
+		logrus.Error(err, "NS Reconcile: Failed to update LinstorNodeSet status")
 		return reconcile.Result{}, err
 	}
 
@@ -293,7 +293,7 @@ func (r *ReconcilePiraeusNodeSet) Reconcile(request reconcile.Request) (reconcil
 // This function is a mini-main function and has a lot of boilerplate code that doesn't make a lot of
 // sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
-func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
+func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.LinstorNodeSet) []error {
 
 	pods := &corev1.PodList{}
 	labelSelector := labels.SelectorFromSet(pnsLabels(pns))
@@ -401,7 +401,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Piraeus
 	return compoundError
 }
 
-func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod) error {
+func (r *ReconcileLinstorNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod) error {
 
 	// Mark this true on successful exit from this function.
 	sat.RegisteredOnController = false
@@ -444,7 +444,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileSatNodeWithController(sat *piraeusv1a
 	return nil
 }
 
-func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alpha1.SatelliteStatus, pools []piraeusv1alpha1.StoragePool, pod corev1.Pod) error {
+func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alpha1.SatelliteStatus, pools []piraeusv1alpha1.StoragePool, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
@@ -478,7 +478,7 @@ func (r *ReconcilePiraeusNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 	return nil
 }
 
-func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
+func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 	labels := pnsLabels(pns)
 	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
 
@@ -611,7 +611,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
 	return daemonSetWithDRBDKernelModuleInjection(ds, pns)
 }
 
-func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
+func newServiceForPNS(pns *piraeusv1alpha1.LinstorNodeSet) *corev1.Service {
 	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
 
 	return &corev1.Service{
@@ -637,7 +637,7 @@ func newServiceForPNS(pns *piraeusv1alpha1.PiraeusNodeSet) *corev1.Service {
 	}
 }
 
-func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1alpha1.PiraeusNodeSet) *apps.DaemonSet {
+func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 	var kernelModHow string
 
 	mode := pns.Spec.DRBDKernelModuleInjectionMode
@@ -696,7 +696,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 	return ds
 }
 
-func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
+func pnsLabels(pns *piraeusv1alpha1.LinstorNodeSet) map[string]string {
 	return map[string]string{
 		"app":  pns.Name,
 		"role": "piraeus-node",
@@ -704,7 +704,7 @@ func pnsLabels(pns *piraeusv1alpha1.PiraeusNodeSet) map[string]string {
 }
 
 // aggregateStoragePools appends all disparate StoragePool types together, so they can be processed together.
-func (r *ReconcilePiraeusNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.PiraeusNodeSet) []piraeusv1alpha1.StoragePool {
+func (r *ReconcileLinstorNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.LinstorNodeSet) []piraeusv1alpha1.StoragePool {
 	var pools = make([]piraeusv1alpha1.StoragePool, 0)
 
 	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
@@ -725,7 +725,7 @@ func (r *ReconcilePiraeusNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.Pir
 	return pools
 }
 
-func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeSet, nodeName string) error {
+func (r *ReconcileLinstorNodeSet) finalizeNode(pns *piraeusv1alpha1.LinstorNodeSet, nodeName string) error {
 	log := logrus.WithFields(logrus.Fields{
 		"name":      pns.Name,
 		"namespace": pns.Namespace,
@@ -752,7 +752,7 @@ func (r *ReconcilePiraeusNodeSet) finalizeNode(pns *piraeusv1alpha1.PiraeusNodeS
 	return nil
 }
 
-func (r *ReconcilePiraeusNodeSet) addFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
+func (r *ReconcileLinstorNodeSet) addFinalizer(pns *piraeusv1alpha1.LinstorNodeSet) error {
 	mdutil.AddFinalizer(pns, linstorNodeFinalizer)
 
 	err := r.client.Update(context.TODO(), pns)
@@ -762,7 +762,7 @@ func (r *ReconcilePiraeusNodeSet) addFinalizer(pns *piraeusv1alpha1.PiraeusNodeS
 	return nil
 }
 
-func (r *ReconcilePiraeusNodeSet) deleteFinalizer(pns *piraeusv1alpha1.PiraeusNodeSet) error {
+func (r *ReconcileLinstorNodeSet) deleteFinalizer(pns *piraeusv1alpha1.LinstorNodeSet) error {
 	mdutil.DeleteFinalizer(pns, linstorNodeFinalizer)
 
 	err := r.client.Update(context.TODO(), pns)
@@ -772,16 +772,16 @@ func (r *ReconcilePiraeusNodeSet) deleteFinalizer(pns *piraeusv1alpha1.PiraeusNo
 	return nil
 }
 
-func (r *ReconcilePiraeusNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.PiraeusNodeSet) []error {
+func (r *ReconcileLinstorNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.LinstorNodeSet) []error {
 	log := logrus.WithFields(logrus.Fields{
 		"name":      pns.Name,
 		"namespace": pns.Namespace,
 		"spec":      fmt.Sprintf("%+v", pns.Spec),
 	})
-	log.Info("found PiraeusNodeSet marked for deletion, finalizing...")
+	log.Info("found LinstorNodeSet marked for deletion, finalizing...")
 
 	if mdutil.HasFinalizer(pns, linstorNodeFinalizer) {
-		// Run finalization logic for PiraeusNodeSet. If the
+		// Run finalization logic for LinstorNodeSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
 		var errs = make([]error, 0)

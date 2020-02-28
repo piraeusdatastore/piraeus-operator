@@ -24,20 +24,46 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
-type PiraeusControllerSetSpec struct {
+// LinstorNodeSetSpec defines the desired state of LinstorNodeSet
+type LinstorNodeSetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	EtcdURL           string `json:"etcdURL"`
-	DrbdRepoCred      string `json:"drbdRepoCred"`
-	ControllerImage   string `json:"controllerImage"`
-	ControllerVersion string `json:"controllerVersion"`
+	// StoragePools is a list of StoragePools for LinstorNodeSet to manage.
+	StoragePools *StoragePools `json:"storagePools"`
+
+	// DRBDKernelModuleInjectionMode selects the source for the DRBD kernel module
+	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
+
+	//DrbdRepoCred is the name of the k8s secret with the repo credential
+	DrbdRepoCred string `json:"drbdRepoCred"`
+
+	//SatelliteImage is the LINSTOR Satellite image location
+	SatelliteImage string `json:"satelliteImage"`
+
+	//SatelliteVersion is the LINSTOR Satellite image location
+	SatelliteVersion string `json:"satelliteVersion"`
+
+	//KernelModImage & Version  is the DRBD Kernel injection image location and version/tag
+	KernelModImage   string `json:"kernelModImage"`
+	KernelModVersion string `json:"kernelModVersion"`
 }
 
-// PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
-type PiraeusControllerSetStatus struct {
+// KernelModuleInjectionMode describes the source for injecting a kernel module
+type KernelModuleInjectionMode string
+
+const (
+	// ModuleInjectionNone means that no module will be injected
+	ModuleInjectionNone = "None"
+	// ModuleInjectionCompile means that the module will be compiled from sources available on the host
+	ModuleInjectionCompile = "Compile"
+	// ModuleInjectionShippedModules means that a module included in the injector image will be used
+	ModuleInjectionShippedModules = "ShippedModules"
+)
+
+// LinstorNodeSetStatus defines the observed state of LinstorNodeSet
+type LinstorNodeSetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
@@ -48,34 +74,32 @@ type PiraeusControllerSetStatus struct {
 
 	// Errors remaining that will trigger reconciliations.
 	Errors []string `json:"errors"`
-	// ControllerStatus information.
-	ControllerStatus *NodeStatus `json:"ControllerStatus"`
 	// SatelliteStatuses by hostname.
 	SatelliteStatuses map[string]*SatelliteStatus `json:"SatelliteStatuses"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PiraeusControllerSet is the Schema for the piraeuscontrollersets API
+// LinstorNodeSet is the Schema for the linstornodesets API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=piraeuscontrollersets,scope=Namespaced
-type PiraeusControllerSet struct {
+// +kubebuilder:resource:path=linstornodesets,scope=Namespaced
+type LinstorNodeSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PiraeusControllerSetSpec   `json:"spec,omitempty"`
-	Status PiraeusControllerSetStatus `json:"status,omitempty"`
+	Spec   LinstorNodeSetSpec   `json:"spec,omitempty"`
+	Status LinstorNodeSetStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PiraeusControllerSetList contains a list of PiraeusControllerSet
-type PiraeusControllerSetList struct {
+// LinstorNodeSetList contains a list of LinstorNodeSet
+type LinstorNodeSetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []PiraeusControllerSet `json:"items"`
+	Items           []LinstorNodeSet `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&PiraeusControllerSet{}, &PiraeusControllerSetList{})
+	SchemeBuilder.Register(&LinstorNodeSet{}, &LinstorNodeSetList{})
 }

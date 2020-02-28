@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package piraeuscontrollerset
+package linstorcontrollerset
 
 import (
 	"context"
@@ -52,7 +52,7 @@ import (
 
 const linstorControllerFinalizer = "finalizer.linstor-controller.linbit.com"
 
-// var log = logf.Log.WithName("controller_piraeuscontrollerset")
+// var log = logf.Log.WithName("controller_linstorcontrollerset")
 
 func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{})
@@ -61,10 +61,10 @@ func init() {
 }
 
 // var log = logrus.WithFields(logrus.Fields{
-// 	"controller": "PiraeusControllerSet",
+// 	"controller": "LinstorControllerSet",
 // })
 
-// Add creates a new PiraeusControllerSet Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new LinstorControllerSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -72,26 +72,26 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcilePiraeusControllerSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileLinstorControllerSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("piraeuscontrollerset-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("linstorcontrollerset-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource PiraeusControllerSet
-	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.PiraeusControllerSet{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource LinstorControllerSet
+	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.LinstorControllerSet{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &piraeusv1alpha1.PiraeusControllerSet{},
+		OwnerType:    &piraeusv1alpha1.LinstorControllerSet{},
 	})
 	if err != nil {
 		return err
@@ -100,11 +100,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcilePiraeusControllerSet implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcilePiraeusControllerSet{}
+// blank assignment to verify that ReconcileLinstorControllerSet implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileLinstorControllerSet{}
 
-// ReconcilePiraeusControllerSet reconciles a PiraeusControllerSet object
-type ReconcilePiraeusControllerSet struct {
+// ReconcileLinstorControllerSet reconciles a LinstorControllerSet object
+type ReconcileLinstorControllerSet struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
@@ -124,8 +124,8 @@ func newCompoundErrorMsg(errs []error) []string {
 	return errStrs
 }
 
-// Reconcile reads that state of the cluster for a PiraeusControllerSet object and makes changes based
-// on the state read and what is in the PiraeusControllerSet.Spec
+// Reconcile reads that state of the cluster for a LinstorControllerSet object and makes changes based
+// on the state read and what is in the LinstorControllerSet.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
@@ -134,7 +134,7 @@ func newCompoundErrorMsg(errs []error) []string {
 // This function is a mini-main function and has a lot of boilerplate code that doesn't make a lot of
 // sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
-func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
 	reqLogger := logrus.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
@@ -143,8 +143,8 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 
 	reqLogger.Info("CS Reconcile: Entering")
 
-	// Fetch the PiraeusControllerSet instance
-	pcs := &piraeusv1alpha1.PiraeusControllerSet{}
+	// Fetch the LinstorControllerSet instance
+	pcs := &piraeusv1alpha1.LinstorControllerSet{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, pcs)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -167,13 +167,13 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 		"name":              pcs.Name,
 		"namespace":         pcs.Namespace,
 	})
-	log.Info("reconciling PiraeusControllerSet")
+	log.Info("reconciling LinstorControllerSet")
 
 	logrus.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
-	}).Debug("found PiraeusControllerSet")
+	}).Debug("found LinstorControllerSet")
 
 	if pcs.Status.SatelliteStatuses == nil {
 		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
@@ -198,7 +198,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 
 	// Define a service for the controller.
 	ctrlService := newServiceForPCS(pcs)
-	// Set PiraeusControllerSet instance as the owner and controller
+	// Set LinstorControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pcs, ctrlService, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -225,7 +225,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 
 	// Define a configmap for the controller.
 	configMap := newConfigMapForPCS(pcs)
-	// Set PiraeusControllerSet instance as the owner and controller
+	// Set LinstorControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pcs, configMap, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -253,7 +253,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	// Define a new StatefulSet object
 	ctrlSet := newStatefulSetForPCS(pcs)
 
-	// Set PiraeusControllerSet instance as the owner and controller
+	// Set LinstorControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pcs, ctrlSet, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -286,7 +286,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	pcs.Status.Errors = compoundErrorMsg
 
 	if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
-		logrus.Error(err, "CS Reconcile: Failed to update PiraeusControllerSet status")
+		logrus.Error(err, "CS Reconcile: Failed to update LinstorControllerSet status")
 		return reconcile.Result{}, err
 	}
 
@@ -302,7 +302,7 @@ func (r *ReconcilePiraeusControllerSet) Reconcile(request reconcile.Request) (re
 	return reconcile.Result{RequeueAfter: time.Minute * 1}, compoundError
 }
 
-func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha1.PiraeusControllerSet) []error {
+func (r *ReconcileLinstorControllerSet) reconcileControllers(pcs *piraeusv1alpha1.LinstorControllerSet) []error {
 	log := logrus.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
@@ -327,7 +327,7 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllers(pcs *piraeusv1alpha
 	return []error{r.reconcileControllerNodeWithControllers(pcs, pods.Items[0])}
 }
 
-func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(pcs *piraeusv1alpha1.PiraeusControllerSet, pod corev1.Pod) error {
+func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(pcs *piraeusv1alpha1.LinstorControllerSet, pod corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
@@ -401,16 +401,16 @@ func (r *ReconcilePiraeusControllerSet) reconcileControllerNodeWithControllers(p
 	return nil
 }
 
-func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+func (r *ReconcileLinstorControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.LinstorControllerSet) error {
 	log := logrus.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
-	log.Info("CS finalizeControllerSet: found PiraeusControllerSet marked for deletion, finalizing...")
+	log.Info("CS finalizeControllerSet: found LinstorControllerSet marked for deletion, finalizing...")
 
 	if mdutil.HasFinalizer(pcs, linstorControllerFinalizer) {
-		// Run finalization logic for PiraeusControllerSet. If the
+		// Run finalization logic for LinstorControllerSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
 
@@ -448,7 +448,7 @@ func (r *ReconcilePiraeusControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 	return nil
 }
 
-func (r *ReconcilePiraeusControllerSet) addFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+func (r *ReconcileLinstorControllerSet) addFinalizer(pcs *piraeusv1alpha1.LinstorControllerSet) error {
 	mdutil.AddFinalizer(pcs, linstorControllerFinalizer)
 
 	err := r.client.Update(context.TODO(), pcs)
@@ -458,7 +458,7 @@ func (r *ReconcilePiraeusControllerSet) addFinalizer(pcs *piraeusv1alpha1.Piraeu
 	return nil
 }
 
-func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.PiraeusControllerSet) error {
+func (r *ReconcileLinstorControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.LinstorControllerSet) error {
 	mdutil.DeleteFinalizer(pcs, linstorControllerFinalizer)
 
 	err := r.client.Update(context.TODO(), pcs)
@@ -468,7 +468,7 @@ func (r *ReconcilePiraeusControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.Pir
 	return nil
 }
 
-func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.StatefulSet {
+func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.StatefulSet {
 	var (
 		replicas = int32(1)
 	)
@@ -571,7 +571,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *appsv1.Sta
 	}
 }
 
-func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service {
+func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name,
@@ -593,7 +593,7 @@ func newServiceForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Service
 	}
 }
 
-func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.ConfigMap {
+func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.ConfigMap {
 
 	if pcs.Spec.EtcdURL == "" {
 		if pcs.Name[len(pcs.Name)-3:len(pcs.Name)] == "-cs" {
@@ -619,7 +619,7 @@ func newConfigMapForPCS(pcs *piraeusv1alpha1.PiraeusControllerSet) *corev1.Confi
 	return cm
 }
 
-func pcsLabels(pcs *piraeusv1alpha1.PiraeusControllerSet) map[string]string {
+func pcsLabels(pcs *piraeusv1alpha1.LinstorControllerSet) map[string]string {
 	return map[string]string{
 		"app":  pcs.Name,
 		"role": "piraeus-controller",

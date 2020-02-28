@@ -1,20 +1,20 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: piraeuscontrollersets.piraeus.linbit.com
+  name: linstorcontrollersets.piraeus.linbit.com
 spec:
   group: piraeus.linbit.com
   names:
-    kind: PiraeusControllerSet
-    listKind: PiraeusControllerSetList
-    plural: piraeuscontrollersets
-    singular: piraeuscontrollerset
+    kind: LinstorControllerSet
+    listKind: LinstorControllerSetList
+    plural: linstorcontrollersets
+    singular: linstorcontrollerset
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: PiraeusControllerSet is the Schema for the piraeuscontrollersets
+      description: LinstorControllerSet is the Schema for the linstorcontrollersets
         API
       properties:
         apiVersion:
@@ -30,7 +30,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
+          description: LinstorControllerSetSpec defines the desired state of LinstorControllerSet
           properties:
             etcdURL:
               description: EtcdURL is the URL of the ETCD endpoint for LINSTOR Controller
@@ -54,7 +54,7 @@ spec:
           - controllerVersion
           type: object
         status:
-          description: PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
+          description: LinstorControllerSetStatus defines the observed state of LinstorControllerSet
           properties:
             ControllerStatus:
               description: ControllerStatus information.

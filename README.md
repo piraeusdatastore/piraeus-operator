@@ -67,17 +67,17 @@ helm delete piraeus-op
 ```
 
 will terminate the Piraeus release.  However due to the Helm's current policy,
-the newly created Custom Resource Definitions named `piraeuscontrollerset` and
-`piraeusnodeset` will __not__ be deleted by the command.  This will also cause
+the newly created Custom Resource Definitions named `linstorcontrollerset` and
+`linstornodeset` will __not__ be deleted by the command.  This will also cause
 the instances of those CRD's named `piraeus-op-ns` and `piraeus-op-cs`
 to remain running.
 
 To terminate those instances after the helm delete command, run
 
 ```
-kubectl patch piraeuscontrollerset piraeus-op-cs -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl patch linstorcontrollerset piraeus-op-cs -p '{"metadata":{"finalizers":[]}}' --type=merge
 
-kubectl patch piraeusnodeset piraeus-op-ns -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl patch linstornodeset piraeus-op-ns -p '{"metadata":{"finalizers":[]}}' --type=merge
 ```
 
 After that, all the instances created by the Helm release will be terminated.

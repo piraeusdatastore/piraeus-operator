@@ -57,7 +57,7 @@ rules:
   - piraeus.linbit.com
   resources:
   - '*'
-  - piraeuscontrollersets
+  - linstorcontrollersets
   verbs:
   - '*'
 ---
@@ -81,20 +81,20 @@ metadata:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: piraeuscontrollersets.piraeus.linbit.com
+  name: linstorcontrollersets.piraeus.linbit.com
 spec:
   group: piraeus.linbit.com
   names:
-    kind: PiraeusControllerSet
-    listKind: PiraeusControllerSetList
-    plural: piraeuscontrollersets
-    singular: piraeuscontrollerset
+    kind: LinstorControllerSet
+    listKind: LinstorControllerSetList
+    plural: linstorcontrollersets
+    singular: linstorcontrollerset
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: PiraeusControllerSet is the Schema for the piraeuscontrollersets
+      description: LinstorControllerSet is the Schema for the linstorcontrollersets
         API
       properties:
         apiVersion:
@@ -110,7 +110,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: PiraeusControllerSetSpec defines the desired state of PiraeusControllerSet
+          description: LinstorControllerSetSpec defines the desired state of LinstorControllerSet
           properties:
             etcdURL:
               description: EtcdURL is the URL of the ETCD endpoint for LINSTOR Controller
@@ -134,7 +134,7 @@ spec:
           - controllerVersion
           type: object
         status:
-          description: PiraeusControllerSetStatus defines the observed state of PiraeusControllerSet
+          description: LinstorControllerSetStatus defines the observed state of LinstorControllerSet
           properties:
             ControllerStatus:
               description: ControllerStatus information.
@@ -171,20 +171,20 @@ spec:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: piraeusnodesets.piraeus.linbit.com
+  name: linstornodesets.piraeus.linbit.com
 spec:
   group: piraeus.linbit.com
   names:
-    kind: PiraeusNodeSet
-    listKind: PiraeusNodeSetList
-    plural: piraeusnodesets
-    singular: piraeusnodeset
+    kind: LinstorNodeSet
+    listKind: LinstorNodeSetList
+    plural: linstornodesets
+    singular: linstornodeset
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: PiraeusNodeSet is the Schema for the piraeusnodesets API
+      description: LinstorNodeSet is the Schema for the linstornodesets API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -199,7 +199,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: PiraeusNodeSetSpec defines the desired state of PiraeusNodeSet
+          description: LinstorNodeSetSpec defines the desired state of LinstorNodeSet
           properties:
             drbdKernelModuleInjectionMode:
               description: drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
@@ -212,14 +212,14 @@ spec:
               # A module included in the injector image will be used
               - ShippedModules
             storagePools:
-              description: StoragePools is a list of StoragePools for PiraeusNodeSet
+              description: StoragePools is a list of StoragePools for LinstorNodeSet
                 to manage.
               properties:
                 lvmPools:
-                  description: LVMPools for PiraeusNodeSet to manage.
+                  description: LVMPools for LinstorNodeSet to manage.
                   items:
                     description: StoragePoolLVM represents LVM storage pool to be
-                      managed by a PiraeusNodeSet
+                      managed by a LinstorNodeSet
                     properties:
                       name:
                         description: Name of the storage pool.
@@ -233,10 +233,10 @@ spec:
                     type: object
                   type: array
                 lvmThinPools:
-                  description: LVMThinPools for PiraeusNodeSet to manage.
+                  description: LVMThinPools for LinstorNodeSet to manage.
                   items:
                     description: StoragePoolLVMThin represents LVM Thin storage pool
-                      to be managed by a PiraeusNodeSet
+                      to be managed by a LinstorNodeSet
                     properties:
                       thinVolume:
                         description: Name of underlying lvm thin volume
@@ -279,7 +279,7 @@ spec:
           - kernelModVersion
           type: object
         status:
-          description: PiraeusNodeSetStatus defines the observed state of PiraeusNodeSet
+          description: LinstorNodeSetStatus defines the observed state of LinstorNodeSet
           properties:
             SatelliteStatuses:
               description: SatelliteStatuses by hostname.

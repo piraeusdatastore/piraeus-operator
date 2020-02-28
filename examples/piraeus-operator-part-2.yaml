@@ -1,6 +1,6 @@
 ---
 apiVersion: piraeus.linbit.com/v1alpha1
-kind: PiraeusControllerSet
+kind: LinstorControllerSet
 metadata:
   name: piraeus-cs
 spec:
@@ -14,7 +14,7 @@ spec:
   controllerVersion: "v1.4.2"
 ---
 apiVersion: piraeus.linbit.com/v1alpha1
-kind: PiraeusNodeSet
+kind: LinstorNodeSet
 metadata:
   name: piraeus-ns
 spec:

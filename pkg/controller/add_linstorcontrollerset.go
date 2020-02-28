@@ -18,10 +18,10 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/piraeusnodeset"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorcontrollerset"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, piraeusnodeset.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, linstorcontrollerset.Add)
 }
