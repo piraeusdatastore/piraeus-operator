@@ -112,6 +112,9 @@ spec:
         spec:
           description: LinstorControllerSetSpec defines the desired state of LinstorControllerSet
           properties:
+            priorityClassName:
+              description: priorityClassName is the name of the PriorityClass for the controller set
+              type: string
             etcdURL:
               description: EtcdURL is the URL of the ETCD endpoint for LINSTOR Controller
               type: string
@@ -128,6 +131,7 @@ spec:
                 controller/server container
               type: string
           required:
+          - priorityClassName
           - etcdURL
           - drbdRepoCred
           - controllerImage
@@ -201,6 +205,9 @@ spec:
         spec:
           description: LinstorNodeSetSpec defines the desired state of LinstorNodeSet
           properties:
+            priorityClassName:
+              description: priorityClassName is the name of the PriorityClass for the node set
+              type: string
             drbdKernelModuleInjectionMode:
               description: drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
               type: string
@@ -270,6 +277,7 @@ spec:
                 DRBD kernel module injector container
               type: string
           required:
+          - priorityClassName
           - drbdKernelModuleInjectionMode
           - storagePools
           - drbdRepoCred

@@ -65,12 +65,15 @@ const (
 	PiraeusNode = selectorPrefix + "piraeus-node"
 )
 
-// PiraeusPriorityClassName is the name of the PriorityClass set up in the
-// example yaml used by important piraeus components.
-const PiraeusCSPriorityClassName = "piraeus-cs-priority-class"
-const PiraeusNSPriorityClassName = "piraeus-ns-priority-class"
-
+// Fallback config values
 const (
+	// PiraeusCSPriorityClassName is the name of the PriorityClass for the
+	// controller set.
+	PiraeusCSPriorityClassName = "piraeus-cs-priority-class"
+	// PiraeusNSPriorityClassName is the name of the PriorityClass for the
+	// node set.
+	PiraeusNSPriorityClassName = "piraeus-ns-priority-class"
+
 	// PiraeusControllerImage is the repo/tag for linstor-server
 	PiraeusControllerImage = "quay.io/piraeusdatastore/piraeus-server"
 	// PiraeusControllerVersion must match PiraeusSatelliteVersion since the

@@ -1,15 +1,15 @@
 apiVersion: scheduling.k8s.io/v1 # v1beta1 for 1.13
 kind: PriorityClass
 metadata:
-  name: "piraeus-cs-priority-class"
+  name: {{ template "operator.fullname" . }}-cs-priority-class
 value: 1000010
 globalDefault: false
-description: "Priority class for piraeus controller"
+description: "Priority class for the LINSTOR controller"
 ---
 apiVersion: scheduling.k8s.io/v1 # v1beta1 for 1.13
 kind: PriorityClass
 metadata:
-  name: "piraeus-ns-priority-class"
+  name: {{ template "operator.fullname" . }}-ns-priority-class
 value: 1000000
 globalDefault: false
-description: "Priority class for piraeus satellite(s)"
+description: "Priority class for LINSTOR satellite(s)"

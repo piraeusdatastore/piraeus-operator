@@ -4,6 +4,8 @@ kind: LinstorControllerSet
 metadata:
   name: piraeus-cs
 spec:
+  priorityClassName: piraeus-cs-priority-class
+
   # etcdURL url for controller persistence.
   etcdURL: "etcd://linstor-etcd.default.svc.cluster.local:2379"
   # K8s secret for repo credential
@@ -18,6 +20,8 @@ kind: LinstorNodeSet
 metadata:
   name: piraeus-ns
 spec:
+  priorityClassName: piraeus-ns-priority-class
+
   drbdKernelModuleInjectionMode: Compile
 
   # K8s secret for repo credential

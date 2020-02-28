@@ -31,6 +31,9 @@ spec:
         spec:
           description: LinstorNodeSetSpec defines the desired state of LinstorNodeSet
           properties:
+            priorityClassName:
+              description: priorityClassName is the name of the PriorityClass for the node set
+              type: string
             drbdKernelModuleInjectionMode:
               description: drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
               type: string
@@ -100,6 +103,7 @@ spec:
                 DRBD kernel module injector container
               type: string
           required:
+          - priorityClassName
           - drbdKernelModuleInjectionMode
           - storagePools
           - drbdRepoCred

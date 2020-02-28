@@ -32,6 +32,9 @@ spec:
         spec:
           description: LinstorControllerSetSpec defines the desired state of LinstorControllerSet
           properties:
+            priorityClassName:
+              description: priorityClassName is the name of the PriorityClass for the controller set
+              type: string
             etcdURL:
               description: EtcdURL is the URL of the ETCD endpoint for LINSTOR Controller
               type: string
@@ -48,6 +51,7 @@ spec:
                 controller/server container
               type: string
           required:
+          - priorityClassName
           - etcdURL
           - drbdRepoCred
           - controllerImage

@@ -482,6 +482,10 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 	labels := pnsLabels(pns)
 	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
 
+	if pns.Spec.PriorityClassName == "" {
+		pns.Spec.PriorityClassName = kubeSpec.PiraeusNSPriorityClassName
+	}
+
 	if pns.Spec.SatelliteImage == "" {
 		pns.Spec.SatelliteImage = kubeSpec.PiraeusSatelliteImage
 	}
@@ -532,7 +536,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 					},
 					HostNetwork:       true, // INFO: Per Roland, set to true
 					DNSPolicy:         corev1.DNSClusterFirstWithHostNet,
-					PriorityClassName: kubeSpec.PiraeusNSPriorityClassName,
+					PriorityClassName: pns.Spec.PriorityClassName,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",

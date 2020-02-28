@@ -30,6 +30,9 @@ type LinstorControllerSetSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
+	// PriorityClassName is the name of the PriorityClass for the controller set
+	PriorityClassName string `json:"priorityClassName"`
+
 	EtcdURL           string `json:"etcdURL"`
 	DrbdRepoCred      string `json:"drbdRepoCred"`
 	ControllerImage   string `json:"controllerImage"`

@@ -3,6 +3,7 @@ kind: LinstorNodeSet
 metadata:
   name: {{ template "operator.fullname" . }}-ns
 spec:
+  priorityClassName: {{ template "operator.fullname" . }}-cs-priority-class
   drbdKernelModuleInjectionMode: {{ .Values.operator.nodeSet.spec.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   satelliteImage: {{ .Values.operator.nodeSet.spec.satelliteImage }}

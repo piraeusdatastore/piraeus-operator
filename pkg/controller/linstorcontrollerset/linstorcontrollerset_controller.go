@@ -475,6 +475,10 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 
 	labels := pcsLabels(pcs)
 
+	if pcs.Spec.PriorityClassName == "" {
+		pcs.Spec.PriorityClassName = kubeSpec.PiraeusCSPriorityClassName
+	}
+
 	if pcs.Spec.ControllerImage == "" {
 		pcs.Spec.ControllerImage = kubeSpec.PiraeusControllerImage
 	}
@@ -499,7 +503,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					PriorityClassName: kubeSpec.PiraeusCSPriorityClassName,
+					PriorityClassName: pcs.Spec.PriorityClassName,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",

@@ -3,6 +3,7 @@ kind: LinstorControllerSet
 metadata:
   name: {{ template "operator.fullname" . }}-cs
 spec:
+  priorityClassName: {{ template "operator.fullname" . }}-cs-priority-class
   etcdURL: etcd://{{ .Release.Name }}-etcd:2379 
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   controllerImage: {{ .Values.operator.controllerSet.spec.controllerImage }}
