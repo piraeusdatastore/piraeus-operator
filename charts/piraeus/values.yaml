@@ -1,6 +1,7 @@
 etcd:
   persistence:
     enabled: true
+    size: 1Gi
   volumePermissions:
     enabled: true
   auth:
