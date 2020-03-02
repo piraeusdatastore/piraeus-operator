@@ -45,6 +45,19 @@ The operator can be deployed with Helm v3 chart in /charts.
     drbdRepoCred: drbdiocred  # <- Specify the kubernetes secret name
     ```
 
+* Configure storage for LINSTOR etcd instance.
+  There are various options for configuring the etcd instance for LINSTOR:
+  * Use an existing storage provisioner with a default `StorageClass`.
+  * [Use `hostPath` volumes](#linstor-etcd-hostpath-persistence).
+  * Disable persistence for basic testing.
+    This can be done by setting the following in charts/piraeus/values.yaml:
+
+      ```
+      etcd:
+        persistence:
+          enabled: false
+      ```
+
 - Configure the LVM VG and LV names in charts/piraeus/values.yaml.
 
     ```
@@ -60,41 +73,35 @@ The operator can be deployed with Helm v3 chart in /charts.
     helm install piraeus-op ./charts/piraeus
     ```
 
-### LINSTOR etcd persistence
+### LINSTOR etcd `hostPath` persistence
 
-The operator can be deployed with persistence for it's etcd database.
+You can use the included Helm templates to create `hostPath` persistent volumes.
+Create as many PVs as needed to satisfy your configured etcd `replicaCount`.
 
-- If you intend to persist LINSTOR's etcd cluster (recommended), you'll either
-  need to have an existing storage provisioner setup, with a storageclass
-  set as the default storageclass, or you can use the included helm templates
-  to create hostpath persistent volumes. Create as many PVs as needed to
-  satisfy your configured etcd replicaCount.
+Create the `hostPath` persistent volumes, substituting cluster node names
+accordingly in the `node=` option:
 
-    Creating the hostpath persistent volumes, substituting cluster node names
-    accordingly in the `--node=` option:
+```
+helm template linstor-etcd-pv-0 charts/pv-hostpath \
+     --set node=NODE-0 > linstor-etcd-pv-0.yaml
+helm template linstor-etcd-pv-1 charts/pv-hostpath \
+     --set node=NODE-1 > linstor-etcd-pv-1.yaml
+helm template linstor-etcd-pv-2 charts/pv-hostpath \
+     --set node=NODE-2 > linstor-etcd-pv-2.yaml
+kubectl create -f linstor-etcd-pv-0.yaml
+kubectl create -f linstor-etcd-pv-1.yaml
+kubectl create -f linstor-etcd-pv-2.yaml
+```
 
-    ```
-    helm template linstor-etcd-pv-0 charts/pv-hostpath \
-         --set node=NODE-0 > linstor-etcd-pv-0.yaml
-    helm template linstor-etcd-pv-1 charts/pv-hostpath \
-         --set node=NODE-1 > linstor-etcd-pv-1.yaml
-    helm template linstor-etcd-pv-2 charts/pv-hostpath \
-         --set node=NODE-2 > linstor-etcd-pv-2.yaml
-    kubectl create -f linstor-etcd-pv-0.yaml
-    kubectl create -f linstor-etcd-pv-1.yaml
-    kubectl create -f linstor-etcd-pv-2.yaml
-    ```
+Persistence for etcd is enabled by default.
+The following key in charts/piraeus/values.yaml is also enabled so that the
+`hostPath` volumes have appropriate permissions set:
 
-    You can enable/disable etcd persistence by changing the following values in
-    charts/piraeus/values.yaml:
-
-    ```
-    etcd:
-      persistence:
-        enabled: true
-      volumePermissions:
-        enabled: true
-    ```
+```
+etcd:
+  volumePermissions:
+    enabled: true
+```
 
 ### Terminating Helm release/deployment
 
