@@ -70,6 +70,7 @@ The operator can be deployed with Helm v3 chart in /charts.
   everything.
 
     ```
+    helm dependency update ./charts/piraeus
     helm install piraeus-op ./charts/piraeus
     ```
 
