@@ -23,12 +23,13 @@ the [documentation for the sdk](https://github.com/operator-framework/operator-s
 
 ## Deployment with Helm v3 Chart
 
-The operator can be deployed with Helm v3 chart in /charts.
+The operator can be deployed with Helm v3 chart in /charts as follows:
 
-- Label the worker nodes with `linstor.linbit.com/piraeus-node=true` such as;
+- Label the worker nodes with `linstor.linbit.com/piraeus-node=true` by
+  running:
 
     ```
-    kubectl label no my-worker-node linstor.linbit.com/piraeus-node=true
+    kubectl label node <NODE_NAME> linstor.linbit.com/piraeus-node=true
     ```
 
 - If you are deploying with images from private repositories, create
@@ -36,37 +37,29 @@ The operator can be deployed with Helm v3 chart in /charts.
   a secret named `drbdiocred`:
 
     ```
-    kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --docker-username=<YOUR LOGIN> --docker-email=<YOUR EMAIL> --docker-password=<YOUR PASSWORD>
+    kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --docker-username=<YOUR_LOGIN> --docker-email=<YOUR_EMAIL> --docker-password=<YOUR_PASSWORD>
     ```
 
-    Then this secret name must be specified in the charts/piraeus/values.yaml.
+    The name of this secret must match the one specified in the Helm values, by
+    default `drbdiocred`.
 
-    ```
-    drbdRepoCred: drbdiocred  # <- Specify the kubernetes secret name
-    ```
-
-* Configure storage for LINSTOR etcd instance.
+* Configure storage for the LINSTOR etcd instance.
   There are various options for configuring the etcd instance for LINSTOR:
   * Use an existing storage provisioner with a default `StorageClass`.
   * [Use `hostPath` volumes](#linstor-etcd-hostpath-persistence).
-  * Disable persistence for basic testing.
-    This can be done by setting the following in charts/piraeus/values.yaml:
+  * Disable persistence for basic testing. This can be done by adding `--set
+    etcd.persistence.enabled=false` to the `helm install` command below.
 
-      ```
-      etcd:
-        persistence:
-          enabled: false
-      ```
-
-- Configure the LVM VG and LV names in charts/piraeus/values.yaml.
+- Configure the LVM VG and LV names by setting the following values in a local
+  values file or by using `--set` with the `helm install` command below.
 
     ```
-    lvmPoolVgName: "drbdpool"      # <- Local VG name for Thick LVM Pool
-    lvmThinPoolVgName: "drbdpool"  # <- Local VG name for Thin LVM Pool
-    lvmThinPoolLvName: "thinpool"  # <- Local LV name for Thin LVM Pool
+    operator.nodeSet.spec.lvmPoolVgName=drbdpool # <- Volume Group name of the thick storage pool
+    operator.nodeSet.spec.lvmThinPoolVgName=drbdpool # <- Volume Group name of the thin storage pool
+    operator.nodeSet.spec.lvmThinPoolLvName=thinpool # <- Logical Volume name of the thin pool
     ```
 
-- Finally create a Helm release named `piraeus-op` that will set up
+- Finally create a Helm deployment named `piraeus-op` that will set up
   everything.
 
     ```
@@ -77,46 +70,41 @@ The operator can be deployed with Helm v3 chart in /charts.
 ### LINSTOR etcd `hostPath` persistence
 
 You can use the included Helm templates to create `hostPath` persistent volumes.
-Create as many PVs as needed to satisfy your configured etcd `replicaCount`.
+Create as many PVs as needed to satisfy your configured etcd `replicaCount`
+(default 3).
 
 Create the `hostPath` persistent volumes, substituting cluster node names
 accordingly in the `nodes=` option:
 
 ```
-helm install linstor-etcd charts/pv-hostpath --set "nodes={nodename0,nodename1,nodename2}"
+helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE0>,<NODE1>,<NODE2>}"
 ```
 
-Persistence for etcd is enabled by default.
-The following key in charts/piraeus/values.yaml is also enabled so that the
-`hostPath` volumes have appropriate permissions set:
+Persistence for etcd is enabled by default. The
+`etcd.volumePermissions.enabled` key in the Helm values is also set so that the
+`hostPath` volumes have appropriate permissions.
 
-```
-etcd:
-  volumePermissions:
-    enabled: true
-```
+### Terminating Helm deployment
 
-### Terminating Helm release/deployment
+The Piraeus deployment can be terminated with:
 
 ```
 helm delete piraeus-op
 ```
 
-will terminate the Piraeus release.  However due to the Helm's current policy,
-the newly created Custom Resource Definitions named `linstorcontrollerset` and
-`linstornodeset` will __not__ be deleted by the command.  This will also cause
-the instances of those CRD's named `piraeus-op-ns` and `piraeus-op-cs`
-to remain running.
+However due to the Helm's current policy, the Custom Resource Definitions named
+`linstorcontrollerset` and `linstornodeset` will __not__ be deleted by the
+command.  This will also cause the instances of those CRD's named
+`piraeus-op-ns` and `piraeus-op-cs` to remain running.
 
-To terminate those instances after the helm delete command, run
+To terminate those instances after the `helm delete` command, run
 
 ```
 kubectl patch linstorcontrollerset piraeus-op-cs -p '{"metadata":{"finalizers":[]}}' --type=merge
-
 kubectl patch linstornodeset piraeus-op-ns -p '{"metadata":{"finalizers":[]}}' --type=merge
 ```
 
-After that, all the instances created by the Helm release will be terminated.
+After that, all the instances created by the Helm deployment will be terminated.
 
 More information regarding Helm's current position on CRD's can be found
 [here](https://helm.sh/docs/topics/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you).
