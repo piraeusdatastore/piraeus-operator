@@ -14,7 +14,7 @@ csi:
   image:
     repo: "quay.io/piraeusdatastore"
     name: "piraeus-csi"
-    version: "v0.7.3"
+    version: "v0.7.4"
 drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 operator:
   image:
@@ -24,12 +24,12 @@ operator:
   controllerSet:
     spec:
       controllerImage: "quay.io/piraeusdatastore/piraeus-server"
-      controllerVersion: "v1.4.2"
+      controllerVersion: "v1.4.3"
   nodeSet:
     spec:
       drbdKernelModuleInjectionMode: Compile
       satelliteImage: "quay.io/piraeusdatastore/piraeus-server"
-      satelliteVersion: "v1.4.2"
+      satelliteVersion: "v1.4.3"
       kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic"
       kernelModVersion: "v9.0.21"
       lvmPoolName: "lvm-thick"
@@ -37,4 +37,3 @@ operator:
       lvmThinPoolName: "lvm-thin"
       lvmThinPoolVgName: "drbdpool"  # <- Volume Group name of the thin storage pool
       lvmThinPoolLvName: "thinpool"  # <- Logical Volume name of the thin pool
-    
