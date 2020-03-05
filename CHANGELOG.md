@@ -13,6 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [v0.1.4] - 2020-03-05
+
+### Added
+
+* Helm: Add support for `hostPath` `PersistentVolume` persistence of etcd
+
+### Remove
+
+* Helm: Remove vendored etcd chart from repository
+
+### Changed
+
+* Rename CRDs from Piraeus* to Linstor*
+* Make priority classes configurable
+* Fix LINSTOR Controller/Satellite arguments
+* Helm: Make etcd persistent by default
+* Helm: Fix deployment of permissions objects into a non-default namespace
+* Helm: Set default etcd size to 1Gi
+* Helm: Update dependent image versions
+* Docker: Change base image to Debian Buster
+
 ## [v0.1.3] - 2020-02-24
 
 ### Added
