@@ -1,16 +1,17 @@
+{{ range (required "A valid .Values.nodes entry required!" .Values.nodes) }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Release.Name }}
-  namespace: {{ .Release.Namespace | default "default" }}
+  name: {{ $.Release.Name }}-{{ . }}
+  namespace: {{ $.Release.Namespace | default "default" }}
 spec:
   capacity:
-    storage: {{ required "A valid .Values.size entry required!" .Values.size }}
+    storage: {{ required "A valid .Values.size entry required!" $.Values.size }}
   volumeMode: Filesystem
   accessModes:
   - ReadWriteOnce
   hostPath:
-    path: {{ required "A valid .Values.size entry required!" .Values.path }}
+    path: {{ required "A valid .Values.size entry required!" $.Values.path }}
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -18,4 +19,6 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - {{ required "A valid .Values.node entry required!" .Values.node }}
+          - {{ . }}
+---
+{{ end }}

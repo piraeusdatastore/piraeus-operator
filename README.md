@@ -80,18 +80,10 @@ You can use the included Helm templates to create `hostPath` persistent volumes.
 Create as many PVs as needed to satisfy your configured etcd `replicaCount`.
 
 Create the `hostPath` persistent volumes, substituting cluster node names
-accordingly in the `node=` option:
+accordingly in the `nodes=` option:
 
 ```
-helm template linstor-etcd-pv-0 charts/pv-hostpath \
-     --set node=NODE-0 > linstor-etcd-pv-0.yaml
-helm template linstor-etcd-pv-1 charts/pv-hostpath \
-     --set node=NODE-1 > linstor-etcd-pv-1.yaml
-helm template linstor-etcd-pv-2 charts/pv-hostpath \
-     --set node=NODE-2 > linstor-etcd-pv-2.yaml
-kubectl create -f linstor-etcd-pv-0.yaml
-kubectl create -f linstor-etcd-pv-1.yaml
-kubectl create -f linstor-etcd-pv-2.yaml
+helm install linstor-etcd charts/pv-hostpath --set "nodes={nodename0,nodename1,nodename2}"
 ```
 
 Persistence for etcd is enabled by default.
