@@ -25,6 +25,12 @@ the [documentation for the sdk](https://github.com/operator-framework/operator-s
 
 The operator can be deployed with Helm v3 chart in /charts as follows:
 
+* Prepare the hosts for DRBD deployment. There are several options:
+  * Install DRBD directly on the hosts as
+    [documented](https://www.linbit.com/drbd-user-guide/users-guide-9-0/#p-build-install-configure).
+  * Install the appropriate kernel headers package for your distribution. Then
+    the operator will compile and load the required modules.
+
 - Label the worker nodes with `linstor.linbit.com/piraeus-node=true` by
   running:
 
