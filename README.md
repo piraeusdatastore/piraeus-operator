@@ -18,8 +18,8 @@ project's gitlab page.
 
 ## Building and Development
 
-This project is built using the operator-sdk (version 0.13.0). Please refer to
-the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.13.x).
+This project is built using the operator-sdk (version 0.14.1). Please refer to
+the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.14.x).
 
 ## Deployment with Helm v3 Chart
 
