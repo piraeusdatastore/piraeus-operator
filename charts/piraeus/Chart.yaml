@@ -9,3 +9,4 @@ dependencies:
   - name: "etcd"
     version: "4.4.10"
     repository: "https://charts.bitnami.com/bitnami"
+    condition: etcd.enabled
