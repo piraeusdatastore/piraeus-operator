@@ -599,11 +599,11 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 
 func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.ConfigMap {
 
-	if pcs.Spec.EtcdURL == "" {
+	if pcs.Spec.DBConnectionURL == "" {
 		if pcs.Name[len(pcs.Name)-3:len(pcs.Name)] == "-cs" {
-			pcs.Spec.EtcdURL = "etcd://" + pcs.Name[0:len(pcs.Name)-3] + "-etcd:2379"
+			pcs.Spec.DBConnectionURL = "etcd://" + pcs.Name[0:len(pcs.Name)-3] + "-etcd:2379"
 		} else {
-			pcs.Spec.EtcdURL = "etcd://" + pcs.Name + "-etcd:2379"
+			pcs.Spec.DBConnectionURL = "etcd://" + pcs.Name + "-etcd:2379"
 		}
 	}
 
@@ -617,7 +617,7 @@ func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Confi
 				`
 				[db]
 					connection_url = "%s"
-				`, pcs.Spec.EtcdURL)},
+				`, pcs.Spec.DBConnectionURL)},
 	}
 
 	return cm
