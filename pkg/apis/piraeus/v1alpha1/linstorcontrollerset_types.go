@@ -33,7 +33,7 @@ type LinstorControllerSetSpec struct {
 	// PriorityClassName is the name of the PriorityClass for the controller set
 	PriorityClassName string `json:"priorityClassName"`
 
-	EtcdURL           string `json:"etcdURL"`
+	DBConnectionURL   string `json:"dbConnectionURL"`
 	DrbdRepoCred      string `json:"drbdRepoCred"`
 	ControllerImage   string `json:"controllerImage"`
 	ControllerVersion string `json:"controllerVersion"`
