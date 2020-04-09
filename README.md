@@ -193,6 +193,27 @@ Lastly, edit the storage nodes' LVM VG and LV names in examples/piraeus-operator
 kubectl create -f examples/piraeus-operator-part-2.yaml
 ```
 
+## Upgrading
+
+While the API version remains at `v1alpha1`, this project does not maintain
+stability of or provide conversion of the Custom Resource Definitions.
+
+If you are using the Helm deployment, you may find that upgrades fail with
+errors similar to the following:
+
+```
+UPGRADE FAILED: cannot patch "piraeus-op-cs" with kind LinstorControllerSet: LinstorControllerSet.piraeus.linbit.com "piraeus-op-cs" is invalid: spec.etcdURL: Required value
+```
+
+The simplest solution in this case is to manually replace the CRD:
+
+```
+kubectl replace -f charts/piraeus/crds/operator-controllerset-crd.yaml
+```
+
+Then continue with the Helm upgrade. Values that are lost during the
+replacement will be set again by Helm.
+
 ## License
 
 Apache 2.0
