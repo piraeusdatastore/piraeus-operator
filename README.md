@@ -90,6 +90,24 @@ Persistence for etcd is enabled by default. The
 `etcd.volumePermissions.enabled` key in the Helm values is also set so that the
 `hostPath` volumes have appropriate permissions.
 
+### Using an existing database
+
+LINSTOR can connect to an existing PostgreSQL, MariaDB or etcd database. For
+instance, for a PostgresSQL instance with the following configuration:
+
+```
+POSTGRES_DB: postgresdb
+POSTGRES_USER: postgresadmin
+POSTGRES_PASSWORD: admin123
+```
+
+The Helm chart can be configured to use this database instead of deploying an
+etcd cluster by adding the following to the Helm install command:
+
+```
+--set etcd.enabled=false --set "operator.controllerSet.spec.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
+```
+
 ### Terminating Helm deployment
 
 The Piraeus deployment can be terminated with:
