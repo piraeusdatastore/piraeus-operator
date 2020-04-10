@@ -115,8 +115,8 @@ spec:
             priorityClassName:
               description: priorityClassName is the name of the PriorityClass for the controller set
               type: string
-            etcdURL:
-              description: EtcdURL is the URL of the ETCD endpoint for LINSTOR Controller
+            dbConnectionURL:
+              description: DBConnectionURL is the URL of the ETCD endpoint for LINSTOR Controller
               type: string
             drbdRepoCred:
               description: DrbdRepoCred is the name of the kubernetes secret that
@@ -132,7 +132,7 @@ spec:
               type: string
           required:
           - priorityClassName
-          - etcdURL
+          - dbConnectionURL
           - drbdRepoCred
           - controllerImage
           - controllerVersion

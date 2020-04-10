@@ -6,8 +6,8 @@ metadata:
 spec:
   priorityClassName: piraeus-cs-priority-class
 
-  # etcdURL url for controller persistence.
-  etcdURL: "etcd://linstor-etcd.default.svc.cluster.local:2379"
+  # dbConnectionURL url for controller persistence.
+  dbConnectionURL: "etcd://linstor-etcd.default.svc.cluster.local:2379"
   # K8s secret for repo credential
   drbdRepoCred: "drbdiocred"
 
