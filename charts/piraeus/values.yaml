@@ -20,7 +20,7 @@ operator:
   image:
     repo: "quay.io/piraeusdatastore"
     name: "piraeus-operator"
-    version: "v0.1.4"
+    version: "v0.2.0"
   controllerSet:
     spec:
       controllerImage: "quay.io/piraeusdatastore/piraeus-server"

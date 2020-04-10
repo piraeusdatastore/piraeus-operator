@@ -13,13 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [v0.2.0] - 2020-04-10
+
+### Added
+
+* Helm: Allow an existing database to be used instead of always setting up
+  a dedicated etcd instance
+
+### Changed
+
+* Rename `etcdURL` parameter of LinstorControllerSet to `dbConnectionURL` to
+  reflect the fact that it can be used for any database type
+* Upgrade to operator-sdk v0.16.0
+* Helm: Create multiple volumes with a single `pv-hostchart` installation
+* Helm: Update dependencies
+
 ## [v0.1.4] - 2020-03-05
 
 ### Added
 
 * Helm: Add support for `hostPath` `PersistentVolume` persistence of etcd
 
-### Remove
+### Removed
 
 * Helm: Remove vendored etcd chart from repository
 
