@@ -2,7 +2,7 @@ apiVersion: v2
 name: piraeus
 description: A Helm chart for Piraeus Operator
 type: application
-version: 0.2.0     # Chart Version
+version: 0.2.1     # Chart Version
 appVersion: 0.2.0  # Application Version
 
 dependencies:

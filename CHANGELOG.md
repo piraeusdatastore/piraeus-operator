@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [v0.2.1] - 2020-04-14
+
+### Changed
+
+* Helm: Update LINSTOR server dependencies to fix startup problems
+
 ## [v0.2.0] - 2020-04-10
 
 ### Added
