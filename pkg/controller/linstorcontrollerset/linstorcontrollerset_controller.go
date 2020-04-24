@@ -157,6 +157,10 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
+	if pcs.Status.ControllerStatus == nil {
+		pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{}
+	}
+
 	if pcs.Spec.DrbdRepoCred == "" {
 		pcs.Spec.DrbdRepoCred = kubeSpec.DrbdRepoCred
 	}
@@ -347,10 +351,7 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(p
 	}
 
 	ctrl := pcs.Status.ControllerStatus
-	if ctrl == nil {
-		pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName}
-		ctrl = pcs.Status.ControllerStatus
-	}
+	ctrl.NodeName = pod.Spec.NodeName
 
 	// Mark this true on successful exit from this function.
 	ctrl.RegisteredOnController = false
