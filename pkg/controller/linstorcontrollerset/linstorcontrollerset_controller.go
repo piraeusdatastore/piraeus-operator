@@ -286,7 +286,14 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 	pcs.Status.Errors = compoundErrorMsg
 
 	if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
-		logrus.Error(err, "CS Reconcile: Failed to update LinstorControllerSet status")
+		logrus.WithFields(logrus.Fields{
+			"err": err,
+		}).Error("CS Reconcile: Failed to update LinstorControllerSet status")
+		for _, err := range errs {
+			logrus.WithFields(logrus.Fields{
+				"err": err,
+			}).Error("CS Reconcile: Error could not be added to LinstorControllerSet status")
+		}
 		return reconcile.Result{}, err
 	}
 
