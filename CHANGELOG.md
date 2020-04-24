@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [v0.2.2] - 2020-04-24
+
+### Changed
+
+* Fix reporting of errors in LinstorControllerSet status
+
 ## [v0.2.1] - 2020-04-14
 
 ### Changed
