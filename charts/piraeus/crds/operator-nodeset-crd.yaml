@@ -65,6 +65,7 @@ spec:
                     - volumeGroup
                     type: object
                   type: array
+                  nullable: true
                 lvmThinPools:
                   description: LVMThinPools for LinstorNodeSet to manage.
                   items:
@@ -78,6 +79,7 @@ spec:
                     - thinVolume
                     type: object
                   type: array
+                  nullable: true
               required:
               - lvmPools
               - lvmThinPools

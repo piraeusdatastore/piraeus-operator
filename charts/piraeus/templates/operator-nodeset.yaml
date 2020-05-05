@@ -11,10 +11,11 @@ spec:
   kernelModImage: {{ .Values.operator.nodeSet.spec.kernelModImage }}
   kernelModVersion: {{ .Values.operator.nodeSet.spec.kernelModVersion }}
   storagePools:
+    {{- if .Values.operator.nodeSet.spec.lvmPools }}
     lvmPools:
-    - name: {{ .Values.operator.nodeSet.spec.lvmPoolName }}
-      volumeGroup: {{ .Values.operator.nodeSet.spec.lvmPoolVgName }}
+{{ toYaml .Values.operator.nodeSet.spec.lvmPools | indent 6 }}
+    {{- end }}
+    {{- if .Values.operator.nodeSet.spec.lvmThinPools }}
     lvmThinPools:
-    - name: {{ .Values.operator.nodeSet.spec.lvmThinPoolName }}
-      volumeGroup: {{ .Values.operator.nodeSet.spec.lvmThinPoolVgName }}
-      thinVolume: {{ .Values.operator.nodeSet.spec.lvmThinPoolLvName }}
+{{ toYaml .Values.operator.nodeSet.spec.lvmThinPools | indent 6 }}
+    {{- end }}
