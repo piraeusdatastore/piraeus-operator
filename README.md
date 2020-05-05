@@ -56,14 +56,35 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   * Disable persistence for basic testing. This can be done by adding `--set
     etcd.persistence.enabled=false` to the `helm install` command below.
 
-- Configure the LVM VG and LV names by setting the following values in a local
-  values file or by using `--set` with the `helm install` command below.
+- Configure storage pools. By default, helm creates two pools (see [values.yaml]):
+  ```yaml
+  lvmPools:
+    - name: "lvm-thick"
+      # Volume Group name of the thick storage pool
+      volumeGroup: "drbdpool"
+  lvmThinPools:
+    - name: "lvm-thin"
+      # Volume Group name of the thin storage pool
+      volumeGroup: "drbdpool"
+      # Logical Volume name of the thin pool
+      thinVolume: "thinpool"
+  ```
+  [values.yaml]: ./charts/piraeus/values.yaml
 
-    ```
-    operator.nodeSet.spec.lvmPoolVgName=drbdpool # <- Volume Group name of the thick storage pool
-    operator.nodeSet.spec.lvmThinPoolVgName=drbdpool # <- Volume Group name of the thin storage pool
-    operator.nodeSet.spec.lvmThinPoolLvName=thinpool # <- Logical Volume name of the thin pool
-    ```
+  To override the configuration, provide your own values file (`helm install -f <file> ...`)
+  or set it directly from the command line (i.e. `helm install --set <value> ...`) in the
+  next step.
+
+  If you do not want to create storage pools automatically, set the value to an empty list or null
+  ```yaml
+  # in values.yaml
+  lvmPools:
+  lvmThinPools:
+  ```
+  or
+  ```
+  helm install --set operator.nodeSet.spec.lvmPools= ...
+  ```
 
 - Finally create a Helm deployment named `piraeus-op` that will set up
   everything.
