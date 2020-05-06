@@ -62,20 +62,13 @@ const (
 	PiraeusNSPriorityClassName = "piraeus-ns-priority-class"
 
 	// PiraeusControllerImage is the repo/tag for linstor-server
-	PiraeusControllerImage = "quay.io/piraeusdatastore/piraeus-server"
-	// PiraeusControllerVersion must match PiraeusSatelliteVersion since the
-	// linstor controller and satellite versions must also match exactly
-	PiraeusControllerVersion = "v1.4.2"
+	PiraeusControllerImage = "quay.io/piraeusdatastore/piraeus-server:v1.4.2"
 
 	// PiraeusSatelliteImage is the repo/tag for LINSTOR Satellite contaier.
-	PiraeusSatelliteImage = "quay.io/piraeusdatastore/piraeus-server"
-	// PiraeusSatelliteVersion is the release tag for the above image
-	PiraeusSatelliteVersion = "v1.4.2"
+	PiraeusSatelliteImage = "quay.io/piraeusdatastore/piraeus-server:v1.4.2"
 
 	// PiraeusKernelModImage is the worker (aka satellite) image for each node
-	PiraeusKernelModImage = "quay.io/piraeusdatastore/drbd9-centos7"
-	// PiraeusKernelModVersion is the release tag for the above image
-	PiraeusKernelModVersion = "v9.0.21"
+	PiraeusKernelModImage = "quay.io/piraeusdatastore/drbd9-centos7:v9.0.21"
 
 	// DrbdRepoCred is the name of the kubernetes secret that holds the repo
 	// credentials for the DRBD related repositories

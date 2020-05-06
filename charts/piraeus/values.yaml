@@ -11,25 +11,16 @@ etcd:
     replicaCount: 3
   envVarsConfigMap: "etcd-env-vars"
 csi:
-  image:
-    repo: "quay.io/piraeusdatastore"
-    name: "piraeus-csi"
-    version: "v0.7.4"
+  image: "quay.io/piraeusdatastore/piraeus-csi:v0.7.4"
 drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 operator:
-  image:
-    repo: "quay.io/piraeusdatastore"
-    name: "piraeus-operator"
-    version: "v0.2.2"
+  image: "quay.io/piraeusdatastore/piraeus-operator:v0.2.2"
   controllerSet:
     spec:
-      controllerImage: "quay.io/piraeusdatastore/piraeus-server"
-      controllerVersion: "v1.6.1"
+      controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.6.1"
   nodeSet:
     spec:
       drbdKernelModuleInjectionMode: Compile
-      satelliteImage: "quay.io/piraeusdatastore/piraeus-server"
-      satelliteVersion: "v1.6.1"
-      kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic"
-      kernelModVersion: "v9.0.22"
+      satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.6.1"
+      kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
       storagePools: null

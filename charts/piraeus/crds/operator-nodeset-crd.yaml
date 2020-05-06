@@ -87,19 +87,11 @@ spec:
                 holds the credential for the DRBD repositories
               type: string
             satelliteImage:
-              description: satelliteImage is the image location for the LINSTOR
-                satellite container
-              type: string
-            satelliteVersion:
-              description: satelliteVersion is the image tag/version for the LINSTOR
+              description: satelliteImage is the image (location + tag) for the LINSTOR
                 satellite container
               type: string
             kernelModImage:
-              description: kernelModImage is the image location for the LINSTOR/
-                DRBD kernel module injector container
-              type: string
-            kernelModVersion:
-              description: kernelModVersion is the image tag/version for the LINSTOR/
+              description: kernelModImage is the image (location + tag) for the LINSTOR/
                 DRBD kernel module injector container
               type: string
           required:
@@ -107,9 +99,7 @@ spec:
           - drbdKernelModuleInjectionMode
           - drbdRepoCred
           - satelliteImage
-          - satelliteVersion
           - kernelModImage
-          - kernelModVersion
           type: object
         status:
           description: LinstorNodeSetStatus defines the observed state of LinstorNodeSet

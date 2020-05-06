@@ -490,16 +490,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 		pns.Spec.SatelliteImage = kubeSpec.PiraeusSatelliteImage
 	}
 
-	if pns.Spec.SatelliteVersion == "" {
-		pns.Spec.SatelliteVersion = kubeSpec.PiraeusSatelliteVersion
-	}
-
 	if pns.Spec.KernelModImage == "" {
 		pns.Spec.KernelModImage = kubeSpec.PiraeusKernelModImage
-	}
-
-	if pns.Spec.KernelModVersion == "" {
-		pns.Spec.KernelModVersion = kubeSpec.PiraeusKernelModVersion
 	}
 
 	ds := &apps.DaemonSet{
@@ -540,7 +532,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-satellite",
-							Image:           pns.Spec.SatelliteImage + ":" + pns.Spec.SatelliteVersion,
+							Image:           pns.Spec.SatelliteImage,
 							Args:            []string{"startSatellite"}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
@@ -662,7 +654,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "drbd-kernel-module-injector",
-			Image:           pns.Spec.KernelModImage + ":" + pns.Spec.KernelModVersion,
+			Image:           pns.Spec.KernelModImage,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			Env: []corev1.EnvVar{

@@ -48,7 +48,7 @@ spec:
             - name: registration-dir
               mountPath: /registration/
         - name: linstor-csi-plugin
-          image: {{ .Values.csi.image.repo }}/{{ .Values.csi.image.name }}:{{ .Values.csi.image.version }}
+          image: {{ .Values.csi.image }}
           args:
             - "--csi-endpoint=$(CSI_ENDPOINT)"
             - "--node=$(KUBE_NODE_NAME)"
