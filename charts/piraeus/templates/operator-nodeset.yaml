@@ -10,12 +10,7 @@ spec:
   satelliteVersion: {{ .Values.operator.nodeSet.spec.satelliteVersion }}
   kernelModImage: {{ .Values.operator.nodeSet.spec.kernelModImage }}
   kernelModVersion: {{ .Values.operator.nodeSet.spec.kernelModVersion }}
+  {{- if .Values.operator.nodeSet.spec.storagePools }}
   storagePools:
-    {{- if .Values.operator.nodeSet.spec.lvmPools }}
-    lvmPools:
-{{ toYaml .Values.operator.nodeSet.spec.lvmPools | indent 6 }}
-    {{- end }}
-    {{- if .Values.operator.nodeSet.spec.lvmThinPools }}
-    lvmThinPools:
-{{ toYaml .Values.operator.nodeSet.spec.lvmThinPools | indent 6 }}
-    {{- end }}
+{{ toYaml .Values.operator.nodeSet.spec.storagePools | indent 4 }}
+  {{- end }}
