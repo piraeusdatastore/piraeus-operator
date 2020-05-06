@@ -56,32 +56,8 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   * Disable persistence for basic testing. This can be done by adding `--set
     etcd.persistence.enabled=false` to the `helm install` command below.
 
-- Configure storage pools. By default, helm creates two pools (see [values.yaml]):
-  ```yaml
-  storagePools:
-      lvmPools:
-        - name: "lvm-thick"
-          # Volume Group name of the thick storage pool
-          volumeGroup: "drbdpool"
-      lvmThinPools:
-        - name: "lvm-thin"
-          # Volume Group name of the thin storage pool
-          volumeGroup: "drbdpool"
-          # Logical Volume name of the thin pool
-          thinVolume: "thinpool"
-  ```
-  [values.yaml]: ./charts/piraeus/values.yaml
-
-  To override the configuration, provide your own values file (`helm install -f <file> ...`). This file takes
-  precedence over the default value file.
-
-  For example, to not create any storage pools on install, the file could look like this:
-  ```yaml
-  operator:
-    nodeSet:
-      spec:
-        storagePools: null
-  ```
+- Configure storage pools. Helm can create storage pools automatically, see
+  [below](#configuring-storage-pool-creation). By default, no storage pools will be created.
 
 - Finally create a Helm deployment named `piraeus-op` that will set up
   everything.
@@ -124,6 +100,64 @@ etcd cluster by adding the following to the Helm install command:
 
 ```
 --set etcd.enabled=false --set "operator.controllerSet.spec.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
+```
+
+### Configuring storage pool creation
+The piraeus operator installed by helm can be used to create storage pools. Creation is under control of the
+LinstorNodeSet resource:
+```
+$ kubectl get LinstorNodeSet.piraeus.linbit.com piraeus-op-ns -o yaml                                                                                       [24/1880]
+kind: LinstorNodeSet
+metadata:
+..
+spec:
+  ..
+  storagePools:
+    lvmPools:
+    - name: lvm-thick
+      volumeGroup: drbdpool
+    lvmThinPools:
+    - name: lvm-thin
+      thinVolume: thinpool
+      volumeGroup: drbdpool
+
+```
+
+There are two ways to configure storage pools
+
+#### On install
+On install time, by setting the value of `operator.nodeSet.spec.storagePools` when running helm install.
+
+First create a file with the storage configuration like:
+```yaml
+operator:
+nodeSet:
+  spec:
+    storagePools:
+      lvmPools:
+      - name: lvm-thick
+        volumeGroup: drbdpool
+      ..
+```
+This file can be passed to the helm installation like this:
+```
+helm install -f <file> charts/piraeus-op
+```
+
+#### After install
+On a cluster with the operator already configured (after helm install)
+
+* Get the current configuration:
+```
+$ kubectl get LinstorNodeSet.piraeus.linbit.com <nodesetname> -o yaml > nodeset.yaml
+```
+* Edit the storage pool section in your favourite editor
+```
+$ vi|vim|emacs|nano nodeset.yaml
+```
+* Update the configuration
+```
+$ kubectl replace -f nodeset.yaml
 ```
 
 ### Terminating Helm deployment
@@ -198,15 +232,21 @@ kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --dock
 ```
 
 ### Deploy Operator
+First you need to create the resource definitions
+```
+kubectl create -f charts/piraeus/crds/operator-controllerset-crd.yaml
+kubectl create -f charts/piraeus/crds/operator-nodeset-crd.yaml
+kubectl create -f charts/piraeus/crds/csinodeinfos.csi.storage.k8s.io.yaml
+```
 
 Inspect the basic deployment example (examples/piraeus-operator-part-1.yaml), it may be deployed by:
-
 ```
 kubectl create -f examples/piraeus-operator-part-1.yaml
 ```
 
-Lastly, edit the storage nodes' LVM VG and LV names in examples/piraeus-operator-part-2.yaml.  Now you can finally deploy the LINSTOR cluster with:
-
+Lastly, edit the storage pool configuration in examples/piraeus-operator-part-2.yaml.
+For examples, see [above](#configuring-storage-pool-creation)
+Now you can finally deploy the LINSTOR cluster with:
 ```
 kubectl create -f examples/piraeus-operator-part-2.yaml
 ```
