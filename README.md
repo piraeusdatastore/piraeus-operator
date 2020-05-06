@@ -103,8 +103,10 @@ etcd cluster by adding the following to the Helm install command:
 ```
 
 ### Configuring storage pool creation
+
 The piraeus operator installed by helm can be used to create storage pools. Creation is under control of the
 LinstorNodeSet resource:
+
 ```
 $ kubectl get LinstorNodeSet.piraeus.linbit.com piraeus-op-ns -o yaml                                                                                       [24/1880]
 kind: LinstorNodeSet
@@ -125,40 +127,39 @@ spec:
 
 There are two ways to configure storage pools
 
-#### On install
-On install time, by setting the value of `operator.nodeSet.spec.storagePools` when running helm install.
+#### At install time
+
+At install time, by setting the value of `operator.nodeSet.spec.storagePools` when running helm install.
 
 First create a file with the storage configuration like:
+
 ```yaml
 operator:
-nodeSet:
-  spec:
-    storagePools:
-      lvmPools:
-      - name: lvm-thick
-        volumeGroup: drbdpool
-      ..
+  nodeSet:
+    spec:
+      storagePools:
+        lvmPools:
+        - name: lvm-thick
+          volumeGroup: drbdpool
+        ..
 ```
+
 This file can be passed to the helm installation like this:
+
 ```
 helm install -f <file> charts/piraeus-op
 ```
 
 #### After install
-On a cluster with the operator already configured (after helm install)
 
-* Get the current configuration:
+On a cluster with the operator already configured (i.e. after `helm install`),
+you can edit the nodeset configuration like this:
+
 ```
-$ kubectl get LinstorNodeSet.piraeus.linbit.com <nodesetname> -o yaml > nodeset.yaml
+$ kubectl edit LinstorNodeSet.piraeus.linbit.com <nodesetname>
 ```
-* Edit the storage pool section in your favourite editor
-```
-$ vi|vim|emacs|nano nodeset.yaml
-```
-* Update the configuration
-```
-$ kubectl replace -f nodeset.yaml
-```
+
+The storage pool configuration can be updated like in the example above.
 
 ### Terminating Helm deployment
 
@@ -232,7 +233,9 @@ kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --dock
 ```
 
 ### Deploy Operator
+
 First you need to create the resource definitions
+
 ```
 kubectl create -f charts/piraeus/crds/operator-controllerset-crd.yaml
 kubectl create -f charts/piraeus/crds/operator-nodeset-crd.yaml
@@ -240,6 +243,7 @@ kubectl create -f charts/piraeus/crds/csinodeinfos.csi.storage.k8s.io.yaml
 ```
 
 Inspect the basic deployment example (examples/piraeus-operator-part-1.yaml), it may be deployed by:
+
 ```
 kubectl create -f examples/piraeus-operator-part-1.yaml
 ```
@@ -247,6 +251,7 @@ kubectl create -f examples/piraeus-operator-part-1.yaml
 Lastly, edit the storage pool configuration in examples/piraeus-operator-part-2.yaml.
 For examples, see [above](#configuring-storage-pool-creation)
 Now you can finally deploy the LINSTOR cluster with:
+
 ```
 kubectl create -f examples/piraeus-operator-part-2.yaml
 ```
