@@ -32,10 +32,11 @@ operator:
       satelliteVersion: "v1.6.1"
       kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic"
       kernelModVersion: "v9.0.22"
-      lvmPools:
-        - name: "lvm-thick"
-          volumeGroup: "drbdpool"
-      lvmThinPools:
-        - name: "lvm-thin"
-          volumeGroup: "drbdpool"
-          thinVolume: "thinpool"
+      storagePools:
+        lvmPools:
+          - name: "lvm-thick"
+            volumeGroup: "drbdpool"
+        lvmThinPools:
+          - name: "lvm-thin"
+            volumeGroup: "drbdpool"
+            thinVolume: "thinpool"

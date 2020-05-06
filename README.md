@@ -58,32 +58,29 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 
 - Configure storage pools. By default, helm creates two pools (see [values.yaml]):
   ```yaml
-  lvmPools:
-    - name: "lvm-thick"
-      # Volume Group name of the thick storage pool
-      volumeGroup: "drbdpool"
-  lvmThinPools:
-    - name: "lvm-thin"
-      # Volume Group name of the thin storage pool
-      volumeGroup: "drbdpool"
-      # Logical Volume name of the thin pool
-      thinVolume: "thinpool"
+  storagePools:
+      lvmPools:
+        - name: "lvm-thick"
+          # Volume Group name of the thick storage pool
+          volumeGroup: "drbdpool"
+      lvmThinPools:
+        - name: "lvm-thin"
+          # Volume Group name of the thin storage pool
+          volumeGroup: "drbdpool"
+          # Logical Volume name of the thin pool
+          thinVolume: "thinpool"
   ```
   [values.yaml]: ./charts/piraeus/values.yaml
 
-  To override the configuration, provide your own values file (`helm install -f <file> ...`)
-  or set it directly from the command line (i.e. `helm install --set <value> ...`) in the
-  next step.
+  To override the configuration, provide your own values file (`helm install -f <file> ...`). This file takes
+  precedence over the default value file.
 
-  If you do not want to create storage pools automatically, set the value to an empty list or null
+  For example, to not create any storage pools on install, the file could look like this:
   ```yaml
-  # in values.yaml
-  lvmPools:
-  lvmThinPools:
-  ```
-  or
-  ```
-  helm install --set operator.nodeSet.spec.lvmPools= ...
+  operator:
+    nodeSet:
+      spec:
+        storagePools: null
   ```
 
 - Finally create a Helm deployment named `piraeus-op` that will set up
