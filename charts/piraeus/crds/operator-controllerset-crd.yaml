@@ -43,11 +43,7 @@ spec:
                 holds the credential for the DRBD repositories
               type: string
             controllerImage:
-              description: controllerImage is the image location for the LINSTOR
-                controller/server container
-              type: string
-            controllerVersion:
-              description: controllerVersion is the image tag/version for the LINSTOR
+              description: controllerImage is the image (location + tag) for the LINSTOR
                 controller/server container
               type: string
           required:
@@ -55,7 +51,6 @@ spec:
           - dbConnectionURL
           - drbdRepoCred
           - controllerImage
-          - controllerVersion
           type: object
         status:
           description: LinstorControllerSetStatus defines the observed state of LinstorControllerSet

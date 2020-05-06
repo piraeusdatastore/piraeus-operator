@@ -7,4 +7,3 @@ spec:
   dbConnectionURL:  {{ .Values.operator.controllerSet.spec.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   controllerImage: {{ .Values.operator.controllerSet.spec.controllerImage }}
-  controllerVersion: {{ .Values.operator.controllerSet.spec.controllerVersion }}

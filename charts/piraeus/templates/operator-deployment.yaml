@@ -17,7 +17,7 @@ spec:
       serviceAccountName: {{ template "operator.fullname" . }}-operator
       containers:
         - name: piraeus-operator
-          image: {{ .Values.operator.image.repo }}/{{ .Values.operator.image.name }}:{{ .Values.operator.image.version }}
+          image: {{ .Values.operator.image }}
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE

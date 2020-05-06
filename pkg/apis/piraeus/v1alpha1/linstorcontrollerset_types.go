@@ -36,7 +36,6 @@ type LinstorControllerSetSpec struct {
 	DBConnectionURL   string `json:"dbConnectionURL"`
 	DrbdRepoCred      string `json:"drbdRepoCred"`
 	ControllerImage   string `json:"controllerImage"`
-	ControllerVersion string `json:"controllerVersion"`
 }
 
 // LinstorControllerSetStatus defines the observed state of LinstorControllerSet
