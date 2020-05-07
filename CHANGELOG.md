@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* helm: `operator.nodeSet.spec` and `operator.controllerSet.spec` are replaced by just
+        `operator.nodeSet` and `operator.controllerSet`.
+
 ## [v0.2.2] - 2020-04-24
 
 ### Changed

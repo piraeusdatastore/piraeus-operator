@@ -99,7 +99,7 @@ The Helm chart can be configured to use this database instead of deploying an
 etcd cluster by adding the following to the Helm install command:
 
 ```
---set etcd.enabled=false --set "operator.controllerSet.spec.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
+--set etcd.enabled=false --set "operator.controllerSet.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
 ```
 
 ### Configuring storage pool creation
@@ -129,19 +129,18 @@ There are two ways to configure storage pools
 
 #### At install time
 
-At install time, by setting the value of `operator.nodeSet.spec.storagePools` when running helm install.
+At install time, by setting the value of `operator.nodeSet.storagePools` when running helm install.
 
 First create a file with the storage configuration like:
 
 ```yaml
 operator:
   nodeSet:
-    spec:
-      storagePools:
-        lvmPools:
-        - name: lvm-thick
-          volumeGroup: drbdpool
-        ..
+    storagePools:
+      lvmPools:
+      - name: lvm-thick
+        volumeGroup: drbdpool
+    ..
 ```
 
 This file can be passed to the helm installation like this:

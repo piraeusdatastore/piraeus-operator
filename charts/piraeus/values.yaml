@@ -16,11 +16,9 @@ drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 operator:
   image: "quay.io/piraeusdatastore/piraeus-operator:v0.2.2"
   controllerSet:
-    spec:
-      controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.6.1"
+    controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.6.1"
   nodeSet:
-    spec:
-      drbdKernelModuleInjectionMode: Compile
-      satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.6.1"
-      kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
-      storagePools: null
+    drbdKernelModuleInjectionMode: Compile
+    satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.6.1"
+    kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
+    storagePools: null
