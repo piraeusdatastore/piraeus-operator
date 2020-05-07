@@ -150,7 +150,19 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	if pns.Spec.DrbdRepoCred == "" {
-		pns.Spec.DrbdRepoCred = kubeSpec.DrbdRepoCred
+		return reconcile.Result{}, fmt.Errorf("NS Reconcile: missing required parameter drbdRepoCred: outdated schema")
+	}
+
+	if pns.Spec.PriorityClassName == "" {
+		return reconcile.Result{}, fmt.Errorf("NS Reconcile: missing required parameter priorityClassName: outdated schema")
+	}
+
+	if pns.Spec.SatelliteImage == "" {
+		return reconcile.Result{}, fmt.Errorf("NS Reconcile: missing required parameter satelliteImage: outdated schema")
+	}
+
+	if pns.Spec.KernelModImage == "" {
+		return reconcile.Result{}, fmt.Errorf("NS Reconcile: missing required parameter kernelModImage: outdated schema")
 	}
 
 	log := logrus.WithFields(logrus.Fields{
@@ -481,18 +493,6 @@ func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 	labels := pnsLabels(pns)
 	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
-
-	if pns.Spec.PriorityClassName == "" {
-		pns.Spec.PriorityClassName = kubeSpec.PiraeusNSPriorityClassName
-	}
-
-	if pns.Spec.SatelliteImage == "" {
-		pns.Spec.SatelliteImage = kubeSpec.PiraeusSatelliteImage
-	}
-
-	if pns.Spec.KernelModImage == "" {
-		pns.Spec.KernelModImage = kubeSpec.PiraeusKernelModImage
-	}
 
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{

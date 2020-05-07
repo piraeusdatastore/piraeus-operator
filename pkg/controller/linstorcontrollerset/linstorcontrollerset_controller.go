@@ -162,7 +162,19 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 	}
 
 	if pcs.Spec.DrbdRepoCred == "" {
-		pcs.Spec.DrbdRepoCred = kubeSpec.DrbdRepoCred
+		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter drbdRepoCred: outdated schema")
+	}
+
+	if pcs.Spec.PriorityClassName == "" {
+		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter priorityClassName: outdated schema")
+	}
+
+	if pcs.Spec.ControllerImage == "" {
+		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter controllerImage: outdated schema")
+	}
+
+	if pcs.Spec.DBConnectionURL == "" {
+		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter dbConnectionURL: outdated schema")
 	}
 
 	log := logrus.WithFields(logrus.Fields{
@@ -483,14 +495,6 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 
 	labels := pcsLabels(pcs)
 
-	if pcs.Spec.PriorityClassName == "" {
-		pcs.Spec.PriorityClassName = kubeSpec.PiraeusCSPriorityClassName
-	}
-
-	if pcs.Spec.ControllerImage == "" {
-		pcs.Spec.ControllerImage = kubeSpec.PiraeusControllerImage
-	}
-
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
@@ -602,15 +606,6 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 }
 
 func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.ConfigMap {
-
-	if pcs.Spec.DBConnectionURL == "" {
-		if pcs.Name[len(pcs.Name)-3:len(pcs.Name)] == "-cs" {
-			pcs.Spec.DBConnectionURL = "etcd://" + pcs.Name[0:len(pcs.Name)-3] + "-etcd:2379"
-		} else {
-			pcs.Spec.DBConnectionURL = "etcd://" + pcs.Name + "-etcd:2379"
-		}
-	}
-
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-config",
