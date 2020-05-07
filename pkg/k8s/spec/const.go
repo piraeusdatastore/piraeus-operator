@@ -51,26 +51,3 @@ var (
 var (
 	Privileged = true
 )
-
-// Fallback config values
-const (
-	// PiraeusCSPriorityClassName is the name of the PriorityClass for the
-	// controller set.
-	PiraeusCSPriorityClassName = "piraeus-cs-priority-class"
-	// PiraeusNSPriorityClassName is the name of the PriorityClass for the
-	// node set.
-	PiraeusNSPriorityClassName = "piraeus-ns-priority-class"
-
-	// PiraeusControllerImage is the repo/tag for linstor-server
-	PiraeusControllerImage = "quay.io/piraeusdatastore/piraeus-server:v1.4.2"
-
-	// PiraeusSatelliteImage is the repo/tag for LINSTOR Satellite contaier.
-	PiraeusSatelliteImage = "quay.io/piraeusdatastore/piraeus-server:v1.4.2"
-
-	// PiraeusKernelModImage is the worker (aka satellite) image for each node
-	PiraeusKernelModImage = "quay.io/piraeusdatastore/drbd9-centos7:v9.0.21"
-
-	// DrbdRepoCred is the name of the kubernetes secret that holds the repo
-	// credentials for the DRBD related repositories
-	DrbdRepoCred = "drbdiocred"
-)
