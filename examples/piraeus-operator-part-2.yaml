@@ -12,7 +12,7 @@ spec:
   drbdRepoCred: "drbdiocred"
 
   # LINSTOR Controller image
-  controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.4.3"
+  controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
 ---
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: LinstorNodeSet
@@ -27,10 +27,10 @@ spec:
   drbdRepoCred: "drbdiocred"
 
   # LINSTOR Satellite image
-  satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.4.3"
+  satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
 
   # DRBD kernel injection image
-  kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.21"
+  kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
 
   # StoragePools for the NodeSet to manage.
   storagePools:
