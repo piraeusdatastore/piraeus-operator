@@ -13,8 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* helm: `operator.nodeSet.spec` and `operator.controllerSet.spec` are replaced by just
-        `operator.nodeSet` and `operator.controllerSet`.
+## [v0.3.0] - 2020-05-08
+
+### Changed
+
+* Use single values for images in CRDs instead of specifying the version
+  separately
+* Helm: Use single values for images instead of specifying repo, name and
+  version separately
+* Helm: Replace fixed storage pool configuration with list
+* Helm: Do not create any storage pools by default
+* Helm: Replace `operator.nodeSet.spec` and `operator.controllerSet.spec` by
+  just `operator.nodeSet` and `operator.controllerSet`.
 
 ## [v0.2.2] - 2020-04-24
 
