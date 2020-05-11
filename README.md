@@ -56,6 +56,9 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   * Disable persistence for basic testing. This can be done by adding `--set
     etcd.persistence.enabled=false` to the `helm install` command below.
 
+- If needed, configure secure communication between LINSTOR components.
+  [Read more below](#configuring-secure-communication-between-LINSTOR-components).
+
 - Configure storage pools. Helm can create storage pools automatically, see
   [below](#configuring-storage-pool-creation). By default, no storage pools will be created.
 
@@ -111,6 +114,39 @@ The secret can then be passed to the controller by passing the following argumen
 ```
 --set operator.controllerSet.dbCertSecret=<secret name>
 ```
+
+### Configuring secure communication between LINSTOR components
+
+The default communication between LINSTOR components is not secured by TLS. If this is needed for your setup,
+follow these steps:
+
+* Create private keys in the java keystore format, one for the controller, one for all nodes:
+  ```
+  keytool -keyalg rsa -keysize 2048 -genkey -keystore node-keys.jks -storepass linstor -alias node -dname "CN=XX, OU=node, O=Example, L=XX, ST=XX, C=X"
+  keytool -keyalg rsa -keysize 2048 -genkey -keystore control-keys.jks -storepass linstor -alias control -dname "CN=XX, OU=control, O=Example, L=XX, ST=XX, C=XX"
+  ```
+* Create a trust store with the public keys that each component needs to trust:
+  * Controller needs to trust the nodes
+  * Nodes need to trust the controller
+  ```
+  keytool -importkeystore -srcstorepass linstor -deststorepass linstor -srckeystore control-keys.jks -destkeystore node-trust.jks
+  keytool -importkeystore -srcstorepass linstor -deststorepass linstor -srckeystore node-keys.jks -destkeystore control-trust.jks
+  ```
+* Create kubernetes secrets that can be passed to the controller and node pods
+  ```
+  kubectl create secret generic control-secret --from-file=keystore.jks=control-keys.jks --from-file=certificates.jks=control-trust.jks
+  kubectl create secret generic node-secret --from-file=keystore.jks=node-keys.jks --from-file=certificates.jks=node-trust.jks
+  ```
+* Pass the names of the created secrets to `helm install`
+  ```
+  --set operator.nodeSet.sslSecret=node-secret --set operator.controllerSet.sslSecret=control-secret
+  ```
+
+:warning: It is currently **NOT** possible to change the keystore password **for the controller**. The current
+version of LINSTOR expects the password to be `linstor`. The passwords for the node keystore **can** be changed:
+* `--set operator.nodeSet.sslKeystorePassword=linstor`
+* `--set operator.nodeSet.sslKeyPassword=linstor`
+* `--set operator.nodeSet.sslTruststorePassword=linstor`
 
 ### Configuring storage pool creation
 

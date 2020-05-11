@@ -113,3 +113,18 @@ func (s *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
 		},
 	}
 }
+
+type JavaSslConfiguration struct {
+	// Name of the secret that holds the key (called `keystore.jks`) and the trusted certificates
+	// (called `certificates.jks`)
+	Secret string `json:"secret"`
+
+	// Password for the private key inside the keystore
+	KeyPassword string `json:"keyPassword"`
+
+	// Password used to unlock the java keystore referenced in `Secret`
+	KeystorePassword string `json:"keystorePassword"`
+
+	// Password for the certificate keystore
+	TruststorePassword string `json:"truststorePassword"`
+}

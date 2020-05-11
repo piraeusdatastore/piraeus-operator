@@ -82,6 +82,29 @@ spec:
                   nullable: true
               nullable: true
               type: object
+            ssl:
+              description: Configuration options for secure communication between nodes and controllers
+              properties:
+                secret:
+                  description: Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and
+                    the trusted certificates (called `certificates.jks`)
+                  type: string
+                keystorePassword:
+                  description: Password used to decode the keystore provided by `secret`
+                  type: string
+                keyPassword:
+                  description: Password for the private key inside the keystore
+                  type: string
+                truststorePassword:
+                  description: Password for the certificate keystore
+                  type: string
+              type: object
+              nullable: true
+              required:
+                - secret
+                - keystorePassword
+                - keyPassword
+                - truststorePassword
             drbdRepoCred:
               description: DrbdRepoCred is the name of the kubernetes secret that
                 holds the credential for the DRBD repositories
