@@ -38,6 +38,12 @@ spec:
             dbConnectionURL:
               description: DBConnectionURL is the URL of the ETCD endpoint for LINSTOR Controller
               type: string
+            dbCertSecret:
+              description: DBCertSecret is the name of the kubernetes secret that holds the CA certificate used to
+                verify the datatbase connection. The secret must contain a key "ca.pem" which holds the certificate in
+                PEM format
+              type: string
+              nullable: true
             drbdRepoCred:
               description: DrbdRepoCred is the name of the kubernetes secret that
                 holds the credential for the DRBD repositories

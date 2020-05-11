@@ -32,6 +32,7 @@ import (
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 
+	"github.com/BurntSushi/toml"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -240,7 +241,10 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 	}).Debug("CS Reconcile: CS already exists")
 
 	// Define a configmap for the controller.
-	configMap := newConfigMapForPCS(pcs)
+	configMap, err := newConfigMapForPCS(pcs)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	// Set LinstorControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pcs, configMap, r.scheme); err != nil {
 		return reconcile.Result{}, err
@@ -495,6 +499,41 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 
 	labels := pcsLabels(pcs)
 
+	volumes := []corev1.Volume{
+		{
+			Name: kubeSpec.LinstorConfDirName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: pcs.Name + "-config",
+					},
+				}}},
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      kubeSpec.LinstorConfDirName,
+			MountPath: kubeSpec.LinstorConfDir,
+		},
+	}
+
+	if pcs.Spec.DBCertSecret != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: kubeSpec.LinstorCertDirName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: pcs.Spec.DBCertSecret,
+				},
+			},
+		})
+
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.LinstorCertDirName,
+			MountPath: kubeSpec.LinstorCertDir,
+			ReadOnly:  true,
+		})
+	}
+
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
@@ -537,12 +576,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 									ContainerPort: 3371,
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      kubeSpec.LinstorConfDirName,
-									MountPath: kubeSpec.LinstorConfDir,
-								},
-							},
+							VolumeMounts: volumeMounts,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "LS_CONTROLLERS",
@@ -562,16 +596,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 							},
 						},
 					},
-					Volumes: []corev1.Volume{
-						{
-							Name: kubeSpec.LinstorConfDirName,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: pcs.Name + "-config",
-									},
-								}}},
-					},
+					Volumes: volumes,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
 							Name: pcs.Spec.DrbdRepoCred,
@@ -605,21 +630,36 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 	}
 }
 
-func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.ConfigMap {
+func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.ConfigMap, error) {
+	certificatePath := ""
+	if pcs.Spec.DBCertSecret != "" {
+		certificatePath = kubeSpec.LinstorCertDir + "/ca.pem"
+	}
+
+	linstorConfig := lapi.ControllerConfig{
+		Db: lapi.ControllerConfigDb{
+			ConnectionUrl: pcs.Spec.DBConnectionURL,
+			CaCertificate: certificatePath,
+		},
+	}
+
+	tomlConfigBuilder := strings.Builder{}
+	tomlEncoder := toml.NewEncoder(&tomlConfigBuilder)
+	if err := tomlEncoder.Encode(linstorConfig); err != nil {
+		return nil, err
+	}
+
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-config",
 			Namespace: pcs.Namespace,
 		},
 		Data: map[string]string{
-			"linstor.toml": fmt.Sprintf(
-				`
-				[db]
-					connection_url = "%s"
-				`, pcs.Spec.DBConnectionURL)},
+			"linstor.toml": tomlConfigBuilder.String(),
+		},
 	}
 
-	return cm
+	return cm, nil
 }
 
 func pcsLabels(pcs *piraeusv1alpha1.LinstorControllerSet) map[string]string {
