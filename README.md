@@ -102,6 +102,16 @@ etcd cluster by adding the following to the Helm install command:
 --set etcd.enabled=false --set "operator.controllerSet.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
 ```
 
+#### Secure communication with an existing etcd instance
+
+Secure communication to an `etcd` instance can be enabled by providing a CA certificate to the operator in form of a
+kubernetes secret. The secret has to contain the key `ca.pem` with the PEM encoded CA certificate as value.
+
+The secret can then be passed to the controller by passing the following argument to `helm install`
+```
+--set operator.controllerSet.dbCertSecret=<secret name>
+```
+
 ### Configuring storage pool creation
 
 The piraeus operator installed by helm can be used to create storage pools. Creation is under control of the

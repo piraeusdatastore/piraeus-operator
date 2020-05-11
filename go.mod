@@ -3,7 +3,8 @@ module github.com/piraeusdatastore/piraeus-operator
 go 1.13
 
 require (
-	github.com/LINBIT/golinstor v0.16.4
+	github.com/BurntSushi/toml v0.3.1
+	github.com/LINBIT/golinstor v0.25.0
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5

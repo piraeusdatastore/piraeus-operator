@@ -34,6 +34,7 @@ type LinstorControllerSetSpec struct {
 	PriorityClassName string `json:"priorityClassName"`
 
 	DBConnectionURL   string `json:"dbConnectionURL"`
+	DBCertSecret      string `json:"dbCertSecret"`
 	DrbdRepoCred      string `json:"drbdRepoCred"`
 	ControllerImage   string `json:"controllerImage"`
 }

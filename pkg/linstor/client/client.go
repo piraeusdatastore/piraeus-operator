@@ -38,7 +38,11 @@ func NewHighLevelLinstorClientForObject(obj metav1.Object) (*HighLevelClient, er
 	}
 	c, err := NewHighLevelClient(
 		lapi.BaseURL(u),
-		lapi.Log(&lapi.LogCfg{Level: "debug", Out: os.Stdout, Formatter: &logrus.TextFormatter{}}),
+		lapi.Log(&logrus.Logger{
+			Level: logrus.DebugLevel,
+			Out: os.Stdout,
+			Formatter: &logrus.TextFormatter{},
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
@@ -48,7 +52,7 @@ func NewHighLevelLinstorClientForObject(obj metav1.Object) (*HighLevelClient, er
 }
 
 // NewHighLevelClient returns a pointer to a golinstor client with convience.
-func NewHighLevelClient(options ...func(*lapi.Client) error) (*HighLevelClient, error) {
+func NewHighLevelClient(options ...lapi.Option) (*HighLevelClient, error) {
 	c, err := lapi.NewClient(options...)
 	if err != nil {
 		return nil, err
