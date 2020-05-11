@@ -20,6 +20,8 @@ package linstornodeset
 import (
 	"context"
 	"fmt"
+	"github.com/BurntSushi/toml"
+
 	"os"
 	"strings"
 	"sync"
@@ -29,6 +31,7 @@ import (
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/utils"
 
 	lapi "github.com/LINBIT/golinstor/client"
 
@@ -239,8 +242,21 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
+	// Create the satellite configuration
+	configMap, err := reconcileSatelliteConfiguration(pns, r)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Set LinstorNodeSet pns as the owner and controller for the config map
+	if err := controllerutil.SetControllerReference(pns, configMap, r.scheme); err != nil {
+		logrus.Debugf("NS CM did not set correctly")
+		return reconcile.Result{}, err
+	}
+	logrus.Debugf("NS CM Set up")
+
 	// Define a new DaemonSet
-	ds := newDaemonSetforPNS(pns)
+	ds := newDaemonSetforPNS(pns, configMap)
 
 	// Set LinstorNodeSet pns as the owner and controller for the daemon set
 	if err := controllerutil.SetControllerReference(pns, ds, r.scheme); err != nil {
@@ -322,6 +338,8 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 		err error
 	}
 
+	com := utils.NewSatelliteComTypeForSslConfig(pns.Spec.Ssl)
+
 	satelliteStatusIn := make(chan satStat)
 	satelliteStatusOut := make(chan satStat)
 
@@ -360,9 +378,9 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 			tokens <- struct{}{} // Acquire a token
 			l.Debug("NS reconcileSatNodes: token acquired, registering node")
 
-			err := r.reconcileSatNodeWithController(sat, pod)
+			err := r.reconcileSatNodeWithController(sat, pod, com)
 			if err != nil {
-				l.Debug("NS reconcileSatNodes: Error with reconcileSatNodeWithController")
+				l.Debugf("NS reconcileSatNodes: Error with reconcileSatNodeWithController: %v", err)
 			}
 			satelliteStatusIn <- satStat{sat, err}
 
@@ -413,7 +431,7 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 	return compoundError
 }
 
-func (r *ReconcileLinstorNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod) error {
+func (r *ReconcileLinstorNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod, com *utils.SatelliteComType) error {
 
 	// Mark this true on successful exit from this function.
 	sat.RegisteredOnController = false
@@ -430,8 +448,8 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodeWithController(sat *piraeusv1a
 			{
 				Name:                    "default",
 				Address:                 pod.Status.HostIP,
-				SatellitePort:           3366,
-				SatelliteEncryptionType: "plain",
+				SatellitePort:           com.Port,
+				SatelliteEncryptionType: com.Name,
 			},
 		},
 	})
@@ -490,9 +508,11 @@ func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 	return nil
 }
 
-func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
+func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.ConfigMap) *apps.DaemonSet {
 	labels := pnsLabels(pns)
 	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
+
+	sslConfig := utils.NewSatelliteComTypeForSslConfig(pns.Spec.Ssl)
 
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -531,22 +551,24 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 					PriorityClassName: pns.Spec.PriorityClassName,
 					Containers: []corev1.Container{
 						{
-							Name:            "linstor-satellite",
-							Image:           pns.Spec.SatelliteImage,
-							Args:            []string{"startSatellite"}, // Run linstor-satellite.
+							Name:  "linstor-satellite",
+							Image: pns.Spec.SatelliteImage,
+							Args: []string{
+								"startSatellite",
+							}, // Run linstor-satellite.
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
 								{
-									HostPort:      3366,
-									ContainerPort: 3366,
-								},
-								{
-									HostPort:      3367,
-									ContainerPort: 3367,
+									HostPort:      sslConfig.Port,
+									ContainerPort: sslConfig.Port,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      kubeSpec.LinstorConfDirName,
+									MountPath: kubeSpec.LinstorConfDir,
+								},
 								{
 									Name:      kubeSpec.DevDirName,
 									MountPath: kubeSpec.DevDir,
@@ -581,6 +603,16 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 					},
 					Volumes: []corev1.Volume{
 						{
+							Name: kubeSpec.LinstorConfDirName,
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: config.Name,
+									},
+								},
+							},
+						},
+						{
 							Name: kubeSpec.DevDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
@@ -604,7 +636,9 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
 		},
 	}
 
-	return daemonSetWithDRBDKernelModuleInjection(ds, pns)
+	ds = daemonSetWithDRBDKernelModuleInjection(ds, pns)
+	ds = daemonSetWithSslConfiguration(ds, pns)
+	return ds
 }
 
 func newServiceForPNS(pns *piraeusv1alpha1.LinstorNodeSet) *corev1.Service {
@@ -631,6 +665,82 @@ func newServiceForPNS(pns *piraeusv1alpha1.LinstorNodeSet) *corev1.Service {
 			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
+}
+
+func reconcileSatelliteConfiguration(pns *piraeusv1alpha1.LinstorNodeSet, r *ReconcileLinstorNodeSet) (*corev1.ConfigMap, error) {
+
+	meta := metav1.ObjectMeta{
+		Name:      pns.Name + "-config",
+		Namespace: pns.Namespace,
+	}
+
+	// Check to see if map already exists
+	foundConfigMap := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: meta.Name, Namespace: meta.Namespace}, foundConfigMap)
+	if err == nil {
+		logrus.WithFields(logrus.Fields{
+			"Name":      meta.Name,
+			"Namespace": meta.Namespace,
+		}).Debugf("reconcileSatelliteConfiguration: ConfigMap already exists")
+		return foundConfigMap, nil
+	} else if !errors.IsNotFound(err) {
+		return nil, err
+	}
+	// ConfigMap does not exist, create it next
+
+	// Create linstor satellite configuration
+	type SatelliteNetcomConfig struct {
+		Type                string `toml:"type"`
+		Port                int32  `toml:"port,omitempty,omitzero"`
+		ServerCertificate   string `toml:"server_certificate,omitempty,omitzero"`
+		TrustedCertificates string `toml:"trusted_certificates,omitempty,omitzero"`
+		KeyPassword         string `toml:"key_password,omitempty,omitzero"`
+		KeystorePassword    string `toml:"keystore_password,omitempty,omitzero"`
+		TruststorePassword  string `toml:"truststore_password,omitempty,omitzero"`
+		SslProtocol         string `toml:"ssl_protocol,omitempty,omitzero"`
+	}
+
+	type SatelliteConfig struct {
+		Netcom SatelliteNetcomConfig `toml:"netcom,omitempty,omitzero"`
+	}
+
+	com := utils.NewSatelliteComTypeForSslConfig(pns.Spec.Ssl)
+
+	config := SatelliteConfig{}
+
+	if pns.Spec.Ssl != nil {
+		config.Netcom = SatelliteNetcomConfig{
+			Type:                com.Name,
+			Port:                com.Port,
+			ServerCertificate:   kubeSpec.LinstorSslDir + "/keystore.jks",
+			TrustedCertificates: kubeSpec.LinstorSslDir + "/certificates.jks",
+			KeyPassword:         pns.Spec.Ssl.KeyPassword,
+			KeystorePassword:    pns.Spec.Ssl.KeystorePassword,
+			TruststorePassword:  pns.Spec.Ssl.TruststorePassword,
+			SslProtocol:         "TLSv1.2",
+		}
+	}
+
+	// Create a config map from it
+	tomlConfigBuilder := strings.Builder{}
+	tomlEncoder := toml.NewEncoder(&tomlConfigBuilder)
+	if err := tomlEncoder.Encode(config); err != nil {
+		return nil, err
+	}
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: meta,
+		Data: map[string]string{
+			kubeSpec.LinstorSatelliteConfigFile: tomlConfigBuilder.String(),
+		},
+	}
+
+	err = r.client.Create(context.TODO(), cm)
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
 }
 
 func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
@@ -688,6 +798,30 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 					Type: &kubeSpec.HostPathDirectoryType,
 				}}},
 	}...)
+
+	return ds
+}
+
+func daemonSetWithSslConfiguration(ds *apps.DaemonSet, pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
+	if pns.Spec.Ssl == nil {
+		// TODO: Implement automatic SSL cert provisioning. For now we just disable SSL
+		return ds
+	}
+
+	ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		Name:      kubeSpec.LinstorSslDirName,
+		MountPath: kubeSpec.LinstorSslDir,
+		ReadOnly:  true,
+	})
+
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: kubeSpec.LinstorSslDirName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: pns.Spec.Ssl.Secret,
+			},
+		},
+	})
 
 	return ds
 }

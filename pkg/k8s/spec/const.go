@@ -21,16 +21,19 @@ import corev1 "k8s.io/api/core/v1"
 
 // Shared consts common to container volumes.
 const (
-	DevDir             = "/dev/"
-	DevDirName         = "device-dir"
-	LinstorConfDir     = "/etc/linstor"
-	LinstorCertDir     = "/etc/linstor/certs"
-	LinstorConfDirName = "linstor-conf"
-	LinstorCertDirName = "linstor-certs"
-	ModulesDir         = "/lib/modules/" // "/usr/lib/modules/"
-	ModulesDirName     = "modules-dir"
-	SrcDir             = "/usr/src"
-	SrcDirName         = "src-dir"
+	DevDir                     = "/dev/"
+	DevDirName                 = "device-dir"
+	LinstorConfDir             = "/etc/linstor"
+	LinstorCertDir             = "/etc/linstor/certs"
+	LinstorSslDir              = "/etc/linstor/ssl"
+	LinstorConfDirName         = "linstor-conf"
+	LinstorCertDirName         = "linstor-certs"
+	LinstorSslDirName          = "linstor-ssl"
+	ModulesDir                 = "/lib/modules/" // "/usr/lib/modules/"
+	ModulesDirName             = "modules-dir"
+	SrcDir                     = "/usr/src"
+	SrcDirName                 = "src-dir"
+	LinstorSatelliteConfigFile = "linstor_satellite.toml"
 )
 
 // Special strings for communicating with the module injector

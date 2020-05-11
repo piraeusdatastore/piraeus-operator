@@ -33,10 +33,12 @@ type LinstorControllerSetSpec struct {
 	// PriorityClassName is the name of the PriorityClass for the controller set
 	PriorityClassName string `json:"priorityClassName"`
 
-	DBConnectionURL   string `json:"dbConnectionURL"`
-	DBCertSecret      string `json:"dbCertSecret"`
-	DrbdRepoCred      string `json:"drbdRepoCred"`
-	ControllerImage   string `json:"controllerImage"`
+	DBConnectionURL string `json:"dbConnectionURL"`
+	DBCertSecret    string `json:"dbCertSecret"`
+	// Configuration options for secure communication between nodes and controllers
+	Ssl             *JavaSslConfiguration `json:"ssl"`
+	DrbdRepoCred    string                `json:"drbdRepoCred"`
+	ControllerImage string                `json:"controllerImage"`
 }
 
 // LinstorControllerSetStatus defines the observed state of LinstorControllerSet

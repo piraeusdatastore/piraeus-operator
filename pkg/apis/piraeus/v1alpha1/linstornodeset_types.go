@@ -39,6 +39,9 @@ type LinstorNodeSetSpec struct {
 	// DRBDKernelModuleInjectionMode selects the source for the DRBD kernel module
 	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 
+	// Configuration options for secure communication between nodes and controllers
+	Ssl *JavaSslConfiguration `json:"ssl"`
+
 	//DrbdRepoCred is the name of the k8s secret with the repo credential
 	DrbdRepoCred string `json:"drbdRepoCred"`
 
@@ -46,7 +49,7 @@ type LinstorNodeSetSpec struct {
 	SatelliteImage string `json:"satelliteImage"`
 
 	//KernelModImage is the DRBD Kernel injection image (location + tag)
-	KernelModImage   string `json:"kernelModImage"`
+	KernelModImage string `json:"kernelModImage"`
 }
 
 // KernelModuleInjectionMode describes the source for injecting a kernel module
