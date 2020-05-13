@@ -5,13 +5,7 @@ metadata:
 spec:
   priorityClassName: {{ template "operator.fullname" . }}-cs-priority-class
   dbConnectionURL:  {{ .Values.operator.controllerSet.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}
-  {{- if .Values.operator.controllerSet.sslSecret }}
-  ssl:
-    secret: {{ .Values.operator.controllerSet.sslSecret }}
-    keystorePassword: {{ .Values.operator.controllerSet.sslKeystorePassword }}
-    keyPassword: {{ .Values.operator.controllerSet.sslKeyPassword }}
-    truststorePassword: {{ .Values.operator.controllerSet.sslTruststorePassword }}
-  {{- end }}
+  sslSecret: {{ .Values.operator.controllerSet.sslSecret }}
   dbCertSecret: {{ .Values.operator.controllerSet.dbCertSecret | default "" }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   controllerImage: {{ .Values.operator.controllerSet.controllerImage }}
