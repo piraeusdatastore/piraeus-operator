@@ -202,10 +202,10 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 
 	markedForDeletion := pcs.GetDeletionTimestamp() != nil
 	if markedForDeletion {
-		err := r.finalizeControllerSet(pcs)
+		finished, err := r.finalizeControllerSet(pcs)
 
 		log.Debug("CS Reconcile: reconcile loop end")
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: !finished}, err
 	}
 
 	if err := r.addFinalizer(pcs); err != nil {
@@ -424,7 +424,8 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(p
 	return nil
 }
 
-func (r *ReconcileLinstorControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.LinstorControllerSet) error {
+// finalizeControllerSet returns whether it is finished as well as potentially an error
+func (r *ReconcileLinstorControllerSet) finalizeControllerSet(pcs *piraeusv1alpha1.LinstorControllerSet) (bool, error) {
 	log := logrus.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
@@ -437,38 +438,62 @@ func (r *ReconcileLinstorControllerSet) finalizeControllerSet(pcs *piraeusv1alph
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
 
-		nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
+		ok, err := r.mayFinalizeControllerSet(pcs)
 		if err != nil {
-			if err != lapi.NotFoundError {
-				return fmt.Errorf("CS unable to get cluster nodes: %v", err)
-			}
+			return false, err
 		}
-
-		var nodeNames = make([]string, 0)
-		for _, node := range nodes {
-			if node.Type == lc.Satellite {
-				nodeNames = append(nodeNames, node.Name)
-			}
-		}
-
-		if len(nodeNames) != 0 {
-			return fmt.Errorf("CS controller still has active satellites which must be cleared before deletion: %v", nodeNames)
+		if !ok {
+			return false, nil
 		}
 
 		// Remove finalizer. Once all finalizers have been
 		// removed, the object will be deleted.
 		log.Info("CS finalizing finished, removing finalizer")
 		if err := r.deleteFinalizer(pcs); err != nil {
-			return err
+			return false, err
 		}
 
 		if err := r.client.Status().Update(context.TODO(), pcs); err != nil {
-			return err
+			return false, err
 		}
-
-		return nil
 	}
-	return nil
+	return true, nil
+}
+
+// mayFinalizeControllerSet returns whether the controller set may be finalized currently
+func (r *ReconcileLinstorControllerSet) mayFinalizeControllerSet(pcs *piraeusv1alpha1.LinstorControllerSet) (bool, error) {
+	log := logrus.WithFields(logrus.Fields{
+		"name":      pcs.Name,
+		"namespace": pcs.Namespace,
+		"spec":      fmt.Sprintf("%+v", pcs.Spec),
+	})
+	if pcs.Status.ControllerStatus.NodeName == "" {
+		log.Info("CS never deployed; finalization OK")
+		return true, nil
+	}
+
+	nodes, err := r.linstorClient.Nodes.GetAll(context.TODO())
+	if err != nil {
+		if err != lapi.NotFoundError {
+			return false, fmt.Errorf("CS unable to get cluster nodes: %v", err)
+		}
+	}
+
+	var nodeNames = make([]string, 0)
+	for _, node := range nodes {
+		if node.Type == lc.Satellite {
+			nodeNames = append(nodeNames, node.Name)
+		}
+	}
+
+	if len(nodeNames) != 0 {
+		log.WithFields(logrus.Fields{
+			"nodeNames": nodeNames,
+		}).Info("CS controller still has active satellites which must be cleared before deletion")
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (r *ReconcileLinstorControllerSet) addFinalizer(pcs *piraeusv1alpha1.LinstorControllerSet) error {
