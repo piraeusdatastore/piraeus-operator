@@ -42,3 +42,18 @@ follow these steps:
 
 :warning: It is currently **NOT** possible to change the keystore password. LINSTOR expects the passwords to be
 `linstor`. This is a current limitation of LINSTOR.
+
+## Automatically set the passphrase for encrypted volumes
+
+Linstor can be used to create encrypted volumes using LUKS. The passphrase used when creating these volumes can
+be set via a secret:
+
+```
+kubectl create secret generic linstor-pass --from-literal=MASTER_PASSPHRASE=<password>
+```
+
+On install, add the following arguments to the helm command:
+
+```
+--set operator.controllerSet.luksSecret=linstor-pass
+```

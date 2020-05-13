@@ -43,6 +43,11 @@ const (
 	LinstorKernelModShippedModules = "shipped_modules"
 )
 
+// Special strings when configuring Linstor
+const (
+	LinstorLUKSPassphraseEnvName = "MASTER_PASSPHRASE"
+)
+
 // Shared consts common to container volumes. These need to be vars, so they
 // are addressible.
 var (

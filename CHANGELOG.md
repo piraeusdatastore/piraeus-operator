@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   certificate to switch from HTTP to HTTPS communication.
 * Secured connection between Linstor components: You can specify TLS keys to secure the communication between
   controller and satellite
+* Secure storage with LUKS: You can specify the master passphrase used by Linstor when creating encrypted volumes
+  when installing via Helm.
 
 ### Removed
 
