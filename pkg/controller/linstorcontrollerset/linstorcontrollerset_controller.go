@@ -30,7 +30,6 @@ import (
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
-	"github.com/piraeusdatastore/piraeus-operator/pkg/utils"
 
 	"github.com/BurntSushi/toml"
 	"github.com/sirupsen/logrus"
@@ -176,13 +175,6 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 
 	if pcs.Spec.DBConnectionURL == "" {
 		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter dbConnectionURL: outdated schema")
-	}
-
-	if pcs.Spec.Ssl != nil {
-		// 2020-05-12 FIXME: Teach LINSTOR how to read these parameters from controller config. Currently these values are added directly to the database on initial migration.
-		if pcs.Spec.Ssl.TruststorePassword != "linstor" || pcs.Spec.Ssl.KeystorePassword != "linstor" || pcs.Spec.Ssl.KeyPassword != "linstor" {
-			return reconcile.Result{}, fmt.Errorf("CS Reconcile: don't know how to set custom passwords for LINSTOR keystores. Default passphrase is 'linstor'. %v", pcs.Spec.Ssl)
-		}
 	}
 
 	log := logrus.WithFields(logrus.Fields{
@@ -379,8 +371,6 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(p
 	// Mark this true on successful exit from this function.
 	ctrl.RegisteredOnController = false
 
-	com := utils.NewSatelliteComTypeForSslConfig(pcs.Spec.Ssl)
-
 	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
 		Name: pod.Name,
 		Type: lc.Controller,
@@ -388,8 +378,8 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(p
 			{
 				Name:                    "default",
 				Address:                 pod.Status.PodIP,
-				SatellitePort:           com.Port,
-				SatelliteEncryptionType: com.Name,
+				SatellitePort:           pcs.Spec.SslConfig.Port(),
+				SatelliteEncryptionType: pcs.Spec.SslConfig.Type(),
 			},
 		},
 	})
@@ -543,12 +533,12 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 		})
 	}
 
-	if pcs.Spec.Ssl != nil {
+	if !pcs.Spec.SslConfig.IsPlain() {
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorSslDirName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pcs.Spec.Ssl.Secret,
+					SecretName: string(*pcs.Spec.SslConfig),
 				},
 			},
 		})

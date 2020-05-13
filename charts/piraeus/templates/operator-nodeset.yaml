@@ -4,13 +4,7 @@ metadata:
   name: {{ template "operator.fullname" . }}-ns
 spec:
   priorityClassName: {{ template "operator.fullname" . }}-cs-priority-class
-  {{- if .Values.operator.nodeSet.sslSecret }}
-  ssl:
-    secret: {{ .Values.operator.nodeSet.sslSecret }}
-    keystorePassword: {{ .Values.operator.nodeSet.sslKeystorePassword }}
-    keyPassword: {{ .Values.operator.nodeSet.sslKeyPassword }}
-    truststorePassword: {{ .Values.operator.nodeSet.sslTruststorePassword }}
-  {{- end }}
+  sslSecret: {{ .Values.operator.nodeSet.sslSecret }}
   drbdKernelModuleInjectionMode: {{ .Values.operator.nodeSet.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   satelliteImage: {{ .Values.operator.nodeSet.satelliteImage }}

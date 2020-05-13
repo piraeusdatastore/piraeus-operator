@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import lapi "github.com/LINBIT/golinstor/client"
+import lapiconst "github.com/LINBIT/golinstor"
 
 // NodeStatus simple status of the node in the linstor cluster.
 type NodeStatus struct {
@@ -114,17 +115,26 @@ func (s *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
 	}
 }
 
-type JavaSslConfiguration struct {
-	// Name of the secret that holds the key (called `keystore.jks`) and the trusted certificates
-	// (called `certificates.jks`)
-	Secret string `json:"secret"`
+// LinstorSSLConfig is the name of the k8s secret that holds the key (called `keystore.jks`) and
+// the trusted certificates (called `certificates.jks`)
+type LinstorSSLConfig string
 
-	// Password for the private key inside the keystore
-	KeyPassword string `json:"keyPassword"`
+func (lsc *LinstorSSLConfig) IsPlain() bool {
+	return lsc == nil || *lsc == ""
+}
 
-	// Password used to unlock the java keystore referenced in `Secret`
-	KeystorePassword string `json:"keystorePassword"`
+func (lsc *LinstorSSLConfig) Port() int32 {
+	if lsc.IsPlain() {
+		return lapiconst.DfltStltPortPlain
+	} else {
+		return lapiconst.DfltStltPortSsl
+	}
+}
 
-	// Password for the certificate keystore
-	TruststorePassword string `json:"truststorePassword"`
+func (lsc *LinstorSSLConfig) Type() string {
+	if lsc.IsPlain() {
+		return lapiconst.ValNetcomTypePlain
+	} else {
+		return lapiconst.ValNetcomTypeSsl
+	}
 }

@@ -40,8 +40,5 @@ follow these steps:
   --set operator.nodeSet.sslSecret=node-secret --set operator.controllerSet.sslSecret=control-secret
   ```
 
-:warning: It is currently **NOT** possible to change the keystore password **for the controller**. The current
-version of LINSTOR expects the password to be `linstor`. The passwords for the node keystore **can** be changed:
-* `--set operator.nodeSet.sslKeystorePassword=linstor`
-* `--set operator.nodeSet.sslKeyPassword=linstor`
-* `--set operator.nodeSet.sslTruststorePassword=linstor`
+:warning: It is currently **NOT** possible to change the keystore password. LINSTOR expects the passwords to be
+`linstor`. This is a current limitation of LINSTOR.

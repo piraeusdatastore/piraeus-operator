@@ -19,15 +19,9 @@ operator:
     controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
     dbCertSecret: ""
     sslSecret: ""
-    sslKeystorePassword: "linstor"
-    sslKeyPassword: "linstor"
-    sslTruststorePassword: "linstor"
   nodeSet:
     drbdKernelModuleInjectionMode: Compile
     satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
     kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
     storagePools: null
     sslSecret: ""
-    sslKeystorePassword: "linstor"
-    sslKeyPassword: "linstor"
-    sslTruststorePassword: "linstor"

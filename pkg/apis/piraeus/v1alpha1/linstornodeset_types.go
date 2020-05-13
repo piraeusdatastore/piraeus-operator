@@ -40,7 +40,7 @@ type LinstorNodeSetSpec struct {
 	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 
 	// Configuration options for secure communication between nodes and controllers
-	Ssl *JavaSslConfiguration `json:"ssl"`
+	SslConfig *LinstorSSLConfig `json:"sslSecret"`
 
 	//DrbdRepoCred is the name of the k8s secret with the repo credential
 	DrbdRepoCred string `json:"drbdRepoCred"`
