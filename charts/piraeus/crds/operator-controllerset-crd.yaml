@@ -47,6 +47,7 @@ spec:
             luksSecret:
               description: Name of the secret containing the master passphrase for LUKS devices as `MASTER_PASSPHRASE`
               type: string
+              nullable: true
             sslSecret:
               description: Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and
                 the trusted certificates (called `certificates.jks`)
