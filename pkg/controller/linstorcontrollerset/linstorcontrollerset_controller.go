@@ -498,6 +498,13 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 
 	labels := pcsLabels(pcs)
 
+	env := []corev1.EnvVar{
+		{
+			Name:  "LS_CONTROLLERS",
+			Value: "http://" + pcs.Name + ":" + "3370",
+		},
+	}
+
 	volumes := []corev1.Volume{
 		{
 			Name: kubeSpec.LinstorConfDirName,
@@ -514,6 +521,20 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 			Name:      kubeSpec.LinstorConfDirName,
 			MountPath: kubeSpec.LinstorConfDir,
 		},
+	}
+
+	if pcs.Spec.LuksSecret != "" {
+		env = append(env, corev1.EnvVar{
+			Name: kubeSpec.LinstorLUKSPassphraseEnvName,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: pcs.Spec.LuksSecret,
+					},
+					Key: kubeSpec.LinstorLUKSPassphraseEnvName,
+				},
+			},
+		})
 	}
 
 	if pcs.Spec.DBCertSecret != "" {
@@ -593,12 +614,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 								},
 							},
 							VolumeMounts: volumeMounts,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "LS_CONTROLLERS",
-									Value: "http://" + pcs.Name + ":" + "3370",
-								},
-							},
+							Env:          env,
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									Exec: &corev1.ExecAction{

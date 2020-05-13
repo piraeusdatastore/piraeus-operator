@@ -17,6 +17,7 @@ operator:
   image: "quay.io/piraeusdatastore/piraeus-operator:v0.3.0"
   controllerSet:
     controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
+    luksSecret: ""
     dbCertSecret: ""
     sslSecret: ""
   nodeSet:

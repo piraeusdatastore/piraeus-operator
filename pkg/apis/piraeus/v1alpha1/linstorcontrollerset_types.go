@@ -35,6 +35,8 @@ type LinstorControllerSetSpec struct {
 
 	DBConnectionURL string `json:"dbConnectionURL"`
 	DBCertSecret    string `json:"dbCertSecret"`
+	// Name of the secret containing the master passphrase for LUKS devices as `MASTER_PASSPHRASE`
+	LuksSecret		string `json:"luksSecret"`
 	// Configuration options for secure communication between nodes and controllers
 	SslConfig       *LinstorSSLConfig `json:"sslSecret"`
 	DrbdRepoCred    string            `json:"drbdRepoCred"`
