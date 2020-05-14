@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Changed
+* CSI storage driver setup: move setup from helm to go operator. This is mostly an internal change.
+  These changes may be of note if you used a non-default CSI configuration:
+  * helm value `csi.image` was renamed to `csi.pluginImage`
+  * CSI deployment can be controlled by a new resource `linstorcsidrivers.piraeus.linbit.com`
 
 ## [v0.3.0] - 2020-05-08
 

@@ -1,7 +1,0 @@
-apiVersion: scheduling.k8s.io/v1
-kind: PriorityClass
-metadata:
-  name: {{ template "operator.fullname" . }}-csi-priority-class
-value: 1000000
-globalDefault: false
-description: "Priority class for piraeus-csi components"
