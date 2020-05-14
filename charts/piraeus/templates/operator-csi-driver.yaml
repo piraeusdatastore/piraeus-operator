@@ -1,0 +1,11 @@
+{{- if .Values.csi.enabled }}
+apiVersion: piraeus.linbit.com/v1alpha1
+kind: LinstorCSIDriver
+metadata:
+  name: {{ template "operator.fullname" . }}-csi-driver
+spec:
+  enabled: {{ .Values.csi.enabled }}
+  imagePullSecret: {{ .Values.drbdRepoCred | quote }}
+  linstorControllerAddress: http://{{ template "operator.fullname" . }}-cs:3700/
+  linstorPluginImage: {{ .Values.csi.pluginImage | quote }}
+{{- end }}

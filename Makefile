@@ -21,3 +21,6 @@ upload:
 		docker push $$r/$(PROJECT):$(TAG) ; \
 		docker push $$r/$(PROJECT):latest ; \
 	done
+
+test:
+	find ./pkg/ -name "*.go" -type f | xargs dirname | uniq | xargs go test
