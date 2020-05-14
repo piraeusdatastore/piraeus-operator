@@ -58,7 +58,7 @@ type LinstorControllerSetStatus struct {
 	// ControllerStatus information.
 	ControllerStatus *NodeStatus `json:"ControllerStatus"`
 	// SatelliteStatuses by hostname.
-	SatelliteStatuses map[string]*SatelliteStatus `json:"SatelliteStatuses"`
+	SatelliteStatuses []*SatelliteStatus `json:"SatelliteStatuses"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

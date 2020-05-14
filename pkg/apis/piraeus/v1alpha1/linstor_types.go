@@ -31,11 +31,11 @@ type NodeStatus struct {
 // SatelliteStatus should provide all the information that the reconsile loop
 // needs to manage the operation of the LINSTOR Satellite.
 type SatelliteStatus struct {
-	NodeStatus
+	NodeStatus `json:",inline"`
 	// As indicated by Linstor
 	ConnectionStatus string `json:"connectionStatus"`
 	// StoragePoolStatuses by storage pool name.
-	StoragePoolStatuses map[string]*StoragePoolStatus `json:"storagePoolStatus"`
+	StoragePoolStatuses []*StoragePoolStatus `json:"storagePoolStatus"`
 }
 
 // StoragePoolStatus reports basic information about storage pool state.
@@ -98,7 +98,7 @@ func (s *StoragePoolLVM) ToLinstorStoragePool() lapi.StoragePool {
 // StoragePoolLVMThin represents LVM Thin storage pool to be
 // managed by a LinstorNodeSet
 type StoragePoolLVMThin struct {
-	StoragePoolLVM
+	StoragePoolLVM `json:",inline"`
 	// Name of underlying lvm thin volume
 	ThinVolume string `json:"thinVolume"`
 }
