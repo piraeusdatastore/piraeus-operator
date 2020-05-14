@@ -77,7 +77,7 @@ type LinstorNodeSetStatus struct {
 	// Errors remaining that will trigger reconciliations.
 	Errors []string `json:"errors"`
 	// SatelliteStatuses by hostname.
-	SatelliteStatuses map[string]*SatelliteStatus `json:"SatelliteStatuses"`
+	SatelliteStatuses []*SatelliteStatus `json:"SatelliteStatuses"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

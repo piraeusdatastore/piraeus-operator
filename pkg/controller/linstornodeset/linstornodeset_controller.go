@@ -179,8 +179,9 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}).Debug("NS Reconcile: found LinstorNodeSet")
 
 	if pns.Status.SatelliteStatuses == nil {
-		pns.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
+		pns.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, 0)
 	}
+
 	if pns.Spec.StoragePools == nil {
 		pns.Spec.StoragePools = &piraeusv1alpha1.StoragePools{}
 	}
@@ -330,12 +331,14 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 	}
 
 	satelliteStatusIn := make(chan satStat)
-	satelliteStatusOut := make(chan satStat)
+	satelliteStatusOut := make(chan error)
 
 	maxConcurrentNodes := 5
 	tokens := make(chan struct{}, maxConcurrentNodes)
 
 	var wg sync.WaitGroup
+
+	pns.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, len(pods.Items))
 
 	for i := range pods.Items {
 		wg.Add(1)
@@ -350,16 +353,10 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 		})
 		log.Debug("NS reconcileSatNodes: reconciling node")
 
-		sat, ok := pns.Status.SatelliteStatuses[pod.Spec.NodeName]
-		if !ok {
-			pns.Status.SatelliteStatuses[pod.Spec.NodeName] = &piraeusv1alpha1.SatelliteStatus{
-				NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
-			}
-			sat = pns.Status.SatelliteStatuses[pod.Spec.NodeName]
+		sat := &piraeusv1alpha1.SatelliteStatus{
+			NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
 		}
-		if sat.StoragePoolStatuses == nil {
-			sat.StoragePoolStatuses = make(map[string]*piraeusv1alpha1.StoragePoolStatus)
-		}
+		pns.Status.SatelliteStatuses[i] = sat
 
 		go func() {
 			l := log
@@ -387,7 +384,7 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 
 			in := <-satelliteStatusIn
 			if in.err != nil {
-				satelliteStatusOut <- satStat{in.sat, in.err}
+				satelliteStatusOut <- in.err
 				return
 			}
 
@@ -395,7 +392,7 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 			if err != nil {
 				l.Debug("NS reconcileSatNodes: Error with reconcileStoragePoolsOnNode")
 			}
-			satelliteStatusOut <- satStat{sat, err}
+			satelliteStatusOut <- err
 		}()
 	}
 
@@ -406,14 +403,9 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 
 	var compoundError []error
 
-	for out := range satelliteStatusOut {
-		if out.err != nil {
-			compoundError = append(compoundError, out.err)
-		}
-
-		// Guard against empty statuses.
-		if out.sat == nil || out.sat.NodeName != "" {
-			pns.Status.SatelliteStatuses[out.sat.NodeName] = out.sat
+	for err := range satelliteStatusOut {
+		if err != nil {
+			compoundError = append(compoundError, err)
 		}
 	}
 
@@ -476,7 +468,8 @@ func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 	}
 
 	// Get status for all pools.
-	for _, pool := range pools {
+	sat.StoragePoolStatuses = make([]*piraeusv1alpha1.StoragePoolStatus, len(pools))
+	for i, pool := range pools {
 		p, err := r.linstorClient.GetStoragePoolOrCreateOnNode(context.TODO(), pool.ToLinstorStoragePool(), pod.Spec.NodeName)
 		if err != nil {
 			return err
@@ -488,10 +481,7 @@ func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 			"storagePool": fmt.Sprintf("%+v", status),
 		}).Debug("NS reconcileStoragePoolsOnNode: found storage pool")
 
-		// Guard against empty statuses.
-		if status == nil || status.Name != "" {
-			sat.StoragePoolStatuses[status.Name] = status
-		}
+		sat.StoragePoolStatuses[i] = status
 	}
 
 	return nil
@@ -873,7 +863,6 @@ func (r *ReconcileLinstorNodeSet) finalizeNode(pns *piraeusv1alpha1.LinstorNodeS
 		return fmt.Errorf("unable to delete node %s: %v", nodeName, err)
 	}
 
-	delete(pns.Status.SatelliteStatuses, nodeName)
 	return nil
 }
 
@@ -910,11 +899,15 @@ func (r *ReconcileLinstorNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Lins
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
 		var errs = make([]error, 0)
-		for nodeName := range pns.Status.SatelliteStatuses {
-			if err := r.finalizeNode(pns, nodeName); err != nil {
+		var keepNodes = make([]*piraeusv1alpha1.SatelliteStatus, 0)
+		for _, node := range pns.Status.SatelliteStatuses {
+			if err := r.finalizeNode(pns, node.NodeName); err != nil {
 				errs = append(errs, err)
+				keepNodes = append(keepNodes, node)
 			}
 		}
+
+		pns.Status.SatelliteStatuses = keepNodes
 
 		// Remove finalizer. Once all finalizers have been
 		// removed, the object will be deleted.

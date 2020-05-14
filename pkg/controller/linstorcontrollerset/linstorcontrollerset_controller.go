@@ -161,6 +161,10 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{}
 	}
 
+	if pcs.Status.SatelliteStatuses == nil {
+		pcs.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, 0)
+	}
+
 	if pcs.Spec.DrbdRepoCred == "" {
 		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter drbdRepoCred: outdated schema")
 	}
@@ -190,10 +194,6 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	}).Debug("found LinstorControllerSet")
-
-	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
-	}
 
 	r.linstorClient, err = lc.NewHighLevelLinstorClientForObject(pcs)
 	if err != nil {
@@ -397,26 +397,24 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(p
 		return fmt.Errorf("CS unable to get cluster storage nodes: %v", err)
 	}
 
-	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make(map[string]*piraeusv1alpha1.SatelliteStatus)
-	}
+	pcs.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, len(nodes))
 
 	for i := range nodes {
 		node := &nodes[i]
 
-		pcs.Status.SatelliteStatuses[node.Name] = &piraeusv1alpha1.SatelliteStatus{
+		pcs.Status.SatelliteStatuses[i] = &piraeusv1alpha1.SatelliteStatus{
 			NodeStatus: piraeusv1alpha1.NodeStatus{
 				NodeName:               node.Name,
 				RegisteredOnController: true,
 			},
 			ConnectionStatus:    node.ConnectionStatus,
-			StoragePoolStatuses: make(map[string]*piraeusv1alpha1.StoragePoolStatus),
+			StoragePoolStatuses: make([]*piraeusv1alpha1.StoragePoolStatus, len(node.StoragePools)),
 		}
 
-		for i := range node.StoragePools {
-			pool := node.StoragePools[i]
+		for j := range node.StoragePools {
+			pool := node.StoragePools[j]
 
-			pcs.Status.SatelliteStatuses[node.Name].StoragePoolStatuses[pool.StoragePoolName] = piraeusv1alpha1.NewStoragePoolStatus(pool)
+			pcs.Status.SatelliteStatuses[i].StoragePoolStatuses[j] = piraeusv1alpha1.NewStoragePoolStatus(pool)
 		}
 	}
 
