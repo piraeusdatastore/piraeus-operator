@@ -13,6 +13,22 @@ The secret can then be passed to the controller by passing the following argumen
 --set operator.controllerSet.dbCertSecret=<secret name>
 ```
 
+### Authentication with `etcd` using certificates
+
+If you want to use TLS certificates to authenticate with an `etcd` database, you need to set the following option on
+helm install:
+```
+--set operator.controllerSet.dbUseClientCert=true
+```
+
+If this option is active, the secret specified in the above section must contain two additional keys:
+* `client.cert` PEM formatted certificate presented to `etcd` for authentication
+* `client.key` private key **in PKCS8 format**, matching the above client certificate.
+  Keys can be converted into PKCS8 format using `openssl`:
+  ```
+  openssl pkcs8 -topk8 -nocrypt -in client-key.pem -out client-key.pkcs8
+  ```
+
 ## Configuring secure communication between LINSTOR components
 
 The default communication between LINSTOR components is not secured by TLS. If this is needed for your setup,

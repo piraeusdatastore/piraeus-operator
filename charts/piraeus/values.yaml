@@ -20,6 +20,7 @@ operator:
     controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
     luksSecret: ""
     dbCertSecret: ""
+    dbUseClientCert: false
     sslSecret: ""
   nodeSet:
     drbdKernelModuleInjectionMode: Compile

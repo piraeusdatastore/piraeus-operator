@@ -35,6 +35,10 @@ type LinstorControllerSetSpec struct {
 
 	DBConnectionURL string `json:"dbConnectionURL"`
 	DBCertSecret    string `json:"dbCertSecret"`
+	// Use a TLS client certificate for authentication with the database (etcd). If set to true,
+	// `dbCertSecret` must be set and contain two additional entries "client.cert" (PEM encoded)
+	// and "client.key" (PKCS8 encoded, without passphrase).
+	DBUseClientCert bool `json:"dbUseClientCert"`
 	// Name of the secret containing the master passphrase for LUKS devices as `MASTER_PASSPHRASE`
 	LuksSecret		string `json:"luksSecret"`
 	// Configuration options for secure communication between nodes and controllers

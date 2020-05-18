@@ -240,7 +240,7 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 	}).Debug("CS Reconcile: CS already exists")
 
 	// Define a configmap for the controller.
-	configMap, err := newConfigMapForPCS(pcs)
+	configMap, err := NewConfigMapForPCS(pcs)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -685,16 +685,24 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 	}
 }
 
-func newConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.ConfigMap, error) {
+func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.ConfigMap, error) {
 	certificatePath := ""
+	clientCertPath := ""
+	clientKeyPath := ""
 	if pcs.Spec.DBCertSecret != "" {
 		certificatePath = kubeSpec.LinstorCertDir + "/ca.pem"
+		if pcs.Spec.DBUseClientCert {
+			clientCertPath = kubeSpec.LinstorCertDir + "/client.cert"
+			clientKeyPath = kubeSpec.LinstorCertDir + "/client.key"
+		}
 	}
 
 	linstorConfig := lapi.ControllerConfig{
 		Db: lapi.ControllerConfigDb{
 			ConnectionUrl: pcs.Spec.DBConnectionURL,
 			CaCertificate: certificatePath,
+			ClientCertificate: clientCertPath,
+			ClientKeyPkcs8Pem: clientKeyPath,
 		},
 	}
 
