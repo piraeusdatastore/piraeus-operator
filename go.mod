@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/LINBIT/golinstor v0.25.1
+	github.com/LINBIT/golinstor v0.25.2-0.20200519080100-e76435b8971a
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5

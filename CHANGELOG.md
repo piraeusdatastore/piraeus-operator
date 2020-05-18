@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   controller and satellite
 * Secure storage with LUKS: You can specify the master passphrase used by Linstor when creating encrypted volumes
   when installing via Helm.
+* Authentication with etcd using TLS client certificates.
 
 ### Removed
 
