@@ -7,19 +7,21 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	schedv1 "k8s.io/api/scheduling/v1"
+	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"testing"
 )
 
 var (
-	OperatorName         = "foo"
-	OperatorNamespace    = "bar"
-	DefaultNodeDaemonSet = appsv1.DaemonSet{
+	CSIDriverAttachRequired = true
+	CSIDriverPodInfoOnMount = true
+	DefaultNodeDaemonSet    = appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo-csi-node-daemonset",
 			Namespace: "bar",
@@ -49,6 +51,16 @@ var (
 			Namespace: "bar",
 		},
 	}
+	DefaultCSIDriver = storagev1beta1.CSIDriver{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "linstor.csi.linbit.com",
+			Namespace: "bar",
+		},
+		Spec: storagev1beta1.CSIDriverSpec{
+			AttachRequired: &CSIDriverAttachRequired,
+			PodInfoOnMount: &CSIDriverPodInfoOnMount,
+		},
+	}
 )
 
 func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
@@ -57,6 +69,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 		deployments     []appsv1.Deployment
 		serviceAccounts []corev1.ServiceAccount
 		priorityClasses []schedv1.PriorityClass
+		csiDrivers      []storagev1beta1.CSIDriver
 	}
 
 	testcases := []struct {
@@ -89,6 +102,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 				deployments:     []appsv1.Deployment{DefaultControllerDeployment},
 				serviceAccounts: []corev1.ServiceAccount{DefaulControllerServiceAccount, DefaultNodeServiceAccount},
 				priorityClasses: []schedv1.PriorityClass{DefaultPriorityClass},
+				csiDrivers:      []storagev1beta1.CSIDriver{DefaultCSIDriver},
 			},
 		},
 	}
@@ -143,6 +157,13 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 					t.Fatalf("Failed to fetch items: %v", err)
 				}
 				comparePriorityClass(testcase.expectedResources.priorityClasses, priorityClasses.Items, t)
+
+				drivers := storagev1beta1.CSIDriverList{}
+				err = controllerClient.List(context.Background(), &drivers)
+				if err != nil {
+					t.Fatalf("Failed to fetch items: %v", err)
+				}
+				compareCSIDrivers(testcase.expectedResources.csiDrivers, drivers.Items, t)
 			}
 		})
 	}
@@ -232,6 +253,35 @@ func comparePriorityClass(expectedItems []schedv1.PriorityClass, actualItems []s
 		if expected == nil {
 			t.Errorf("unexpected priorityclass: %s/%s", actual.Namespace, actual.Name)
 			continue
+		}
+	}
+}
+
+func compareCSIDrivers(expectedItems []storagev1beta1.CSIDriver, actualItems []storagev1beta1.CSIDriver, t *testing.T) {
+	if len(expectedItems) != len(actualItems) {
+		t.Errorf("expected daemonsets to contain %d items, got %d instead", len(expectedItems), len(actualItems))
+	}
+
+	for _, actual := range actualItems {
+		var expected *storagev1beta1.CSIDriver = nil
+		for _, candidate := range expectedItems {
+			if actual.Name == candidate.Name && actual.Namespace == candidate.Namespace {
+				expected = &candidate
+				break
+			}
+		}
+
+		if expected == nil {
+			t.Errorf("unexpected csi driver: %s/%s", actual.Namespace, actual.Name)
+			continue
+		}
+
+		if !reflect.DeepEqual(actual.Spec.AttachRequired, expected.Spec.PodInfoOnMount) {
+			t.Errorf("driver %s/%s differs in .Spec.PodInfoOnMount", actual.Namespace, actual.Name)
+		}
+
+		if !reflect.DeepEqual(actual.Spec.AttachRequired, expected.Spec.AttachRequired) {
+			t.Errorf("driver %s/%s differs in .Spec.AttachRequired", actual.Namespace, actual.Name)
 		}
 	}
 }

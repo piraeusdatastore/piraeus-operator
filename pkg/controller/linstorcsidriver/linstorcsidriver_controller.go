@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	schedv1 "k8s.io/api/scheduling/v1"
+	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -80,6 +81,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRoleBinding{},
 		&rbacv1.ClusterRole{},
+		&storagev1beta1.CSIDriver{},
 	}
 
 	for _, createdResource := range createdResources {
@@ -133,7 +135,12 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 
 	specErr := r.reconcileSpec(ctx, csiResource)
 
-	return r.reconcileStatus(ctx, csiResource, specErr)
+	statusErr := r.reconcileStatus(ctx, csiResource, specErr)
+
+	if specErr != nil {
+		return reconcile.Result{}, specErr
+	}
+	return reconcile.Result{}, statusErr
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
@@ -162,10 +169,15 @@ func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResour
 		return err
 	}
 
+	err = r.reconcileCSIDriver(ctx, csiResource)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver, specError error) (reconcile.Result, error) {
+func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver, specError error) error {
 	nodeReady := false
 	controllerReady := false
 
@@ -205,7 +217,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 		}).Error("Failed to update status")
 	}
 
-	return reconcile.Result{}, err
+	return err
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcilePriorityClass(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
@@ -258,11 +270,9 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerServiceAccount(ctx contex
 	toReconcile := []GCRuntimeObject{
 		newCSIControllerServiceAccount(csiResource),
 		newCSIAttacherRole(csiResource),
-		newCSIClusterDriverRegistrarRole(csiResource),
 		newCSIProvisionerRole(csiResource),
 		newCSISnapshotterRole(csiResource),
 		newCSIAttacherBinding(csiResource),
-		newCSIClusterDriverRegistrarBinding(csiResource),
 		newCSIProvisionerBinding(csiResource),
 		newCSISnapshotterBinding(csiResource),
 	}
@@ -302,6 +312,17 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Co
 	return r.createOrReplaceWithOwner(ctx, controllerDeployment, csiResource)
 }
 
+func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      csiResource.Name,
+		"Namespace": csiResource.Namespace,
+		"Op":        "reconcileCSIDriver",
+	})
+	logger.Debugf("creating csi driver resource")
+	csiDriver := newCSIDriver(csiResource)
+	return r.createOrReplaceWithOwner(ctx, csiDriver, csiResource)
+}
+
 var (
 	ControllerReplicas            = int32(1)
 	IsPrivileged                  = true
@@ -324,24 +345,6 @@ func newCSIAttacherBinding(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv
 			Kind:     "ClusterRole",
 			APIGroup: "rbac.authorization.k8s.io",
 			Name:     csiResource.Name + AttacherRole,
-		},
-	}
-}
-
-func newCSIClusterDriverRegistrarBinding(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRoleBinding {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: makeMeta(csiResource, ClusterDriverRegistrarBinding),
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      getControllerServiceAccountName(csiResource),
-				Namespace: csiResource.Namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			APIGroup: "rbac.authorization.k8s.io",
-			Name:     csiResource.Name + ClusterDriverRegistrarRole,
 		},
 	}
 }
@@ -409,15 +412,6 @@ func newCSIAttacherRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.C
 			{APIGroups: []string{"csi.storage.k8s.io"}, Resources: []string{"csinodeinfos"}, Verbs: []string{"get", "list", "watch"}},
 			{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"volumeattachments"}, Verbs: []string{"get", "list", "watch", "update", "patch"}},
 			{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"csinodes"}, Verbs: []string{"get", "list", "watch"}},
-		},
-	}
-}
-
-func newCSIClusterDriverRegistrarRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		ObjectMeta: makeMeta(csiResource, ClusterDriverRegistrarRole),
-		Rules: []rbacv1.PolicyRule{
-			{APIGroups: []string{"csi.storage.k8s.io"}, Resources: []string{"csidrivers"}, Verbs: []string{"create", "delete"}},
 		},
 	}
 }
@@ -705,21 +699,6 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
 		}},
 	}
-	csiClusterDriverRegistrar := corev1.Container{
-		Name:  "csi-cluster-driver-registrar",
-		Image: "quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1",
-		Args: []string{
-			"--v=5",
-			"--pod-info-mount-version=\"v1\"",
-			"--csi-address=$(ADDRESS)",
-		},
-		Env:             []corev1.EnvVar{socketAddress},
-		ImagePullPolicy: "Always",
-		VolumeMounts: []corev1.VolumeMount{{
-			Name:      socketVolume.Name,
-			MountPath: "/var/lib/csi/sockets/pluginproxy/",
-		}},
-	}
 	linstorPlugin := corev1.Container{
 		Name:  "linstor-csi-plugin",
 		Image: csiResource.Spec.LinstorPluginImage,
@@ -755,7 +734,6 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 					ServiceAccountName: getControllerServiceAccountName(csiResource),
 					Containers: []corev1.Container{
 						csiAttacher,
-						csiClusterDriverRegistrar,
 						csiProvisioner,
 						csiSnapshotter,
 						linstorPlugin,
@@ -766,6 +744,24 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 					Volumes: []corev1.Volume{socketVolume},
 				},
 			},
+		},
+	}
+}
+
+func newCSIDriver(csiResource *piraeusv1alpha1.LinstorCSIDriver) *storagev1beta1.CSIDriver {
+	// should be const, but required to be var so that we can take the address to get a *bool
+	var attachRequired = true
+	var podInfoOnMount = true
+
+	return &storagev1beta1.CSIDriver{
+		ObjectMeta: metav1.ObjectMeta{
+			// Name must match exactly the one reported by the CSI plugin
+			Name:      "linstor.csi.linbit.com",
+			Namespace: csiResource.Namespace,
+		},
+		Spec: storagev1beta1.CSIDriverSpec{
+			AttachRequired: &attachRequired,
+			PodInfoOnMount: &podInfoOnMount,
 		},
 	}
 }
@@ -800,8 +796,8 @@ func (r *ReconcileLinstorCSIDriver) createOrReplaceWithOwner(ctx context.Context
 	err := controllerutil.SetControllerReference(csiResource, obj, r.scheme)
 	// If it is already owned, we don't treat the SetControllerReference() call as a failure condition
 	if err != nil {
-		maybeAlreadyOwned := err.(*controllerutil.AlreadyOwnedError)
-		if maybeAlreadyOwned == nil {
+		_, isAlreadyOwned := err.(*controllerutil.AlreadyOwnedError)
+		if !isAlreadyOwned {
 			return err
 		}
 	}
@@ -847,10 +843,8 @@ const (
 	SnapshotterRole               = "-csi-snapshotter-role"
 	ProvisionerRole               = "-csi-provisioner-role"
 	DriverRegistrarRole           = "-csi-driver-registrar-role"
-	ClusterDriverRegistrarRole    = "-csi-cluster-driver-registrar-role"
 	AttacherRole                  = "-csi-attacher-role"
 	AttacherBinding               = "-csi-attacher-binding"
-	ClusterDriverRegistrarBinding = "-csi-cluster-driver-registrar-binding"
 	DriverRegistrarBinding        = "-csi-driver-registrar-binding"
 	ProvisionerBinding            = "-csi-provisioner-binding"
 	SnapshotterBinding            = "-csi-snapshotter-binding"
