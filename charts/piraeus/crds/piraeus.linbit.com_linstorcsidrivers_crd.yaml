@@ -38,6 +38,18 @@ spec:
         spec:
           description: LinstorCSIDriverSpec defines the desired state of LinstorCSIDriver
           properties:
+            csiAttacherImage:
+              description: Name of the CSI external attacher image. See https://kubernetes-csi.github.io/docs/external-attacher.html
+              type: string
+            csiNodeDriverRegistrarImage:
+              description: Name of the CSI node driver registrar image. See https://kubernetes-csi.github.io/docs/node-driver-registrar.html
+              type: string
+            csiProvisionerImage:
+              description: Name of the CSI external provisioner image. See https://kubernetes-csi.github.io/docs/external-provisioner.html
+              type: string
+            csiSnapshotterImage:
+              description: Name of the CSI external snapshotter image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html
+              type: string
             imagePullSecret:
               description: Name of a secret with authentication details for the `LinstorPluginImage`
                 registry
