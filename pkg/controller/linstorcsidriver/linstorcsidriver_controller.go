@@ -133,6 +133,11 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 
+	resourceErr := r.reconcileResource(ctx, csiResource)
+	if resourceErr != nil {
+		return reconcile.Result{}, resourceErr
+	}
+
 	specErr := r.reconcileSpec(ctx, csiResource)
 
 	statusErr := r.reconcileStatus(ctx, csiResource, specErr)
@@ -142,6 +147,47 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 	}
 	return reconcile.Result{}, statusErr
 }
+
+func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      csiResource.Name,
+		"Namespace": csiResource.Namespace,
+		"Op":        "reconcileResource",
+	})
+	logger.Info("performing upgrades and fill defaults in resource")
+
+	changed := false
+
+	logger.Info("performing upgrade/fill: #1 -> Set default image names for CSI")
+	if csiResource.Spec.CSIAttacherImage == "" {
+		csiResource.Spec.CSIAttacherImage = DefaultAttacherImage
+		changed = true
+	}
+
+	if csiResource.Spec.CSINodeDriverRegistrarImage == "" {
+		csiResource.Spec.CSINodeDriverRegistrarImage = DefaultNodeDriverRegistrarImage
+		changed = true
+	}
+
+	if csiResource.Spec.CSIProvisionerImage == "" {
+		csiResource.Spec.CSIProvisionerImage =  DefaultProvisionerImage
+		changed = true
+	}
+
+	if csiResource.Spec.CSISnapshotterImage == "" {
+		csiResource.Spec.CSISnapshotterImage = DefaultSnapshotterImage
+		changed = true
+	}
+	logger.Infof("finished upgrade/fill: #1 -> Set default image names for CSI: changed=%t", changed)
+
+	logger.Info("finished all upgrades/fills")
+	if changed {
+		logger.Info("save updated spec")
+		return r.client.Update(ctx, csiResource)
+	}
+	return nil
+}
+
 
 func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
 	err := r.reconcilePriorityClass(ctx, csiResource)
@@ -537,7 +583,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 
 	driverRegistrar := corev1.Container{
 		Name:  "csi-node-driver-registrar",
-		Image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0",
+		Image: csiResource.Spec.CSINodeDriverRegistrarImage,
 		Args:  []string{"--v=5", "--csi-address=$(CSI_ENDPOINT)", "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"},
 		Lifecycle: &corev1.Lifecycle{
 			PreStop: &corev1.Handler{
@@ -655,7 +701,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 
 	csiProvisioner := corev1.Container{
 		Name:  "csi-provisioner",
-		Image: "quay.io/k8scsi/csi-provisioner:v1.5.0",
+		Image: csiResource.Spec.CSIProvisionerImage,
 		Args: []string{
 			"--provisioner=linstor.csi.linbit.com",
 			"--csi-address=$(ADDRESS)",
@@ -664,7 +710,6 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"--connection-timeout=4m",
 		},
 		Env:             []corev1.EnvVar{socketAddress},
-		ImagePullPolicy: "Always",
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
@@ -672,14 +717,13 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 	}
 	csiAttacher := corev1.Container{
 		Name:  "csi-attacher",
-		Image: "quay.io/k8scsi/csi-attacher:v2.1.1",
+		Image: csiResource.Spec.CSIAttacherImage,
 		Args: []string{
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
 			"--timeout=4m",
 		},
 		Env:             []corev1.EnvVar{socketAddress},
-		ImagePullPolicy: "Always",
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
@@ -687,13 +731,12 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 	}
 	csiSnapshotter := corev1.Container{
 		Name:  "csi-snapshotter",
-		Image: "quay.io/k8scsi/csi-snapshotter:v2.0.1",
+		Image: csiResource.Spec.CSISnapshotterImage,
 		Args: []string{
 			"-timeout=4m",
 			"-csi-address=$(ADDRESS)",
 		},
 		Env:             []corev1.EnvVar{socketAddress},
-		ImagePullPolicy: "Always",
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
