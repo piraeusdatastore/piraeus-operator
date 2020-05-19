@@ -551,6 +551,10 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 									MountPath: kubeSpec.DevDir,
 								},
 								{
+									Name: kubeSpec.SysDirName,
+									MountPath: kubeSpec.SysDir,
+								},
+								{
 									Name:             kubeSpec.ModulesDirName,
 									MountPath:        kubeSpec.ModulesDir,
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
@@ -594,14 +598,27 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.DevDir,
-								}}},
+								},
+							},
+						},
+						{
+							Name: kubeSpec.SysDirName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kubeSpec.SysDir,
+									Type: &kubeSpec.HostPathDirectoryType,
+								},
+							},
+						},
 						{
 							Name: kubeSpec.ModulesDirName,
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: kubeSpec.ModulesDir,
 									Type: &kubeSpec.HostPathDirectoryOrCreateType,
-								}}},
+								},
+							},
+						},
 					},
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{

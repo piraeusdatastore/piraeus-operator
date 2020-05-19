@@ -33,6 +33,8 @@ const (
 	ModulesDirName             = "modules-dir"
 	SrcDir                     = "/usr/src"
 	SrcDirName                 = "src-dir"
+	SysDir                     = "/sys/"
+	SysDirName                 = "sys-dir"
 	LinstorSatelliteConfigFile = "linstor_satellite.toml"
 )
 
