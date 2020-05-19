@@ -724,7 +724,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		Name:  "linstor-csi-plugin",
 		Image: csiResource.Spec.LinstorPluginImage,
 		Args: []string{
-			"--csi-endpoint=$(ADDRESS)",
+			"--csi-endpoint=unix://$(ADDRESS)",
 			"--node=$(KUBE_NODE_NAME)",
 			"--linstor-endpoint=$(LINSTOR_ENDPOINT)",
 			"--log-level=debug",
