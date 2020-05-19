@@ -6,6 +6,6 @@ metadata:
 spec:
   enabled: {{ .Values.csi.enabled }}
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
-  linstorControllerAddress: http://{{ template "operator.fullname" . }}-cs:3700/
+  linstorControllerAddress: http://{{ template "operator.fullname" . }}-cs:3370/
   linstorPluginImage: {{ .Values.csi.pluginImage | quote }}
 {{- end }}
