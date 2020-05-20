@@ -48,6 +48,10 @@ func TestNewConfigMapForPCS(t *testing.T) {
 
 [ldap]
 `,
+					"linstor-client.conf": `[global]
+controllers = http://test.default-ns.svc:3370
+
+`,
 				},
 			},
 		},
@@ -85,6 +89,10 @@ func TestNewConfigMapForPCS(t *testing.T) {
 [https]
 
 [ldap]
+`,
+					"linstor-client.conf": `[global]
+controllers = http://test.default-ns.svc:3370
+
 `,
 				},
 			},
@@ -126,6 +134,63 @@ func TestNewConfigMapForPCS(t *testing.T) {
 [https]
 
 [ldap]
+`,
+					"linstor-client.conf": `[global]
+controllers = http://test.default-ns.svc:3370
+
+`,
+				},
+			},
+		},
+		{
+			name: "with-https-auth",
+			spec: &piraeusv1alpha1.LinstorControllerSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default-ns",
+				},
+				Spec: piraeusv1alpha1.LinstorControllerSetSpec{
+					DBConnectionURL: "etcd://etcd.svc:5000/",
+					DBCertSecret:    "",
+					LinstorHttpsControllerSecret: "controller-secret",
+					LinstorClientConfig: piraeusv1alpha1.LinstorClientConfig{
+						LinstorHttpsClientSecret: "secret",
+					},
+				},
+			},
+			expected: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-config",
+					Namespace: "default-ns",
+				},
+				Data: map[string]string{
+					"linstor.toml": `[config]
+
+[debug]
+
+[log]
+
+[db]
+  connection_url = "etcd://etcd.svc:5000/"
+  [db.etcd]
+
+[http]
+
+[https]
+  enabled = true
+  keystore = "/etc/linstor/https/keystore.jks"
+  keystore_password = "linstor"
+  truststore = "/etc/linstor/https/truststore.jks"
+  truststore_password = "linstor"
+
+[ldap]
+`,
+					"linstor-client.conf": `[global]
+controllers = https://test.default-ns.svc:3371
+cafile      = /etc/linstor/client/ca.pem
+certfile    = /etc/linstor/client/client.cert
+keyfile     = /etc/linstor/client/client.key
+
 `,
 				},
 			},

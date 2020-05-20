@@ -18,6 +18,7 @@ limitations under the License.
 package linstorcsidriver
 
 import (
+	linstorClient "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
@@ -170,7 +171,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 	}
 
 	if csiResource.Spec.CSIProvisionerImage == "" {
-		csiResource.Spec.CSIProvisionerImage =  DefaultProvisionerImage
+		csiResource.Spec.CSIProvisionerImage = DefaultProvisionerImage
 		changed = true
 	}
 
@@ -187,7 +188,6 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 	}
 	return nil
 }
-
 
 func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
 	err := r.reconcilePriorityClass(ctx, csiResource)
@@ -576,10 +576,15 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 			FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"},
 		},
 	}
-	linstorController := corev1.EnvVar{
-		Name:  "LS_CONTROLLERS",
-		Value: csiResource.Spec.LinstorControllerAddress,
+
+	env := []corev1.EnvVar{
+		csiEndpoint,
+		driverSocket,
+		kubeNodeName,
 	}
+
+	controllerServiceName := getLinstorControllerServiceName(csiResource)
+	env = append(env, linstorClient.ApiResourceAsEnvVars(controllerServiceName, &csiResource.Spec.LinstorClientConfig)...)
 
 	driverRegistrar := corev1.Container{
 		Name:  "csi-node-driver-registrar",
@@ -590,11 +595,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 				Exec: &corev1.ExecAction{Command: []string{"/bin/sh", "-c", "rm -rf /registration/linstor.csi.linbit.com /registration/linstor.csi.linbit.com-reg.sock"}},
 			},
 		},
-		Env: []corev1.EnvVar{
-			csiEndpoint,
-			driverSocket,
-			kubeNodeName,
-		},
+		Env: env,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               &IsPrivileged,
 			Capabilities:             &corev1.Capabilities{Add: []corev1.Capability{"SYS_ADMIN"}},
@@ -617,11 +618,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 		Image:           csiResource.Spec.LinstorPluginImage,
 		ImagePullPolicy: "Always",
 		Args:            []string{"--csi-endpoint=unix://$(CSI_ENDPOINT)", "--node=$(KUBE_NODE_NAME)", "--linstor-endpoint=$(LS_CONTROLLERS)", "--log-level=debug"},
-		Env: []corev1.EnvVar{
-			csiEndpoint,
-			kubeNodeName,
-			linstorController,
-		},
+		Env:             env,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               &IsPrivileged,
 			Capabilities:             &corev1.Capabilities{Add: []corev1.Capability{"SYS_ADMIN"}},
@@ -687,17 +684,15 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}},
 	}
 
-	linstorEndpoint := corev1.EnvVar{
-		Name:  "LINSTOR_ENDPOINT",
-		Value: csiResource.Spec.LinstorControllerAddress,
-	}
-
 	socketVolume := corev1.Volume{
 		Name: "socket-dir",
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
+
+	controllerServiceName := getLinstorControllerServiceName(csiResource)
+	linstorEnvVars := linstorClient.ApiResourceAsEnvVars(controllerServiceName, &csiResource.Spec.LinstorClientConfig)
 
 	csiProvisioner := corev1.Container{
 		Name:  "csi-provisioner",
@@ -709,7 +704,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"--feature-gates=Topology=false",
 			"--connection-timeout=4m",
 		},
-		Env:             []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
@@ -723,7 +718,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"--csi-address=$(ADDRESS)",
 			"--timeout=4m",
 		},
-		Env:             []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
@@ -736,7 +731,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"-timeout=4m",
 			"-csi-address=$(ADDRESS)",
 		},
-		Env:             []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
@@ -748,14 +743,16 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		Args: []string{
 			"--csi-endpoint=unix://$(ADDRESS)",
 			"--node=$(KUBE_NODE_NAME)",
-			"--linstor-endpoint=$(LINSTOR_ENDPOINT)",
+			"--linstor-endpoint=$(LS_CONTROLLERS)",
 			"--log-level=debug",
 		},
-		Env: []corev1.EnvVar{
-			socketAddress,
-			kubeNodeName,
-			linstorEndpoint,
-		},
+		Env: append(
+			[]corev1.EnvVar{
+				socketAddress,
+				kubeNodeName,
+			},
+			linstorEnvVars...,
+		),
 		ImagePullPolicy: "Always",
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
@@ -821,6 +818,13 @@ func getPriorityClassName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string 
 	return csiResource.Name + PriorityClass
 }
 
+func getLinstorControllerServiceName(csiResource *piraeusv1alpha1.LinstorCSIDriver) types.NamespacedName {
+	return types.NamespacedName{
+		Name:      csiResource.Name[:len(csiResource.Name)-len("-csi-driver")] + "-cs",
+		Namespace: csiResource.Namespace,
+	}
+}
+
 func makeMeta(csiResource *piraeusv1alpha1.LinstorCSIDriver, namePostfix string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      csiResource.Name + namePostfix,
@@ -879,17 +883,17 @@ type GCRuntimeObject interface {
 }
 
 const (
-	NodeServiceAccount            = "-csi-node-sa"
-	ControllerServiceAccount      = "-csi-controller-sa"
-	PriorityClass                 = "-csi-priority-class"
-	NodeDaemonSet                 = "-csi-node-daemonset"
-	SnapshotterRole               = "-csi-snapshotter-role"
-	ProvisionerRole               = "-csi-provisioner-role"
-	DriverRegistrarRole           = "-csi-driver-registrar-role"
-	AttacherRole                  = "-csi-attacher-role"
-	AttacherBinding               = "-csi-attacher-binding"
-	DriverRegistrarBinding        = "-csi-driver-registrar-binding"
-	ProvisionerBinding            = "-csi-provisioner-binding"
-	SnapshotterBinding            = "-csi-snapshotter-binding"
-	ControllerDeployment          = "-csi-controller-deployment"
+	NodeServiceAccount       = "-csi-node-sa"
+	ControllerServiceAccount = "-csi-controller-sa"
+	PriorityClass            = "-csi-priority-class"
+	NodeDaemonSet            = "-csi-node-daemonset"
+	SnapshotterRole          = "-csi-snapshotter-role"
+	ProvisionerRole          = "-csi-provisioner-role"
+	DriverRegistrarRole      = "-csi-driver-registrar-role"
+	AttacherRole             = "-csi-attacher-role"
+	AttacherBinding          = "-csi-attacher-binding"
+	DriverRegistrarBinding   = "-csi-driver-registrar-binding"
+	ProvisionerBinding       = "-csi-provisioner-binding"
+	SnapshotterBinding       = "-csi-snapshotter-binding"
+	ControllerDeployment     = "-csi-controller-deployment"
 )

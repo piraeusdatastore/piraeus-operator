@@ -21,21 +21,28 @@ import corev1 "k8s.io/api/core/v1"
 
 // Shared consts common to container volumes.
 const (
-	DevDir                     = "/dev/"
-	DevDirName                 = "device-dir"
-	LinstorConfDir             = "/etc/linstor"
-	LinstorCertDir             = "/etc/linstor/certs"
-	LinstorSslDir              = "/etc/linstor/ssl"
-	LinstorConfDirName         = "linstor-conf"
-	LinstorCertDirName         = "linstor-certs"
-	LinstorSslDirName          = "linstor-ssl"
-	ModulesDir                 = "/lib/modules/" // "/usr/lib/modules/"
-	ModulesDirName             = "modules-dir"
-	SrcDir                     = "/usr/src"
-	SrcDirName                 = "src-dir"
-	SysDir                     = "/sys/"
-	SysDirName                 = "sys-dir"
-	LinstorSatelliteConfigFile = "linstor_satellite.toml"
+	DevDir                      = "/dev/"
+	DevDirName                  = "device-dir"
+	LinstorConfDir              = "/etc/linstor"
+	LinstorCertDir              = "/etc/linstor/certs"
+	LinstorClientDir            = "/etc/linstor/client"
+	LinstorClientDirName        = "linstor-client"
+	LinstorHttpsCertDir         = "/etc/linstor/https"
+	LinstorHttpsCertDirName     = "linstor-https"
+	LinstorHttpsCertPassword    = "linstor"
+	LinstorSslDir               = "/etc/linstor/ssl"
+	LinstorConfDirName          = "linstor-conf"
+	LinstorCertDirName          = "linstor-certs"
+	LinstorSslDirName           = "linstor-ssl"
+	ModulesDir                  = "/lib/modules/" // "/usr/lib/modules/"
+	ModulesDirName              = "modules-dir"
+	SrcDir                      = "/usr/src"
+	SrcDirName                  = "src-dir"
+	SysDir                      = "/sys/"
+	SysDirName                  = "sys-dir"
+	LinstorControllerConfigFile = "linstor.toml"
+	LinstorSatelliteConfigFile  = "linstor_satellite.toml"
+	LinstorClientConfigFile     = "linstor-client.conf"
 )
 
 // Special strings for communicating with the module injector
@@ -48,6 +55,7 @@ const (
 // Special strings when configuring Linstor
 const (
 	LinstorLUKSPassphraseEnvName = "MASTER_PASSPHRASE"
+	JavaOptsName                 = "JAVA_OPTS"
 )
 
 // Shared consts common to container volumes. These need to be vars, so they

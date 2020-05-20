@@ -44,8 +44,8 @@ type LinstorCSIDriverSpec struct {
 	ImagePullSecret string `json:"imagePullSecret"`
 	// Image that contains the linstor-csi driver plugin
 	LinstorPluginImage string `json:"linstorPluginImage"`
-	// Cluster address of the linstor controller
-	LinstorControllerAddress string `json:"linstorControllerAddress"`
+
+	LinstorClientConfig `json:",inline"`
 }
 
 // LinstorCSIDriverStatus defines the observed state of LinstorCSIDriver
