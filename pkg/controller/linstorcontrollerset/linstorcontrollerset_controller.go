@@ -195,7 +195,22 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	}).Debug("found LinstorControllerSet")
 
-	r.linstorClient, err = lc.NewHighLevelLinstorClientForObject(pcs)
+	getSecret := func(secretName string) (map[string][]byte, error) {
+		var secret = corev1.Secret{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: pcs.Namespace}, &secret)
+		if err != nil {
+			return nil, err
+		}
+		return secret.Data, nil
+	}
+
+	tlsConfig, err := lc.ApiResourceAsTlsConfig(&pcs.Spec.LinstorClientConfig, getSecret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	serviceName := types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}
+	r.linstorClient, err = lc.NewHighLevelLinstorClientForServiceName(serviceName, tlsConfig)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -523,8 +538,9 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 
 	env := []corev1.EnvVar{
 		{
-			Name:  "LS_CONTROLLERS",
-			Value: "http://" + pcs.Name + ":" + "3370",
+			Name: kubeSpec.JavaOptsName,
+			// Workaround for https://github.com/LINBIT/linstor-server/issues/123
+			Value: "-Djdk.tls.acknowledgeCloseNotify=true",
 		},
 	}
 
@@ -574,6 +590,39 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 			Name:      kubeSpec.LinstorCertDirName,
 			MountPath: kubeSpec.LinstorCertDir,
 			ReadOnly:  true,
+		})
+	}
+
+	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: kubeSpec.LinstorHttpsCertDirName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: pcs.Spec.LinstorHttpsControllerSecret,
+				},
+			},
+		})
+
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.LinstorHttpsCertDirName,
+			MountPath: kubeSpec.LinstorHttpsCertDir,
+			ReadOnly:  true,
+		})
+	}
+
+	if pcs.Spec.LinstorHttpsClientSecret != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: kubeSpec.LinstorClientDirName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: pcs.Spec.LinstorHttpsClientSecret,
+				},
+			},
+		})
+
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.LinstorClientDirName,
+			MountPath: kubeSpec.LinstorClientDir,
 		})
 	}
 
@@ -628,20 +677,23 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 									ContainerPort: 3377,
 								},
 								{
-									HostPort:      3370,
-									ContainerPort: 3370,
+									HostPort:      lc.DefaultHttpPort,
+									ContainerPort: lc.DefaultHttpPort,
 								},
 								{
-									HostPort:      3371,
-									ContainerPort: 3371,
+									HostPort:      lc.DefaultHttpsPort,
+									ContainerPort: lc.DefaultHttpsPort,
 								},
 							},
 							VolumeMounts: volumeMounts,
 							Env:          env,
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
-									Exec: &corev1.ExecAction{
-										Command: []string{"linstor", "node", "list"},
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										// Http is always enabled (it will redirect to https if configured)
+										Scheme: corev1.URISchemeHTTP,
+										Port:   intstr.FromInt(lc.DefaultHttpPort),
 									},
 								},
 								TimeoutSeconds:      10,
@@ -664,6 +716,11 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 }
 
 func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service {
+	port := lc.DefaultHttpPort
+	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+		port = lc.DefaultHttpsPort
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name,
@@ -674,9 +731,9 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 			Ports: []corev1.ServicePort{
 				{
 					Name:       pcs.Name,
-					Port:       3370,
+					Port:       int32(port),
 					Protocol:   "TCP",
-					TargetPort: intstr.FromInt(3370),
+					TargetPort: intstr.FromInt(port),
 				},
 			},
 			Selector: pcsLabels(pcs),
@@ -686,29 +743,44 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 }
 
 func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.ConfigMap, error) {
-	certificatePath := ""
-	clientCertPath := ""
-	clientKeyPath := ""
+	dbCertificatePath := ""
+	dbClientCertPath := ""
+	dbClientKeyPath := ""
 	if pcs.Spec.DBCertSecret != "" {
-		certificatePath = kubeSpec.LinstorCertDir + "/ca.pem"
+		dbCertificatePath = kubeSpec.LinstorCertDir + "/ca.pem"
 		if pcs.Spec.DBUseClientCert {
-			clientCertPath = kubeSpec.LinstorCertDir + "/client.cert"
-			clientKeyPath = kubeSpec.LinstorCertDir + "/client.key"
+			dbClientCertPath = kubeSpec.LinstorCertDir + "/client.cert"
+			dbClientKeyPath = kubeSpec.LinstorCertDir + "/client.key"
 		}
 	}
 
-	linstorConfig := lapi.ControllerConfig{
-		Db: lapi.ControllerConfigDb{
-			ConnectionUrl: pcs.Spec.DBConnectionURL,
-			CaCertificate: certificatePath,
-			ClientCertificate: clientCertPath,
-			ClientKeyPkcs8Pem: clientKeyPath,
-		},
+	https := lapi.ControllerConfigHttps{}
+	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+		https.Enabled = true
+		https.Keystore = kubeSpec.LinstorHttpsCertDir + "/keystore.jks"
+		https.KeystorePassword = kubeSpec.LinstorHttpsCertPassword
+		https.Truststore = kubeSpec.LinstorHttpsCertDir + "/truststore.jks"
+		https.TruststorePassword = kubeSpec.LinstorHttpsCertPassword
 	}
 
-	tomlConfigBuilder := strings.Builder{}
-	tomlEncoder := toml.NewEncoder(&tomlConfigBuilder)
-	if err := tomlEncoder.Encode(linstorConfig); err != nil {
+	linstorControllerConfig := lapi.ControllerConfig{
+		Db: lapi.ControllerConfigDb{
+			ConnectionUrl:     pcs.Spec.DBConnectionURL,
+			CaCertificate:     dbCertificatePath,
+			ClientCertificate: dbClientCertPath,
+			ClientKeyPkcs8Pem: dbClientKeyPath,
+		},
+		Https: https,
+	}
+
+	controllerConfigBuilder := strings.Builder{}
+	if err := toml.NewEncoder(&controllerConfigBuilder).Encode(linstorControllerConfig); err != nil {
+		return nil, err
+	}
+
+	clientConfig := lc.NewClientConfigForApiResource(types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}, &pcs.Spec.LinstorClientConfig)
+	clientConfigFile, err := clientConfig.ToConfigFile()
+	if err != nil {
 		return nil, err
 	}
 
@@ -718,7 +790,8 @@ func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.Conf
 			Namespace: pcs.Namespace,
 		},
 		Data: map[string]string{
-			"linstor.toml": tomlConfigBuilder.String(),
+			kubeSpec.LinstorControllerConfigFile: controllerConfigBuilder.String(),
+			kubeSpec.LinstorClientConfigFile:     clientConfigFile,
 		},
 	}
 

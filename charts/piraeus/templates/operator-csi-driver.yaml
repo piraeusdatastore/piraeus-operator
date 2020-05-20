@@ -6,10 +6,10 @@ metadata:
 spec:
   enabled: {{ .Values.csi.enabled }}
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
-  linstorControllerAddress: http://{{ template "operator.fullname" . }}-cs:3370/
   linstorPluginImage: {{ .Values.csi.pluginImage | quote }}
   csiAttacherImage: {{ .Values.csi.csiAttacherImage | quote }}
   csiNodeDriverRegistrarImage: {{ .Values.csi.csiNodeDriverRegistrarImage | quote }}
   csiProvisionerImage: {{ .Values.csi.csiProvisionerImage | quote }}
   csiSnapshotterImage: {{ .Values.csi.csiSnapshotterImage | quote }}
-{{- end }}
+  linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  {{- end }}

@@ -45,6 +45,15 @@ type LinstorControllerSetSpec struct {
 	SslConfig       *LinstorSSLConfig `json:"sslSecret"`
 	DrbdRepoCred    string            `json:"drbdRepoCred"`
 	ControllerImage string            `json:"controllerImage"`
+
+	// Name of the secret containing the java keystore (`keystore.jks`) used to enable HTTPS on the
+	// controller. The controller will create a secured https endpoint on port 3371 with the key
+	// stored in `keystore.jks`. The keystore must be secured using the passphrase "linstor". Also
+	// needs to contain a truststore `truststore.jks`, which will be used to authenticate clients.
+	// +kubebuilder:validation:Optional
+	LinstorHttpsControllerSecret string `json:"linstorHttpsControllerSecret"`
+
+	LinstorClientConfig `json:",inline"`
 }
 
 // LinstorControllerSetStatus defines the observed state of LinstorControllerSet

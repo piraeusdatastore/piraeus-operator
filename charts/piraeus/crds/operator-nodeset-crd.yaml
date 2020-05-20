@@ -99,6 +99,14 @@ spec:
               description: kernelModImage is the image (location + tag) for the LINSTOR/
                 DRBD kernel module injector container
               type: string
+            linstorHttpsClientSecret:
+              description: 'Name of the secret containing: (a) `ca.pem`: root certificate
+                used to validate HTTPS connections with Linstor (PEM format, without
+                password) (b) `client.key`: client key used by the linstor client
+                (PEM format, without password) (c) `client.cert`: client certificate
+                matching the client key (PEM format, without password) If set, HTTPS
+                is used for connecting and authenticating with linstor'
+              type: string
           required:
           - priorityClassName
           - drbdKernelModuleInjectionMode

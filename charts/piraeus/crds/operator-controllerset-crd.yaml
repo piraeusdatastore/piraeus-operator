@@ -66,6 +66,22 @@ spec:
               description: controllerImage is the image (location + tag) for the LINSTOR
                 controller/server container
               type: string
+            linstorHttpsControllerSecret:
+              description: Name of the secret containing the java keystore (`keystore.jks`)
+                used to enable HTTPS on the controller. The controller will create
+                a secured https endpoint on port 3371 with the key stored in `keystore.jks`.
+                The keystore must be secured using the passphrase "linstor". Also needs to
+                contain a truststore `truststore.jks`, which will be used to authenticate
+                clients.
+              type: string
+            linstorHttpsClientSecret:
+              description: 'Name of the secret containing: (a) `ca.pem`: root certificate
+                used to validate HTTPS connections with Linstor (PEM format, without
+                password) (b) `client.key`: client key used by the linstor client
+                (PEM format, without password) (c) `client.cert`: client certificate
+                matching the client key (PEM format, without password) If set, HTTPS
+                is used for connecting and authenticating with linstor'
+              type: string
           required:
           - priorityClassName
           - dbConnectionURL

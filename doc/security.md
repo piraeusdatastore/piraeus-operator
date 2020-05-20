@@ -59,6 +59,67 @@ follow these steps:
 :warning: It is currently **NOT** possible to change the keystore password. LINSTOR expects the passwords to be
 `linstor`. This is a current limitation of LINSTOR.
 
+## Configuring secure communications for the LINSTOR API
+
+Various components need to talk to the LINSTOR controller via its REST interface. This interface can be
+secured via HTTPS, which automatically includes authentication. For HTTPS+authentication to work, each component
+needs access to:
+
+* A private key
+* A certificate based on the key
+* A trusted certificate, used to verify that other components are trustworthy
+
+The next sections will guide you through creating all required components.
+
+#### Creating the private keys
+
+Private keys can be created using java's keytool
+
+```
+keytool -keyalg rsa -keysize 2048 -genkey -keystore controller.pkcs12 -storetype pkcs12 -storepass linstor -ext san=dns:piraeus-op-cs.default.svc -dname "CN=XX, OU=controller, O=Example, L=XX, ST=XX, C=X" -validity 5000
+keytool -keyalg rsa -keysize 2048 -genkey -keystore client.pkcs12 -storetype pkcs12 -storepass linstor -dname "CN=XX, OU=client, O=Example, L=XX, ST=XX, C=XX" -validity 5000
+```
+
+The clients need private keys and certificate in a different format, so we need to convert it
+```
+openssl pkcs12 -in client.pkcs12 -passin pass:linstor -out client.cert -clcerts -nokeys
+openssl pkcs12 -in client.pkcs12 -passin pass:linstor -out client.key -nocerts -nodes
+```
+
+**NOTE**: The alias specified for the controller key (i.e. `-ext san=dns:piraeus-op-cs.default.svc`) has to exactly match the
+service name created by the operator. When using `helm`, this is always of the form `<release-name>-cs.<release-namespace>.svc`.
+
+:warning: It is currently NOT possible to change the keystore password. LINSTOR expects the passwords to be linstor. This is a current limitation of LINSTOR
+
+#### Create the trusted certificates
+
+For the controller to trust the clients, we can use the following command to create a truststore, importing the client certificate
+
+```
+keytool -importkeystore -srcstorepass linstor -srckeystore client.pkcs12 -deststorepass linstor -deststoretype pkcs12 -destkeystore controller-trust.pkcs12
+```
+
+For the client, we have to convert the controller certificate into a different format
+
+```
+openssl pkcs12 -in controller.pkcs12 -passin pass:linstor -out ca.pem -clcerts -nokeys
+```
+
+#### Create Kubernetes secrets
+
+Now you can create secrets for the controller and for clients:
+
+```
+kubectl create secret generic http-controller --from-file=keystore.jks=controller.pkcs12 --from-file=truststore.jks=controller-trust.pkcs12
+kubectl create secret generic http-client --from-file=ca.pem=ca.pem --from-file=client.cert=client.cert --from-file=client.key=client.key
+```
+
+The names of the secrets can be passed to `helm install` to configure all clients to use https.
+
+```
+--set linstorHttpsControllerSecret=http-controller  --set linstorHttpsClientSecret=http-client
+```
+
 ## Automatically set the passphrase for encrypted volumes
 
 Linstor can be used to create encrypted volumes using LUKS. The passphrase used when creating these volumes can

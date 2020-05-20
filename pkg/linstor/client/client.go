@@ -2,21 +2,48 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	lapi "github.com/LINBIT/golinstor/client"
+	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
-	lapi "github.com/LINBIT/golinstor/client"
-	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ini "gopkg.in/ini.v1"
 )
 
 // Various lapi consts yet to be defined in golinstor.
 const (
-	Controller = "CONTROLLER"
-	Satellite  = "SATELLITE"
-	Online     = "ONLINE"
+	Controller       = "CONTROLLER"
+	Satellite        = "SATELLITE"
+	Online           = "ONLINE"
+	DefaultHttpPort  = 3370
+	DefaultHttpsPort = 3371
 )
+
+// Global linstor client configuration, like controllers and connection settings
+type GlobalLinstorClientConfig struct {
+	// Comma separated list of of LINSTOR REST API endpoints
+	Controllers []string `ini:"controllers" delim:"|"`
+	// Path to the PEM encoded root certificates used for HTTPS connections
+	CAFile string `ini:"cafile,omitempty"`
+	// Path to the PEM encoded certificate to present when TLS authentication is required
+	Certfile string `ini:"certfile,omitempty"`
+	// Path to the PEM encoded private key used when TLS authentication is required
+	Keyfile string `ini:"keyfile,omitempty"`
+}
+
+// LinstorClientConfig is the go representation of `/etc/linstor/linstor-client.conf`.
+type LinstorClientConfig struct {
+	Global GlobalLinstorClientConfig `ini:"global"`
+}
 
 // StorageNode is a linstor node with its respective storage pools.
 type StorageNode struct {
@@ -30,19 +57,24 @@ type HighLevelClient struct {
 }
 
 // NewHighLevelLinstorClientForObject configures a HighLevelClient with an
-// in-cluster url based on the controller's service naming convention.
-func NewHighLevelLinstorClientForObject(obj metav1.Object) (*HighLevelClient, error) {
-	u, err := url.Parse(fmt.Sprintf("http://%s.%s.svc:3370", obj.GetName(), obj.GetNamespace()))
+// in-cluster url based on service naming convention.
+func NewHighLevelLinstorClientForServiceName(nameObj types.NamespacedName, tlsConfig *tls.Config) (*HighLevelClient, error) {
+	transport := http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
+	u, err := url.Parse(formatEndpoint(nameObj, tlsConfig != nil))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
 	}
 	c, err := NewHighLevelClient(
 		lapi.BaseURL(u),
 		lapi.Log(&logrus.Logger{
-			Level: logrus.DebugLevel,
-			Out: os.Stdout,
+			Level:     logrus.DebugLevel,
+			Out:       os.Stdout,
 			Formatter: &logrus.TextFormatter{},
 		}),
+		lapi.HTTPClient(&http.Client{Transport: &transport}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
@@ -181,4 +213,154 @@ func (c *HighLevelClient) GetAllStorageNodes(ctx context.Context) ([]StorageNode
 		}
 	}
 	return storageNodes, nil
+}
+
+// Create a client config from an API resource
+func NewClientConfigForApiResource(serviceName types.NamespacedName, resource *piraeusv1alpha1.LinstorClientConfig) *LinstorClientConfig {
+	clientCAPath := ""
+	clientCertPath := ""
+	clientKeyPath := ""
+
+	if resource.LinstorHttpsClientSecret != "" {
+		clientCAPath = kubeSpec.LinstorClientDir + "/ca.pem"
+		clientCertPath = kubeSpec.LinstorClientDir + "/client.cert"
+		clientKeyPath = kubeSpec.LinstorClientDir + "/client.key"
+	}
+
+	controllerEndpoint := formatEndpoint(serviceName, resource.LinstorHttpsClientSecret != "")
+
+	return &LinstorClientConfig{
+		Global: GlobalLinstorClientConfig{
+			Controllers: []string{controllerEndpoint},
+			CAFile:      clientCAPath,
+			Certfile:    clientCertPath,
+			Keyfile:     clientKeyPath,
+		},
+	}
+}
+
+func formatEndpoint(serviceName types.NamespacedName, useHttps bool) string {
+	if useHttps {
+		return fmt.Sprintf("https://%s.%s.svc:%d", serviceName.Name, serviceName.Namespace, DefaultHttpsPort)
+	} else {
+		return fmt.Sprintf("http://%s.%s.svc:%d", serviceName.Name, serviceName.Namespace, DefaultHttpPort)
+	}
+}
+
+func (clientConfig *LinstorClientConfig) ToConfigFile() (string, error) {
+	cfg := ini.Empty()
+	err := ini.ReflectFrom(cfg, clientConfig)
+	if err != nil {
+		return "", err
+	}
+	builder := strings.Builder{}
+	_, err = cfg.WriteTo(&builder)
+	if err != nil {
+		return "", err
+	}
+
+	return builder.String(), nil
+}
+
+// Consts for extracting TLS certificates from api resources
+const (
+	SecretCARootName = "ca.pem"
+	SecretKeyName    = "client.key"
+	SecretCertName   = "client.cert"
+)
+
+func ApiResourceAsTlsConfig(cfg *piraeusv1alpha1.LinstorClientConfig, getSecretFunc func(string) (map[string][]byte, error)) (*tls.Config, error) {
+	var tlsConfig *tls.Config = nil
+	if cfg.LinstorHttpsClientSecret != "" {
+		secretData, err := getSecretFunc(cfg.LinstorHttpsClientSecret)
+		if err != nil {
+			return nil, err
+		}
+
+		rootCaBytes, ok := secretData[SecretCARootName]
+		if !ok {
+			return nil, fmt.Errorf("did not find expected key '%s' in secret '%s'", SecretCARootName, cfg.LinstorHttpsClientSecret)
+		}
+
+		rootCA := x509.NewCertPool()
+		ok = rootCA.AppendCertsFromPEM(rootCaBytes)
+		if !ok {
+			return nil, fmt.Errorf("failed to set valid root certificate for linstor client")
+		}
+
+		var clientCerts []tls.Certificate
+		clientKey, ok := secretData[SecretKeyName]
+		if !ok {
+			return nil, fmt.Errorf("did not find expected key '%s' in secret '%s'", SecretKeyName, cfg.LinstorHttpsClientSecret)
+		}
+
+		clientCert, ok := secretData[SecretCertName]
+		if !ok {
+			return nil, fmt.Errorf("did not find expected key '%s' in secret '%s'", SecretCertName, cfg.LinstorHttpsClientSecret)
+		}
+
+		key, err := tls.X509KeyPair(clientCert, clientKey)
+		if err != nil {
+			return nil, err
+		}
+
+		clientCerts = []tls.Certificate{key}
+
+		tlsConfig = &tls.Config{
+			RootCAs:      rootCA,
+			Certificates: clientCerts,
+		}
+	}
+
+	return tlsConfig, nil
+}
+
+
+// Convert a LinstorClientConfig into env variables understood by the CSI plugins and golinstor client
+// See also: https://pkg.go.dev/github.com/LINBIT/golinstor/client?tab=doc#NewClient
+func ApiResourceAsEnvVars(serviceName types.NamespacedName, resource *piraeusv1alpha1.LinstorClientConfig) []corev1.EnvVar {
+	controllerEndpoint := formatEndpoint(serviceName, resource.LinstorHttpsClientSecret != "")
+
+	env := []corev1.EnvVar{
+		{
+			Name: "LS_CONTROLLERS",
+			Value: controllerEndpoint,
+		},
+	}
+
+	if resource.LinstorHttpsClientSecret != "" {
+		env = append(env, corev1.EnvVar{
+			Name: "LS_ROOT_CA",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resource.LinstorHttpsClientSecret,
+					},
+					Key: SecretCARootName,
+				},
+			},
+		}, corev1.EnvVar{
+			Name: "LS_USER_CERTIFICATE",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resource.LinstorHttpsClientSecret,
+					},
+					Key: SecretCertName,
+				},
+			},
+		}, corev1.EnvVar{
+			Name: "LS_USER_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resource.LinstorHttpsClientSecret,
+					},
+					Key: SecretKeyName,
+				},
+			},
+		})
+	}
+
+	return env
 }

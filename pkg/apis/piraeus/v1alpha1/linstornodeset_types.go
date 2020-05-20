@@ -50,6 +50,8 @@ type LinstorNodeSetSpec struct {
 
 	//KernelModImage is the DRBD Kernel injection image (location + tag)
 	KernelModImage string `json:"kernelModImage"`
+
+	LinstorClientConfig `json:",inline"`
 }
 
 // KernelModuleInjectionMode describes the source for injecting a kernel module

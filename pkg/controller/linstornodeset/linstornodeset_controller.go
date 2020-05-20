@@ -192,7 +192,23 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
 	}
 
-	r.linstorClient, err = lc.NewHighLevelLinstorClientForObject(pns)
+	getSecret := func(secretName string) (map[string][]byte, error) {
+		var secret = corev1.Secret{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: pns.Namespace}, &secret)
+		if err != nil {
+			return nil, err
+		}
+		return secret.Data, nil
+	}
+
+	tlsConfig, err := lc.ApiResourceAsTlsConfig(&pns.Spec.LinstorClientConfig, getSecret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	controllerServiceName := types.NamespacedName{Name: pns.Name[:len(pns.Name)-3] + "-cs", Namespace: pns.Namespace}
+
+	r.linstorClient, err = lc.NewHighLevelLinstorClientForServiceName(controllerServiceName, tlsConfig)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -213,31 +229,6 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	if err := r.addFinalizer(pns); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Define a service for the controller.
-	ctrlService := newServiceForPNS(pns)
-
-	// Set LinstorControllerSet instance as the owner and controller
-	if err := controllerutil.SetControllerReference(pns, ctrlService, r.scheme); err != nil {
-		logrus.Debug("NS SVC Controller did not set correctly")
-		return reconcile.Result{}, err
-	}
-	logrus.Debug("NS SVC Set up")
-
-	foundSrv := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ctrlService.Name, Namespace: ctrlService.Namespace}, foundSrv)
-	if err != nil && errors.IsNotFound(err) {
-		logrus.WithFields(logrus.Fields{
-			"NS SVC name":      ctrlService.Name,
-			"NS SVC namespace": ctrlService.Namespace,
-		}).Info("NS Reconcile: creating a new Service")
-		err = r.client.Create(context.TODO(), ctrlService)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -489,7 +480,6 @@ func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alph
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.ConfigMap) *apps.DaemonSet {
 	labels := pnsLabels(pns)
-	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
 
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -551,7 +541,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 									MountPath: kubeSpec.DevDir,
 								},
 								{
-									Name: kubeSpec.SysDirName,
+									Name:      kubeSpec.SysDirName,
 									MountPath: kubeSpec.SysDir,
 								},
 								{
@@ -560,19 +550,10 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
 								},
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "LS_CONTROLLERS",
-									Value: "http://" + controllerName + ":" + "3370",
-									// Value: "http://" + controllerName + ":" + "3370",
-								},
-							},
-
-							// TODO: Move to kubeSpec later
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
-									Exec: &corev1.ExecAction{
-										Command: []string{"curl", "http://" + controllerName + ":" + "3370"},
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromInt(int(pns.Spec.SslConfig.Port())),
 									},
 								},
 								TimeoutSeconds:      5,
@@ -632,33 +613,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 
 	ds = daemonSetWithDRBDKernelModuleInjection(ds, pns)
 	ds = daemonSetWithSslConfiguration(ds, pns)
+	ds = daemonSetWithHttpsConfiguration(ds, pns)
 	return ds
-}
-
-func newServiceForPNS(pns *piraeusv1alpha1.LinstorNodeSet) *corev1.Service {
-	controllerName := pns.Name[0:len(pns.Name)-3] + "-cs"
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      pns.Name,
-			Namespace: pns.Namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			ClusterIP: "None",
-			Ports: []corev1.ServicePort{
-				{
-					Name:       controllerName,
-					Port:       3370,
-					Protocol:   "TCP",
-					TargetPort: intstr.FromInt(3370),
-				},
-			},
-			Selector: map[string]string{
-				"app": controllerName,
-			},
-			Type: corev1.ServiceTypeClusterIP,
-		},
-	}
 }
 
 func reconcileSatelliteConfiguration(pns *piraeusv1alpha1.LinstorNodeSet, r *ReconcileLinstorNodeSet) (*corev1.ConfigMap, error) {
@@ -709,10 +665,10 @@ func reconcileSatelliteConfiguration(pns *piraeusv1alpha1.LinstorNodeSet, r *Rec
 			// LINSTOR is currently limited on the controller side to these passwords. Because there is not much value
 			// in supporting different passwords just on one side of the connection, and because these passwords are in
 			// the "less secure" configmap anyways, we just use this password everywhere.
-			KeyPassword:         "linstor",
-			KeystorePassword:    "linstor",
-			TruststorePassword:  "linstor",
-			SslProtocol:         "TLSv1.2",
+			KeyPassword:        "linstor",
+			KeystorePassword:   "linstor",
+			TruststorePassword: "linstor",
+			SslProtocol:        "TLSv1.2",
 		}
 	}
 
@@ -723,10 +679,18 @@ func reconcileSatelliteConfiguration(pns *piraeusv1alpha1.LinstorNodeSet, r *Rec
 		return nil, err
 	}
 
+	serviceName := types.NamespacedName{Name: pns.Name[:len(pns.Name)-3] + "-cs", Namespace: pns.Namespace}
+	clientConfig := lc.NewClientConfigForApiResource(serviceName, &pns.Spec.LinstorClientConfig)
+	clientConfigFile, err := clientConfig.ToConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
 	cm := &corev1.ConfigMap{
 		ObjectMeta: meta,
 		Data: map[string]string{
 			kubeSpec.LinstorSatelliteConfigFile: tomlConfigBuilder.String(),
+			kubeSpec.LinstorClientConfigFile:    clientConfigFile,
 		},
 	}
 
@@ -824,6 +788,30 @@ func daemonSetWithSslConfiguration(ds *apps.DaemonSet, pns *piraeusv1alpha1.Lins
 			},
 		},
 	})
+
+	return ds
+}
+
+func daemonSetWithHttpsConfiguration(ds *apps.DaemonSet, pns *piraeusv1alpha1.LinstorNodeSet) *apps.DaemonSet {
+	if pns.Spec.LinstorHttpsClientSecret == "" {
+		return ds
+	}
+
+	if pns.Spec.LinstorHttpsClientSecret != "" {
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: kubeSpec.LinstorClientDirName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: pns.Spec.LinstorHttpsClientSecret,
+				},
+			},
+		})
+
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.LinstorClientDirName,
+			MountPath: kubeSpec.LinstorClientDir,
+		})
+	}
 
 	return ds
 }

@@ -18,6 +18,9 @@ limitations under the License.
 package client
 
 import (
+	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"testing"
 
@@ -119,5 +122,133 @@ func TestFilterNode(t *testing.T) {
 			t.Errorf("\nexpected\n\t%v\nto filter into\n\t%v\ngot\n\t%v",
 				tt.raw, tt.filtered, actual)
 		}
+	}
+}
+
+func TestNewClientConfigForApiResource(t *testing.T) {
+	testcases := []struct {
+		name           string
+		clientConfig   piraeusv1alpha1.LinstorClientConfig
+		expectedConfig LinstorClientConfig
+	}{
+		{
+			name:         "default",
+			clientConfig: piraeusv1alpha1.LinstorClientConfig{},
+			expectedConfig: LinstorClientConfig{
+				Global: GlobalLinstorClientConfig{
+					Controllers: []string{"http://default.test.svc:3370"},
+				},
+			},
+		},
+		{
+			name: "with-https-client-auth",
+			clientConfig: piraeusv1alpha1.LinstorClientConfig{
+				LinstorHttpsClientSecret:  "secret",
+			},
+			expectedConfig: LinstorClientConfig{
+				Global: GlobalLinstorClientConfig{
+					Controllers: []string{"https://with-https-client-auth.test.svc:3371"},
+					CAFile:      "/etc/linstor/client/ca.pem",
+					Keyfile:     "/etc/linstor/client/client.key",
+					Certfile:    "/etc/linstor/client/client.cert",
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			serviceName := types.NamespacedName{Name: testcase.name, Namespace: "test"}
+			actual := NewClientConfigForApiResource(serviceName, &testcase.clientConfig)
+
+			if !reflect.DeepEqual(actual, &testcase.expectedConfig) {
+				t.Fatalf("client configs not equal. expected: %v, actual: %v", testcase.expectedConfig, *actual)
+			}
+		})
+	}
+}
+
+func TestClientConfigAsEnvVars(t *testing.T) {
+	expectedHttpControllerVar := corev1.EnvVar{
+		Name: "LS_CONTROLLERS",
+		Value: "http://controller.test.svc:3370",
+	}
+
+	expectedHttpsControllerVar := corev1.EnvVar{
+		Name: "LS_CONTROLLERS",
+		Value: "https://controller.test.svc:3371",
+	}
+
+	expectedRootCaVar := corev1.EnvVar{
+		Name: "LS_ROOT_CA",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "secret",
+				},
+				Key: "ca.pem",
+			},
+		},
+	}
+
+	expectedUserCertVar := corev1.EnvVar{
+		Name: "LS_USER_CERTIFICATE",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "secret",
+				},
+				Key: "client.cert",
+			},
+		},
+	}
+
+	expectedUserKeyVar := corev1.EnvVar{
+		Name: "LS_USER_KEY",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: "secret",
+				},
+				Key: "client.key",
+			},
+		},
+	}
+
+	testcases := []struct {
+		name           string
+		clientConfig   piraeusv1alpha1.LinstorClientConfig
+		expectedConfig []corev1.EnvVar
+	}{
+		{
+			name:           "default",
+			clientConfig:   piraeusv1alpha1.LinstorClientConfig{},
+			expectedConfig: []corev1.EnvVar{
+				expectedHttpControllerVar,
+			},
+		},
+		{
+			name: "with-https-client-auth",
+			clientConfig: piraeusv1alpha1.LinstorClientConfig{
+				LinstorHttpsClientSecret:  "secret",
+			},
+			expectedConfig: []corev1.EnvVar{
+				expectedHttpsControllerVar,
+				expectedRootCaVar,
+				expectedUserCertVar,
+				expectedUserKeyVar,
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			serviceName := types.NamespacedName{Name: "controller", Namespace: "test"}
+			actual := ApiResourceAsEnvVars(serviceName, &testcase.clientConfig)
+
+			if !reflect.DeepEqual(actual, testcase.expectedConfig) {
+				t.Fatalf("client configs not equal. expected: %v, actual: %v", testcase.expectedConfig, actual)
+			}
+		})
 	}
 }

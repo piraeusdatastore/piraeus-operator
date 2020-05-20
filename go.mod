@@ -4,11 +4,12 @@ go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/LINBIT/golinstor v0.25.2-0.20200519080100-e76435b8971a
+	github.com/LINBIT/golinstor v0.26.1-0.20200520122514-71747751b6af
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/net v0.0.0-20191028085509-fe3aa8a45271
+	gopkg.in/ini.v1 v1.56.0
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v12.0.0+incompatible

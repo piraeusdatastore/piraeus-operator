@@ -9,6 +9,7 @@ spec:
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   satelliteImage: {{ .Values.operator.nodeSet.satelliteImage }}
   kernelModImage: {{ .Values.operator.nodeSet.kernelModImage }}
+  linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   {{- if .Values.operator.nodeSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.nodeSet.storagePools | indent 4 }}

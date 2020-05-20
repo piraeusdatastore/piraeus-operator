@@ -16,8 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Secure storage with LUKS: You can specify the master passphrase used by Linstor when creating encrypted volumes
   when installing via Helm.
 * Authentication with etcd using TLS client certificates.
+* Secured connection between linstor-client and controller (HTTPS). More in the [security guide](./doc/security.md#configuring-secure-communications-for-the-linstor-api)
 
 ### Removed
+
+* NodeSet service (`piraeus-op-ns`) was replaced by the ControllerSet service (`piraeus-op-cs`) everywhere
 
 ### Changed
 * CSI storage driver setup: move setup from helm to go operator. This is mostly an internal change.

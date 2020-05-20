@@ -23,31 +23,31 @@ var (
 	CSIDriverPodInfoOnMount = true
 	DefaultNodeDaemonSet    = appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-node-daemonset",
+			Name:      "foo-csi-driver-csi-node-daemonset",
 			Namespace: "bar",
 		},
 	}
 	DefaultControllerDeployment = appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-controller-deployment",
+			Name:      "foo-csi-driver-csi-controller-deployment",
 			Namespace: "bar",
 		},
 	}
 	DefaultNodeServiceAccount = corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-node-sa",
+			Name:      "foo-csi-driver-csi-node-sa",
 			Namespace: "bar",
 		},
 	}
 	DefaulControllerServiceAccount = corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-controller-sa",
+			Name:      "foo-csi-driver-csi-controller-sa",
 			Namespace: "bar",
 		},
 	}
 	DefaultPriorityClass = schedv1.PriorityClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-priority-class",
+			Name:      "foo-csi-driver-csi-priority-class",
 			Namespace: "bar",
 		},
 	}
@@ -89,11 +89,10 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 			initialResources: []runtime.Object{
 				&piraeusv1alpha1.LinstorCSIDriver{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
+						Name:      "foo-csi-driver",
 						Namespace: "bar",
 					},
 					Spec: piraeusv1alpha1.LinstorCSIDriverSpec{
-						LinstorControllerAddress: "http://fakeservice.svc:3700/",
 					},
 				},
 			},
@@ -119,7 +118,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 
 			reconciler := ReconcileLinstorCSIDriver{controllerClient, scheme.Scheme}
 
-			_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "bar"}})
+			_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo-csi-driver", Namespace: "bar"}})
 			if testcase.withError {
 				if err == nil {
 					t.Errorf("expected error, got no error")
