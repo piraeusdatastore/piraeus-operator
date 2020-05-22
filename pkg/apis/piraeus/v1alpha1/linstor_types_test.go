@@ -25,7 +25,7 @@ import (
 )
 
 func TestToLinstorStoragePool(t *testing.T) {
-	var tableTest = []struct {
+	tableTest := []struct {
 		from     StoragePool
 		expected lapi.StoragePool
 	}{

@@ -67,8 +67,12 @@ func NewStoragePoolStatus(pool lapi.StoragePool) *StoragePoolStatus {
 // StoragePools hold lists of linstor storage pools supported by this operator.
 type StoragePools struct {
 	// LVMPools for LinstorNodeSet to manage.
+	// +optional
+	// +nullable
 	LVMPools []*StoragePoolLVM `json:"lvmPools"`
 	// LVMThinPools for LinstorNodeSet to manage.
+	// +optional
+	// +nullable
 	LVMThinPools []*StoragePoolLVMThin `json:"lvmThinPools"`
 }
 
@@ -147,6 +151,6 @@ type LinstorClientConfig struct {
 	// (b) `client.key`: client key used by the linstor client (PEM format, without password)
 	// (c) `client.cert`: client certificate matching the client key (PEM format, without password)
 	// If set, HTTPS is used for connecting and authenticating with linstor
-	// +kubebuilder:validation:Optional
+	// +optional
 	LinstorHttpsClientSecret string `json:"linstorHttpsClientSecret"`
 }

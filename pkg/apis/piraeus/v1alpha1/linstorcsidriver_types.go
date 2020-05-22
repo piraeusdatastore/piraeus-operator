@@ -25,20 +25,20 @@ import (
 type LinstorCSIDriverSpec struct {
 	// Name of the CSI external attacher image.
 	// See https://kubernetes-csi.github.io/docs/external-attacher.html
-	// +kubebuilder:validation:Optional
-	CSIAttacherImage               string `json:"csiAttacherImage"`
+	// +optional
+	CSIAttacherImage string `json:"csiAttacherImage"`
 	// Name of the CSI node driver registrar image.
 	// See https://kubernetes-csi.github.io/docs/node-driver-registrar.html
-	// +kubebuilder:validation:Optional
-	CSINodeDriverRegistrarImage    string `json:"csiNodeDriverRegistrarImage"`
+	// +optional
+	CSINodeDriverRegistrarImage string `json:"csiNodeDriverRegistrarImage"`
 	// Name of the CSI external provisioner image.
 	// See https://kubernetes-csi.github.io/docs/external-provisioner.html
-	// +kubebuilder:validation:Optional
-	CSIProvisionerImage            string `json:"csiProvisionerImage"`
+	// +optional
+	CSIProvisionerImage string `json:"csiProvisionerImage"`
 	// Name of the CSI external snapshotter image.
 	// See https://kubernetes-csi.github.io/docs/external-snapshotter.html
-	// +kubebuilder:validation:Optional
-	CSISnapshotterImage            string `json:"csiSnapshotterImage"`
+	// +optional
+	CSISnapshotterImage string `json:"csiSnapshotterImage"`
 
 	// Name of a secret with authentication details for the `LinstorPluginImage` registry
 	ImagePullSecret string `json:"imagePullSecret"`

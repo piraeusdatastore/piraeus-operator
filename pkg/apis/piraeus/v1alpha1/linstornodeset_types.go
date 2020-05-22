@@ -30,25 +30,31 @@ type LinstorNodeSetSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// PriorityClassName is the name of the PriorityClass for the node set
+	// priorityClassName is the name of the PriorityClass for the node set
 	PriorityClassName string `json:"priorityClassName"`
 
 	// StoragePools is a list of StoragePools for LinstorNodeSet to manage.
+	// +optional
+	// +nullable
 	StoragePools *StoragePools `json:"storagePools"`
 
-	// DRBDKernelModuleInjectionMode selects the source for the DRBD kernel module
+	// drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
+	// +kubebuilder:validation:Enum=None;Compile;ShippedModules
 	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 
-	// Configuration options for secure communication between nodes and controllers
+	// Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and
+	// the trusted certificates (called `certificates.jks`)
+	// +optional
+	// +nullable
 	SslConfig *LinstorSSLConfig `json:"sslSecret"`
 
-	//DrbdRepoCred is the name of the k8s secret with the repo credential
+	// drbdRepoCred is the name of the kubernetes secret that holds the credential for the DRBD repositories
 	DrbdRepoCred string `json:"drbdRepoCred"`
 
-	//SatelliteImage is the LINSTOR Satellite image (location + tag)
+	// satelliteImage is the image (location + tag) for the LINSTOR satellite container
 	SatelliteImage string `json:"satelliteImage"`
 
-	//KernelModImage is the DRBD Kernel injection image (location + tag)
+	// kernelModImage is the image (location + tag) for the LINSTOR/DRBD kernel module injector container
 	KernelModImage string `json:"kernelModImage"`
 
 	LinstorClientConfig `json:",inline"`

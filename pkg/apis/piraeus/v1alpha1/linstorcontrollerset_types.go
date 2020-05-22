@@ -21,36 +21,51 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // LinstorControllerSetSpec defines the desired state of LinstorControllerSet
 type LinstorControllerSetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// PriorityClassName is the name of the PriorityClass for the controller set
+	// priorityClassName is the name of the PriorityClass for the controller set
 	PriorityClassName string `json:"priorityClassName"`
 
+	// DBConnectionURL is the URL of the ETCD endpoint for LINSTOR Controller
 	DBConnectionURL string `json:"dbConnectionURL"`
-	DBCertSecret    string `json:"dbCertSecret"`
+
+	// DBCertSecret is the name of the kubernetes secret that holds the CA certificate used to verify
+	// the datatbase connection. The secret must contain a key "ca.pem" which holds the certificate in
+	// PEM format
+	// +nullable
+	// +optional
+	DBCertSecret string `json:"dbCertSecret"`
+
 	// Use a TLS client certificate for authentication with the database (etcd). If set to true,
 	// `dbCertSecret` must be set and contain two additional entries "client.cert" (PEM encoded)
 	// and "client.key" (PKCS8 encoded, without passphrase).
+	// +optional
 	DBUseClientCert bool `json:"dbUseClientCert"`
+
 	// Name of the secret containing the master passphrase for LUKS devices as `MASTER_PASSPHRASE`
-	LuksSecret		string `json:"luksSecret"`
-	// Configuration options for secure communication between nodes and controllers
-	SslConfig       *LinstorSSLConfig `json:"sslSecret"`
-	DrbdRepoCred    string            `json:"drbdRepoCred"`
-	ControllerImage string            `json:"controllerImage"`
+	// +nullable
+	// +optional
+	LuksSecret string `json:"luksSecret"`
+
+	// Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and the
+	// trusted certificates (called `certificates.jks`)
+	// +nullable
+	// +optional
+	SslConfig *LinstorSSLConfig `json:"sslSecret"`
+
+	// DrbdRepoCred is the name of the kubernetes secret that holds the credential for the
+	// DRBD repositories
+	DrbdRepoCred string `json:"drbdRepoCred"`
+
+	// controllerImage is the image (location + tag) for the LINSTOR controller/server container
+	ControllerImage string `json:"controllerImage"`
 
 	// Name of the secret containing the java keystore (`keystore.jks`) used to enable HTTPS on the
 	// controller. The controller will create a secured https endpoint on port 3371 with the key
 	// stored in `keystore.jks`. The keystore must be secured using the passphrase "linstor". Also
 	// needs to contain a truststore `truststore.jks`, which will be used to authenticate clients.
-	// +kubebuilder:validation:Optional
+	// +optional
 	LinstorHttpsControllerSecret string `json:"linstorHttpsControllerSecret"`
 
 	LinstorClientConfig `json:",inline"`

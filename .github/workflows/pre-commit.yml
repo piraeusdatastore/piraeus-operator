@@ -1,0 +1,49 @@
+name: pre-commit
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  pull_request:
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      # These hooks will run separately in github actions
+      SKIP: golangci-lint,go-unit-tests
+      OPERATOR_SDK_VERSION: v0.16.0
+    steps:
+      # Setup
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.0.3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: set PY
+        run: echo "::set-env name=PY::$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')"
+      - uses: actions/cache@v1
+        with:
+          path: ~/operator-sdk/bin/
+          key: operator-sdk-${{ env.OPERATOR_SDK_VERSION }}
+      - name: setup operator-sdk
+        run: |
+          if [ ! -x ~/operator-sdk/bin/operator-sdk ]; then
+            mkdir -p ~/operator-sdk/bin/
+            curl -L https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu > ~/operator-sdk/bin/operator-sdk
+            chmod +x ~/operator-sdk/bin/operator-sdk
+          fi
+          echo "::add-path::${HOME}/operator-sdk/bin/"
+      # Caching
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-pre-commit-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-pre-commit-
+      # Checks
+      - name: Run pre-commit checks on changes files
+        uses: pre-commit/action@v1.1.0
