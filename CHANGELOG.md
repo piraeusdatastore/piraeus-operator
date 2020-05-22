@@ -121,7 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EtcdURL field to controllersetcontroller spec. default: etcd-piraeus:2379
 - Host networking on the LINSTOR Satellite pods with DNSClusterFirstWithHostNet
   DNS policy
-- NodeSet service for the Satellite pods that also point to the Controller 
+- NodeSet service for the Satellite pods that also point to the Controller
   service for LINSTOR discovery
 
 ### Removed

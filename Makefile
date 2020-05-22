@@ -23,4 +23,11 @@ upload:
 	done
 
 test:
-	find ./pkg/ -name "*.go" -type f | xargs dirname | uniq | xargs go test
+	go test ./...
+
+deep-copy:
+	operator-sdk generate k8s
+
+crds:
+	operator-sdk generate crds
+	mv ./deploy/crds/* ./charts/piraeus/crds

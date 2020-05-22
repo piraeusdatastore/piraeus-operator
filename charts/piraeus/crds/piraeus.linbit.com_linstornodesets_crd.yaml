@@ -1,0 +1,196 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: linstornodesets.piraeus.linbit.com
+spec:
+  group: piraeus.linbit.com
+  names:
+    kind: LinstorNodeSet
+    listKind: LinstorNodeSetList
+    plural: linstornodesets
+    singular: linstornodeset
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: LinstorNodeSet is the Schema for the linstornodesets API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: LinstorNodeSetSpec defines the desired state of LinstorNodeSet
+          properties:
+            drbdKernelModuleInjectionMode:
+              description: drbdKernelModuleInjectionMode selects the source for the
+                DRBD kernel module
+              enum:
+              - None
+              - Compile
+              - ShippedModules
+              type: string
+            drbdRepoCred:
+              description: drbdRepoCred is the name of the kubernetes secret that
+                holds the credential for the DRBD repositories
+              type: string
+            kernelModImage:
+              description: kernelModImage is the image (location + tag) for the LINSTOR/DRBD
+                kernel module injector container
+              type: string
+            linstorHttpsClientSecret:
+              description: 'Name of the secret containing: (a) `ca.pem`: root certificate
+                used to validate HTTPS connections with Linstor (PEM format, without
+                password) (b) `client.key`: client key used by the linstor client
+                (PEM format, without password) (c) `client.cert`: client certificate
+                matching the client key (PEM format, without password) If set, HTTPS
+                is used for connecting and authenticating with linstor'
+              type: string
+            priorityClassName:
+              description: priorityClassName is the name of the PriorityClass for
+                the node set
+              type: string
+            satelliteImage:
+              description: satelliteImage is the image (location + tag) for the LINSTOR
+                satellite container
+              type: string
+            sslSecret:
+              description: Name of k8s secret that holds the SSL key for a node (called
+                `keystore.jks`) and the trusted certificates (called `certificates.jks`)
+              nullable: true
+              type: string
+            storagePools:
+              description: StoragePools is a list of StoragePools for LinstorNodeSet
+                to manage.
+              nullable: true
+              properties:
+                lvmPools:
+                  description: LVMPools for LinstorNodeSet to manage.
+                  items:
+                    description: StoragePoolLVM represents LVM storage pool to be
+                      managed by a LinstorNodeSet
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      volumeGroup:
+                        description: Name of underlying lvm group
+                        type: string
+                    required:
+                    - name
+                    - volumeGroup
+                    type: object
+                  nullable: true
+                  type: array
+                lvmThinPools:
+                  description: LVMThinPools for LinstorNodeSet to manage.
+                  items:
+                    description: StoragePoolLVMThin represents LVM Thin storage pool
+                      to be managed by a LinstorNodeSet
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      thinVolume:
+                        description: Name of underlying lvm thin volume
+                        type: string
+                      volumeGroup:
+                        description: Name of underlying lvm group
+                        type: string
+                    required:
+                    - name
+                    - thinVolume
+                    - volumeGroup
+                    type: object
+                  nullable: true
+                  type: array
+              type: object
+          required:
+          - drbdKernelModuleInjectionMode
+          - drbdRepoCred
+          - kernelModImage
+          - priorityClassName
+          - satelliteImage
+          type: object
+        status:
+          description: LinstorNodeSetStatus defines the observed state of LinstorNodeSet
+          properties:
+            SatelliteStatuses:
+              description: SatelliteStatuses by hostname.
+              items:
+                description: SatelliteStatus should provide all the information that
+                  the reconsile loop needs to manage the operation of the LINSTOR
+                  Satellite.
+                properties:
+                  connectionStatus:
+                    description: As indicated by Linstor
+                    type: string
+                  nodeName:
+                    description: The hostname of the kubelet running the node
+                    type: string
+                  registeredOnController:
+                    description: Indicates if the node has been created on the controller.
+                    type: boolean
+                  storagePoolStatus:
+                    description: StoragePoolStatuses by storage pool name.
+                    items:
+                      description: StoragePoolStatus reports basic information about
+                        storage pool state.
+                      properties:
+                        freeCapacity:
+                          description: Usage reporting
+                          format: int64
+                          type: integer
+                        name:
+                          description: The name of the storage pool.
+                          type: string
+                        nodeName:
+                          description: The hostname of the kubelet hosting the storage
+                            pool.
+                          type: string
+                        provider:
+                          description: Provider is the underlying storage, lvm, zfs,
+                            etc.
+                          type: string
+                        totalCapacity:
+                          format: int64
+                          type: integer
+                      required:
+                      - freeCapacity
+                      - name
+                      - nodeName
+                      - provider
+                      - totalCapacity
+                      type: object
+                    type: array
+                required:
+                - connectionStatus
+                - nodeName
+                - registeredOnController
+                - storagePoolStatus
+                type: object
+              type: array
+            errors:
+              description: Errors remaining that will trigger reconciliations.
+              items:
+                type: string
+              type: array
+          required:
+          - SatelliteStatuses
+          - errors
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
