@@ -5,16 +5,17 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+
 	lapi "github.com/LINBIT/golinstor/client"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
-	"net/url"
-	"os"
-	"strings"
 
 	ini "gopkg.in/ini.v1"
 )
@@ -173,7 +174,7 @@ func (c *HighLevelClient) GetAllResourcesOnNode(ctx context.Context, nodeName st
 }
 
 func filterNodes(resources []lapi.ResourceWithVolumes, nodeName string) []lapi.ResourceWithVolumes {
-	var nodeRes = make([]lapi.ResourceWithVolumes, 0)
+	nodeRes := make([]lapi.ResourceWithVolumes, 0)
 	for i := range resources {
 		r := resources[i]
 
@@ -187,7 +188,7 @@ func filterNodes(resources []lapi.ResourceWithVolumes, nodeName string) []lapi.R
 // GetAllStorageNodes returns a list of all Satellite nodes with a list of their
 // storage pools.
 func (c *HighLevelClient) GetAllStorageNodes(ctx context.Context) ([]StorageNode, error) {
-	var storageNodes = make([]StorageNode, 0)
+	storageNodes := make([]StorageNode, 0)
 
 	// TODO: Expand LINSTOR API for an all nodes plus storage pools view?
 	nodes, err := c.Nodes.GetAll(ctx)
@@ -269,6 +270,7 @@ const (
 	SecretCertName   = "client.cert"
 )
 
+// Convert an ApiResource (i.e. secret name) into a go tls configration useable for HTTP clients
 func ApiResourceAsTlsConfig(cfg *piraeusv1alpha1.LinstorClientConfig, getSecretFunc func(string) (map[string][]byte, error)) (*tls.Config, error) {
 	var tlsConfig *tls.Config = nil
 	if cfg.LinstorHttpsClientSecret != "" {
@@ -315,7 +317,6 @@ func ApiResourceAsTlsConfig(cfg *piraeusv1alpha1.LinstorClientConfig, getSecretF
 	return tlsConfig, nil
 }
 
-
 // Convert a LinstorClientConfig into env variables understood by the CSI plugins and golinstor client
 // See also: https://pkg.go.dev/github.com/LINBIT/golinstor/client?tab=doc#NewClient
 func ApiResourceAsEnvVars(serviceName types.NamespacedName, resource *piraeusv1alpha1.LinstorClientConfig) []corev1.EnvVar {
@@ -323,7 +324,7 @@ func ApiResourceAsEnvVars(serviceName types.NamespacedName, resource *piraeusv1a
 
 	env := []corev1.EnvVar{
 		{
-			Name: "LS_CONTROLLERS",
+			Name:  "LS_CONTROLLERS",
 			Value: controllerEndpoint,
 		},
 	}
