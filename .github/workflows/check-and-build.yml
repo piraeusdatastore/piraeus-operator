@@ -1,0 +1,132 @@
+name: check and build piraeus-operator
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  pull_request:
+env:
+  OPERATOR_SDK_VERSION: v0.16.0
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2.0.3
+      # Cache operator-sdk
+      - uses: actions/cache@v1
+        id: operator-sdk-cache
+        with:
+          path: ~/operator-sdk/bin
+          key: ${{ runner.os }}-operator-sdk-${{ env.OPERATOR_SDK_VERSION }}
+      - name: setup operator-sdk
+        run: ./.github/workflows/scripts/install-operator-sdk.sh ${OPERATOR_SDK_VERSION}
+      # Cache go module sources
+      - uses: actions/cache@v1
+        id: go-cache
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+      - name: download sources
+        run: go mod download
+
+  golangci:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v2
+      # Use go cache
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v1
+        with:
+          version: v1.26
+          only-new-issues: true
+          # Lints are more guidelines than actual rules
+          args: --issues-exit-code=0
+
+  checks:
+    runs-on: ubuntu-latest
+    needs: prepare
+    env:
+      # These hooks will run separately in github actions
+      SKIP: golangci-lint,go-unit-tests
+    steps:
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.0.3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: set PY
+        run: echo "::set-env name=PY::$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')"
+      # Cache pre-commit repos
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      # use operator-sdk
+      - uses: actions/cache@v1
+        id: operator-sdk-cache
+        with:
+          path: ~/operator-sdk/bin
+          key: ${{ runner.os }}-operator-sdk-${{ env.OPERATOR_SDK_VERSION }}
+      - name: setup operator-sdk
+        run: ./.github/workflows/scripts/install-operator-sdk.sh ${OPERATOR_SDK_VERSION}
+      # use go module sources
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+      # Checks
+      - name: Run pre-commit checks on changes files
+        uses: pre-commit/action@v1.1.0
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs:
+      - checks
+      - golangci
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2.0.3
+      # use operator-sdk
+      - uses: actions/cache@v1
+        id: operator-sdk-cache
+        with:
+          path: ~/operator-sdk/bin
+          key: ${{ runner.os }}-operator-sdk-${{ env.OPERATOR_SDK_VERSION }}
+      - name: setup operator-sdk
+        run: ./.github/workflows/scripts/install-operator-sdk.sh ${OPERATOR_SDK_VERSION}
+      # use go module sources
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+      - name: Build with operator-sdk
+        run: operator-sdk build quay.io/piraeusdatastore/piraeus-operator:latest
+      - name: Push docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: quay.io
+          repository: piraeusdatastore/piraeus-operator
+          dockerfile: ./build/Dockerfile
+          # master -> latest
+          # tag -> tag
+          # pull request -> pr-{pull request}
+          tag_with_ref: true
+          add_git_labels: true
+          push: ${{ github.event_name != 'pull_request' }}

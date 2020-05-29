@@ -5,6 +5,9 @@ suitable for testing and development.
 
 ## Contributing
 
+
+![](https://github.com/piraeusdatastore/piraeus-operator/workflows/check%20and%20build%20piraeus-operator/badge.svg)
+
 This Operator is currently under heavy development: documentation and examples
 will change frequently. Always use the latest release.
 
