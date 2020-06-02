@@ -2,20 +2,23 @@ package linstorcsidriver
 
 import (
 	"context"
+	"reflect"
+	"testing"
+
+	schedv1 "k8s.io/api/scheduling/v1"
+
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	schedv1 "k8s.io/api/scheduling/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"reflect"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
 )
 
 var (
@@ -92,8 +95,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 						Name:      "foo-csi-driver",
 						Namespace: "bar",
 					},
-					Spec: piraeusv1alpha1.LinstorCSIDriverSpec{
-					},
+					Spec: piraeusv1alpha1.LinstorCSIDriverSpec{},
 				},
 			},
 			expectedResources: expectedResources{
@@ -168,7 +170,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 	}
 }
 
-func compareDaemonSets(expectedItems []appsv1.DaemonSet, actualItems []appsv1.DaemonSet, t *testing.T) {
+func compareDaemonSets(expectedItems, actualItems []appsv1.DaemonSet, t *testing.T) {
 	if len(expectedItems) != len(actualItems) {
 		t.Errorf("expected daemonsets to contain %d items, got %d instead", len(expectedItems), len(actualItems))
 	}
@@ -191,7 +193,7 @@ func compareDaemonSets(expectedItems []appsv1.DaemonSet, actualItems []appsv1.Da
 	}
 }
 
-func compareDeployments(expectedItems []appsv1.Deployment, actualItems []appsv1.Deployment, t *testing.T) {
+func compareDeployments(expectedItems, actualItems []appsv1.Deployment, t *testing.T) {
 	if len(expectedItems) != len(actualItems) {
 		t.Errorf("expected deployments to contain %d items, got %d instead", len(expectedItems), len(actualItems))
 	}
@@ -214,7 +216,7 @@ func compareDeployments(expectedItems []appsv1.Deployment, actualItems []appsv1.
 	}
 }
 
-func compareServiceAccounts(expectedItems []corev1.ServiceAccount, actualItems []corev1.ServiceAccount, t *testing.T) {
+func compareServiceAccounts(expectedItems, actualItems []corev1.ServiceAccount, t *testing.T) {
 	if len(expectedItems) != len(actualItems) {
 		t.Errorf("expected serviceaccounts to contain %d items, got %d instead", len(expectedItems), len(actualItems))
 	}
@@ -235,7 +237,7 @@ func compareServiceAccounts(expectedItems []corev1.ServiceAccount, actualItems [
 	}
 }
 
-func comparePriorityClass(expectedItems []schedv1.PriorityClass, actualItems []schedv1.PriorityClass, t *testing.T) {
+func comparePriorityClass(expectedItems, actualItems []schedv1.PriorityClass, t *testing.T) {
 	if len(expectedItems) != len(actualItems) {
 		t.Errorf("expected priorityclasses to contain %d items, got %d instead", len(expectedItems), len(actualItems))
 	}
@@ -256,7 +258,7 @@ func comparePriorityClass(expectedItems []schedv1.PriorityClass, actualItems []s
 	}
 }
 
-func compareCSIDrivers(expectedItems []storagev1beta1.CSIDriver, actualItems []storagev1beta1.CSIDriver, t *testing.T) {
+func compareCSIDrivers(expectedItems, actualItems []storagev1beta1.CSIDriver, t *testing.T) {
 	if len(expectedItems) != len(actualItems) {
 		t.Errorf("expected daemonsets to contain %d items, got %d instead", len(expectedItems), len(actualItems))
 	}
