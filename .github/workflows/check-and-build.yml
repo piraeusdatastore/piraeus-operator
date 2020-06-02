@@ -58,7 +58,7 @@ jobs:
     needs: prepare
     env:
       # These hooks will run separately in github actions
-      SKIP: golangci-lint,go-unit-tests
+      SKIP: golangci-lint
     steps:
       - name: Setup Go environment
         uses: actions/setup-go@v2.0.3
