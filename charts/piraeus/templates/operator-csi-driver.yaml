@@ -2,7 +2,7 @@
 apiVersion: piraeus.linbit.com/v1alpha1
 kind: LinstorCSIDriver
 metadata:
-  name: {{ template "operator.fullname" . }}-csi-driver
+  name: {{ template "operator.fullname" . }}
 spec:
   enabled: {{ .Values.csi.enabled }}
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
