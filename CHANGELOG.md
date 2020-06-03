@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   These changes may be of note if you used a non-default CSI configuration:
   * helm value `csi.image` was renamed to `csi.pluginImage`
   * CSI deployment can be controlled by a new resource `linstorcsidrivers.piraeus.linbit.com`
+* PriorityClasses are not automatically created. When not specified, the priority class is:
+  * "system-node-critical", if deployed in "kube-system" namespace
+  * default PriorityClass in other namespaces
+
 
 ## [v0.3.0] - 2020-05-08
 

@@ -30,8 +30,8 @@ type LinstorNodeSetSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// priorityClassName is the name of the PriorityClass for the node set
-	PriorityClassName string `json:"priorityClassName"`
+	// priorityClassName is the name of the PriorityClass for the node pods
+	PriorityClassName PriorityClassName `json:"priorityClassName"`
 
 	// StoragePools is a list of StoragePools for LinstorNodeSet to manage.
 	// +optional

@@ -19,6 +19,8 @@ repos:
     rev: master
     hooks:
       - id: golangci-lint
+        args:
+          - --new-from-rev=HEAD
       - id: go-unit-tests
   - repo: local
     hooks:

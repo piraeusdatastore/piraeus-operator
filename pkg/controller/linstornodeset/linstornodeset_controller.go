@@ -20,11 +20,12 @@ package linstornodeset
 import (
 	"context"
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/BurntSushi/toml"
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
@@ -47,7 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
-	//logf "sigs.k8s.io/controller-runtime/pkg/log"
+	// logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -118,7 +119,7 @@ type ReconcileLinstorNodeSet struct {
 }
 
 func newCompoundErrorMsg(errs []error) []string {
-	var errStrs = make([]string, 0)
+	errStrs := make([]string, 0)
 
 	for _, err := range errs {
 		errStrs = append(errStrs, err.Error())
@@ -135,7 +136,6 @@ func newCompoundErrorMsg(errs []error) []string {
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-
 	// Fetch the LinstorNodeSet instance
 	pns := &piraeusv1alpha1.LinstorNodeSet{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, pns)
@@ -152,10 +152,6 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 
 	if pns.Spec.DrbdRepoCred == "" {
 		return reconcile.Result{}, fmt.Errorf("NS Reconcile: missing required parameter drbdRepoCred: outdated schema")
-	}
-
-	if pns.Spec.PriorityClassName == "" {
-		return reconcile.Result{}, fmt.Errorf("NS Reconcile: missing required parameter priorityClassName: outdated schema")
 	}
 
 	if pns.Spec.SatelliteImage == "" {
@@ -193,7 +189,7 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	getSecret := func(secretName string) (map[string][]byte, error) {
-		var secret = corev1.Secret{}
+		secret := corev1.Secret{}
 		err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: pns.Namespace}, &secret)
 		if err != nil {
 			return nil, err
@@ -305,12 +301,12 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 // sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.LinstorNodeSet) []error {
-
 	pods := &corev1.PodList{}
 	labelSelector := labels.SelectorFromSet(pnsLabels(pns))
 	listOpts := []client.ListOption{
 		// Namespace: pns.Namespace, LabelSelector: labelSelector}
-		client.InNamespace(pns.Namespace), client.MatchingLabelsSelector{labelSelector}}
+		client.InNamespace(pns.Namespace), client.MatchingLabelsSelector{Selector: labelSelector},
+	}
 	err := r.client.List(context.TODO(), pods, listOpts...)
 	if err != nil {
 		return []error{err}
@@ -361,7 +357,6 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 				l.Debugf("NS reconcileSatNodes: Error with reconcileSatNodeWithController: %v", err)
 			}
 			satelliteStatusIn <- satStat{sat, err}
-
 		}()
 
 		pools := r.aggregateStoragePools(pns)
@@ -405,7 +400,6 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 }
 
 func (r *ReconcileLinstorNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod, ssl *piraeusv1alpha1.LinstorSSLConfig) error {
-
 	// Mark this true on successful exit from this function.
 	sat.RegisteredOnController = false
 
@@ -516,7 +510,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 					},
 					HostNetwork:       true, // INFO: Per Roland, set to true
 					DNSPolicy:         corev1.DNSClusterFirstWithHostNet,
-					PriorityClassName: pns.Spec.PriorityClassName,
+					PriorityClassName: pns.Spec.PriorityClassName.GetName(pns.Namespace),
 					Containers: []corev1.Container{
 						{
 							Name:  "linstor-satellite",
@@ -619,7 +613,6 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 }
 
 func reconcileSatelliteConfiguration(pns *piraeusv1alpha1.LinstorNodeSet, r *ReconcileLinstorNodeSet) (*corev1.ConfigMap, error) {
-
 	meta := metav1.ObjectMeta{
 		Name:      pns.Name + "-config",
 		Namespace: pns.Namespace,
@@ -763,7 +756,9 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: kubeSpec.SrcDir,
 					Type: &kubeSpec.HostPathDirectoryType,
-				}}},
+				},
+			},
+		},
 	}...)
 
 	return ds
@@ -826,7 +821,7 @@ func pnsLabels(pns *piraeusv1alpha1.LinstorNodeSet) map[string]string {
 
 // aggregateStoragePools appends all disparate StoragePool types together, so they can be processed together.
 func (r *ReconcileLinstorNodeSet) aggregateStoragePools(pns *piraeusv1alpha1.LinstorNodeSet) []piraeusv1alpha1.StoragePool {
-	var pools = make([]piraeusv1alpha1.StoragePool, 0)
+	pools := make([]piraeusv1alpha1.StoragePool, 0)
 
 	for _, thickPool := range pns.Spec.StoragePools.LVMPools {
 		pools = append(pools, thickPool)
@@ -904,8 +899,8 @@ func (r *ReconcileLinstorNodeSet) finalizeSatelliteSet(pns *piraeusv1alpha1.Lins
 		// Run finalization logic for LinstorNodeSet. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.
-		var errs = make([]error, 0)
-		var keepNodes = make([]*piraeusv1alpha1.SatelliteStatus, 0)
+		errs := make([]error, 0)
+		keepNodes := make([]*piraeusv1alpha1.SatelliteStatus, 0)
 		for _, node := range pns.Status.SatelliteStatuses {
 			if err := r.finalizeNode(pns, node.NodeName); err != nil {
 				errs = append(errs, err)

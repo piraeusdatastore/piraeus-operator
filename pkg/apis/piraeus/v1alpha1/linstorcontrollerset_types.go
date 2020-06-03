@@ -24,8 +24,8 @@ import (
 // LinstorControllerSetSpec defines the desired state of LinstorControllerSet
 type LinstorControllerSetSpec struct {
 
-	// priorityClassName is the name of the PriorityClass for the controller set
-	PriorityClassName string `json:"priorityClassName"`
+	// priorityClassName is the name of the PriorityClass for the controller pods
+	PriorityClassName PriorityClassName `json:"priorityClassName"`
 
 	// DBConnectionURL is the URL of the ETCD endpoint for LINSTOR Controller
 	DBConnectionURL string `json:"dbConnectionURL"`

@@ -80,7 +80,7 @@ spec:
               type: string
             priorityClassName:
               description: priorityClassName is the name of the PriorityClass for
-                the controller set
+                the controller pods
               type: string
             sslSecret:
               description: Name of k8s secret that holds the SSL key for a node (called

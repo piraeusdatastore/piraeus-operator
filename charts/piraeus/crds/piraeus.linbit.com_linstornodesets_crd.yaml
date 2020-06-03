@@ -57,7 +57,7 @@ spec:
               type: string
             priorityClassName:
               description: priorityClassName is the name of the PriorityClass for
-                the node set
+                the node pods
               type: string
             satelliteImage:
               description: satelliteImage is the image (location + tag) for the LINSTOR

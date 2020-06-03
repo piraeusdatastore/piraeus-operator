@@ -18,9 +18,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	lapiconst "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
+
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 )
-import lapiconst "github.com/LINBIT/golinstor"
 
 // NodeStatus simple status of the node in the linstor cluster.
 type NodeStatus struct {
@@ -153,4 +155,20 @@ type LinstorClientConfig struct {
 	// If set, HTTPS is used for connecting and authenticating with linstor
 	// +optional
 	LinstorHttpsClientSecret string `json:"linstorHttpsClientSecret"`
+}
+
+// PriorityClassName is the name PriorityClass associated with all pods for this resource.
+// Can be left empty to use the default PriorityClass.
+type PriorityClassName string
+
+func (pcn *PriorityClassName) GetName(namespace string) string {
+	if *pcn != "" {
+		return string(*pcn)
+	}
+
+	if namespace == spec.SystemNamespace {
+		return spec.SystemCriticalPriorityClassName
+	}
+
+	return ""
 }

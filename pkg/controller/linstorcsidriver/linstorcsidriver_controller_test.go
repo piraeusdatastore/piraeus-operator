@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	schedv1 "k8s.io/api/scheduling/v1"
-
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,12 +46,6 @@ var (
 			Namespace: "bar",
 		},
 	}
-	DefaultPriorityClass = schedv1.PriorityClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi",
-			Namespace: "bar",
-		},
-	}
 	DefaultCSIDriver = storagev1beta1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "linstor.csi.linbit.com",
@@ -71,7 +63,6 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 		daemonsSets     []appsv1.DaemonSet
 		deployments     []appsv1.Deployment
 		serviceAccounts []corev1.ServiceAccount
-		priorityClasses []schedv1.PriorityClass
 		csiDrivers      []storagev1beta1.CSIDriver
 	}
 
@@ -102,7 +93,6 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 				daemonsSets:     []appsv1.DaemonSet{DefaultNodeDaemonSet},
 				deployments:     []appsv1.Deployment{DefaultControllerDeployment},
 				serviceAccounts: []corev1.ServiceAccount{DefaulControllerServiceAccount, DefaultNodeServiceAccount},
-				priorityClasses: []schedv1.PriorityClass{DefaultPriorityClass},
 				csiDrivers:      []storagev1beta1.CSIDriver{DefaultCSIDriver},
 			},
 		},
@@ -151,13 +141,6 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 					t.Fatalf("Failed to fetch items: %v", err)
 				}
 				compareServiceAccounts(testcase.expectedResources.serviceAccounts, serviceAccounts.Items, t)
-
-				priorityClasses := schedv1.PriorityClassList{}
-				err = controllerClient.List(context.Background(), &priorityClasses)
-				if err != nil {
-					t.Fatalf("Failed to fetch items: %v", err)
-				}
-				comparePriorityClass(testcase.expectedResources.priorityClasses, priorityClasses.Items, t)
 
 				drivers := storagev1beta1.CSIDriverList{}
 				err = controllerClient.List(context.Background(), &drivers)
@@ -232,27 +215,6 @@ func compareServiceAccounts(expectedItems, actualItems []corev1.ServiceAccount, 
 
 		if expected == nil {
 			t.Errorf("unexpected serviceaccount: %s/%s", actual.Namespace, actual.Name)
-			continue
-		}
-	}
-}
-
-func comparePriorityClass(expectedItems, actualItems []schedv1.PriorityClass, t *testing.T) {
-	if len(expectedItems) != len(actualItems) {
-		t.Errorf("expected priorityclasses to contain %d items, got %d instead", len(expectedItems), len(actualItems))
-	}
-
-	for _, actual := range actualItems {
-		var expected *schedv1.PriorityClass = nil
-		for _, candidate := range expectedItems {
-			if actual.Name == candidate.Name && actual.Namespace == candidate.Namespace {
-				expected = &candidate
-				break
-			}
-		}
-
-		if expected == nil {
-			t.Errorf("unexpected priorityclass: %s/%s", actual.Namespace, actual.Name)
 			continue
 		}
 	}

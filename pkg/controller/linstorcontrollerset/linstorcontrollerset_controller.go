@@ -113,7 +113,7 @@ type ReconcileLinstorControllerSet struct {
 }
 
 func newCompoundErrorMsg(errs []error) []string {
-	var errStrs = make([]string, 0)
+	errStrs := make([]string, 0)
 
 	for _, err := range errs {
 		if err != nil {
@@ -135,7 +135,6 @@ func newCompoundErrorMsg(errs []error) []string {
 // sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-
 	reqLogger := logrus.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
@@ -169,10 +168,6 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter drbdRepoCred: outdated schema")
 	}
 
-	if pcs.Spec.PriorityClassName == "" {
-		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter priorityClassName: outdated schema")
-	}
-
 	if pcs.Spec.ControllerImage == "" {
 		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter controllerImage: outdated schema")
 	}
@@ -196,7 +191,7 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 	}).Debug("found LinstorControllerSet")
 
 	getSecret := func(secretName string) (map[string][]byte, error) {
-		var secret = corev1.Secret{}
+		secret := corev1.Secret{}
 		err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: pcs.Namespace}, &secret)
 		if err != nil {
 			return nil, err
@@ -355,7 +350,8 @@ func (r *ReconcileLinstorControllerSet) reconcileControllers(pcs *piraeusv1alpha
 	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
 	listOpts := []client.ListOption{
 		// Namespace: pns.Namespace, LabelSelector: labelSelector}
-		client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{labelSelector}}
+		client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector},
+	}
 	err := r.client.List(context.TODO(), pods, listOpts...)
 	if err != nil {
 		return []error{err}
@@ -492,7 +488,7 @@ func (r *ReconcileLinstorControllerSet) mayFinalizeControllerSet(pcs *piraeusv1a
 		}
 	}
 
-	var nodeNames = make([]string, 0)
+	nodeNames := make([]string, 0)
 	for _, node := range nodes {
 		if node.Type == lc.Satellite {
 			nodeNames = append(nodeNames, node.Name)
@@ -530,9 +526,7 @@ func (r *ReconcileLinstorControllerSet) deleteFinalizer(pcs *piraeusv1alpha1.Lin
 }
 
 func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.StatefulSet {
-	var (
-		replicas = int32(1)
-	)
+	replicas := int32(1)
 
 	labels := pcsLabels(pcs)
 
@@ -552,7 +546,9 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: pcs.Name + "-config",
 					},
-				}}},
+				},
+			},
+		},
 	}
 
 	volumeMounts := []corev1.VolumeMount{
@@ -659,7 +655,7 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					PriorityClassName: pcs.Spec.PriorityClassName,
+					PriorityClassName: pcs.Spec.PriorityClassName.GetName(pcs.Namespace),
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
