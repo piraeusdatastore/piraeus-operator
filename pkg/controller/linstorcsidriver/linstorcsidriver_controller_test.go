@@ -26,31 +26,31 @@ var (
 	CSIDriverPodInfoOnMount = true
 	DefaultNodeDaemonSet    = appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-driver-csi-node-daemonset",
+			Name:      "foo-csi-node",
 			Namespace: "bar",
 		},
 	}
 	DefaultControllerDeployment = appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-driver-csi-controller-deployment",
+			Name:      "foo-csi-controller",
 			Namespace: "bar",
 		},
 	}
 	DefaultNodeServiceAccount = corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-driver-csi-node-sa",
+			Name:      "foo-csi-node",
 			Namespace: "bar",
 		},
 	}
 	DefaulControllerServiceAccount = corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-driver-csi-controller-sa",
+			Name:      "foo-csi-controller",
 			Namespace: "bar",
 		},
 	}
 	DefaultPriorityClass = schedv1.PriorityClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-driver-csi-priority-class",
+			Name:      "foo-csi",
 			Namespace: "bar",
 		},
 	}
@@ -92,7 +92,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 			initialResources: []runtime.Object{
 				&piraeusv1alpha1.LinstorCSIDriver{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo-csi-driver",
+						Name:      "foo",
 						Namespace: "bar",
 					},
 					Spec: piraeusv1alpha1.LinstorCSIDriverSpec{},
@@ -120,7 +120,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 
 			reconciler := ReconcileLinstorCSIDriver{controllerClient, scheme.Scheme}
 
-			_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo-csi-driver", Namespace: "bar"}})
+			_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "bar"}})
 			if testcase.withError {
 				if err == nil {
 					t.Errorf("expected error, got no error")

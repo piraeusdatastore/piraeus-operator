@@ -831,7 +831,7 @@ func getPriorityClassName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string 
 
 func getLinstorControllerServiceName(csiResource *piraeusv1alpha1.LinstorCSIDriver) types.NamespacedName {
 	return types.NamespacedName{
-		Name:      csiResource.Name[:len(csiResource.Name)-len("-csi-driver")] + "-cs",
+		Name:      csiResource.Name + "-cs",
 		Namespace: csiResource.Namespace,
 	}
 }
@@ -905,17 +905,17 @@ type GCRuntimeObject interface {
 }
 
 const (
-	NodeServiceAccount       = "-csi-node-sa"
-	ControllerServiceAccount = "-csi-controller-sa"
-	PriorityClass            = "-csi-priority-class"
-	NodeDaemonSet            = "-csi-node-daemonset"
-	SnapshotterRole          = "-csi-snapshotter-role"
-	ProvisionerRole          = "-csi-provisioner-role"
-	DriverRegistrarRole      = "-csi-driver-registrar-role"
-	AttacherRole             = "-csi-attacher-role"
-	AttacherBinding          = "-csi-attacher-binding"
-	DriverRegistrarBinding   = "-csi-driver-registrar-binding"
-	ProvisionerBinding       = "-csi-provisioner-binding"
-	SnapshotterBinding       = "-csi-snapshotter-binding"
-	ControllerDeployment     = "-csi-controller-deployment"
+	NodeServiceAccount       = "-csi-node"
+	ControllerServiceAccount = "-csi-controller"
+	PriorityClass            = "-csi"
+	NodeDaemonSet            = "-csi-node"
+	SnapshotterRole          = "-csi-snapshotter"
+	ProvisionerRole          = "-csi-provisioner"
+	DriverRegistrarRole      = "-csi-driver-registrar"
+	AttacherRole             = "-csi-attacher"
+	AttacherBinding          = "-csi-attacher"
+	DriverRegistrarBinding   = "-csi-driver-registrar"
+	ProvisionerBinding       = "-csi-provisioner"
+	SnapshotterBinding       = "-csi-snapshotter"
+	ControllerDeployment     = "-csi-controller"
 )
