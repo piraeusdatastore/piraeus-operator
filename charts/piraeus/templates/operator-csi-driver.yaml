@@ -12,4 +12,5 @@ spec:
   csiProvisionerImage: {{ .Values.csi.csiProvisionerImage | quote }}
   csiSnapshotterImage: {{ .Values.csi.csiSnapshotterImage | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   {{- end }}

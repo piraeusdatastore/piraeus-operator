@@ -25,7 +25,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
-	schedv1 "k8s.io/api/scheduling/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -80,7 +79,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	createdResources := []runtime.Object{
 		&appsv1.Deployment{},
 		&appsv1.DaemonSet{},
-		&schedv1.PriorityClass{},
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRoleBinding{},
 		&rbacv1.ClusterRole{},
@@ -192,12 +190,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
-	err := r.reconcilePriorityClass(ctx, csiResource)
-	if err != nil {
-		return err
-	}
-
-	err = r.reconcileNodeServiceAccount(ctx, csiResource)
+	err := r.reconcileNodeServiceAccount(ctx, csiResource)
 	if err != nil {
 		return err
 	}
@@ -266,11 +259,6 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	}
 
 	return err
-}
-
-func (r *ReconcileLinstorCSIDriver) reconcilePriorityClass(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
-	pc := newCSIPriorityClass(csiResource)
-	return r.createOrReplace(ctx, pc)
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileNodeServiceAccount(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
@@ -515,15 +503,6 @@ func newCSISnapshotterRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv
 	}
 }
 
-func newCSIPriorityClass(csiResource *piraeusv1alpha1.LinstorCSIDriver) *schedv1.PriorityClass {
-	return &schedv1.PriorityClass{
-		ObjectMeta:    makeMeta(csiResource, PriorityClass),
-		Value:         1000000,
-		GlobalDefault: false,
-		Description:   "Priority class for piraeus-csi components",
-	}
-}
-
 func newCSIControllerServiceAccount(csiResource *piraeusv1alpha1.LinstorCSIDriver) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: makeMeta(csiResource, ControllerServiceAccount),
@@ -661,7 +640,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: makeMeta(csiResource, NodeDaemonSet),
 				Spec: corev1.PodSpec{
-					PriorityClassName:  getPriorityClassName(csiResource),
+					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: getNodeServiceAccountName(csiResource),
 					Containers: []corev1.Container{
 						driverRegistrar,
@@ -781,7 +760,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: makeMeta(csiResource, ControllerDeployment),
 				Spec: corev1.PodSpec{
-					PriorityClassName:  getPriorityClassName(csiResource),
+					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: getControllerServiceAccountName(csiResource),
 					Containers: []corev1.Container{
 						csiAttacher,
@@ -823,10 +802,6 @@ func getNodeServiceAccountName(csiResource *piraeusv1alpha1.LinstorCSIDriver) st
 
 func getControllerServiceAccountName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string {
 	return csiResource.Name + ControllerServiceAccount
-}
-
-func getPriorityClassName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string {
-	return csiResource.Name + PriorityClass
 }
 
 func getLinstorControllerServiceName(csiResource *piraeusv1alpha1.LinstorCSIDriver) types.NamespacedName {
@@ -907,7 +882,6 @@ type GCRuntimeObject interface {
 const (
 	NodeServiceAccount       = "-csi-node"
 	ControllerServiceAccount = "-csi-controller"
-	PriorityClass            = "-csi"
 	NodeDaemonSet            = "-csi-node"
 	SnapshotterRole          = "-csi-snapshotter"
 	ProvisionerRole          = "-csi-provisioner"

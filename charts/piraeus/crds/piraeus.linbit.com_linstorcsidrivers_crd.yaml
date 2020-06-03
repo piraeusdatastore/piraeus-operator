@@ -65,6 +65,10 @@ spec:
             linstorPluginImage:
               description: Image that contains the linstor-csi driver plugin
               type: string
+            priorityClassName:
+              description: priorityClassName is the name of the PriorityClass for
+                the csi driver pods
+              type: string
           required:
           - imagePullSecret
           - linstorPluginImage

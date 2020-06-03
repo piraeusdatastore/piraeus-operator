@@ -17,6 +17,7 @@ csi:
   csiNodeDriverRegistrarImage: ""
   csiProvisionerImage: ""
   csiSnapshotterImage: ""
+priorityClassName: ""
 drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: ""  # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: ""   # <- name of secret containing linstor client certificates+key. See docs/security.md

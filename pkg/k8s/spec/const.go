@@ -58,6 +58,12 @@ const (
 	JavaOptsName                 = "JAVA_OPTS"
 )
 
+// k8s constants: Special names for k8s APIs.
+const (
+	SystemNamespace                 = "kube-system"
+	SystemCriticalPriorityClassName = "system-node-critical"
+)
+
 // Shared consts common to container volumes. These need to be vars, so they
 // are addressible.
 var (

@@ -45,6 +45,10 @@ type LinstorCSIDriverSpec struct {
 	// Image that contains the linstor-csi driver plugin
 	LinstorPluginImage string `json:"linstorPluginImage"`
 
+	// priorityClassName is the name of the PriorityClass for the csi driver pods
+	// +optional
+	PriorityClassName PriorityClassName `json:"priorityClassName"`
+
 	LinstorClientConfig `json:",inline"`
 }
 
