@@ -345,7 +345,8 @@ func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.Linstor
 		log.Debug("NS reconcileSatNodes: reconciling node")
 
 		sat := &piraeusv1alpha1.SatelliteStatus{
-			NodeStatus: piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
+			NodeStatus:          piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
+			StoragePoolStatuses: make([]*piraeusv1alpha1.StoragePoolStatus, 0),
 		}
 		pns.Status.SatelliteStatuses[i] = sat
 
