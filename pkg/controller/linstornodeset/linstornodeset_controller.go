@@ -188,6 +188,11 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
 	}
 
+	err = r.reconcileResource(context.TODO(), pns)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	getSecret := func(secretName string) (map[string][]byte, error) {
 		secret := corev1.Secret{}
 		err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: pns.Namespace}, &secret)
@@ -197,14 +202,7 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 		return secret.Data, nil
 	}
 
-	tlsConfig, err := lc.ApiResourceAsTlsConfig(&pns.Spec.LinstorClientConfig, getSecret)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	controllerServiceName := types.NamespacedName{Name: pns.Name[:len(pns.Name)-3] + "-cs", Namespace: pns.Namespace}
-
-	r.linstorClient, err = lc.NewHighLevelLinstorClientForServiceName(controllerServiceName, tlsConfig)
+	r.linstorClient, err = lc.NewHighLevelLinstorClientFromConfig(pns.Spec.ControllerEndpoint, &pns.Spec.LinstorClientConfig, getSecret)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -295,6 +293,40 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	return reconcile.Result{}, compoundError
+}
+
+func (r *ReconcileLinstorNodeSet) reconcileResource(ctx context.Context, pns *piraeusv1alpha1.LinstorNodeSet) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      pns.Name,
+		"Namespace": pns.Namespace,
+		"Op":        "reconcileResource",
+	})
+	logger.Debug("performing upgrades and fill defaults in resource")
+
+	changed := false
+
+	logger.Debug("performing upgrade/fill: #1 -> Set default endpoint URL for client")
+
+	if pns.Spec.ControllerEndpoint == "" {
+		serviceName := types.NamespacedName{Name: pns.Name[:len(pns.Name)-3] + "-cs", Namespace: pns.Namespace}
+		useHTTPS := pns.Spec.LinstorHttpsClientSecret != ""
+		defaultEndpoint := lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
+		pns.Spec.ControllerEndpoint = defaultEndpoint
+		changed = true
+
+		logger.Infof("set controller endpoint URL to '%s'", pns.Spec.ControllerEndpoint)
+	}
+
+	logger.Debugf("finished upgrade/fill: #1 -> Set default endpoint URL for client: changed=%t", changed)
+
+	logger.Debug("finished all upgrades/fills")
+
+	if changed {
+		logger.Info("save updated spec")
+		return r.client.Update(ctx, pns)
+	}
+
+	return nil
 }
 
 // This function is a mini-main function and has a lot of boilerplate code that doesn't make a lot of
@@ -673,8 +705,7 @@ func reconcileSatelliteConfiguration(pns *piraeusv1alpha1.LinstorNodeSet, r *Rec
 		return nil, err
 	}
 
-	serviceName := types.NamespacedName{Name: pns.Name[:len(pns.Name)-3] + "-cs", Namespace: pns.Namespace}
-	clientConfig := lc.NewClientConfigForApiResource(serviceName, &pns.Spec.LinstorClientConfig)
+	clientConfig := lc.NewClientConfigForAPIResource(pns.Spec.ControllerEndpoint, &pns.Spec.LinstorClientConfig)
 	clientConfigFile, err := clientConfig.ToConfigFile()
 	if err != nil {
 		return nil, err

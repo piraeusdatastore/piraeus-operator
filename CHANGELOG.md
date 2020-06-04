@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when installing via Helm.
 * Authentication with etcd using TLS client certificates.
 * Secured connection between linstor-client and controller (HTTPS). More in the [security guide](./doc/security.md#configuring-secure-communications-for-the-linstor-api)
+* Linstor controller endpoint can now be customized for all resources. If not specified, the old default values will be
+  filled in.
 
 ### Removed
 

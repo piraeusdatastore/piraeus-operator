@@ -13,4 +13,9 @@ spec:
   csiSnapshotterImage: {{ .Values.csi.csiSnapshotterImage | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
+  {{- if empty .Values.linstorHttpsClientSecret }}
+  controllerEndpoint: http://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3370
+  {{- else }}
+  controllerEndpoint: https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
+  {{- end }}
   {{- end }}

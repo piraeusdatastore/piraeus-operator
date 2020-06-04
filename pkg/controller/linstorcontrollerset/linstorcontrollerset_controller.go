@@ -199,13 +199,8 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return secret.Data, nil
 	}
 
-	tlsConfig, err := lc.ApiResourceAsTlsConfig(&pcs.Spec.LinstorClientConfig, getSecret)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	serviceName := types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}
-	r.linstorClient, err = lc.NewHighLevelLinstorClientForServiceName(serviceName, tlsConfig)
+	endpoint := expectedEndpoint(pcs)
+	r.linstorClient, err = lc.NewHighLevelLinstorClientFromConfig(endpoint, &pcs.Spec.LinstorClientConfig, getSecret)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -774,7 +769,8 @@ func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.Conf
 		return nil, err
 	}
 
-	clientConfig := lc.NewClientConfigForApiResource(types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}, &pcs.Spec.LinstorClientConfig)
+	endpoint := expectedEndpoint(pcs)
+	clientConfig := lc.NewClientConfigForAPIResource(endpoint, &pcs.Spec.LinstorClientConfig)
 	clientConfigFile, err := clientConfig.ToConfigFile()
 	if err != nil {
 		return nil, err
@@ -792,6 +788,13 @@ func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.Conf
 	}
 
 	return cm, nil
+}
+
+func expectedEndpoint(pcs *piraeusv1alpha1.LinstorControllerSet) string {
+	serviceName := types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}
+	useHTTPS := pcs.Spec.LinstorHttpsClientSecret != ""
+
+	return lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
 }
 
 func pcsLabels(pcs *piraeusv1alpha1.LinstorControllerSet) map[string]string {

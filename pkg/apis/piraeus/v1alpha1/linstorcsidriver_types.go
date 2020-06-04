@@ -49,6 +49,11 @@ type LinstorCSIDriverSpec struct {
 	// +optional
 	PriorityClassName PriorityClassName `json:"priorityClassName"`
 
+	// Cluster URL of the linstor controller.
+	// If not set, will be determined from the current resource name.
+	// +optional
+	ControllerEndpoint string `json:"controllerEndpoint"`
+
 	LinstorClientConfig `json:",inline"`
 }
 

@@ -155,33 +155,57 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 		"Namespace": csiResource.Namespace,
 		"Op":        "reconcileResource",
 	})
-	logger.Info("performing upgrades and fill defaults in resource")
+	logger.Debug("performing upgrades and fill defaults in resource")
 
 	changed := false
 
-	logger.Info("performing upgrade/fill: #1 -> Set default image names for CSI")
+	logger.Debug("performing upgrade/fill: #1 -> Set default image names for CSI")
+
 	if csiResource.Spec.CSIAttacherImage == "" {
 		csiResource.Spec.CSIAttacherImage = DefaultAttacherImage
 		changed = true
+
+		logger.Infof("set csi attacher image to '%s'", csiResource.Spec.CSIAttacherImage)
 	}
 
 	if csiResource.Spec.CSINodeDriverRegistrarImage == "" {
 		csiResource.Spec.CSINodeDriverRegistrarImage = DefaultNodeDriverRegistrarImage
 		changed = true
+
+		logger.Infof("set csi node driver registrar image to '%s'", csiResource.Spec.CSINodeDriverRegistrarImage)
 	}
 
 	if csiResource.Spec.CSIProvisionerImage == "" {
 		csiResource.Spec.CSIProvisionerImage = DefaultProvisionerImage
 		changed = true
+
+		logger.Infof("set csi provisioner image to '%s'", csiResource.Spec.CSIProvisionerImage)
 	}
 
 	if csiResource.Spec.CSISnapshotterImage == "" {
 		csiResource.Spec.CSISnapshotterImage = DefaultSnapshotterImage
 		changed = true
-	}
-	logger.Infof("finished upgrade/fill: #1 -> Set default image names for CSI: changed=%t", changed)
 
-	logger.Info("finished all upgrades/fills")
+		logger.Infof("set csi snapshotter image to '%s'", csiResource.Spec.CSISnapshotterImage)
+	}
+
+	logger.Debugf("finished upgrade/fill: #1 -> Set default image names for CSI: changed=%t", changed)
+
+	logger.Debug("performing upgrade/fill: #2 -> Set default endpoint URL for client")
+
+	if csiResource.Spec.ControllerEndpoint == "" {
+		serviceName := types.NamespacedName{Name: csiResource.Name + "-cs", Namespace: csiResource.Namespace}
+		useHTTPS := csiResource.Spec.LinstorClientConfig.LinstorHttpsClientSecret != ""
+		defaultEndpoint := linstorClient.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
+		csiResource.Spec.ControllerEndpoint = defaultEndpoint
+		changed = true
+
+		logger.Infof("set controller endpoint URL to '%s'", csiResource.Spec.ControllerEndpoint)
+	}
+
+	logger.Debugf("finished upgrade/fill: #2 -> Set default endpoint URL for client: changed=%t", changed)
+
+	logger.Debug("finished all upgrades/fills")
 	if changed {
 		logger.Info("save updated spec")
 		return r.client.Update(ctx, csiResource)
@@ -573,8 +597,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 		kubeNodeName,
 	}
 
-	controllerServiceName := getLinstorControllerServiceName(csiResource)
-	env = append(env, linstorClient.ApiResourceAsEnvVars(controllerServiceName, &csiResource.Spec.LinstorClientConfig)...)
+	env = append(env, linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)...)
 
 	driverRegistrar := corev1.Container{
 		Name:  "csi-node-driver-registrar",
@@ -681,8 +704,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		},
 	}
 
-	controllerServiceName := getLinstorControllerServiceName(csiResource)
-	linstorEnvVars := linstorClient.ApiResourceAsEnvVars(controllerServiceName, &csiResource.Spec.LinstorClientConfig)
+	linstorEnvVars := linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)
 
 	csiProvisioner := corev1.Container{
 		Name:  "csi-provisioner",
@@ -802,13 +824,6 @@ func getNodeServiceAccountName(csiResource *piraeusv1alpha1.LinstorCSIDriver) st
 
 func getControllerServiceAccountName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string {
 	return csiResource.Name + ControllerServiceAccount
-}
-
-func getLinstorControllerServiceName(csiResource *piraeusv1alpha1.LinstorCSIDriver) types.NamespacedName {
-	return types.NamespacedName{
-		Name:      csiResource.Name + "-cs",
-		Namespace: csiResource.Namespace,
-	}
 }
 
 func makeMeta(csiResource *piraeusv1alpha1.LinstorCSIDriver, namePostfix string) metav1.ObjectMeta {
