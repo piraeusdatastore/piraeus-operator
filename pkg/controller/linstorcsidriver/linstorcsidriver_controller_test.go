@@ -8,7 +8,6 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,18 +33,6 @@ var (
 			Namespace: "bar",
 		},
 	}
-	DefaultNodeServiceAccount = corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-node",
-			Namespace: "bar",
-		},
-	}
-	DefaulControllerServiceAccount = corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-controller",
-			Namespace: "bar",
-		},
-	}
 	DefaultCSIDriver = storagev1beta1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "linstor.csi.linbit.com",
@@ -60,10 +47,9 @@ var (
 
 func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 	type expectedResources struct {
-		daemonsSets     []appsv1.DaemonSet
-		deployments     []appsv1.Deployment
-		serviceAccounts []corev1.ServiceAccount
-		csiDrivers      []storagev1beta1.CSIDriver
+		daemonsSets []appsv1.DaemonSet
+		deployments []appsv1.Deployment
+		csiDrivers  []storagev1beta1.CSIDriver
 	}
 
 	testcases := []struct {
@@ -90,10 +76,9 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 				},
 			},
 			expectedResources: expectedResources{
-				daemonsSets:     []appsv1.DaemonSet{DefaultNodeDaemonSet},
-				deployments:     []appsv1.Deployment{DefaultControllerDeployment},
-				serviceAccounts: []corev1.ServiceAccount{DefaulControllerServiceAccount, DefaultNodeServiceAccount},
-				csiDrivers:      []storagev1beta1.CSIDriver{DefaultCSIDriver},
+				daemonsSets: []appsv1.DaemonSet{DefaultNodeDaemonSet},
+				deployments: []appsv1.Deployment{DefaultControllerDeployment},
+				csiDrivers:  []storagev1beta1.CSIDriver{DefaultCSIDriver},
 			},
 		},
 	}
@@ -134,13 +119,6 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 					t.Fatalf("Failed to fetch items: %v", err)
 				}
 				compareDeployments(testcase.expectedResources.deployments, deployments.Items, t)
-
-				serviceAccounts := corev1.ServiceAccountList{}
-				err = controllerClient.List(context.Background(), &serviceAccounts)
-				if err != nil {
-					t.Fatalf("Failed to fetch items: %v", err)
-				}
-				compareServiceAccounts(testcase.expectedResources.serviceAccounts, serviceAccounts.Items, t)
 
 				drivers := storagev1beta1.CSIDriverList{}
 				err = controllerClient.List(context.Background(), &drivers)
@@ -196,27 +174,6 @@ func compareDeployments(expectedItems, actualItems []appsv1.Deployment, t *testi
 		}
 
 		// TODO: deeper comparison
-	}
-}
-
-func compareServiceAccounts(expectedItems, actualItems []corev1.ServiceAccount, t *testing.T) {
-	if len(expectedItems) != len(actualItems) {
-		t.Errorf("expected serviceaccounts to contain %d items, got %d instead", len(expectedItems), len(actualItems))
-	}
-
-	for _, actual := range actualItems {
-		var expected *corev1.ServiceAccount = nil
-		for _, candidate := range expectedItems {
-			if actual.Name == candidate.Name && actual.Namespace == candidate.Namespace {
-				expected = &candidate
-				break
-			}
-		}
-
-		if expected == nil {
-			t.Errorf("unexpected serviceaccount: %s/%s", actual.Namespace, actual.Name)
-			continue
-		}
 	}
 }
 

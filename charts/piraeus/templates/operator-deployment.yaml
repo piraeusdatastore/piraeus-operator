@@ -14,7 +14,7 @@ spec:
       labels:
         name: {{ template "operator.fullname" . }}-operator
     spec:
-      serviceAccountName: {{ template "operator.fullname" . }}-service-account
+      serviceAccountName: {{ template "operator.fullname" . }}
       containers:
         - name: piraeus-operator
           image: {{ .Values.operator.image }}
