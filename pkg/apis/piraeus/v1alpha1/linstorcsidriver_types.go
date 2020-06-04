@@ -45,6 +45,14 @@ type LinstorCSIDriverSpec struct {
 	// Image that contains the linstor-csi driver plugin
 	LinstorPluginImage string `json:"linstorPluginImage"`
 
+	// Name of the service account used by the CSI node pods
+	// +optional
+	CSINodeServiceAccountName string `json:"csiNodeServiceAccountName"`
+
+	// Name of the service account used by the CSI controller pods
+	// +optional
+	CSIControllerServiceAccountName string `json:"csiControllerServiceAccountName"`
+
 	// priorityClassName is the name of the PriorityClass for the csi driver pods
 	// +optional
 	PriorityClassName PriorityClassName `json:"priorityClassName"`

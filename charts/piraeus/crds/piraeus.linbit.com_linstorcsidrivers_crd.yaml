@@ -45,8 +45,15 @@ spec:
             csiAttacherImage:
               description: Name of the CSI external attacher image. See https://kubernetes-csi.github.io/docs/external-attacher.html
               type: string
+            csiControllerServiceAccountName:
+              description: Name of the service account used by the CSI controller
+                pods
+              type: string
             csiNodeDriverRegistrarImage:
               description: Name of the CSI node driver registrar image. See https://kubernetes-csi.github.io/docs/node-driver-registrar.html
+              type: string
+            csiNodeServiceAccountName:
+              description: Name of the service account used by the CSI node pods
               type: string
             csiProvisionerImage:
               description: Name of the CSI external provisioner image. See https://kubernetes-csi.github.io/docs/external-provisioner.html

@@ -32,7 +32,6 @@ import (
 
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,9 +78,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	createdResources := []runtime.Object{
 		&appsv1.Deployment{},
 		&appsv1.DaemonSet{},
-		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRoleBinding{},
-		&rbacv1.ClusterRole{},
 		&storagev1beta1.CSIDriver{},
 	}
 
@@ -205,6 +201,24 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 
 	logger.Debugf("finished upgrade/fill: #2 -> Set default endpoint URL for client: changed=%t", changed)
 
+	logger.Debug("performing upgrade/fill: #3 -> Set service account names to previous implicit values")
+
+	if csiResource.Spec.CSINodeServiceAccountName == "" {
+		csiResource.Spec.CSINodeServiceAccountName = csiResource.Name + NodeServiceAccount
+		changed = true
+
+		logger.Infof("set csi node service account to '%s'", csiResource.Spec.CSINodeServiceAccountName)
+	}
+
+	if csiResource.Spec.CSIControllerServiceAccountName == "" {
+		csiResource.Spec.CSIControllerServiceAccountName = csiResource.Name + ControllerServiceAccount
+		changed = true
+
+		logger.Infof("set csi controller service account to '%s'", csiResource.Spec.CSIControllerServiceAccountName)
+	}
+
+	logger.Debugf("finished upgrade/fill: #3 -> Set service account names to previous implicit values: changed=%t", changed)
+
 	logger.Debug("finished all upgrades/fills")
 	if changed {
 		logger.Info("save updated spec")
@@ -214,17 +228,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
-	err := r.reconcileNodeServiceAccount(ctx, csiResource)
-	if err != nil {
-		return err
-	}
-
-	err = r.reconcileControllerServiceAccount(ctx, csiResource)
-	if err != nil {
-		return err
-	}
-
-	err = r.reconcileNodeDaemonSet(ctx, csiResource)
+	err := r.reconcileNodeDaemonSet(ctx, csiResource)
 	if err != nil {
 		return err
 	}
@@ -285,78 +289,6 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	return err
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileNodeServiceAccount(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileNodeServiceAccount",
-	})
-
-	logger.Debugf("creating csi node service account")
-	sa := newCSINodeServiceAccount(csiResource)
-	err := r.createOrReplaceWithOwner(ctx, sa, csiResource)
-	if err != nil {
-		return err
-	}
-
-	logger.Debugf("creating driver registrar role")
-	role := newCSIDriverRegistrarRole(csiResource)
-	err = r.createOrReplace(ctx, role)
-	if err != nil {
-		return err
-	}
-
-	logger.Debugf("creating csi node service account bindings")
-	rolebinding := newCSIDriverRegistrarBinding(csiResource)
-	err = r.createOrReplace(ctx, rolebinding)
-	if err != nil {
-		return err
-	}
-
-	logger.Debugf("creation successful")
-
-	return nil
-}
-
-func (r *ReconcileLinstorCSIDriver) reconcileControllerServiceAccount(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileControllerServiceAccount",
-	})
-
-	logger.Debugf("creating csi controller service account, roles and bindings")
-
-	serviceAccount := newCSIControllerServiceAccount(csiResource)
-	logger.Debugf("creating %s", serviceAccount.GetName())
-
-	err := r.createOrReplaceWithOwner(ctx, serviceAccount, csiResource)
-	if err != nil {
-		return err
-	}
-
-	clusterScopeResources := []GCRuntimeObject{
-		newCSIAttacherRole(csiResource),
-		newCSIProvisionerRole(csiResource),
-		newCSISnapshotterRole(csiResource),
-		newCSIAttacherBinding(csiResource),
-		newCSIProvisionerBinding(csiResource),
-		newCSISnapshotterBinding(csiResource),
-	}
-
-	for _, obj := range clusterScopeResources {
-		logger.Debugf("creating %s at cluster scope", obj.GetName())
-		err := r.createOrReplace(ctx, obj)
-		if err != nil {
-			return err
-		}
-	}
-
-	logger.Debugf("creation successful")
-
-	return nil
-}
-
 func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"Name":      csiResource.Name,
@@ -398,146 +330,6 @@ var (
 	HostPathDirectoryOrCreate     = corev1.HostPathDirectoryOrCreate
 	HostPathDirectory             = corev1.HostPathDirectory
 )
-
-func newCSIAttacherBinding(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRoleBinding {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: makeMeta(csiResource, AttacherBinding),
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      getControllerServiceAccountName(csiResource),
-				Namespace: csiResource.Namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			APIGroup: "rbac.authorization.k8s.io",
-			Name:     csiResource.Name + AttacherRole,
-		},
-	}
-}
-
-func newCSIDriverRegistrarBinding(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRoleBinding {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: makeMeta(csiResource, DriverRegistrarBinding),
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      getNodeServiceAccountName(csiResource),
-				Namespace: csiResource.Namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			APIGroup: "rbac.authorization.k8s.io",
-			Name:     csiResource.Name + DriverRegistrarRole,
-		},
-	}
-}
-
-func newCSIProvisionerBinding(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRoleBinding {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: makeMeta(csiResource, ProvisionerBinding),
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      getControllerServiceAccountName(csiResource),
-				Namespace: csiResource.Namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			APIGroup: "rbac.authorization.k8s.io",
-			Name:     csiResource.Name + ProvisionerRole,
-		},
-	}
-}
-
-func newCSISnapshotterBinding(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRoleBinding {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: makeMeta(csiResource, SnapshotterBinding),
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      getControllerServiceAccountName(csiResource),
-				Namespace: csiResource.Namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
-			APIGroup: "rbac.authorization.k8s.io",
-			Name:     csiResource.Name + SnapshotterRole,
-		},
-	}
-}
-
-func newCSIAttacherRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		ObjectMeta: makeMeta(csiResource, AttacherRole),
-		Rules: []rbacv1.PolicyRule{
-			{APIGroups: []string{""}, Resources: []string{"persistentvolumes"}, Verbs: []string{"get", "list", "watch", "update", "patch"}},
-			{APIGroups: []string{""}, Resources: []string{"nodes"}, Verbs: []string{"get", "list", "watch"}},
-			{APIGroups: []string{"csi.storage.k8s.io"}, Resources: []string{"csinodeinfos"}, Verbs: []string{"get", "list", "watch"}},
-			{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"volumeattachments"}, Verbs: []string{"get", "list", "watch", "update", "patch"}},
-			{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"csinodes"}, Verbs: []string{"get", "list", "watch"}},
-		},
-	}
-}
-
-func newCSIDriverRegistrarRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		ObjectMeta: makeMeta(csiResource, DriverRegistrarRole),
-		Rules: []rbacv1.PolicyRule{
-			{APIGroups: []string{""}, Resources: []string{"events"}, Verbs: []string{"get", "list", "watch", "create", "update", "patch"}},
-		},
-	}
-}
-
-func newCSIProvisionerRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		ObjectMeta: makeMeta(csiResource, ProvisionerRole),
-		Rules: []rbacv1.PolicyRule{
-			{APIGroups: []string{""}, Resources: []string{"secrets"}, Verbs: []string{"get", "list"}},
-			{APIGroups: []string{""}, Resources: []string{"persistentvolumes"}, Verbs: []string{"get", "list", "watch", "create", "delete"}},
-			{APIGroups: []string{""}, Resources: []string{"persistentvolumeclaims"}, Verbs: []string{"get", "list", "watch", "update"}},
-			{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"storageclasses"}, Verbs: []string{"get", "list", "watch"}},
-			{APIGroups: []string{""}, Resources: []string{"events"}, Verbs: []string{"list", "watch", "create", "update", "patch"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshots"}, Verbs: []string{"get", "list"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshotcontents"}, Verbs: []string{"get", "list"}},
-		},
-	}
-}
-
-func newCSISnapshotterRole(csiResource *piraeusv1alpha1.LinstorCSIDriver) *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		ObjectMeta: makeMeta(csiResource, SnapshotterRole),
-		Rules: []rbacv1.PolicyRule{
-			{APIGroups: []string{""}, Resources: []string{"persistentvolumes"}, Verbs: []string{"get", "list", "watch"}},
-			{APIGroups: []string{""}, Resources: []string{"persistentvolumeclaims"}, Verbs: []string{"get", "list", "watch", "update"}},
-			{APIGroups: []string{"storage.k8s.io"}, Resources: []string{"storageclasses"}, Verbs: []string{"get", "list", "watch"}},
-			{APIGroups: []string{""}, Resources: []string{"events"}, Verbs: []string{"list", "watch", "create", "update", "patch"}},
-			{APIGroups: []string{""}, Resources: []string{"secrets"}, Verbs: []string{"get", "list"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshotclasses"}, Verbs: []string{"get", "list", "watch"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshotcontents"}, Verbs: []string{"create", "get", "list", "watch", "update", "delete"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshotcontents/status"}, Verbs: []string{"update"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshots"}, Verbs: []string{"get", "list", "watch", "update"}},
-			{APIGroups: []string{"snapshot.storage.k8s.io"}, Resources: []string{"volumesnapshots/status"}, Verbs: []string{"update"}},
-			{APIGroups: []string{"apiextensions.k8s.io"}, Resources: []string{"customresourcedefinitions"}, Verbs: []string{"create", "list", "watch", "delete", "get", "update"}},
-		},
-	}
-}
-
-func newCSIControllerServiceAccount(csiResource *piraeusv1alpha1.LinstorCSIDriver) *corev1.ServiceAccount {
-	return &corev1.ServiceAccount{
-		ObjectMeta: makeMeta(csiResource, ControllerServiceAccount),
-	}
-}
-
-func newCSINodeServiceAccount(csiResource *piraeusv1alpha1.LinstorCSIDriver) *corev1.ServiceAccount {
-	return &corev1.ServiceAccount{
-		ObjectMeta: makeMeta(csiResource, NodeServiceAccount),
-	}
-}
 
 func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.DaemonSet {
 	registrationDir := corev1.Volume{
@@ -664,7 +456,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 				ObjectMeta: makeMeta(csiResource, NodeDaemonSet),
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
-					ServiceAccountName: getNodeServiceAccountName(csiResource),
+					ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
 					Containers: []corev1.Container{
 						driverRegistrar,
 						linstorPluginContainer,
@@ -783,7 +575,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 				ObjectMeta: makeMeta(csiResource, ControllerDeployment),
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
-					ServiceAccountName: getControllerServiceAccountName(csiResource),
+					ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
 					Containers: []corev1.Container{
 						csiAttacher,
 						csiProvisioner,
@@ -816,14 +608,6 @@ func newCSIDriver(csiResource *piraeusv1alpha1.LinstorCSIDriver) *storagev1beta1
 			PodInfoOnMount: &podInfoOnMount,
 		},
 	}
-}
-
-func getNodeServiceAccountName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string {
-	return csiResource.Name + NodeServiceAccount
-}
-
-func getControllerServiceAccountName(csiResource *piraeusv1alpha1.LinstorCSIDriver) string {
-	return csiResource.Name + ControllerServiceAccount
 }
 
 func makeMeta(csiResource *piraeusv1alpha1.LinstorCSIDriver, namePostfix string) metav1.ObjectMeta {
