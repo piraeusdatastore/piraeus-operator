@@ -57,6 +57,11 @@ type LinstorNodeSetSpec struct {
 	// kernelModImage is the image (location + tag) for the LINSTOR/DRBD kernel module injector container
 	KernelModImage string `json:"kernelModImage"`
 
+	// Cluster URL of the linstor controller.
+	// If not set, will be determined from the current resource name.
+	// +optional
+	ControllerEndpoint string `json:"controllerEndpoint"`
+
 	LinstorClientConfig `json:",inline"`
 }
 

@@ -18,17 +18,17 @@ limitations under the License.
 package client
 
 import (
-	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"testing"
+
+	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 
 	lapi "github.com/LINBIT/golinstor/client"
 )
 
 func TestFilterNode(t *testing.T) {
-	var tableTest = []struct {
+	tableTest := []struct {
 		raw        []lapi.ResourceWithVolumes
 		filterNode string
 		filtered   []lapi.ResourceWithVolumes
@@ -129,11 +129,13 @@ func TestNewClientConfigForApiResource(t *testing.T) {
 	testcases := []struct {
 		name           string
 		clientConfig   piraeusv1alpha1.LinstorClientConfig
+		endpoint       string
 		expectedConfig LinstorClientConfig
 	}{
 		{
 			name:         "default",
 			clientConfig: piraeusv1alpha1.LinstorClientConfig{},
+			endpoint:     "http://default.test.svc:3370",
 			expectedConfig: LinstorClientConfig{
 				Global: GlobalLinstorClientConfig{
 					Controllers: []string{"http://default.test.svc:3370"},
@@ -143,8 +145,9 @@ func TestNewClientConfigForApiResource(t *testing.T) {
 		{
 			name: "with-https-client-auth",
 			clientConfig: piraeusv1alpha1.LinstorClientConfig{
-				LinstorHttpsClientSecret:  "secret",
+				LinstorHttpsClientSecret: "secret",
 			},
+			endpoint: "https://with-https-client-auth.test.svc:3371",
 			expectedConfig: LinstorClientConfig{
 				Global: GlobalLinstorClientConfig{
 					Controllers: []string{"https://with-https-client-auth.test.svc:3371"},
@@ -156,13 +159,13 @@ func TestNewClientConfigForApiResource(t *testing.T) {
 		},
 	}
 
-	for _, testcase := range testcases {
-		t.Run(testcase.name, func(t *testing.T) {
-			serviceName := types.NamespacedName{Name: testcase.name, Namespace: "test"}
-			actual := NewClientConfigForApiResource(serviceName, &testcase.clientConfig)
+	for _, item := range testcases {
+		testCase := item
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := NewClientConfigForAPIResource(testCase.endpoint, &testCase.clientConfig)
 
-			if !reflect.DeepEqual(actual, &testcase.expectedConfig) {
-				t.Fatalf("client configs not equal. expected: %v, actual: %v", testcase.expectedConfig, *actual)
+			if !reflect.DeepEqual(actual, &testCase.expectedConfig) {
+				t.Fatalf("client configs not equal. expected: %v, actual: %v", testCase.expectedConfig, *actual)
 			}
 		})
 	}
@@ -170,12 +173,12 @@ func TestNewClientConfigForApiResource(t *testing.T) {
 
 func TestClientConfigAsEnvVars(t *testing.T) {
 	expectedHttpControllerVar := corev1.EnvVar{
-		Name: "LS_CONTROLLERS",
+		Name:  "LS_CONTROLLERS",
 		Value: "http://controller.test.svc:3370",
 	}
 
 	expectedHttpsControllerVar := corev1.EnvVar{
-		Name: "LS_CONTROLLERS",
+		Name:  "LS_CONTROLLERS",
 		Value: "https://controller.test.svc:3371",
 	}
 
@@ -218,11 +221,13 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 	testcases := []struct {
 		name           string
 		clientConfig   piraeusv1alpha1.LinstorClientConfig
+		endpoint       string
 		expectedConfig []corev1.EnvVar
 	}{
 		{
-			name:           "default",
-			clientConfig:   piraeusv1alpha1.LinstorClientConfig{},
+			name:         "default",
+			clientConfig: piraeusv1alpha1.LinstorClientConfig{},
+			endpoint:     "http://controller.test.svc:3370",
 			expectedConfig: []corev1.EnvVar{
 				expectedHttpControllerVar,
 			},
@@ -230,8 +235,9 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 		{
 			name: "with-https-client-auth",
 			clientConfig: piraeusv1alpha1.LinstorClientConfig{
-				LinstorHttpsClientSecret:  "secret",
+				LinstorHttpsClientSecret: "secret",
 			},
+			endpoint: "https://controller.test.svc:3371",
 			expectedConfig: []corev1.EnvVar{
 				expectedHttpsControllerVar,
 				expectedRootCaVar,
@@ -241,13 +247,13 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 		},
 	}
 
-	for _, testcase := range testcases {
-		t.Run(testcase.name, func(t *testing.T) {
-			serviceName := types.NamespacedName{Name: "controller", Namespace: "test"}
-			actual := ApiResourceAsEnvVars(serviceName, &testcase.clientConfig)
+	for _, item := range testcases {
+		testCase := item
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := APIResourceAsEnvVars(testCase.endpoint, &testCase.clientConfig)
 
-			if !reflect.DeepEqual(actual, testcase.expectedConfig) {
-				t.Fatalf("client configs not equal. expected: %v, actual: %v", testcase.expectedConfig, actual)
+			if !reflect.DeepEqual(actual, testCase.expectedConfig) {
+				t.Fatalf("client configs not equal. expected: %v, actual: %v", testCase.expectedConfig, actual)
 			}
 		})
 	}

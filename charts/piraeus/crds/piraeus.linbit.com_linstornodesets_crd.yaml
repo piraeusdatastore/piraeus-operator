@@ -31,6 +31,10 @@ spec:
         spec:
           description: LinstorNodeSetSpec defines the desired state of LinstorNodeSet
           properties:
+            controllerEndpoint:
+              description: Cluster URL of the linstor controller. If not set, will
+                be determined from the current resource name.
+              type: string
             drbdKernelModuleInjectionMode:
               description: drbdKernelModuleInjectionMode selects the source for the
                 DRBD kernel module

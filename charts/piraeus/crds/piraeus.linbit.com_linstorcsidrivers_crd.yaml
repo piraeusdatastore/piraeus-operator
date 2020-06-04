@@ -38,6 +38,10 @@ spec:
         spec:
           description: LinstorCSIDriverSpec defines the desired state of LinstorCSIDriver
           properties:
+            controllerEndpoint:
+              description: Cluster URL of the linstor controller. If not set, will
+                be determined from the current resource name.
+              type: string
             csiAttacherImage:
               description: Name of the CSI external attacher image. See https://kubernetes-csi.github.io/docs/external-attacher.html
               type: string
