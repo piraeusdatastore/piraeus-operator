@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Removed
+
+### Changed
+
+## [v0.4.0] - 2020-06-05
+
+### Added
+
 * Secured database connection for Linstor: When using the `etcd` connector, you can specify a secret containing a CA
   certificate to switch from HTTP to HTTPS communication.
 * Secured connection between Linstor components: You can specify TLS keys to secure the communication between
