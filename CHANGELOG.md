@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * default PriorityClass in other namespaces
 * RBAC rules for CSI: creation moved to deployment step (Helm/OLM). ServiceAccounts should be specified in CSI resource.
   If no ServiceAccounts are named, the implicitly created accounts from previous deployments will be used.
+* Helm: update default images
 
 ## [v0.3.0] - 2020-05-08
 

@@ -12,7 +12,7 @@ etcd:
   envVarsConfigMap: "etcd-env-vars"
 csi:
   enabled: true
-  pluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.8.0"
+  pluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.8.2"
   csiAttacherImage: ""
   csiNodeDriverRegistrarImage: ""
   csiProvisionerImage: ""
@@ -22,16 +22,16 @@ drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: ""  # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: ""   # <- name of secret containing linstor client certificates+key. See docs/security.md
 operator:
-  image: "quay.io/piraeusdatastore/piraeus-operator:v0.3.0"
+  image: "quay.io/piraeusdatastore/piraeus-operator:latest"
   controllerSet:
-    controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
+    controllerImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.1"
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
     sslSecret: ""
   nodeSet:
     drbdKernelModuleInjectionMode: Compile
-    satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.0"
+    satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.1"
     kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
     storagePools: null
     sslSecret: ""
