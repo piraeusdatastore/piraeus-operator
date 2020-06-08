@@ -15,6 +15,7 @@ spec:
   {{- else }}
   controllerEndpoint: https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
   {{- end }}
+  automaticStorageType: {{ .Values.operator.nodeSet.automaticStorageType | default "None" | quote }}
   {{- if .Values.operator.nodeSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.nodeSet.storagePools | indent 4 }}

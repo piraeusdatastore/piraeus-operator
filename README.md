@@ -59,8 +59,11 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   * Disable persistence for basic testing. This can be done by adding `--set
     etcd.persistence.enabled=false` to the `helm install` command below.
 
-- Configure storage pools. Helm can create storage pools automatically, see
-  [below](#configuring-storage-pool-creation). By default, no storage pools will be created.
+- Configure a basic storage setup for LINSTOR:
+  * Create storage pools from available devices. Recommended for simple set ups. [Guide](doc/storage.md#preparing-physical-devices)
+  * Create storage pools from existing LVM setup. [Guide](doc/storage.md#configuring-storage-pool-creation)
+
+  Read [the storage guide](doc/storage.md) and configure as needed.
 
 - Read the [guide on securing the deployment](doc/security.md) and configure as needed.
 
@@ -106,64 +109,6 @@ etcd cluster by adding the following to the Helm install command:
 ```
 --set etcd.enabled=false --set "operator.controllerSet.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
 ```
-
-### Configuring storage pool creation
-
-The piraeus operator installed by helm can be used to create storage pools. Creation is under control of the
-LinstorNodeSet resource:
-
-```
-$ kubectl get LinstorNodeSet.piraeus.linbit.com piraeus-op-ns -o yaml                                                                                       [24/1880]
-kind: LinstorNodeSet
-metadata:
-..
-spec:
-  ..
-  storagePools:
-    lvmPools:
-    - name: lvm-thick
-      volumeGroup: drbdpool
-    lvmThinPools:
-    - name: lvm-thin
-      thinVolume: thinpool
-      volumeGroup: drbdpool
-
-```
-
-There are two ways to configure storage pools
-
-#### At install time
-
-At install time, by setting the value of `operator.nodeSet.storagePools` when running helm install.
-
-First create a file with the storage configuration like:
-
-```yaml
-operator:
-  nodeSet:
-    storagePools:
-      lvmPools:
-      - name: lvm-thick
-        volumeGroup: drbdpool
-    ..
-```
-
-This file can be passed to the helm installation like this:
-
-```
-helm install -f <file> charts/piraeus-op
-```
-
-#### After install
-
-On a cluster with the operator already configured (i.e. after `helm install`),
-you can edit the nodeset configuration like this:
-
-```
-$ kubectl edit LinstorNodeSet.piraeus.linbit.com <nodesetname>
-```
-
-The storage pool configuration can be updated like in the example above.
 
 ### Terminating Helm deployment
 

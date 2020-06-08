@@ -418,7 +418,7 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(p
 		}
 
 		for j := range node.StoragePools {
-			pool := node.StoragePools[j]
+			pool := &node.StoragePools[j]
 
 			pcs.Status.SatelliteStatuses[i].StoragePoolStatuses[j] = piraeusv1alpha1.NewStoragePoolStatus(pool)
 		}

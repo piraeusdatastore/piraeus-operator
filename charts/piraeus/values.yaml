@@ -35,3 +35,4 @@ operator:
     kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
     storagePools: null
     sslSecret: ""
+    automaticStorageType: None

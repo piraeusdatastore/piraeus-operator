@@ -31,6 +31,17 @@ spec:
         spec:
           description: LinstorNodeSetSpec defines the desired state of LinstorNodeSet
           properties:
+            automaticStorageType:
+              description: If set, the operator will automatically create storage
+                pools of the specified type for all devices that can be found. The
+                name of the storage pools matches the device name. For example, all
+                devices `/dev/sdc` will be part of the `sdc` storage pool.
+              enum:
+              - None
+              - LVM
+              - LVMTHIN
+              - ZFS
+              type: string
             controllerEndpoint:
               description: Cluster URL of the linstor controller. If not set, will
                 be determined from the current resource name.
