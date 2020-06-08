@@ -38,6 +38,13 @@ type LinstorNodeSetSpec struct {
 	// +nullable
 	StoragePools *StoragePools `json:"storagePools"`
 
+	// If set, the operator will automatically create storage pools of the specified type for all devices that can
+	// be found. The name of the storage pools matches the device name. For example, all devices `/dev/sdc` will be
+	// part of the `sdc` storage pool.
+	// +optional
+	// +kubebuilder:validation:Enum=None;LVM;LVMTHIN;ZFS
+	AutomaticStorageType string `json:"automaticStorageType"`
+
 	// drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
 	// +kubebuilder:validation:Enum=None;Compile;ShippedModules
 	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`

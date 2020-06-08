@@ -18,12 +18,12 @@ limitations under the License.
 package linstorcsidriver
 
 import (
+	"context"
 	"os"
 	"time"
 
 	linstorClient "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/apimachinery/pkg/types"

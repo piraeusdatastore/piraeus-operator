@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* Automatic storage pool creation via `automaticStorageType` on `LinstorNodeSet`. If this option is set, LINSTOR
+  will create a storage pool based on all available devices on a node.
 
 ### Removed
 
 ### Changed
+* Moved storage documentation to the [storage guide](./doc/storage.md)
 
 ## [v0.4.0] - 2020-06-05
 

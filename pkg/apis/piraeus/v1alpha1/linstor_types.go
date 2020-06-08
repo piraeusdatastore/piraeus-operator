@@ -56,7 +56,7 @@ type StoragePoolStatus struct {
 }
 
 // NewStoragePoolStatus convert from golinstor StoragePool to StoragePoolStatus.
-func NewStoragePoolStatus(pool lapi.StoragePool) *StoragePoolStatus {
+func NewStoragePoolStatus(pool *lapi.StoragePool) *StoragePoolStatus {
 	return &StoragePoolStatus{
 		Name:          pool.StoragePoolName,
 		NodeName:      pool.NodeName,

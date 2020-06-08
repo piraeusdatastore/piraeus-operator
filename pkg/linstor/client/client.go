@@ -171,7 +171,7 @@ func (c *HighLevelClient) GetStoragePoolOrCreateOnNode(ctx context.Context, pool
 
 // GetNodeOrCreate gets a linstor node, creating it if it is not already present.
 func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (lapi.Node, error) {
-	n, err := c.Nodes.Get(context.TODO(), node.Name)
+	n, err := c.Nodes.Get(ctx, node.Name)
 	if err != nil {
 		// For 404
 		if err != lapi.NotFoundError {
@@ -183,22 +183,22 @@ func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (
 		}
 
 		// Node doesn't exist, create it.
-		if err := c.Nodes.Create(context.TODO(), node); err != nil {
+		if err := c.Nodes.Create(ctx, node); err != nil {
 			return n, fmt.Errorf("unable to create node %s: %v", node.Name, err)
 		}
 
-		newNode, err := c.Nodes.Get(context.TODO(), node.Name)
+		newNode, err := c.Nodes.Get(ctx, node.Name)
 		if err != nil {
 			return newNode, fmt.Errorf("unable to get newly created node %s: %v", node.Name, err)
 		}
 
-		return newNode, c.insureWantedInterface(ctx, newNode, node.NetInterfaces[0])
+		return newNode, c.ensureWantedInterface(ctx, newNode, node.NetInterfaces[0])
 	}
 
 	return n, nil
 }
 
-func (c *HighLevelClient) insureWantedInterface(ctx context.Context, node lapi.Node, wanted lapi.NetInterface) error {
+func (c *HighLevelClient) ensureWantedInterface(ctx context.Context, node lapi.Node, wanted lapi.NetInterface) error {
 	// Make sure default network interface is to spec.
 	for _, nodeIf := range node.NetInterfaces {
 		if nodeIf.Name == wanted.Name {

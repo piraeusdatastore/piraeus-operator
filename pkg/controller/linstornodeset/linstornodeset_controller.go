@@ -21,8 +21,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -68,6 +68,9 @@ var log = logrus.WithFields(logrus.Fields{
 // ready to be shutdown. For now, this means that they have no resources assigned
 // to them.
 const linstorNodeFinalizer = "finalizer.linstor-node.linbit.com"
+
+// Default value for automaticStorageType. If set, no automatic setup of storage devices happens.
+const automaticStorageTypeNone = "None"
 
 // Add creates a new LinstorNodeSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -136,9 +139,12 @@ func newCompoundErrorMsg(errs []error) []string {
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
 	// Fetch the LinstorNodeSet instance
 	pns := &piraeusv1alpha1.LinstorNodeSet{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, pns)
+	err := r.client.Get(ctx, request.NamespacedName, pns)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -188,14 +194,14 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 		pns.Spec.StoragePools.LVMThinPools = make([]*piraeusv1alpha1.StoragePoolLVMThin, 0)
 	}
 
-	err = r.reconcileResource(context.TODO(), pns)
+	err = r.reconcileResource(ctx, pns)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	getSecret := func(secretName string) (map[string][]byte, error) {
 		secret := corev1.Secret{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: pns.Namespace}, &secret)
+		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: pns.Namespace}, &secret)
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +250,7 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 
 	// Check if this Pod already exists
 	found := &apps.DaemonSet{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ds.Name, Namespace: ds.Namespace}, found)
+	err = r.client.Get(ctx, types.NamespacedName{Name: ds.Name, Namespace: ds.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		logrus.WithFields(logrus.Fields{
 			"name":      ds.Name,
@@ -273,26 +279,15 @@ func (r *ReconcileLinstorNodeSet) Reconcile(request reconcile.Request) (reconcil
 		"namespace": ds.Namespace,
 	}).Debug("NS Reconcile: DaemonSet already exists")
 
-	errs := r.reconcileSatNodes(pns)
+	errs := r.reconcileAllNodesOnController(ctx, pns)
 
-	compoundErrorMsg := newCompoundErrorMsg(errs)
-	pns.Status.Errors = compoundErrorMsg
+	statusErr := r.reconcileStatus(ctx, pns, errs)
 
-	if err := r.client.Status().Update(context.TODO(), pns); err != nil {
-		logrus.Error(err, "NS Reconcile: Failed to update LinstorNodeSet status")
-		return reconcile.Result{}, err
+	if len(errs) != 0 {
+		return reconcile.Result{}, fmt.Errorf("reconcile ended with errors: %v", newCompoundErrorMsg(errs))
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"errs": compoundErrorMsg,
-	}).Debug("NS Reconcile: reconcile loop end")
-
-	var compoundError error
-	if len(compoundErrorMsg) != 0 {
-		compoundError = fmt.Errorf("NS Reconcile: requeuing NodeSet reconcile loop for the following reason(s): %s", strings.Join(compoundErrorMsg, " ;; "))
-	}
-
-	return reconcile.Result{}, compoundError
+	return reconcile.Result{}, statusErr
 }
 
 func (r *ReconcileLinstorNodeSet) reconcileResource(ctx context.Context, pns *piraeusv1alpha1.LinstorNodeSet) error {
@@ -319,6 +314,17 @@ func (r *ReconcileLinstorNodeSet) reconcileResource(ctx context.Context, pns *pi
 
 	logger.Debugf("finished upgrade/fill: #1 -> Set default endpoint URL for client: changed=%t", changed)
 
+	logger.Debugf("performing upgrade/fill: #2 -> Set default automatic storage setup type")
+
+	if pns.Spec.AutomaticStorageType == "" {
+		pns.Spec.AutomaticStorageType = automaticStorageTypeNone
+		changed = true
+
+		logger.Infof("set default automatic storage setup type to '%s'", automaticStorageTypeNone)
+	}
+
+	logger.Debugf("finished upgrade/fill: #2 -> Set default automatic storage setup type: changed=%t", changed)
+
 	logger.Debug("finished all upgrades/fills")
 
 	if changed {
@@ -329,180 +335,304 @@ func (r *ReconcileLinstorNodeSet) reconcileResource(ctx context.Context, pns *pi
 	return nil
 }
 
-// This function is a mini-main function and has a lot of boilerplate code that doesn't make a lot of
-// sense to put elsewhere, so don't lint it for cyclomatic complexity.
-// nolint:gocyclo
-func (r *ReconcileLinstorNodeSet) reconcileSatNodes(pns *piraeusv1alpha1.LinstorNodeSet) []error {
-	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(pnsLabels(pns))
-	listOpts := []client.ListOption{
-		// Namespace: pns.Namespace, LabelSelector: labelSelector}
-		client.InNamespace(pns.Namespace), client.MatchingLabelsSelector{Selector: labelSelector},
-	}
-	err := r.client.List(context.TODO(), pods, listOpts...)
+func (r *ReconcileLinstorNodeSet) reconcileAllNodesOnController(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet) []error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      nodeSet.Name,
+		"Namespace": nodeSet.Namespace,
+		"Op":        "reconcileAllNodesOnController",
+	})
+	logger.Debug("start per-node reconciliation")
+
+	pods, err := r.getAllNodePods(ctx, nodeSet)
 	if err != nil {
 		return []error{err}
 	}
 
-	type satStat struct {
-		sat *piraeusv1alpha1.SatelliteStatus
-		err error
-	}
+	// Every registration routine gets its own channel to send a list of errors
+	outputs := make([]chan error, len(pods))
 
-	satelliteStatusIn := make(chan satStat)
-	satelliteStatusOut := make(chan error)
+	for i := range pods {
+		pod := &pods[i]
+		output := make(chan error)
+		outputs[i] = output
 
-	maxConcurrentNodes := 5
-	tokens := make(chan struct{}, maxConcurrentNodes)
-
-	var wg sync.WaitGroup
-
-	pns.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, len(pods.Items))
-
-	for i := range pods.Items {
-		wg.Add(1)
-		pod := pods.Items[i]
-
-		log := logrus.WithFields(logrus.Fields{
-			"podName":                        pod.Name,
-			"podNameSpace":                   pod.Namespace,
-			"podPhase":                       pod.Status.Phase,
-			"podNumber":                      i,
-			"maxConcurrentNodeRegistrations": maxConcurrentNodes,
-		})
-		log.Debug("NS reconcileSatNodes: reconciling node")
-
-		sat := &piraeusv1alpha1.SatelliteStatus{
-			NodeStatus:          piraeusv1alpha1.NodeStatus{NodeName: pod.Spec.NodeName},
-			StoragePoolStatuses: make([]*piraeusv1alpha1.StoragePoolStatus, 0),
-		}
-		pns.Status.SatelliteStatuses[i] = sat
-
+		// Registration can be done in parallel, so we handle per-node work in a separate go-routine
 		go func() {
-			l := log
-			l.Debug("NS reconcileSatNodes: waiting to acquire token...")
-			tokens <- struct{}{} // Acquire a token
-			l.Debug("NS reconcileSatNodes: token acquired, registering node")
-
-			err := r.reconcileSatNodeWithController(sat, pod, pns.Spec.SslConfig)
-			if err != nil {
-				l.Debugf("NS reconcileSatNodes: Error with reconcileSatNodeWithController: %v", err)
-			}
-			satelliteStatusIn <- satStat{sat, err}
-		}()
-
-		pools := r.aggregateStoragePools(pns)
-
-		go func() {
-			l := log
-			defer func() {
-				<-tokens // Work done, release token.
-				l.Debug("NS reconcileSatNodes: token released")
-				wg.Done()
-			}()
-
-			in := <-satelliteStatusIn
-			if in.err != nil {
-				satelliteStatusOut <- in.err
-				return
-			}
-
-			err := r.reconcileStoragePoolsOnNode(in.sat, pools, pod)
-			if err != nil {
-				l.Debug("NS reconcileSatNodes: Error with reconcileStoragePoolsOnNode")
-			}
-			satelliteStatusOut <- err
+			defer close(output)
+			output <- r.reconcilePod(ctx, nodeSet, pod)
 		}()
 	}
 
-	go func() {
-		wg.Wait()
-		close(satelliteStatusOut)
-	}()
+	logger.Debug("start collecting per-node reconciliation results")
 
-	var compoundError []error
+	registerErrors := make([]error, 0)
 
-	for err := range satelliteStatusOut {
+	// Every pod has its own error channel. This preserves order of errors on multiple runs
+	for i := range pods {
+		err := <-outputs[i]
 		if err != nil {
-			compoundError = append(compoundError, err)
+			registerErrors = append(registerErrors, err)
 		}
 	}
 
-	return compoundError
+	return registerErrors
 }
 
-func (r *ReconcileLinstorNodeSet) reconcileSatNodeWithController(sat *piraeusv1alpha1.SatelliteStatus, pod corev1.Pod, ssl *piraeusv1alpha1.LinstorSSLConfig) error {
-	// Mark this true on successful exit from this function.
-	sat.RegisteredOnController = false
+func (r *ReconcileLinstorNodeSet) reconcilePod(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet, pod *corev1.Pod) error {
+	podLog := logrus.WithFields(logrus.Fields{
+		"podName":      pod.Name,
+		"podNameSpace": pod.Namespace,
+		"Op":           "reconcilePod",
+	})
 
-	// TODO: Add Context w/ an infinite loop
-	if len(pod.Status.ContainerStatuses) != 0 && !pod.Status.ContainerStatuses[0].Ready {
-		return fmt.Errorf("NS reconcileSatNodeWithController: Nodeset pod %s is not ready, delaying registration on controller", pod.Spec.NodeName)
+	podLog.Debug("reconcile node registration")
+
+	err := r.reconcileSingleNodeRegistration(ctx, nodeSet, pod)
+	if err != nil {
+		return err
 	}
 
-	node, err := r.linstorClient.GetNodeOrCreate(context.TODO(), lapi.Node{
+	podLog.Debug("reconcile automatic device setup")
+
+	err = r.reconcileAutomaticDeviceSetup(ctx, nodeSet, pod)
+	if err != nil {
+		return err
+	}
+
+	podLog.Debug("reconcile storage pool setup")
+
+	err = r.reconcileStoragePoolsOnNode(ctx, nodeSet, pod)
+	if err != nil {
+		return err
+	}
+
+	podLog.Debug("reconcile node registration: success")
+
+	return nil
+}
+
+func (r *ReconcileLinstorNodeSet) reconcileSingleNodeRegistration(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet, pod *corev1.Pod) error {
+	lNode, err := r.linstorClient.GetNodeOrCreate(ctx, lapi.Node{
 		Name: pod.Spec.NodeName,
 		Type: lc.Satellite,
 		NetInterfaces: []lapi.NetInterface{
 			{
 				Name:                    "default",
 				Address:                 pod.Status.HostIP,
-				SatellitePort:           ssl.Port(),
-				SatelliteEncryptionType: ssl.Type(),
+				SatellitePort:           nodeSet.Spec.SslConfig.Port(),
+				SatelliteEncryptionType: nodeSet.Spec.SslConfig.Type(),
 			},
 		},
 	})
 	if err != nil {
-		log.Debug("NS reconcileSatNodeWithController error")
 		return err
 	}
 
-	log.WithFields(logrus.Fields{
-		"nodeName":         node.Name,
-		"nodeType":         node.Type,
-		"connectionStatus": node.ConnectionStatus,
-	}).Debug("NS reconcileSatNodeWithController: Found / Added a Satellite Node")
-
-	sat.ConnectionStatus = node.ConnectionStatus
-	if sat.ConnectionStatus != lc.Online {
-		return fmt.Errorf("NS reconcileSatNodeWithController: waiting for node %s ConnectionStatus to be %s, current ConnectionStatus: %s",
-			pod.Spec.NodeName, lc.Online, sat.ConnectionStatus)
+	if lNode.ConnectionStatus != lc.Online {
+		return fmt.Errorf("node '%s' registered, but not online (%s)", lNode.Name, lNode.ConnectionStatus)
 	}
 
-	sat.RegisteredOnController = true
 	return nil
 }
 
-func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(sat *piraeusv1alpha1.SatelliteStatus, pools []piraeusv1alpha1.StoragePool, pod corev1.Pod) error {
+func (r *ReconcileLinstorNodeSet) reconcileAutomaticDeviceSetup(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet, pod *corev1.Pod) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      nodeSet.Name,
+		"Namespace": nodeSet.Namespace,
+		"Pod":       pod.Name,
+		"Op":        "reconcileAutomaticDeviceSetup",
+	})
+	// No setup required
+	if nodeSet.Spec.AutomaticStorageType == automaticStorageTypeNone {
+		return nil
+	}
+
+	logger.Debug("fetch available devices for node")
+
+	storageList, err := r.linstorClient.Nodes.GetPhysicalStorage(ctx, &lapi.ListOpts{Node: []string{pod.Spec.NodeName}})
+	if err != nil {
+		return err
+	}
+
+	paths := make([]string, 0)
+
+	for _, entry := range storageList {
+		ourNode, ok := entry.Nodes[pod.Spec.NodeName]
+		if !ok {
+			continue
+		}
+
+		for _, dev := range ourNode {
+			paths = append(paths, dev.Device)
+		}
+	}
+
+	for _, path := range paths {
+		logger.WithField("path", path).Debug("prepare device")
+
+		// Note: not found returns -1, so in this case name == path, which is exactly what we want
+		idx := strings.LastIndex(path, "/")
+		name := path[idx+1:]
+
+		err := r.linstorClient.Nodes.CreateDevicePool(ctx, pod.Spec.NodeName, lapi.PhysicalStorageCreate{
+			DevicePaths: []string{path},
+			PoolName:    name,
+			WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
+				Name: name,
+			},
+			ProviderKind: lapi.ProviderKind(nodeSet.Spec.AutomaticStorageType),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.Debug("devices set up")
+
+	return nil
+}
+
+func (r *ReconcileLinstorNodeSet) reconcileStoragePoolsOnNode(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet, pod *corev1.Pod) error {
 	log := logrus.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
 		"podPhase":     pod.Status.Phase,
 	})
-	log.Info("NS reconcileStoragePoolsOnNode: reconciling storagePools")
+	log.Debug("reconcile storage pools: started")
 
-	if !sat.RegisteredOnController {
-		return fmt.Errorf("NS reconcileStoragePoolsOnNode: waiting for %s to be registered on controller, not able to reconcile storage pools", pod.Spec.NodeName)
-	}
+	log.Debug("reconcile LVM storage pools")
 
-	// Get status for all pools.
-	sat.StoragePoolStatuses = make([]*piraeusv1alpha1.StoragePoolStatus, len(pools))
-	for i, pool := range pools {
-		p, err := r.linstorClient.GetStoragePoolOrCreateOnNode(context.TODO(), pool.ToLinstorStoragePool(), pod.Spec.NodeName)
+	for _, pool := range nodeSet.Spec.StoragePools.LVMPools {
+		_, err := r.linstorClient.GetStoragePoolOrCreateOnNode(ctx, pool.ToLinstorStoragePool(), pod.Spec.NodeName)
 		if err != nil {
 			return err
 		}
-
-		status := piraeusv1alpha1.NewStoragePoolStatus(p)
-
-		log.WithFields(logrus.Fields{
-			"storagePool": fmt.Sprintf("%+v", status),
-		}).Debug("NS reconcileStoragePoolsOnNode: found storage pool")
-
-		sat.StoragePoolStatuses[i] = status
 	}
 
+	log.Debug("reconcile LVM thin storage pools")
+
+	for _, pool := range nodeSet.Spec.StoragePools.LVMThinPools {
+		_, err := r.linstorClient.GetStoragePoolOrCreateOnNode(ctx, pool.ToLinstorStoragePool(), pod.Spec.NodeName)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Debug("reconcile storage pools: finished")
+
 	return nil
+}
+
+func (r *ReconcileLinstorNodeSet) reconcileStatus(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet, errorlist []error) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      nodeSet.Name,
+		"Namespace": nodeSet.Namespace,
+	})
+	logger.Debug("reconcile status of all nodes")
+
+	logger.Debug("reconcile error list")
+
+	nodeSet.Status.Errors = make([]string, 0)
+	for _, err := range errorlist {
+		nodeSet.Status.Errors = append(nodeSet.Status.Errors, err.Error())
+	}
+
+	logger.Debug("get all node pods")
+
+	pods, err := r.getAllNodePods(ctx, nodeSet)
+	if err != nil {
+		logger.Warnf("could not find pods: %v, continue with empty pod list...", err)
+	}
+
+	nodeNames := make([]string, 0)
+	for i := range pods {
+		nodeNames = append(nodeNames, pods[i].Spec.NodeName)
+	}
+
+	logger.Debug("find all satellite nodes from linstor")
+
+	linstorNodes, err := r.linstorClient.Nodes.GetAll(ctx, &lapi.ListOpts{Node: nodeNames})
+	if err != nil {
+		logger.Warnf("could not fetch nodes from LINSTOR: %v, continue with empty node list", err)
+	}
+
+	nodeSet.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, len(pods))
+
+	for i := range pods {
+		pod := &pods[i]
+
+		var matchingNode *lapi.Node = nil
+
+		for i := range linstorNodes {
+			node := &linstorNodes[i]
+			if node.Name == pod.Spec.NodeName {
+				matchingNode = node
+				break
+			}
+		}
+
+		pools, err := r.linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName)
+		if err != nil {
+			logger.Warnf("failed to get storage pools for node %s: %v", pod.Spec.NodeName, err)
+		}
+
+		nodeSet.Status.SatelliteStatuses[i] = satelliteStatusFromLinstor(pod, matchingNode, pools)
+	}
+
+	// Sort for stable status reporting
+	sort.Slice(nodeSet.Status.SatelliteStatuses, func(i, j int) bool {
+		return nodeSet.Status.SatelliteStatuses[i].NodeName < nodeSet.Status.SatelliteStatuses[j].NodeName
+	})
+
+	return r.client.Status().Update(ctx, nodeSet)
+}
+
+func satelliteStatusFromLinstor(pod *corev1.Pod, node *lapi.Node, pools []lapi.StoragePool) *piraeusv1alpha1.SatelliteStatus {
+	status := &piraeusv1alpha1.SatelliteStatus{
+		NodeStatus: piraeusv1alpha1.NodeStatus{
+			NodeName: pod.Spec.NodeName,
+		},
+	}
+
+	if node == nil {
+		return status
+	}
+
+	status.ConnectionStatus = node.ConnectionStatus
+	status.RegisteredOnController = node.ConnectionStatus == lc.Online
+
+	poolsStatus := make([]*piraeusv1alpha1.StoragePoolStatus, 0)
+	for i := range pools {
+		poolsStatus = append(poolsStatus, piraeusv1alpha1.NewStoragePoolStatus(&pools[i]))
+	}
+
+	status.StoragePoolStatuses = poolsStatus
+
+	// Sort for stable status reporting
+	sort.Slice(status.StoragePoolStatuses, func(i, j int) bool {
+		return status.StoragePoolStatuses[i].Name < status.StoragePoolStatuses[j].Name
+	})
+
+	return status
+}
+
+func (r *ReconcileLinstorNodeSet) getAllNodePods(ctx context.Context, nodeSet *piraeusv1alpha1.LinstorNodeSet) ([]corev1.Pod, error) {
+	logrus.WithFields(logrus.Fields{
+		"Name":      nodeSet.Name,
+		"Namespace": nodeSet.Namespace,
+	}).Debug("list all node pods to register on controller")
+
+	// Filters
+	namespaceSelector := client.InNamespace(nodeSet.Namespace)
+	labelSelector := client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(pnsLabels(nodeSet))}
+	pods := &corev1.PodList{}
+
+	err := r.client.List(ctx, pods, namespaceSelector, labelSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	return pods.Items, nil
 }
 
 func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.ConfigMap) *apps.DaemonSet {
