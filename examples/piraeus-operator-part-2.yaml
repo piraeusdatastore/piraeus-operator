@@ -30,7 +30,7 @@ spec:
   satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.1"
 
   # DRBD kernel injection image
-  kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
+  kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.23"
 
   # StoragePools for the NodeSet to manage.
   storagePools:
