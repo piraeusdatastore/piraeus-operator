@@ -8,13 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Automatic storage pool creation via `automaticStorageType` on `LinstorNodeSet`. If this option is set, LINSTOR
-  will create a storage pool based on all available devices on a node.
 
 ### Removed
 
 ### Changed
+
+## [v0.4.1] - 2020-06-10
+
+### Added
+* Automatic storage pool creation via `automaticStorageType` on `LinstorNodeSet`. If this option is set, LINSTOR
+  will create a storage pool based on all available devices on a node.
+
+### Changed
 * Moved storage documentation to the [storage guide](./doc/storage.md)
+* Helm: update default images
 
 ## [v0.4.0] - 2020-06-05
 
