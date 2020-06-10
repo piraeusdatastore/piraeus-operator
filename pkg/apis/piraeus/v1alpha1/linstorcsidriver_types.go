@@ -40,6 +40,11 @@ type LinstorCSIDriverSpec struct {
 	// +optional
 	CSISnapshotterImage string `json:"csiSnapshotterImage"`
 
+	// Name of the CSI external resizer image.
+	// See https://kubernetes-csi.github.io/docs/external-resizer.html
+	// +optional
+	CSIResizerImage string `json:"csiResizerImage"`
+
 	// Name of a secret with authentication details for the `LinstorPluginImage` registry
 	ImagePullSecret string `json:"imagePullSecret"`
 	// Image that contains the linstor-csi driver plugin
