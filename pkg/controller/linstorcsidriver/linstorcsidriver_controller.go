@@ -185,6 +185,13 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 		logger.Infof("set csi snapshotter image to '%s'", csiResource.Spec.CSISnapshotterImage)
 	}
 
+	if csiResource.Spec.CSIResizerImage == "" {
+		csiResource.Spec.CSIResizerImage = DefaultResizerImage
+		changed = true
+
+		logger.Infof("set csi resizer image to '%s'", csiResource.Spec.CSIResizerImage)
+	}
+
 	logger.Debugf("finished upgrade/fill: #1 -> Set default image names for CSI: changed=%t", changed)
 
 	logger.Debug("performing upgrade/fill: #2 -> Set default endpoint URL for client")
@@ -479,9 +486,11 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 }
 
 func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.Deployment {
+	const socketDirPath = "/var/lib/csi/sockets/pluginproxy/"
+
 	socketAddress := corev1.EnvVar{
 		Name:  "ADDRESS",
-		Value: "/var/lib/csi/sockets/pluginproxy/csi.sock",
+		Value: socketDirPath + "./csi.sock",
 	}
 
 	kubeNodeName := corev1.EnvVar{
@@ -511,7 +520,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		Env: []corev1.EnvVar{socketAddress},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
-			MountPath: "/var/lib/csi/sockets/pluginproxy/",
+			MountPath: socketDirPath,
 		}},
 	}
 	csiAttacher := corev1.Container{
@@ -525,7 +534,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		Env: []corev1.EnvVar{socketAddress},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
-			MountPath: "/var/lib/csi/sockets/pluginproxy/",
+			MountPath: socketDirPath,
 		}},
 	}
 	csiSnapshotter := corev1.Container{
@@ -538,7 +547,21 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		Env: []corev1.EnvVar{socketAddress},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
-			MountPath: "/var/lib/csi/sockets/pluginproxy/",
+			MountPath: socketDirPath,
+		}},
+	}
+	csiResizer := corev1.Container{
+		Name:  "csi-resizer",
+		Image: csiResource.Spec.CSIResizerImage,
+		Args: []string{
+			"--v=5",
+			"--csi-address=$(ADDRESS)",
+			"--csiTimeout=4m",
+		},
+		Env: []corev1.EnvVar{socketAddress},
+		VolumeMounts: []corev1.VolumeMount{{
+			Name:      socketVolume.Name,
+			MountPath: socketDirPath,
 		}},
 	}
 	linstorPlugin := corev1.Container{
@@ -580,6 +603,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 						csiAttacher,
 						csiProvisioner,
 						csiSnapshotter,
+						csiResizer,
 						linstorPlugin,
 					},
 					ImagePullSecrets: []corev1.LocalObjectReference{{

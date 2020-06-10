@@ -2,9 +2,10 @@
 # CSI controller pod
 #
 # This file was manually merged from the following sources:
-# external-attacher v2.2.0: https://raw.githubusercontent.com/kubernetes-csi/external-attacher/v2.2.0/deploy/kubernetes/rbac.yaml
-# external-provisioner v1.6.0: https://raw.githubusercontent.com/kubernetes-csi/external-provisioner/v1.6.0/deploy/kubernetes/rbac.yaml
-# external-snapshotter v2.1.1: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v2.1.1/deploy/kubernetes/csi-snapshotter/rbac-csi-snapshotter.yaml
+# external-attacher     v2.2.0: https://raw.githubusercontent.com/kubernetes-csi/external-attacher/v2.2.0/deploy/kubernetes/rbac.yaml
+# external-provisioner  v1.6.0: https://raw.githubusercontent.com/kubernetes-csi/external-provisioner/v1.6.0/deploy/kubernetes/rbac.yaml
+# external-snapshotter  v2.1.1: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v2.1.1/deploy/kubernetes/csi-snapshotter/rbac-csi-snapshotter.yaml
+# external-resizer      v0.5.0: https://raw.githubusercontent.com/kubernetes-csi/external-resizer/v0.5.0/deploy/kubernetes/rbac.yaml
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -118,4 +119,35 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: external-snapshotter-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: external-resizer-runner
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims/status"]
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-resizer-role
+subjects:
+  - kind: ServiceAccount
+    name: csi-controller
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: external-resizer-runner
   apiGroup: rbac.authorization.k8s.io

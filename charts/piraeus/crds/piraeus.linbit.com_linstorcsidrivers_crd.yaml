@@ -58,6 +58,9 @@ spec:
             csiProvisionerImage:
               description: Name of the CSI external provisioner image. See https://kubernetes-csi.github.io/docs/external-provisioner.html
               type: string
+            csiResizerImage:
+              description: Name of the CSI external resizer image. See https://kubernetes-csi.github.io/docs/external-resizer.html
+              type: string
             csiSnapshotterImage:
               description: Name of the CSI external snapshotter image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html
               type: string
