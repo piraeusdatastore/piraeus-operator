@@ -12,7 +12,7 @@ etcd:
   envVarsConfigMap: "etcd-env-vars"
 csi:
   enabled: true
-  pluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.8.2"
+  pluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.8.3"
   csiAttacherImage: ""
   csiNodeDriverRegistrarImage: ""
   csiProvisionerImage: ""
@@ -32,7 +32,7 @@ operator:
   nodeSet:
     drbdKernelModuleInjectionMode: Compile
     satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.1"
-    kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.22"
+    kernelModImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.23"
     storagePools: null
     sslSecret: ""
     automaticStorageType: None
