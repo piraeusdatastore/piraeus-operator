@@ -10,3 +10,6 @@ dependencies:
     version: "4.4.10"
     repository: "https://charts.bitnami.com/bitnami"
     condition: etcd.enabled
+  - name: "csi-snapshotter"
+    version: "1.0.0"
+    condition: csi-snapshotter.enabled

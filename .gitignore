@@ -78,4 +78,4 @@ tags
 .DS_Store
 
 # helm chart dependencies
-/charts/piraeus/charts/
+/charts/piraeus/charts/*.tgz

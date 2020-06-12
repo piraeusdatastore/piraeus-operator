@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "properties": {
+    "image": {
+      "description": "Snapshotter container image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html",
+      "type": "string"
+    }
+  },
+  "required": [
+    "image"
+  ],
+  "title": "Values",
+  "type": "object"
+}
