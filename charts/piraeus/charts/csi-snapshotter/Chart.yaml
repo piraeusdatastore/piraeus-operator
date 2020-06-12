@@ -1,0 +1,6 @@
+apiVersion: v2
+name: csi-snapshotter
+description: A Helm chart for adding CSI snapshotting to Kubernetes
+type: application
+version: 1.0.0
+appVersion: 2.0.1
