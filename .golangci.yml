@@ -74,6 +74,7 @@ linters:
     - gochecknoglobals
     - gochecknoinits
     - dupl
+    - goerr113
   fast: false
 
   # Excluding configuration per-path, per-linter, per-text and per-source
