@@ -10,11 +10,7 @@ spec:
   satelliteImage: {{ .Values.operator.nodeSet.satelliteImage }}
   kernelModImage: {{ .Values.operator.nodeSet.kernelModImage }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
-  {{- if empty .Values.linstorHttpsClientSecret }}
-  controllerEndpoint: http://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3370
-  {{- else }}
-  controllerEndpoint: https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
-  {{- end }}
+  controllerEndpoint: {{ template "controller.endpoint" . }}
   automaticStorageType: {{ .Values.operator.nodeSet.automaticStorageType | default "None" | quote }}
   {{- if .Values.operator.nodeSet.storagePools }}
   storagePools:

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Support volume resizing with newer CSI versions.
 * A new Helm chart `csi-snapshotter` that deploys extra components needed for volume snapshots.
 
+* Automatic deployment of [Stork](https://github.com/libopenstorage/stork) scheduler configured for LINSTOR.
+
 ### Removed
 
 ### Changed
