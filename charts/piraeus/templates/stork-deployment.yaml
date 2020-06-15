@@ -1,0 +1,281 @@
+{{- if .Values.stork.enabled }}
+# Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-deployment.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-stork-config
+  namespace: {{ .Release.Namespace }}
+data:
+  # The default list of predicates and priorities can change depending on your version
+  # of Kubernetes, so please update those as required. The requirement to manually specify this
+  # list will go away with Kubernetes v1.10 where it will use the defaults if nothing is
+  # specified.
+  policy.cfg: |-
+    {
+      "kind": "Policy",
+      "apiVersion": "v1",
+      "extenders": [
+        {
+          "urlPrefix": "http://{{ .Release.Name }}-stork-service.{{ .Release.Namespace }}.svc.cluster.local:8099",
+          "apiVersion": "v1beta1",
+          "filterVerb": "filter",
+          "prioritizeVerb": "prioritize",
+          "weight": 5,
+          "enableHttps": false,
+          "nodeCacheCapable": false
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stork-account
+  namespace: {{ .Release.Namespace }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stork-role
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stork-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: stork-account
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stork-role
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-stork-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    name: stork
+    release: {{ .Release.Name }}
+  ports:
+    - name: extender
+      protocol: TCP
+      port: 8099
+      targetPort: 8099
+    - name: webhook
+      protocol: TCP
+      port: 443
+      targetPort: 443
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
+  labels:
+    tier: control-plane
+  name: {{ .Release.Name }}-stork
+  namespace: {{ .Release.Namespace }}
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: stork
+  replicas: {{ .Values.stork.replicas }}
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        name: stork
+        release: {{ .Release.Name }}
+        tier: control-plane
+    spec:
+      containers:
+        - command:
+            - /stork
+            - --driver=linstor
+            - --verbose
+            - --leader-elect=true
+            - --snapshotter=false
+            - --cluster-domain-controllers=false
+          imagePullPolicy: Always
+          image: {{ .Values.stork.image }}
+          ports:
+            - containerPort: 8099
+              name: extender
+              protocol: TCP
+            - containerPort: 443
+              name: webhook
+              protocol: TCP
+          resources:
+            requests:
+              cpu: '0.1'
+          securityContext:
+            privileged: false
+          name: stork
+          env:
+{{ include "stork.config" . | indent 12 }}
+      hostPID: false
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "name"
+                    operator: In
+                    values:
+                      - stork
+              topologyKey: "kubernetes.io/hostname"
+      serviceAccountName: stork-account
+# Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-scheduler.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stork-scheduler-account
+  namespace: {{ .Release.Namespace }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stork-scheduler-role
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resourceNames: ["kube-scheduler"]
+    resources: ["endpoints"]
+    verbs: ["delete", "get", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["bindings", "pods/binding"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["patch", "update"]
+  - apiGroups: [""]
+    resources: ["replicationcontrollers", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["*"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims", "persistentvolumes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses", "csinodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "watch", "list", "delete", "update", "create"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stork-scheduler-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: stork-scheduler-account
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stork-scheduler-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: scheduler
+    tier: control-plane
+  name: {{ .Release.Name }}-stork-scheduler
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.stork.replicas }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-stork-scheduler
+  template:
+    metadata:
+      labels:
+        component: scheduler
+        tier: control-plane
+        name: {{ .Release.Name }}-stork-scheduler
+      name: {{ .Release.Name }}-stork-scheduler
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/kube-scheduler
+            - --address=0.0.0.0
+            - --leader-elect=true
+            - --scheduler-name=stork
+            - --policy-configmap={{ .Release.Name }}-stork-config
+            - --policy-configmap-namespace={{ .Release.Namespace }}
+            - --leader-elect-resource-name={{ .Release.Name }}-stork-scheduler
+            - --leader-elect-resource-namespace={{ .Release.Namespace }}
+          image: "gcr.io/google_containers/kube-scheduler-amd64:{{ .Capabilities.KubeVersion }}"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10251
+            initialDelaySeconds: 15
+          name: {{ .Release.Name }}-stork-scheduler
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10251
+          resources:
+            requests:
+              cpu: '0.1'
+          securityContext:
+            privileged: false
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "name"
+                    operator: In
+                    values:
+                      - {{ .Release.Name }}-stork-scheduler
+              topologyKey: "kubernetes.io/hostname"
+      hostPID: false
+      serviceAccountName: stork-scheduler-account
+{{- end }}

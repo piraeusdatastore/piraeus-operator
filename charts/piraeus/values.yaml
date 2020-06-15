@@ -4,6 +4,10 @@ etcd:
     storage: 1Gi
   replicas: 1 # How many instances of etcd will be added to the initial cluster.
 
+stork:
+  enabled: true
+  image: docker.io/linbit/stork:latest
+  replicas: 1
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
 csi:

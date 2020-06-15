@@ -43,3 +43,39 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Endpoint URL of LINSTOR controller
+*/}}
+{{- define "controller.endpoint" -}}
+  {{- if empty .Values.linstorHttpsClientSecret -}}
+    http://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3370
+  {{- else -}}
+    https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Environment to pass to stork
+*/}}
+{{- define "stork.config" -}}
+- name: LS_CONTROLLERS
+  value: {{ template "controller.endpoint" . }}
+{{- if not (empty .Values.linstorHttpsClientSecret) }}
+- name: LS_USER_CERTIFICATE
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.linstorHttpsClientSecret }}
+      key: client.cert
+- name: LS_USER_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.linstorHttpsClientSecret }}
+      key: client.key
+- name: LS_ROOT_CA
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.linstorHttpsClientSecret }}
+      key: ca.pem
+{{- end -}}
+{{- end -}}

@@ -67,7 +67,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 
 - Read the [guide on securing the deployment](doc/security.md) and configure as needed.
 
-- Read up on [volume snapshots](#adding-snapshot-support) and configure as needed.
+- Read up on [optional components](doc/optional-components.md) and configure as needed.
 
 - Finally create a Helm deployment named `piraeus-op` that will set up
   everything.
@@ -107,22 +107,6 @@ etcd cluster by adding the following to the Helm install command:
 
 ```
 --set etcd.enabled=false --set "operator.controllerSet.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
-```
-
-### Adding snapshot support
-
-LINSTOR supports the volume snapshot feature, which is currently in beta. To use it, you need to install a cluster wide
-snapshot controller. This is done either by the cluster provider, or you can use the piraeus chart.
-
-By default, the piraeus chart will install its own snapshot controller. This can lead to conflict in some cases:
-
-* the cluster already has a snapshot controller
-* the cluster does not meet the minimal version requirements (>= 1.17)
-
-In such a case, installation of the snapshot controller can be disabled:
-
-```
---set csi-snapshotter.enabled=false
 ```
 
 ### Terminating Helm deployment
