@@ -14,7 +14,7 @@ csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
 csi:
   enabled: true
-  pluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.8.3"
+  pluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.9.0"
   csiAttacherImage: ""
   csiNodeDriverRegistrarImage: ""
   csiProvisionerImage: ""
