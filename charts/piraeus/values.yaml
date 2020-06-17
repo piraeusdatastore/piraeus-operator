@@ -1,15 +1,9 @@
 etcd:
-  persistence:
+  persistentVolume:
     enabled: true
-    size: 1Gi
-  volumePermissions:
-    enabled: true
-  auth:
-    rbac:
-      enabled: false
-  statefulset:
-    replicaCount: 3
-  envVarsConfigMap: "etcd-env-vars"
+    storage: 1Gi
+  replicas: 1 # How many instances of etcd will be added to the initial cluster.
+
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
 csi:
