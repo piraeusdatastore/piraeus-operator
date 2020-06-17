@@ -57,7 +57,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   * Use an existing storage provisioner with a default `StorageClass`.
   * [Use `hostPath` volumes](#linstor-etcd-hostpath-persistence).
   * Disable persistence for basic testing. This can be done by adding `--set
-    etcd.persistence.enabled=false` to the `helm install` command below.
+    etcd.persistentVolume.enabled=false` to the `helm install` command below.
 
 - Configure a basic storage setup for LINSTOR:
   * Create storage pools from available devices. Recommended for simple set ups. [Guide](doc/storage.md#preparing-physical-devices)
@@ -73,7 +73,6 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   everything.
 
     ```
-    helm dependency update ./charts/piraeus
     helm install piraeus-op ./charts/piraeus
     ```
 
@@ -90,9 +89,7 @@ accordingly in the `nodes=` option:
 helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE0>,<NODE1>,<NODE2>}"
 ```
 
-Persistence for etcd is enabled by default. The
-`etcd.volumePermissions.enabled` key in the Helm values is also set so that the
-`hostPath` volumes have appropriate permissions.
+Persistence for etcd is enabled by default.
 
 ### Using an existing database
 
@@ -176,8 +173,7 @@ A simple in-memory etcd cluster can be set up using helm:
 
 ```
 kubectl create -f examples/etcd-env-vars.yaml
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm install piraeus-etcd bitnami/etcd --set statefulset.replicaCount=3 -f examples/etcd-values.yaml
+helm install piraeus-etcd charts/piraeus/charts/etcd --set replicas=3 -f examples/etcd-values.yaml
 ```
 
 If you are using Helm 2 and encountering difficulties with the above steps, you

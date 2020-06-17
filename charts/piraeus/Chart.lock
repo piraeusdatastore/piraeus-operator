@@ -1,9 +1,9 @@
 dependencies:
 - name: etcd
-  repository: https://charts.bitnami.com/bitnami
-  version: 4.4.10
+  repository: ""
+  version: 0.7.4
 - name: csi-snapshotter
   repository: ""
   version: 1.0.0
-digest: sha256:55610ea8b4bbd94dd9990c68af9111eef69c7a04dd7611303d37c3519c86e896
-generated: "2020-06-16T09:04:06.160781829+02:00"
+digest: sha256:cf21a04c22738a1cf06166ce1515f9ffe0558483c043e4432d19fbcd15307682
+generated: "2020-06-17T11:17:16.759913497+02:00"

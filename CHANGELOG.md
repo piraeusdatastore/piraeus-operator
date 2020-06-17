@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Changed
+* Replaced `bitnami/etcd` dependency with vendored custom version
+  Some important keys for the `etcd` helm chart have changed:
+  * `statefulset.replicaCount` -> `replicas`
+  * `persistence.enabled` -> `persistentVolume.enabled`
+  * `persistence.size` -> `persistentVolume.storage`
+  * `àuth.rbac` was removed: use [tls certificates](./doc/security.md#authentication-with-etcd-using-certificates)
+  * `auth.peer.useAutoTLS` was removed
+  * `envVarsConfigMap` was removed
+  * When using etcd with TLS enabled:
+    * For peer communication, peers need valid certificates for `*.<release-name>-etcd` (was `.<release-name>>-etcd-headless.<namespace>.svc.cluster.local`)
+    * For client communication, servers need valid certificates for `*.<release-name>-etcd`  (was `.<release-name>>-etcd.<namespace>.svc.cluster.local`)
 
 ## [v0.4.1] - 2020-06-10
 
