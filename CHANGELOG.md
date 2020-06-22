@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * When using etcd with TLS enabled:
     * For peer communication, peers need valid certificates for `*.<release-name>-etcd` (was `.<release-name>>-etcd-headless.<namespace>.svc.cluster.local`)
     * For client communication, servers need valid certificates for `*.<release-name>-etcd`  (was `.<release-name>>-etcd.<namespace>.svc.cluster.local`)
+* Build in Docker with operator-sdk v0.18.x
 
 ## [v0.4.1] - 2020-06-10
 
