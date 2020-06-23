@@ -111,28 +111,50 @@ etcd cluster by adding the following to the Helm install command:
 
 ### Terminating Helm deployment
 
-The Piraeus deployment can be terminated with:
+To protect the storage infrastructure of the cluster from accidentally deleting vital components, it is necessary
+to perform some manual steps before deleting a Helm deployment.
 
-```
-helm delete piraeus-op
-```
+1. Delete all volume claims managed by piraeus components.
+   You can use the following command to get a list of volume claims managed by Piraeus.
+   After checking that non of the listed volumes still hold needed data, you can delete them using the generated
+   `kubectl delete` command.
 
-However due to the Helm's current policy, the Custom Resource Definitions named
-`linstorcontrollerset` and `linstornodeset` will __not__ be deleted by the
-command.  This will also cause the instances of those CRD's named
-`piraeus-op-ns` and `piraeus-op-cs` to remain running.
+   ```
+   $ kubectl get pvc --all-namespaces -o=jsonpath='{range .items[?(@.metadata.annotations.volume\.beta\.kubernetes\.io/storage-provisioner=="linstor.csi.linbit.com")]}kubectl delete pvc --namespace {.metadata.namespace} {.metadata.name}{"\n"}{end}'
+   kubectl delete pvc --namespace default data-mysql-0
+   kubectl delete pvc --namespace default data-mysql-1
+   kubectl delete pvc --namespace default data-mysql-2
+   ```
 
-To terminate those instances after the `helm delete` command, run
+   **WARNING** These volumes, once deleted, cannot be recovered.
 
-```
-kubectl patch linstorcontrollerset piraeus-op-cs -p '{"metadata":{"finalizers":[]}}' --type=merge
-kubectl patch linstornodeset piraeus-op-ns -p '{"metadata":{"finalizers":[]}}' --type=merge
-```
+2. Delete the LINSTOR controller and satellite resources.
 
-After that, all the instances created by the Helm deployment will be terminated.
+   Deployment of LINSTOR satellite and controller is controlled by the `linstornodeset` and `linstorcontrollerset`
+   resources. You can delete the resources associated with your deployment using `kubectl`
 
-More information regarding Helm's current position on CRD's can be found
-[here](https://helm.sh/docs/topics/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you).
+   ```
+   kubectl delete linstorcontrollerset <helm-deploy-name>-cs
+   kubectl delete linstornodeset <helm-deploy-name>-ns
+   ```
+
+   After a short wait, the controller and satellite pods should terminate. If they continue to run, you can
+   check the above resources for errors (they are only removed after all associated pods terminate)
+
+3. Delete the Helm deployment.
+
+   If you removed all PVCs and all LINSTOR pods have terminated, you can uninstall the helm deployment
+
+   ```
+   helm uninstall piraeus-op
+   ```
+
+   However due to the Helm's current policy, the Custom Resource Definitions named
+   `linstorcontrollerset` and `linstornodeset` will __not__ be deleted by the
+   command.
+
+   More information regarding Helm's current position on CRD's can be found
+   [here](https://helm.sh/docs/topics/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you).
 
 ## Deployment without using Helm v3 chart
 
