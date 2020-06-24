@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Support volume resizing with newer CSI versions.
 * A new Helm chart `csi-snapshotter` that deploys extra components needed for volume snapshots.
+* Add new kmod injection mode `DepsOnly`. Will try load kmods for LINSTOR layers from the host. Deprecates `None`.
 
 * Automatic deployment of [Stork](https://github.com/libopenstorage/stork) scheduler configured for LINSTOR.
 

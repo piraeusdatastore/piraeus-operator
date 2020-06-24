@@ -46,7 +46,7 @@ type LinstorNodeSetSpec struct {
 	AutomaticStorageType string `json:"automaticStorageType"`
 
 	// drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
-	// +kubebuilder:validation:Enum=None;Compile;ShippedModules
+	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
 	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 
 	// Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and
@@ -82,6 +82,8 @@ const (
 	ModuleInjectionCompile = "Compile"
 	// ModuleInjectionShippedModules means that a module included in the injector image will be used
 	ModuleInjectionShippedModules = "ShippedModules"
+	// ModuleInjectionDepsOnly means we only inject already present modules on the host for LINSTOR layers
+	ModuleInjectionDepsOnly = "DepsOnly"
 )
 
 // LinstorNodeSetStatus defines the observed state of LinstorNodeSet
