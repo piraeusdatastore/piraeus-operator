@@ -53,6 +53,7 @@ spec:
               - None
               - Compile
               - ShippedModules
+              - DepsOnly
               type: string
             drbdRepoCred:
               description: drbdRepoCred is the name of the kubernetes secret that

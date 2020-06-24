@@ -902,11 +902,14 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 	mode := pns.Spec.DRBDKernelModuleInjectionMode
 	switch mode {
 	case piraeusv1alpha1.ModuleInjectionNone:
+		logrus.WithField("drbdKernelModuleInjectionMode", mode).Warnf("using deprecated injection mode: beginning with injector image version 9.0.23, it is recommended to use '%s' instead", piraeusv1alpha1.ModuleInjectionDepsOnly)
 		return ds
 	case piraeusv1alpha1.ModuleInjectionCompile:
 		kernelModHow = kubeSpec.LinstorKernelModCompile
 	case piraeusv1alpha1.ModuleInjectionShippedModules:
 		kernelModHow = kubeSpec.LinstorKernelModShippedModules
+	case piraeusv1alpha1.ModuleInjectionDepsOnly:
+		kernelModHow = kubeSpec.LinstorKernelModDepsOnly
 	default:
 		logrus.WithFields(logrus.Fields{
 			"mode": mode,

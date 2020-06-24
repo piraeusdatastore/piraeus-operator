@@ -50,6 +50,7 @@ const (
 	LinstorKernelModHow            = "LB_HOW"
 	LinstorKernelModCompile        = "compile"
 	LinstorKernelModShippedModules = "shipped_modules"
+	LinstorKernelModDepsOnly       = "deps_only"
 )
 
 // Special strings when configuring Linstor
