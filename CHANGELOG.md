@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.0] - 2020-06-29
+
 ### Added
 * Support volume resizing with newer CSI versions.
 * A new Helm chart `csi-snapshotter` that deploys extra components needed for volume snapshots.
@@ -190,3 +192,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial public version with docs
+
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.4.1...v0.5.0
+[v0.4.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.4.0...v0.4.1
+[v0.4.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.3.0...v0.4.0
+[v0.3.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.2.2...v0.3.0
+[v0.2.2]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.2.1...v0.2.2
+[v0.2.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.2.0...v0.2.1
+[v0.2.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.1.4...v0.2.0
+[v0.1.4]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.0.1...v0.1.4
+[v0.0.1]: https://github.com/piraeusdatastore/piraeus-operator/tree/v0.0.1
