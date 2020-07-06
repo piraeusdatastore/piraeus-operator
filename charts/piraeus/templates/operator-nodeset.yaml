@@ -12,6 +12,8 @@ spec:
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   controllerEndpoint: {{ template "controller.endpoint" . }}
   automaticStorageType: {{ .Values.operator.nodeSet.automaticStorageType | default "None" | quote }}
+  affinity: {{ .Values.operator.nodeSet.affinity | toJson }}
+  tolerations: {{ .Values.operator.nodeSet.tolerations | toJson}}
   {{- if .Values.operator.nodeSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.nodeSet.storagePools | indent 4 }}

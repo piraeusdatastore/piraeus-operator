@@ -686,6 +686,8 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 							Name: pcs.Spec.DrbdRepoCred,
 						},
 					},
+					Affinity:    pcs.Spec.Affinity,
+					Tolerations: pcs.Spec.Tolerations,
 				},
 			},
 		},

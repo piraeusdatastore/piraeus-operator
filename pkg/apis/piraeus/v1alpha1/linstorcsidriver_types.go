@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -66,6 +67,26 @@ type LinstorCSIDriverSpec struct {
 	// If not set, will be determined from the current resource name.
 	// +optional
 	ControllerEndpoint string `json:"controllerEndpoint"`
+
+	// Affinity for scheduling the CSI node pods
+	// +optional
+	// +nullable
+	NodeAffinity *v1.Affinity `json:"nodeAffinity"`
+
+	// Tolerations for scheduling CSI node pods
+	// +optional
+	// +nullable
+	NodeTolerations []v1.Toleration `json:"nodeTolerations"`
+
+	// Affinity for scheduling the CSI controller pod
+	// +optional
+	// +nullable
+	ControllerAffinity *v1.Affinity `json:"controllerAffinity"`
+
+	// Tolerations for schedluing CSI controller pods
+	// +optional
+	// +nullable
+	ControllerTolerations []v1.Toleration `json:"controllerTolerations"`
 
 	LinstorClientConfig `json:",inline"`
 }

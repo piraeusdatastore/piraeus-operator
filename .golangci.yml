@@ -77,21 +77,19 @@ linters:
     - goerr113
   fast: false
 
+issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
+    # Exclude some linters from running on generated files
+    - path: zz_generated
+      linters:
+        - wsl
     # Exclude some linters from running on tests files.
     - path: _test\.go
       linters:
         - gocyclo
         - errcheck
         - dupl
-        - gosec
-
-    # Exclude known linters from partially hard-vendored code,
-    # which is impossible to exclude via "nolint" comments.
-    - path: internal/hmac/
-      text: "weak cryptographic primitive"
-      linters:
         - gosec
 
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.

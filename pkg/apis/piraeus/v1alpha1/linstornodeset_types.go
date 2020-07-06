@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -68,6 +69,16 @@ type LinstorNodeSetSpec struct {
 	// If not set, will be determined from the current resource name.
 	// +optional
 	ControllerEndpoint string `json:"controllerEndpoint"`
+
+	// Affinity for scheduling the satellite pods
+	// +optional
+	// +nullable
+	Affinity *v1.Affinity `json:"affinity"`
+
+	// Tolerations for scheduling the satellite pods
+	// +optional
+	// +nullable
+	Tolerations []v1.Toleration `json:"tolerations"`
 
 	LinstorClientConfig `json:",inline"`
 }

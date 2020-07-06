@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,6 +68,16 @@ type LinstorControllerSetSpec struct {
 	// needs to contain a truststore `truststore.jks`, which will be used to authenticate clients.
 	// +optional
 	LinstorHttpsControllerSecret string `json:"linstorHttpsControllerSecret"`
+
+	// Affinity for scheduling the controller pod
+	// +optional
+	// +nullable
+	Affinity *v1.Affinity `json:"affinity"`
+
+	// Tolerations for scheduling the controller pod
+	// +optional
+	// +nullable
+	Tolerations []v1.Toleration `json:"tolerations"`
 
 	LinstorClientConfig `json:",inline"`
 }

@@ -23,9 +23,6 @@ const (
 	// APIGroup specifies the group for the custom resource definition APIs
 	APIGroup = "piraeus.linbit.com"
 
-	// PiraeusNode label to mark nodes eligible to run piraeus-node pods
-	PiraeusNode = "linstor.linbit.com/piraeus-node"
-
 	// ControllerRole is the role for the controller set
 	ControllerRole = "piraeus-controller"
 

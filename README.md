@@ -34,13 +34,6 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
   * Install the appropriate kernel headers package for your distribution. Then
     the operator will compile and load the required modules.
 
-- Label the worker nodes with `linstor.linbit.com/piraeus-node=true` by
-  running:
-
-    ```
-    kubectl label node <NODE_NAME> linstor.linbit.com/piraeus-node=true
-    ```
-
 - If you are deploying with images from private repositories, create
   a kubernetes secret to allow obtaining the images.  This example will create
   a secret named `drbdiocred`:
@@ -160,15 +153,9 @@ to perform some manual steps before deleting a Helm deployment.
 
 ### Configuration
 
-The operator must be deployed within the cluster in order for it it to have access
+The operator must be deployed within the cluster in order for it to have access
 to the controller endpoint, which is a kubernetes service. See the operator-sdk
 guide on the Operator Framework for more information.
-
-Worker nodes will only run on kubelets labeled with `linstor.linbit.com/piraeus-node=true`
-
-```
-kubectl label no my-worker-node linstor.linbit.com/piraeus-node=true
-```
 
 ### Etcd
 

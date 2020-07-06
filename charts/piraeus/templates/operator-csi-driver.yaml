@@ -16,4 +16,8 @@ spec:
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   controllerEndpoint: {{ template "controller.endpoint" . }}
+  nodeAffinity: {{ .Values.csi.nodeAffinity | toJson }}
+  nodeTolerations: {{ .Values.csi.nodeTolerations | toJson}}
+  controllerAffinity: {{ .Values.csi.controllerAffinity | toJson }}
+  controllerTolerations: {{ .Values.csi.controllerTolerations | toJson}}
   {{- end }}
