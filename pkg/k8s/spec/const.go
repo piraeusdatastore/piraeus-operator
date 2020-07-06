@@ -57,6 +57,7 @@ const (
 const (
 	LinstorLUKSPassphraseEnvName = "MASTER_PASSPHRASE"
 	JavaOptsName                 = "JAVA_OPTS"
+	LinstorRegistrationProperty  = "Aux/registered-by"
 )
 
 // k8s constants: Special names for k8s APIs.

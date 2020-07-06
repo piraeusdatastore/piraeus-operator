@@ -29,6 +29,9 @@ const (
 	// NodeRole is the role for the node set
 	NodeRole = "piraeus-node"
 
+	// Name is the name of the operator
+	Name = "piraeus-operator"
+
 	// LockName is the name of the lock for leader election
 	LockName = "piraeus-operator-lock"
 )

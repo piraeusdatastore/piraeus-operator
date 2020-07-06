@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 [tolerations]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
+* Controller is now a Deployment instead of StatefulSet.
+  This means a controller can be re-scheduled more easily should anything happen to the pod/node.
+  Please make sure any deployed StatefulSet for the controller is removed first.
+
 ## [v0.5.0] - 2020-06-29
 
 ### Added

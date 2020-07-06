@@ -92,7 +92,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &piraeusv1alpha1.LinstorControllerSet{},
 	})
@@ -250,18 +250,18 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 
 	log.Debug("CS Reconcile: controllerConfigMap already exists")
 
-	// Define a new StatefulSet object
-	ctrlSet := newStatefulSetForPCS(pcs)
+	// Define a new Deployment object
+	ctrlSet := newDeploymentForResource(pcs)
 
 	// Set LinstorControllerSet instance as the owner and controller
 	if err := controllerutil.SetControllerReference(pcs, ctrlSet, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	found := &appsv1.StatefulSet{}
+	found := &appsv1.Deployment{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: ctrlSet.Name, Namespace: ctrlSet.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("CS Reconcile: creating a new StatefulSet")
+		log.Info("CS Reconcile: creating a new Deployment")
 
 		err = r.client.Create(ctx, ctrlSet)
 		if err != nil {
@@ -274,7 +274,7 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	log.Debug("CS Reconcile: StatefulSet already exists")
+	log.Debug("CS Reconcile: Deployment already exists")
 
 	resErr := r.reconcileControllers(ctx, pcs)
 
@@ -302,40 +302,7 @@ func (r *ReconcileLinstorControllerSet) reconcileControllers(ctx context.Context
 	})
 	log.Info("CS Reconcile: reconciling CS Nodes")
 
-	pods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
-	listOpts := []client.ListOption{
-		client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector},
-	}
-	err := r.client.List(ctx, pods, listOpts...)
-	if err != nil {
-		return err
-	}
-
-	if len(pods.Items) != 1 {
-		return &reconcileutil.TemporaryError{
-			Source:       fmt.Errorf("CS Reconcile: waiting until there is exactly one controller pod, found %d pods instead", len(pods.Items)),
-			RequeueAfter: connectionRetrySeconds * time.Second,
-		}
-	}
-
-	err = r.reconcileControllerNodeWithControllers(ctx, pcs, pods.Items[0])
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet, pod corev1.Pod) error {
-	log := logrus.WithFields(logrus.Fields{
-		"podName":      pod.Name,
-		"podNameSpace": pod.Namespace,
-		"podPhase":     pod.Status.Phase,
-	})
-	log.Debug("CS reconcileControllerNodeWithControllers: reconciling node")
-
-	log.Debug("check if controller is reachable")
+	log.Debug("wait for controller service to come online")
 
 	_, err := r.linstorClient.Nodes.GetControllerVersion(ctx)
 	if err != nil {
@@ -345,38 +312,123 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(c
 		}
 	}
 
-	log.Debug("register controller")
-
-	ctrl := pcs.Status.ControllerStatus
-	ctrl.NodeName = pod.Spec.NodeName
-
-	// Mark this true on successful exit from this function.
-	ctrl.RegisteredOnController = false
-
-	node, err := r.linstorClient.GetNodeOrCreate(ctx, lapi.Node{
-		Name: pod.Name,
-		Type: lc.Controller,
-		NetInterfaces: []lapi.NetInterface{
-			{
-				Name:                    "default",
-				Address:                 pod.Status.PodIP,
-				SatellitePort:           pcs.Spec.SslConfig.Port(),
-				SatelliteEncryptionType: pcs.Spec.SslConfig.Type(),
-			},
-		},
-	})
+	allNodes, err := r.linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		return err
 	}
 
-	log.WithFields(logrus.Fields{
-		"nodeName": node.Name,
-		"nodeType": node.Type,
-	}).Debug("CS reconcileControllerNodeWithControllers: found node")
+	var ourControllers []lapi.Node
+	for _, node := range allNodes {
+		registrar, ok := node.Props[kubeSpec.LinstorRegistrationProperty]
+		if ok && registrar == kubeSpec.Name && node.Type == lc.Controller {
+			ourControllers = append(ourControllers, node)
+		}
+	}
+
+	ourPods := &corev1.PodList{}
+	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
+	err = r.client.List(ctx, ourPods, client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
+	if err != nil {
+		return err
+	}
+
+	log.Debug("register controller pods in LINSTOR")
+
+	for _, pod := range ourPods.Items {
+		log.WithField("pod", pod.Name).Debug("register controller pod")
+		_, err := r.linstorClient.GetNodeOrCreate(ctx, lapi.Node{
+			Name: pod.Name,
+			Type: lc.Controller,
+			NetInterfaces: []lapi.NetInterface{
+				{
+					Name:                    "default",
+					Address:                 pod.Status.PodIP,
+					SatellitePort:           pcs.Spec.SslConfig.Port(),
+					SatelliteEncryptionType: pcs.Spec.SslConfig.Type(),
+				},
+			},
+			Props: map[string]string{
+				kubeSpec.LinstorRegistrationProperty: kubeSpec.Name,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Debug("remove controllers without pods from LINSTOR")
+
+	for _, linstorController := range ourControllers {
+		found := false
+		for _, pod := range ourPods.Items {
+			if pod.Name == linstorController.Name {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			log.WithField("node", linstorController.Name).Debug("remove controller pod")
+			err = r.linstorClient.Nodes.Delete(ctx, linstorController.Name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(ourPods.Items) > 1 {
+		log.WithField("#controllerPods", len(ourPods.Items)).Debug("requeue because multiple controller pods are present")
+		return &reconcileutil.TemporaryError{
+			RequeueAfter: time.Minute,
+			Source: fmt.Errorf("multiple controller pods present"),
+		}
+	}
+
+	return nil
+}
+
+func (r *ReconcileLinstorControllerSet) reconcileStatus(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet, resErr error) error {
+	log := logrus.WithFields(logrus.Fields{
+		"Name":      pcs.Name,
+		"Namespace": pcs.Namespace,
+	})
+	log.Info("reconcile status")
+
+	log.Debug("find active controller pod")
+	pod, err := r.findActiveControllerPod(ctx, pcs)
+	if err != nil {
+		log.Warnf("failed to find active controller pod: %v", err)
+	}
+
+	controllerName := ""
+	if pod != nil {
+		controllerName = pod.Name
+	}
+
+	pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{
+		NodeName: controllerName,
+		RegisteredOnController: false,
+	}
+
+	log.Debug("check if controller pod is registered")
+
+	allNodes, err := r.linstorClient.Nodes.GetAll(ctx)
+	if err != nil {
+		log.Warnf("failed to fetch list of LINSTOR nodes: %v", err)
+	}
+
+	for _, node := range allNodes {
+		if pod != nil && node.Name == pod.Name {
+			pcs.Status.ControllerStatus.RegisteredOnController = true
+		}
+	}
+
+	log.Debug("fetch information about storage nodes")
 
 	nodes, err := r.linstorClient.GetAllStorageNodes(ctx)
 	if err != nil {
-		return fmt.Errorf("CS unable to get cluster storage nodes: %v", err)
+		log.Warnf("unable to get LINSTOR storage nodes: %v, continue with empty node list", err)
+		nodes = nil
 	}
 
 	pcs.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, len(nodes))
@@ -400,22 +452,41 @@ func (r *ReconcileLinstorControllerSet) reconcileControllerNodeWithControllers(c
 		}
 	}
 
-	ctrl.RegisteredOnController = true
-	return nil
-}
-
-func (r *ReconcileLinstorControllerSet) reconcileStatus(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet, resErr error) error {
-	log := logrus.WithFields(logrus.Fields{
-		"Name":      pcs.Name,
-		"Namespace": pcs.Namespace,
-	})
-	log.Debug("reconcile status")
-
 	pcs.Status.Errors = reconcileutil.ErrorStrings(resErr)
 
 	log.Debug("update status in resource")
 
 	return r.client.Status().Update(ctx, pcs)
+}
+
+func (r *ReconcileLinstorControllerSet) findActiveControllerPod(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.Pod, error) {
+	ourPods := &corev1.PodList{}
+	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
+	err := r.client.List(ctx, ourPods, client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the single currently serving pod
+	var candidatePods []corev1.Pod
+	for _, pod := range ourPods.Items {
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+				candidatePods = append(candidatePods, pod)
+				break
+			}
+		}
+	}
+
+	switch len(candidatePods) {
+	case 1:
+		return &candidatePods[0], nil
+	case 0:
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("expected one controller pod, got multiple: %v", candidatePods)
+	}
+
 }
 
 // finalizeControllerSet returns whether it is finished as well as potentially an error
@@ -506,9 +577,7 @@ func (r *ReconcileLinstorControllerSet) deleteFinalizer(ctx context.Context, pcs
 	return nil
 }
 
-func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.StatefulSet {
-	replicas := int32(1)
-
+func newDeploymentForResource(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Deployment {
 	labels := pcsLabels(pcs)
 
 	env := []corev1.EnvVar{
@@ -620,15 +689,15 @@ func newStatefulSetForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Sta
 		})
 	}
 
-	return &appsv1.StatefulSet{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
 			Namespace: pcs.Namespace,
 			Labels:    labels,
 		},
-		Spec: appsv1.StatefulSetSpec{
+		Spec: appsv1.DeploymentSpec{
+			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
-			Replicas: &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pcs.Name + "-controller",
