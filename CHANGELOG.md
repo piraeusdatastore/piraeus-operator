@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Node scheduling no longer relies on `linstor.linbit.com/piraeus-node` labels. Instead, all CRDs support
+  setting pod [affinity] and [tolerations].
+  In detail:
+  * `linstorcsidrivers` gained 4 new resource keys, with no change in default behaviour:
+    * `nodeAffinity` affinity passed to the csi nodes
+    * `nodeTolerations` tolerations passed to the csi nodes
+    * `controllerAffinity` affinity passed to the csi controller
+    * `controllerTolerations` tolerations passed to the csi controller
+  * `linstorcontrollerset` gained 2 new resource keys, with no change in default behaviour:
+    * `affinity` affinity passed to the linstor controller pod
+    * `tolerations` tolerations passed to the linstor controller pod
+  * `linstornodeset` gained 2 new resource keys, **with change in default behaviour**:
+    * `affinity` affinity passed to the linstor controller pod
+    * `tolerations` tolerations passed to the linstor controller pod
+
+    Previously, linstor satellite pods required nodes marked with `linstor.linbit.com/piraeus-node=true`. The new
+    default value does not place this restriction on nodes. To restore the old behaviour, set the following affinity:
+    ```yaml
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: linstor.linbit.com/piraeus-node
+              operator: In
+              values:
+              - "true"
+    ```
+
+[affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+[tolerations]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+
 ## [v0.5.0] - 2020-06-29
 
 ### Added

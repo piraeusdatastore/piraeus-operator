@@ -13,3 +13,5 @@ spec:
   controllerImage: {{ .Values.operator.controllerSet.controllerImage }}
   linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  affinity: {{ .Values.operator.controllerSet.affinity | toJson }}
+  tolerations: {{ .Values.operator.controllerSet.tolerations | toJson}}

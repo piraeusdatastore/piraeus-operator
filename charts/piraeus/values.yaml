@@ -17,6 +17,10 @@ csi:
   csiNodeDriverRegistrarImage: ""
   csiProvisionerImage: ""
   csiSnapshotterImage: ""
+  nodeAffinity: {}
+  nodeTolerations: []
+  controllerAffinity: {}
+  controllerTolerations: []
 priorityClassName: ""
 drbdRepoCred: drbdiocred     # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: ""  # <- name of secret containing linstor server certificates+key. See docs/security.md
@@ -29,6 +33,8 @@ operator:
     dbCertSecret: ""
     dbUseClientCert: false
     sslSecret: ""
+    affinity: {}
+    tolerations: []
   nodeSet:
     drbdKernelModuleInjectionMode: Compile
     satelliteImage: "quay.io/piraeusdatastore/piraeus-server:v1.7.1"
@@ -36,3 +42,5 @@ operator:
     storagePools: null
     sslSecret: ""
     automaticStorageType: None
+    affinity: {}
+    tolerations: []

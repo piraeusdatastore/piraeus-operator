@@ -685,23 +685,8 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: []corev1.NodeSelectorRequirement{
-											{
-												Key:      kubeSpec.PiraeusNode,
-												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{"true"},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
+					Affinity:          pns.Spec.Affinity,
+					Tolerations:       pns.Spec.Tolerations,
 					HostNetwork:       true, // INFO: Per Roland, set to true
 					DNSPolicy:         corev1.DNSClusterFirstWithHostNet,
 					PriorityClassName: pns.Spec.PriorityClassName.GetName(pns.Namespace),

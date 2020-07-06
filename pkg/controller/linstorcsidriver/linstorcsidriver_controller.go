@@ -479,6 +479,8 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 					ImagePullSecrets: []corev1.LocalObjectReference{{
 						Name: csiResource.Spec.ImagePullSecret,
 					}},
+					Affinity:    csiResource.Spec.NodeAffinity,
+					Tolerations: csiResource.Spec.NodeTolerations,
 				},
 			},
 		},
@@ -609,7 +611,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 					ImagePullSecrets: []corev1.LocalObjectReference{{
 						Name: csiResource.Spec.ImagePullSecret,
 					}},
-					Volumes: []corev1.Volume{socketVolume},
+					Volumes:     []corev1.Volume{socketVolume},
+					Affinity:    csiResource.Spec.ControllerAffinity,
+					Tolerations: csiResource.Spec.ControllerTolerations,
 				},
 			},
 		},
@@ -706,13 +710,5 @@ const (
 	NodeServiceAccount       = "-csi-node"
 	ControllerServiceAccount = "-csi-controller"
 	NodeDaemonSet            = "-csi-node"
-	SnapshotterRole          = "-csi-snapshotter"
-	ProvisionerRole          = "-csi-provisioner"
-	DriverRegistrarRole      = "-csi-driver-registrar"
-	AttacherRole             = "-csi-attacher"
-	AttacherBinding          = "-csi-attacher"
-	DriverRegistrarBinding   = "-csi-driver-registrar"
-	ProvisionerBinding       = "-csi-provisioner"
-	SnapshotterBinding       = "-csi-snapshotter"
 	ControllerDeployment     = "-csi-controller"
 )
