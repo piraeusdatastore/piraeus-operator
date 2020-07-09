@@ -697,7 +697,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 							Args: []string{
 								"startSatellite",
 							}, // Run linstor-satellite.
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							ImagePullPolicy: pns.Spec.ImagePullPolicy,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
 								{
@@ -906,7 +906,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 		{
 			Name:            "drbd-kernel-module-injector",
 			Image:           pns.Spec.KernelModImage,
-			ImagePullPolicy: corev1.PullIfNotPresent,
+			ImagePullPolicy: pns.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			Env: []corev1.EnvVar{
 				{

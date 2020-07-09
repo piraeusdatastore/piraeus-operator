@@ -630,6 +630,9 @@ spec:
               description: DrbdRepoCred is the name of the kubernetes secret that
                 holds the credential for the DRBD repositories
               type: string
+            imagePullPolicy:
+              description: Pull policy applied to all pods started from this controller
+              type: string
             linstorHttpsClientSecret:
               description: 'Name of the secret containing: (a) `ca.pem`: root certificate
                 used to validate HTTPS connections with Linstor (PEM format, without

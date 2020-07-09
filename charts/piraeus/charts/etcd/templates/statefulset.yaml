@@ -43,7 +43,7 @@ spec:
       containers:
       - name: {{ template "etcd.fullname" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
         ports:
         - containerPort: {{ .Values.peerPort }}
           name: peer

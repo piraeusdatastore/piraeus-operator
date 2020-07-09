@@ -678,6 +678,9 @@ spec:
             csiSnapshotterImage:
               description: Name of the CSI external snapshotter image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html
               type: string
+            imagePullPolicy:
+              description: Pull policy applied to all pods started from this controller
+              type: string
             imagePullSecret:
               description: Name of a secret with authentication details for the `LinstorPluginImage`
                 registry

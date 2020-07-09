@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Central value for controller image pull policy of all pods. Use `--set global.imagePullPolicy=<value>` on
+  helm deployment.
+* `charts/piraeus/values.cn.yaml` a set of helm values for faster image download for CN users.
+
 ### Changed
 
 * Node scheduling no longer relies on `linstor.linbit.com/piraeus-node` labels. Instead, all CRDs support

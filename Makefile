@@ -32,6 +32,14 @@ crds:
 	operator-sdk generate crds
 	mv ./deploy/crds/* ./charts/piraeus/crds
 
+helm-values:
+	cp ./charts/piraeus/values.yaml ./charts/piraeus/values.cn.yaml
+	sed 's|gcr.io/etcd-development/etcd|daocloud.io/piraeus/etcd|' -i ./charts/piraeus/values.cn.yaml
+	sed 's|docker.io/linbit/stork:latest|daocloud.io/piraeus/stork:latest|' -i ./charts/piraeus/values.cn.yaml
+	sed 's|gcr.io/google_containers/kube-scheduler-amd64|daocloud.io/piraeus/kube-scheduler-amd64|' -i ./charts/piraeus/values.cn.yaml
+	sed 's|quay.io/piraeusdatastore|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
+	sed 's|quay.io/k8scsi|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
+
 release:
 	# check that VERSION is set
 	@if [ -z "$(VERSION)" ]; then \
@@ -63,6 +71,8 @@ release:
 	yq w -i charts/piraeus/Chart.yaml appVersion $(VERSION)
 	# set operator image to tagged version
 	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:$(VERSION)"
+	yq w -i charts/piraeus/values.cn.yaml operator.image "daocloud.io/piraeus/piraeus-operator:$(VERSION)"
+	git add --update
 	# commit as current release + tag
 	git commit -aevm "Release v$(VERSION)"
 	git tag v$(VERSION)
@@ -71,5 +81,6 @@ release:
 	echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$(VERSION)...HEAD" >> CHANGELOG.md
 	# set operator image back to :latest during development
 	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:latest"
+	yq w -i charts/piraeus/values.cn.yaml operator.image "daocloud.io/piraeus/piraeus-operator:latest"
 	# commit begin of new dev cycle
 	git commit -aevm "Prepare next dev cycle"
