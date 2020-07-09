@@ -7,6 +7,7 @@ spec:
   sslSecret: {{ .Values.operator.nodeSet.sslSecret }}
   drbdKernelModuleInjectionMode: {{ .Values.operator.nodeSet.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
+  imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   satelliteImage: {{ .Values.operator.nodeSet.satelliteImage }}
   kernelModImage: {{ .Values.operator.nodeSet.kernelModImage }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}

@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -48,6 +48,11 @@ type LinstorCSIDriverSpec struct {
 
 	// Name of a secret with authentication details for the `LinstorPluginImage` registry
 	ImagePullSecret string `json:"imagePullSecret"`
+
+	// Pull policy applied to all pods started from this controller
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
+
 	// Image that contains the linstor-csi driver plugin
 	LinstorPluginImage string `json:"linstorPluginImage"`
 
@@ -71,22 +76,22 @@ type LinstorCSIDriverSpec struct {
 	// Affinity for scheduling the CSI node pods
 	// +optional
 	// +nullable
-	NodeAffinity *v1.Affinity `json:"nodeAffinity"`
+	NodeAffinity *corev1.Affinity `json:"nodeAffinity"`
 
 	// Tolerations for scheduling CSI node pods
 	// +optional
 	// +nullable
-	NodeTolerations []v1.Toleration `json:"nodeTolerations"`
+	NodeTolerations []corev1.Toleration `json:"nodeTolerations"`
 
 	// Affinity for scheduling the CSI controller pod
 	// +optional
 	// +nullable
-	ControllerAffinity *v1.Affinity `json:"controllerAffinity"`
+	ControllerAffinity *corev1.Affinity `json:"controllerAffinity"`
 
 	// Tolerations for schedluing CSI controller pods
 	// +optional
 	// +nullable
-	ControllerTolerations []v1.Toleration `json:"controllerTolerations"`
+	ControllerTolerations []corev1.Toleration `json:"controllerTolerations"`
 
 	LinstorClientConfig `json:",inline"`
 }

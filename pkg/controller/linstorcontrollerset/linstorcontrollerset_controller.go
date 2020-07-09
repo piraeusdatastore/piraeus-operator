@@ -380,7 +380,7 @@ func (r *ReconcileLinstorControllerSet) reconcileControllers(ctx context.Context
 		log.WithField("#controllerPods", len(ourPods.Items)).Debug("requeue because multiple controller pods are present")
 		return &reconcileutil.TemporaryError{
 			RequeueAfter: time.Minute,
-			Source: fmt.Errorf("multiple controller pods present"),
+			Source:       fmt.Errorf("multiple controller pods present"),
 		}
 	}
 
@@ -406,7 +406,7 @@ func (r *ReconcileLinstorControllerSet) reconcileStatus(ctx context.Context, pcs
 	}
 
 	pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{
-		NodeName: controllerName,
+		NodeName:               controllerName,
 		RegisteredOnController: false,
 	}
 
@@ -486,7 +486,6 @@ func (r *ReconcileLinstorControllerSet) findActiveControllerPod(ctx context.Cont
 	default:
 		return nil, fmt.Errorf("expected one controller pod, got multiple: %v", candidatePods)
 	}
-
 }
 
 // finalizeControllerSet returns whether it is finished as well as potentially an error
@@ -711,7 +710,7 @@ func newDeploymentForResource(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1
 							Name:            "linstor-controller",
 							Image:           pcs.Spec.ControllerImage,
 							Args:            []string{"startController"}, // Run linstor-controller.
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							ImagePullPolicy: pcs.Spec.ImagePullPolicy,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
 								{

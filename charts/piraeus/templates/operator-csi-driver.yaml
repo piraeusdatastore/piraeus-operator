@@ -7,11 +7,13 @@ spec:
   enabled: {{ .Values.csi.enabled }}
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
   linstorPluginImage: {{ .Values.csi.pluginImage | quote }}
+  imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node
   csiAttacherImage: {{ .Values.csi.csiAttacherImage | quote }}
   csiNodeDriverRegistrarImage: {{ .Values.csi.csiNodeDriverRegistrarImage | quote }}
   csiProvisionerImage: {{ .Values.csi.csiProvisionerImage | quote }}
+  csiResizerImage: {{ .Values.csi.csiResizerImage | quote }}
   csiSnapshotterImage: {{ .Values.csi.csiSnapshotterImage | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}

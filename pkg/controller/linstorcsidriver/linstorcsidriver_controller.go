@@ -399,9 +399,10 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 	env = append(env, linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)...)
 
 	driverRegistrar := corev1.Container{
-		Name:  "csi-node-driver-registrar",
-		Image: csiResource.Spec.CSINodeDriverRegistrarImage,
-		Args:  []string{"--v=5", "--csi-address=$(CSI_ENDPOINT)", "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"},
+		Name:            "csi-node-driver-registrar",
+		Image:           csiResource.Spec.CSINodeDriverRegistrarImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Args:            []string{"--v=5", "--csi-address=$(CSI_ENDPOINT)", "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"},
 		Lifecycle: &corev1.Lifecycle{
 			PreStop: &corev1.Handler{
 				Exec: &corev1.ExecAction{Command: []string{"/bin/sh", "-c", "rm -rf /registration/linstor.csi.linbit.com /registration/linstor.csi.linbit.com-reg.sock"}},
@@ -428,7 +429,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 	linstorPluginContainer := corev1.Container{
 		Name:            "csi-node-driver-linstor-plugin",
 		Image:           csiResource.Spec.LinstorPluginImage,
-		ImagePullPolicy: "Always",
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args:            []string{"--csi-endpoint=unix://$(CSI_ENDPOINT)", "--node=$(KUBE_NODE_NAME)", "--linstor-endpoint=$(LS_CONTROLLERS)", "--log-level=debug"},
 		Env:             env,
 		SecurityContext: &corev1.SecurityContext{
@@ -510,8 +511,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 	linstorEnvVars := linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)
 
 	csiProvisioner := corev1.Container{
-		Name:  "csi-provisioner",
-		Image: csiResource.Spec.CSIProvisionerImage,
+		Name:            "csi-provisioner",
+		Image:           csiResource.Spec.CSIProvisionerImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
 			"--provisioner=linstor.csi.linbit.com",
 			"--csi-address=$(ADDRESS)",
@@ -526,8 +528,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		}},
 	}
 	csiAttacher := corev1.Container{
-		Name:  "csi-attacher",
-		Image: csiResource.Spec.CSIAttacherImage,
+		Name:            "csi-attacher",
+		Image:           csiResource.Spec.CSIAttacherImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
@@ -540,8 +543,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		}},
 	}
 	csiSnapshotter := corev1.Container{
-		Name:  "csi-snapshotter",
-		Image: csiResource.Spec.CSISnapshotterImage,
+		Name:            "csi-snapshotter",
+		Image:           csiResource.Spec.CSISnapshotterImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
 			"-timeout=4m",
 			"-csi-address=$(ADDRESS)",
@@ -553,8 +557,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		}},
 	}
 	csiResizer := corev1.Container{
-		Name:  "csi-resizer",
-		Image: csiResource.Spec.CSIResizerImage,
+		Name:            "csi-resizer",
+		Image:           csiResource.Spec.CSIResizerImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
@@ -567,8 +572,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		}},
 	}
 	linstorPlugin := corev1.Container{
-		Name:  "linstor-csi-plugin",
-		Image: csiResource.Spec.LinstorPluginImage,
+		Name:            "linstor-csi-plugin",
+		Image:           csiResource.Spec.LinstorPluginImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
 			"--csi-endpoint=unix://$(ADDRESS)",
 			"--node=$(KUBE_NODE_NAME)",
@@ -582,7 +588,6 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			},
 			linstorEnvVars...,
 		),
-		ImagePullPolicy: "Always",
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",

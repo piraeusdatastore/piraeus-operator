@@ -11,6 +11,7 @@ spec:
   dbUseClientCert: {{ .Values.operator.controllerSet.dbUseClientCert }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   controllerImage: {{ .Values.operator.controllerSet.controllerImage }}
+  imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   affinity: {{ .Values.operator.controllerSet.affinity | toJson }}

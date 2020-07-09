@@ -102,6 +102,11 @@ etcd cluster by adding the following to the Helm install command:
 --set etcd.enabled=false --set "operator.controllerSet.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
 ```
 
+### Image mirror for CN users
+
+The chart contains a values file prepared for chinese users [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
+It replaces the default image locations with images hosted on daocloud.io.
+
 ### Terminating Helm deployment
 
 To protect the storage infrastructure of the cluster from accidentally deleting vital components, it is necessary

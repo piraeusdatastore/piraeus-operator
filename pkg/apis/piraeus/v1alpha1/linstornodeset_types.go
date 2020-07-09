@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,6 +59,10 @@ type LinstorNodeSetSpec struct {
 	// drbdRepoCred is the name of the kubernetes secret that holds the credential for the DRBD repositories
 	DrbdRepoCred string `json:"drbdRepoCred"`
 
+	// Pull policy applied to all pods started from this controller
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
+
 	// satelliteImage is the image (location + tag) for the LINSTOR satellite container
 	SatelliteImage string `json:"satelliteImage"`
 
@@ -73,12 +77,12 @@ type LinstorNodeSetSpec struct {
 	// Affinity for scheduling the satellite pods
 	// +optional
 	// +nullable
-	Affinity *v1.Affinity `json:"affinity"`
+	Affinity *corev1.Affinity `json:"affinity"`
 
 	// Tolerations for scheduling the satellite pods
 	// +optional
 	// +nullable
-	Tolerations []v1.Toleration `json:"tolerations"`
+	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	LinstorClientConfig `json:",inline"`
 }

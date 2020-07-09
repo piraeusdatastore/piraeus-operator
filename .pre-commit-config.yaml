@@ -36,3 +36,9 @@ repos:
         files: '^pkg/apis/.*\.go$'
         pass_filenames: false
         entry: make crds
+      - id: generate-cn-values
+        name: generate helm values for CN users
+        language: system
+        files: '^charts/piraeus/values.*\.yaml'
+        pass_filenames: false
+        entry: make helm-values

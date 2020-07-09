@@ -111,8 +111,8 @@ spec:
             - --leader-elect=true
             - --snapshotter=false
             - --cluster-domain-controllers=false
-          imagePullPolicy: Always
-          image: {{ .Values.stork.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          image: {{ .Values.stork.storkImage }}
           ports:
             - containerPort: 8099
               name: extender
@@ -250,7 +250,8 @@ spec:
             - --policy-configmap-namespace={{ .Release.Namespace }}
             - --leader-elect-resource-name={{ .Release.Name }}-stork-scheduler
             - --leader-elect-resource-namespace={{ .Release.Namespace }}
-          image: "gcr.io/google_containers/kube-scheduler-amd64:{{ .Capabilities.KubeVersion }}"
+          image: "{{ .Values.stork.schedulerImage }}:{{ .Capabilities.KubeVersion }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           livenessProbe:
             httpGet:
               path: /healthz

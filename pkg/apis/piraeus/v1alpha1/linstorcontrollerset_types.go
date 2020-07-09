@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,6 +62,10 @@ type LinstorControllerSetSpec struct {
 	// controllerImage is the image (location + tag) for the LINSTOR controller/server container
 	ControllerImage string `json:"controllerImage"`
 
+	// Pull policy applied to all pods started from this controller
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
+
 	// Name of the secret containing the java keystore (`keystore.jks`) used to enable HTTPS on the
 	// controller. The controller will create a secured https endpoint on port 3371 with the key
 	// stored in `keystore.jks`. The keystore must be secured using the passphrase "linstor". Also
@@ -72,12 +76,12 @@ type LinstorControllerSetSpec struct {
 	// Affinity for scheduling the controller pod
 	// +optional
 	// +nullable
-	Affinity *v1.Affinity `json:"affinity"`
+	Affinity *corev1.Affinity `json:"affinity"`
 
 	// Tolerations for scheduling the controller pod
 	// +optional
 	// +nullable
-	Tolerations []v1.Toleration `json:"tolerations"`
+	Tolerations []corev1.Toleration `json:"tolerations"`
 
 	LinstorClientConfig `json:",inline"`
 }
