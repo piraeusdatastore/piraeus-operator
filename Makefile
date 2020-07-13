@@ -31,3 +31,45 @@ deep-copy:
 crds:
 	operator-sdk generate crds
 	mv ./deploy/crds/* ./charts/piraeus/crds
+
+release:
+	# check that VERSION is set
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make prepare-release VERSION=<version>" >&2 ; \
+		exit 1 ; \
+	fi
+	# check that version has expected format
+	@if ! echo -e "$(VERSION)" | grep -qP '^\d+\.\d+\.\d+$$' ; then \
+		echo "version format: <maj>.<min>.<patch>" >&2 ; \
+		exit 1 ; \
+	fi
+	# check that version does not exist
+	@if git rev-parse "v$(VERSION)" >/dev/null 2>&1 ; then \
+		echo "version v$(VERSION) already exists" >&2 ; \
+		exit 1 ; \
+	fi
+	# check that working tree is clean
+	@if ! git diff-index --quiet HEAD -- ; then \
+		echo "Refusing to create release from dirty repository" >&2 ; \
+		exit 1; \
+	fi
+	# replace changelog header "Unreleased" with version and replace link target
+	sed 's/^## \[Unreleased\]/## [v$(VERSION)] - $(shell date +%Y-%m-%d)/' -i CHANGELOG.md
+	sed 's#^\[Unreleased\]: \(.*\)HEAD$$#[v$(VERSION)]: \1v$(VERSION)#' -i CHANGELOG.md
+	# replace go operator version
+	sed 's/var Version = ".*"/var Version = "$(VERSION)"/' -i version/version.go
+	# replace chart version+appVersion
+	yq w -i charts/piraeus/Chart.yaml version $(VERSION)
+	yq w -i charts/piraeus/Chart.yaml appVersion $(VERSION)
+	# set operator image to tagged version
+	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:$(VERSION)"
+	# commit as current release + tag
+	git commit -aevm "Release v$(VERSION)"
+	git tag v$(VERSION)
+	# add "Unreleased" section at top + create comparison link against current master
+	sed 's/^## \[v$(VERSION)\]/## [Unreleased]\n\n## [v$(VERSION)]/' -i CHANGELOG.md
+	echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$(VERSION)...HEAD" >> CHANGELOG.md
+	# set operator image back to :latest during development
+	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:latest"
+	# commit begin of new dev cycle
+	git commit -aevm "Prepare next dev cycle"
