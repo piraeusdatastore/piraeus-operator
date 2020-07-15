@@ -424,6 +424,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 				MountPath: "/registration/",
 			},
 		},
+		Resources: csiResource.Spec.Resources,
 	}
 
 	linstorPluginContainer := corev1.Container{
@@ -452,6 +453,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 				MountPath: "/dev",
 			},
 		},
+		Resources: csiResource.Spec.Resources,
 	}
 
 	return &appsv1.DaemonSet{
@@ -526,6 +528,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
 		}},
+		Resources: csiResource.Spec.Resources,
 	}
 	csiAttacher := corev1.Container{
 		Name:            "csi-attacher",
@@ -541,6 +544,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
 		}},
+		Resources: csiResource.Spec.Resources,
 	}
 	csiSnapshotter := corev1.Container{
 		Name:            "csi-snapshotter",
@@ -555,6 +559,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
 		}},
+		Resources: csiResource.Spec.Resources,
 	}
 	csiResizer := corev1.Container{
 		Name:            "csi-resizer",
@@ -570,6 +575,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
 		}},
+		Resources: csiResource.Spec.Resources,
 	}
 	linstorPlugin := corev1.Container{
 		Name:            "linstor-csi-plugin",
@@ -592,6 +598,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Name:      socketVolume.Name,
 			MountPath: "/var/lib/csi/sockets/pluginproxy/",
 		}},
+		Resources: csiResource.Spec.Resources,
 	}
 
 	return &appsv1.Deployment{

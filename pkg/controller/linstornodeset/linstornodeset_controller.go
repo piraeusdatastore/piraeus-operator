@@ -735,6 +735,7 @@ func newDaemonSetforPNS(pns *piraeusv1alpha1.LinstorNodeSet, config *corev1.Conf
 								FailureThreshold:    10,
 								InitialDelaySeconds: 10,
 							},
+							Resources: pns.Spec.Resources,
 						},
 					},
 					Volumes: []corev1.Volume{

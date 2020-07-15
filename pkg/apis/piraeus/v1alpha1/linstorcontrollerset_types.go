@@ -73,6 +73,11 @@ type LinstorControllerSetSpec struct {
 	// +optional
 	LinstorHttpsControllerSecret string `json:"linstorHttpsControllerSecret"`
 
+	// Resource requirements for the LINSTOR controller pod
+	// +optional
+	// +nullable
+	Resources corev1.ResourceRequirements `json:"resources"`
+
 	// Affinity for scheduling the controller pod
 	// +optional
 	// +nullable

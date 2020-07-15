@@ -746,6 +746,7 @@ func newDeploymentForResource(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1
 								FailureThreshold:    10,
 								InitialDelaySeconds: 5,
 							},
+							Resources: pcs.Spec.Resources,
 						},
 					},
 					Volumes: volumes,

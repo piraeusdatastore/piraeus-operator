@@ -6,17 +6,21 @@ etcd:
     enabled: true
     storage: 1Gi
   replicas: 1 # How many instances of etcd will be added to the initial cluster.
+  resources: {} # resource requirements for etcd containers
   image:
     repository: daocloud.io/piraeus/etcd
     tag: v3.4.9
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
   image: daocloud.io/piraeus/snapshot-controller:v2.1.0
+  resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
   storkImage: daocloud.io/piraeus/stork:latest
   schedulerImage: daocloud.io/piraeus/kube-scheduler-amd64
   replicas: 1
+  storkResources: {} # resources requirements for the stork plugin containers
+  schedulerResources: {} # resource requirements for the kube-scheduler containers
 csi:
   enabled: true
   pluginImage: daocloud.io/piraeus/piraeus-csi:v0.9.0
@@ -29,12 +33,14 @@ csi:
   nodeTolerations: []
   controllerAffinity: {}
   controllerTolerations: []
+  resources: {}
 priorityClassName: ""
 drbdRepoCred: drbdiocred # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: "" # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
 operator:
   image: daocloud.io/piraeus/piraeus-operator:latest
+  resources: {}
   controllerSet:
     controllerImage: daocloud.io/piraeus/piraeus-server:v1.7.1
     luksSecret: ""
@@ -43,6 +49,7 @@ operator:
     sslSecret: ""
     affinity: {}
     tolerations: []
+    resources: {}
   nodeSet:
     drbdKernelModuleInjectionMode: Compile
     satelliteImage: daocloud.io/piraeus/piraeus-server:v1.7.1
@@ -52,3 +59,4 @@ operator:
     automaticStorageType: None
     affinity: {}
     tolerations: []
+    resources: {}

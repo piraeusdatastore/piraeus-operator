@@ -4,10 +4,15 @@
     "image": {
       "description": "Snapshotter container image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html",
       "type": "string"
+    },
+    "resources": {
+      "description": "resource requirements for the snapshotter container",
+      "$ref": "https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.18/api/openapi-spec/swagger.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
     }
   },
   "required": [
-    "image"
+    "image",
+    "resources"
   ],
   "title": "Values",
   "type": "object"

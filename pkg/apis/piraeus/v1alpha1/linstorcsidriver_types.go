@@ -73,6 +73,12 @@ type LinstorCSIDriverSpec struct {
 	// +optional
 	ControllerEndpoint string `json:"controllerEndpoint"`
 
+	// Resource requirements for the csi pods.
+	// The requirements are re-used for all pods (node/controller).
+	// +optional
+	// +nullable
+	Resources corev1.ResourceRequirements `json:"resources"`
+
 	// Affinity for scheduling the CSI node pods
 	// +optional
 	// +nullable

@@ -30,3 +30,5 @@ spec:
             - "--v=5"
             - "--leader-election=false"
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          resources:
+{{ .Values.resources | toYaml | indent 12 }}

@@ -15,6 +15,7 @@ spec:
   automaticStorageType: {{ .Values.operator.nodeSet.automaticStorageType | default "None" | quote }}
   affinity: {{ .Values.operator.nodeSet.affinity | toJson }}
   tolerations: {{ .Values.operator.nodeSet.tolerations | toJson}}
+  resources: {{ .Values.operator.nodeSet.resources | toJson }}
   {{- if .Values.operator.nodeSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.nodeSet.storagePools | indent 4 }}
