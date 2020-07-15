@@ -74,6 +74,11 @@ type LinstorNodeSetSpec struct {
 	// +optional
 	ControllerEndpoint string `json:"controllerEndpoint"`
 
+	// Resource requirements for the LINSTOR satellite pod
+	// +optional
+	// +nullable
+	Resources corev1.ResourceRequirements `json:"resources"`
+
 	// Affinity for scheduling the satellite pods
 	// +optional
 	// +nullable

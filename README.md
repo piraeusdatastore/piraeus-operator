@@ -107,6 +107,14 @@ etcd cluster by adding the following to the Helm install command:
 The chart contains a values file prepared for chinese users [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
 It replaces the default image locations with images hosted on daocloud.io.
 
+### Pod resources
+
+You can configure [resource requests and limits] for all deployed containers. Take a look at
+this [example chart configuration.](./examples/resource-requirements.yaml)
+
+[resource requests and limits]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+
+
 ### Terminating Helm deployment
 
 To protect the storage infrastructure of the cluster from accidentally deleting vital components, it is necessary

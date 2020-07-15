@@ -30,5 +30,7 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "piraeus-operator"
+          resources:
+{{ .Values.operator.resources | toYaml | indent 12}}
       imagePullSecrets:
       - name: {{ .Values.drbdRepoCred }}

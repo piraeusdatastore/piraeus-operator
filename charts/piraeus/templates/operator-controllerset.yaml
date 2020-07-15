@@ -16,3 +16,4 @@ spec:
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   affinity: {{ .Values.operator.controllerSet.affinity | toJson }}
   tolerations: {{ .Values.operator.controllerSet.tolerations | toJson}}
+  resources: {{ .Values.operator.controllerSet.resources | toJson }}

@@ -8,9 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 * Central value for controller image pull policy of all pods. Use `--set global.imagePullPolicy=<value>` on
   helm deployment.
 * `charts/piraeus/values.cn.yaml` a set of helm values for faster image download for CN users.
+* Allow specifying [resource requirements] for all pods. In helm you can set:
+  * `etcd.resources` for etcd containers
+  * `stork.storkResources` for stork plugin resources
+  * `stork.schedulerResources` for the kube-scheduler deployed for use with stork
+  * `csi-snapshotter.resources` for the cluster snapshotter controller
+  * `csi.resources` for all CSI related containers. for brevity, there is only one setting for ALL CSI containers. They
+    are all stateless go process which use the same amount of resources.
+  * `operator.resources` for operator containers
+  * `operator.controllerSet.resources` for LINSTOR controller containers
+  * `operator.nodeSet.resources` for LINSTOR satellite containers
+
+
+[resource requirements]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 
 ### Changed
 

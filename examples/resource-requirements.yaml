@@ -1,0 +1,41 @@
+.minimal-resouces: &minimal-resources
+  # Resources for a minimal stateless go container.
+  limits:
+    cpu: "0.2"
+    memory: "250Mi"
+  requests:
+    cpu: "0.1"
+    memory: "100Mi"
+etcd:
+  resources:
+    limits:
+      cpu: "1.0"
+      memory: "1Gi"
+    requests:
+      cpu: "0.1"
+      memory: "100Mi"
+csi-snapshotter:
+  resources: *minimal-resources
+stork:
+  storkResources: *minimal-resources
+  schedulerResources: *minimal-resources
+csi:
+  resources: *minimal-resources
+operator:
+  resources: *minimal-resources
+  controllerSet:
+    resources:
+      limits:
+        cpu: "1.0"
+        memory: "1Gi"
+      requests:
+        cpu: "0.3"
+        memory: "500Mi"
+  nodeSet:
+    resources:
+      limits:
+        cpu: "1.0"
+        memory: "1Gi"
+      requests:
+        cpu: "0.1"
+        memory: "300Mi"
