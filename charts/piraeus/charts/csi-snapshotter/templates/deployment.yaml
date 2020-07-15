@@ -6,14 +6,13 @@
   # Vanilla Kubernetes, kube-system makes sense for the namespace.
 
 ---
-kind: StatefulSet
+kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: snapshot-controller
   namespace: {{ .Release.Namespace }}
 spec:
-  serviceName: "snapshot-controller"
-  replicas: 1
+  replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
       app: snapshot-controller
@@ -28,7 +27,7 @@ spec:
           image: {{ .Values.image }}
           args:
             - "--v=5"
-            - "--leader-election=false"
+            - "--leader-election=true"
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           resources:
 {{ .Values.resources | toYaml | indent 12 }}

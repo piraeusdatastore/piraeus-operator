@@ -5,7 +5,7 @@ metadata:
   labels:
     name: {{ template "operator.fullname" . }}-operator
 spec:
-  replicas: 1
+  replicas: {{ .Values.operator.replicas }}
   selector:
     matchLabels:
       name: {{ template "operator.fullname" . }}-operator

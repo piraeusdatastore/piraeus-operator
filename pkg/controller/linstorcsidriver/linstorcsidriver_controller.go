@@ -331,7 +331,6 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiR
 }
 
 var (
-	ControllerReplicas            = int32(1)
 	IsPrivileged                  = true
 	MountPropagationBidirectional = corev1.MountPropagationBidirectional
 	HostPathDirectoryOrCreate     = corev1.HostPathDirectoryOrCreate
@@ -503,6 +502,11 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}},
 	}
 
+	podNamespace := corev1.EnvVar{
+		Name:      "NAMESPACE",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+	}
+
 	socketVolume := corev1.Volume{
 		Name: "socket-dir",
 		VolumeSource: corev1.VolumeSource{
@@ -522,8 +526,11 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"--v=5",
 			"--feature-gates=Topology=false",
 			"--connection-timeout=4m",
+			"--enable-leader-election=true",
+			"--leader-election-type=leases",
+			"--leader-election-namespace=$(NAMESPACE)",
 		},
-		Env: []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
@@ -538,8 +545,10 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
 			"--timeout=4m",
+			"--leader-election=true",
+			"--leader-election-namespace=$(NAMESPACE)",
 		},
-		Env: []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
@@ -553,8 +562,10 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 		Args: []string{
 			"-timeout=4m",
 			"-csi-address=$(ADDRESS)",
+			"--leader-election=true",
+			"--leader-election-namespace=$(NAMESPACE)",
 		},
-		Env: []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
@@ -569,8 +580,10 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
 			"--csiTimeout=4m",
+			"--leader-election=true",
+			"--leader-election-namespace=$(NAMESPACE)",
 		},
-		Env: []corev1.EnvVar{socketAddress},
+		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
@@ -607,7 +620,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 			Selector: &metav1.LabelSelector{
 				MatchLabels: defaultLabels(csiResource),
 			},
-			Replicas: &ControllerReplicas,
+			Replicas: csiResource.Spec.ControllerReplicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: makeMeta(csiResource, ControllerDeployment),
 				Spec: corev1.PodSpec{

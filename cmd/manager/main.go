@@ -24,18 +24,18 @@ import (
 	"os"
 	"runtime"
 
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
-	version "github.com/piraeusdatastore/piraeus-operator/version"
+	"github.com/piraeusdatastore/piraeus-operator/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -101,13 +101,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.TODO()
-	// Become the leader before proceeding
-	err = leader.Become(ctx, kubeSpec.LockName)
-	if err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
+	ctx := context.Background()
 
 	mapperProvider := func(c *rest.Config) (meta.RESTMapper, error) {
 		return apiutil.NewDynamicRESTMapper(c)
@@ -117,6 +111,8 @@ func main() {
 	mgr, err := manager.New(cfg, manager.Options{
 		Namespace:          namespace,
 		MapperProvider:     mapperProvider,
+		LeaderElection:     true,
+		LeaderElectionID:   kubeSpec.LockName,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
