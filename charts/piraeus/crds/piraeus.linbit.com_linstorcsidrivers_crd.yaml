@@ -615,6 +615,11 @@ spec:
               description: Cluster URL of the linstor controller. If not set, will
                 be determined from the current resource name.
               type: string
+            controllerReplicas:
+              description: controllerReplicas is the number of replicas created for
+                the CSI controller deployment.
+              format: int32
+              type: integer
             controllerTolerations:
               description: Tolerations for schedluing CSI controller pods
               items:

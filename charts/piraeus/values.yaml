@@ -13,6 +13,7 @@ etcd:
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
   image: quay.io/k8scsi/snapshot-controller:v2.1.0
+  replicas: 1
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
@@ -29,6 +30,7 @@ csi:
   csiProvisionerImage: quay.io/k8scsi/csi-provisioner:v1.6.0
   csiSnapshotterImage: quay.io/k8scsi/csi-snapshotter:v2.1.0
   csiResizerImage: quay.io/k8scsi/csi-resizer:v0.5.0
+  controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
   controllerAffinity: {}
@@ -39,6 +41,7 @@ drbdRepoCred: drbdiocred # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: "" # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
 operator:
+  replicas: 1 # <- number of replicas for the operator deployment
   image: quay.io/piraeusdatastore/piraeus-operator:latest
   resources: {}
   controllerSet:

@@ -22,7 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `operator.resources` for operator containers
   * `operator.controllerSet.resources` for LINSTOR controller containers
   * `operator.nodeSet.resources` for LINSTOR satellite containers
-
+* Components deployed by the operator can now run with multiple replicas. Components
+  elect a leader, that will take on the actual work as long as it is active. Should one
+  pod go down, another replica will take over.
+  Currently these components support multiple replicas:
+  * `etcd` => set `etcd.replicas` to the desired count
+  * `stork` => set `stork.replicas` to the desired count for stork scheduler and controller
+  * `snapshot-controller` => set `csi-snapshotter.replicas` to the desired count for cluster-wide CSI snapshot controller
+  * `csi-controller` => set `csi.controllerReplicas` to the desired count for the linstor CSI controller
+  * `operator` => set `operator.replicas` to have multiple replicas of the operator running
 
 [resource requirements]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 

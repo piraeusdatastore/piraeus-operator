@@ -68,6 +68,11 @@ type LinstorCSIDriverSpec struct {
 	// +optional
 	PriorityClassName PriorityClassName `json:"priorityClassName"`
 
+	// controllerReplicas is the number of replicas created for the CSI controller
+	// deployment.
+	// +optional
+	ControllerReplicas *int32 `json:"controllerReplicas"`
+
 	// Cluster URL of the linstor controller.
 	// If not set, will be determined from the current resource name.
 	// +optional
