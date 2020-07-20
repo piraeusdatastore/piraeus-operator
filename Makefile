@@ -70,8 +70,8 @@ release:
 	yq w -i charts/piraeus/Chart.yaml version $(VERSION)
 	yq w -i charts/piraeus/Chart.yaml appVersion $(VERSION)
 	# set operator image to tagged version
-	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:$(VERSION)"
-	yq w -i charts/piraeus/values.cn.yaml operator.image "daocloud.io/piraeus/piraeus-operator:$(VERSION)"
+	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:v$(VERSION)"
+	yq w -i charts/piraeus/values.cn.yaml operator.image "daocloud.io/piraeus/piraeus-operator:v$(VERSION)"
 	git add --update
 	# commit as current release + tag
 	git commit -aevm "Release v$(VERSION)"
