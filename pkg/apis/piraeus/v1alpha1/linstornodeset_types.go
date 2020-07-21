@@ -18,7 +18,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,99 +26,20 @@ import (
 
 // LinstorNodeSetSpec defines the desired state of LinstorNodeSet
 type LinstorNodeSetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-
-	// priorityClassName is the name of the PriorityClass for the node pods
-	PriorityClassName PriorityClassName `json:"priorityClassName"`
-
-	// StoragePools is a list of StoragePools for LinstorNodeSet to manage.
-	// +optional
-	// +nullable
-	StoragePools *StoragePools `json:"storagePools"`
-
-	// If set, the operator will automatically create storage pools of the specified type for all devices that can
-	// be found. The name of the storage pools matches the device name. For example, all devices `/dev/sdc` will be
-	// part of the `sdc` storage pool.
-	// +optional
-	// +kubebuilder:validation:Enum=None;LVM;LVMTHIN;ZFS
-	AutomaticStorageType string `json:"automaticStorageType"`
-
-	// drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
-	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
-	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
-
-	// Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and
-	// the trusted certificates (called `certificates.jks`)
-	// +optional
-	// +nullable
-	SslConfig *LinstorSSLConfig `json:"sslSecret"`
-
-	// drbdRepoCred is the name of the kubernetes secret that holds the credential for the DRBD repositories
-	DrbdRepoCred string `json:"drbdRepoCred"`
-
-	// Pull policy applied to all pods started from this controller
-	// +optional
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy"`
-
-	// satelliteImage is the image (location + tag) for the LINSTOR satellite container
-	SatelliteImage string `json:"satelliteImage"`
-
-	// kernelModImage is the image (location + tag) for the LINSTOR/DRBD kernel module injector container
-	KernelModImage string `json:"kernelModImage"`
-
-	// Cluster URL of the linstor controller.
-	// If not set, will be determined from the current resource name.
-	// +optional
-	ControllerEndpoint string `json:"controllerEndpoint"`
-
-	// Resource requirements for the LINSTOR satellite pod
-	// +optional
-	// +nullable
-	Resources corev1.ResourceRequirements `json:"resources"`
-
-	// Affinity for scheduling the satellite pods
-	// +optional
-	// +nullable
-	Affinity *corev1.Affinity `json:"affinity"`
-
-	// Tolerations for scheduling the satellite pods
-	// +optional
-	// +nullable
-	Tolerations []corev1.Toleration `json:"tolerations"`
-
-	LinstorClientConfig `json:",inline"`
+	LinstorSatelliteSetSpec `json:",inline"`
 }
-
-// KernelModuleInjectionMode describes the source for injecting a kernel module
-type KernelModuleInjectionMode string
-
-const (
-	// ModuleInjectionNone means that no module will be injected
-	ModuleInjectionNone = "None"
-	// ModuleInjectionCompile means that the module will be compiled from sources available on the host
-	ModuleInjectionCompile = "Compile"
-	// ModuleInjectionShippedModules means that a module included in the injector image will be used
-	ModuleInjectionShippedModules = "ShippedModules"
-	// ModuleInjectionDepsOnly means we only inject already present modules on the host for LINSTOR layers
-	ModuleInjectionDepsOnly = "DepsOnly"
-)
 
 // LinstorNodeSetStatus defines the observed state of LinstorNodeSet
 type LinstorNodeSetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	LinstorSatelliteSetStatus `json:",inline"`
 
-	// Keep the first letters in the json for Errors lowercase and all other
-	// statuses uppercase. This causes `kubectl get TYPE NAME -oyaml` to sort
-	// errors to below the other potentially very long Statuses which is the preferred UX.
+	// ResourceMigrated indicates that this LinstorNodeSet was already converted into a LinstorSatelliteSet.
+	// +optional
+	ResourceMigrated bool `json:"ResourceMigrated"`
 
-	// Errors remaining that will trigger reconciliations.
-	Errors []string `json:"errors"`
-	// SatelliteStatuses by hostname.
-	SatelliteStatuses []*SatelliteStatus `json:"SatelliteStatuses"`
+	// DependantsMigrated indicated that all resources created from this LinstorNodeSet have a new owner.
+	// +optional
+	DependantsMigrated bool `json:"DependantsMigrated"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -127,6 +47,7 @@ type LinstorNodeSetStatus struct {
 // LinstorNodeSet is the Schema for the linstornodesets API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=linstornodesets,scope=Namespaced
+// DEPRECATED: use LinstorSatelliteSet
 type LinstorNodeSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

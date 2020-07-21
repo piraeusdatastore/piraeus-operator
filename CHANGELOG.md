@@ -36,6 +36,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Renamed `LinstorNodeSet` to `LinstorSatelliteSet`. This brings the operator in line with other LINSTOR resources.
+  Existing `LinstorNodeSet` resources will automatically be migrated to `LinstorSatelliteSet`. The old resources will
+  not be deleted. You can verify that migration was successful by running the following command:
+  ```
+  $ kubectl get linstornodesets.piraeus.linbit.com -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.ResourceMigrated}{"\t"}{.status.DependantsMigrated}{"\n"}{end}'
+  piraeus-op-ns true    true
+  ```
+  If both values are `true`, migration was successful. The old resource can be removed after migration.
+
+* Renamed `LinstorControllerSet` to `LinstorController`. The old name implied the existence of multiple (separate)
+  controllers. Existing `LinstorControllerSet` resources will automatically be migrated to `LinstorController`. The old
+  resources will not be deleted. You can verify that migration was successful by running the following command:
+  ```
+  $ kubectl get linstorcontrollersets.piraeus.linbit.com -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.ResourceMigrated}{"\t"}{.status.DependantsMigrated}{"\n"}{end}'
+  piraeus-op-cs true    true
+  ```
+  If both values are `true`, migration was successful. The old resource can be removed after migration.
+
 * Node scheduling no longer relies on `linstor.linbit.com/piraeus-node` labels. Instead, all CRDs support
   setting pod [affinity] and [tolerations].
   In detail:

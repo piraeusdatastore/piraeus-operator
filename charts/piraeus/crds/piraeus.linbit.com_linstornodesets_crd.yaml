@@ -14,7 +14,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: LinstorNodeSet is the Schema for the linstornodesets API
+      description: 'LinstorNodeSet is the Schema for the linstornodesets API DEPRECATED:
+        use LinstorSatelliteSet'
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -776,6 +777,14 @@ spec:
         status:
           description: LinstorNodeSetStatus defines the observed state of LinstorNodeSet
           properties:
+            DependantsMigrated:
+              description: DependantsMigrated indicated that all resources created
+                from this LinstorNodeSet have a new owner.
+              type: boolean
+            ResourceMigrated:
+              description: ResourceMigrated indicates that this LinstorNodeSet was
+                already converted into a LinstorSatelliteSet.
+              type: boolean
             SatelliteStatuses:
               description: SatelliteStatuses by hostname.
               items:

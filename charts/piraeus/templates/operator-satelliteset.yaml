@@ -1,5 +1,5 @@
 apiVersion: piraeus.linbit.com/v1alpha1
-kind: LinstorNodeSet
+kind: LinstorSatelliteSet
 metadata:
   name: {{ template "operator.fullname" . }}-ns
 spec:

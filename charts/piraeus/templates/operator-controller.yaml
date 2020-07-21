@@ -1,5 +1,5 @@
 apiVersion: piraeus.linbit.com/v1alpha1
-kind: LinstorControllerSet
+kind: LinstorController
 metadata:
   name: {{ template "operator.fullname" . }}-cs
 spec:

@@ -1,21 +1,20 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: linstorcontrollersets.piraeus.linbit.com
+  name: linstorcontrollers.piraeus.linbit.com
 spec:
   group: piraeus.linbit.com
   names:
-    kind: LinstorControllerSet
-    listKind: LinstorControllerSetList
-    plural: linstorcontrollersets
-    singular: linstorcontrollerset
+    kind: LinstorController
+    listKind: LinstorControllerList
+    plural: linstorcontrollers
+    singular: linstorcontroller
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: 'LinstorControllerSet is the Schema for the linstorcontrollersets
-        API DEPRECATED: use LinstorController'
+      description: LinstorController is the Schema for the linstorcontrollers API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -30,7 +29,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: LinstorControllerSetSpec defines the desired state of LinstorControllerSet
+          description: LinstorControllerSpec defines the desired state of LinstorController
           properties:
             affinity:
               description: Affinity for scheduling the controller pod
@@ -730,7 +729,7 @@ spec:
           - priorityClassName
           type: object
         status:
-          description: LinstorControllerSetStatus defines the observed state of LinstorControllerSet
+          description: LinstorControllerStatus defines the observed state of LinstorController
           properties:
             ControllerStatus:
               description: ControllerStatus information.
@@ -745,14 +744,6 @@ spec:
               - nodeName
               - registeredOnController
               type: object
-            DependantsMigrated:
-              description: DependantsMigrated indicated that all resources created
-                from this LinstorControllerSet have a new owner.
-              type: boolean
-            ResourceMigrated:
-              description: ResourceMigrated indicates that this LinstorControllerSet
-                was already converted into a LinstorController.
-              type: boolean
             SatelliteStatuses:
               description: SatelliteStatuses by hostname.
               items:
