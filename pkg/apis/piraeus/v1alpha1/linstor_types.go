@@ -172,3 +172,17 @@ func (pcn *PriorityClassName) GetName(namespace string) string {
 
 	return ""
 }
+
+// KernelModuleInjectionMode describes the source for injecting a kernel module
+type KernelModuleInjectionMode string
+
+const (
+	// ModuleInjectionNone means that no module will be injected
+	ModuleInjectionNone = "None"
+	// ModuleInjectionCompile means that the module will be compiled from sources available on the host
+	ModuleInjectionCompile = "Compile"
+	// ModuleInjectionShippedModules means that a module included in the injector image will be used
+	ModuleInjectionShippedModules = "ShippedModules"
+	// ModuleInjectionDepsOnly means we only inject already present modules on the host for LINSTOR layers
+	ModuleInjectionDepsOnly = "DepsOnly"
+)

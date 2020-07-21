@@ -1,21 +1,21 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: linstorcontrollersets.piraeus.linbit.com
+  name: linstorsatellitesets.piraeus.linbit.com
 spec:
   group: piraeus.linbit.com
   names:
-    kind: LinstorControllerSet
-    listKind: LinstorControllerSetList
-    plural: linstorcontrollersets
-    singular: linstorcontrollerset
+    kind: LinstorSatelliteSet
+    listKind: LinstorSatelliteSetList
+    plural: linstorsatellitesets
+    singular: linstorsatelliteset
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: 'LinstorControllerSet is the Schema for the linstorcontrollersets
-        API DEPRECATED: use LinstorController'
+      description: LinstorSatelliteSet is the Schema for the linstorsatellitesets
+        API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -30,10 +30,10 @@ spec:
         metadata:
           type: object
         spec:
-          description: LinstorControllerSetSpec defines the desired state of LinstorControllerSet
+          description: LinstorSatelliteSetSpec defines the desired state of a LinstorSatelliteSet.
           properties:
             affinity:
-              description: Affinity for scheduling the controller pod
+              description: Affinity for scheduling the satellite pods
               nullable: true
               properties:
                 nodeAffinity:
@@ -605,33 +605,40 @@ spec:
                       type: array
                   type: object
               type: object
-            controllerImage:
-              description: controllerImage is the image (location + tag) for the LINSTOR
-                controller/server container
+            automaticStorageType:
+              description: If set, the operator will automatically create storage
+                pools of the specified type for all devices that can be found. The
+                name of the storage pools matches the device name. For example, all
+                devices `/dev/sdc` will be part of the `sdc` storage pool.
+              enum:
+              - None
+              - LVM
+              - LVMTHIN
+              - ZFS
               type: string
-            dbCertSecret:
-              description: DBCertSecret is the name of the kubernetes secret that
-                holds the CA certificate used to verify the datatbase connection.
-                The secret must contain a key "ca.pem" which holds the certificate
-                in PEM format
-              nullable: true
+            controllerEndpoint:
+              description: Cluster URL of the linstor controller. If not set, will
+                be determined from the current resource name.
               type: string
-            dbConnectionURL:
-              description: DBConnectionURL is the URL of the ETCD endpoint for LINSTOR
-                Controller
+            drbdKernelModuleInjectionMode:
+              description: drbdKernelModuleInjectionMode selects the source for the
+                DRBD kernel module
+              enum:
+              - None
+              - Compile
+              - ShippedModules
+              - DepsOnly
               type: string
-            dbUseClientCert:
-              description: Use a TLS client certificate for authentication with the
-                database (etcd). If set to true, `dbCertSecret` must be set and contain
-                two additional entries "client.cert" (PEM encoded) and "client.key"
-                (PKCS8 encoded, without passphrase).
-              type: boolean
             drbdRepoCred:
-              description: DrbdRepoCred is the name of the kubernetes secret that
+              description: drbdRepoCred is the name of the kubernetes secret that
                 holds the credential for the DRBD repositories
               type: string
             imagePullPolicy:
               description: Pull policy applied to all pods started from this controller
+              type: string
+            kernelModImage:
+              description: kernelModImage is the image (location + tag) for the LINSTOR/DRBD
+                kernel module injector container
               type: string
             linstorHttpsClientSecret:
               description: 'Name of the secret containing: (a) `ca.pem`: root certificate
@@ -641,25 +648,12 @@ spec:
                 matching the client key (PEM format, without password) If set, HTTPS
                 is used for connecting and authenticating with linstor'
               type: string
-            linstorHttpsControllerSecret:
-              description: Name of the secret containing the java keystore (`keystore.jks`)
-                used to enable HTTPS on the controller. The controller will create
-                a secured https endpoint on port 3371 with the key stored in `keystore.jks`.
-                The keystore must be secured using the passphrase "linstor". Also
-                needs to contain a truststore `truststore.jks`, which will be used
-                to authenticate clients.
-              type: string
-            luksSecret:
-              description: Name of the secret containing the master passphrase for
-                LUKS devices as `MASTER_PASSPHRASE`
-              nullable: true
-              type: string
             priorityClassName:
               description: priorityClassName is the name of the PriorityClass for
-                the controller pods
+                the node pods
               type: string
             resources:
-              description: Resource requirements for the LINSTOR controller pod
+              description: Resource requirements for the LINSTOR satellite pod
               nullable: true
               properties:
                 limits:
@@ -677,13 +671,63 @@ spec:
                     value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                   type: object
               type: object
+            satelliteImage:
+              description: satelliteImage is the image (location + tag) for the LINSTOR
+                satellite container
+              type: string
             sslSecret:
               description: Name of k8s secret that holds the SSL key for a node (called
                 `keystore.jks`) and the trusted certificates (called `certificates.jks`)
               nullable: true
               type: string
+            storagePools:
+              description: StoragePools is a list of StoragePools for LinstorNodeSet
+                to manage.
+              nullable: true
+              properties:
+                lvmPools:
+                  description: LVMPools for LinstorNodeSet to manage.
+                  items:
+                    description: StoragePoolLVM represents LVM storage pool to be
+                      managed by a LinstorNodeSet
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      volumeGroup:
+                        description: Name of underlying lvm group
+                        type: string
+                    required:
+                    - name
+                    - volumeGroup
+                    type: object
+                  nullable: true
+                  type: array
+                lvmThinPools:
+                  description: LVMThinPools for LinstorNodeSet to manage.
+                  items:
+                    description: StoragePoolLVMThin represents LVM Thin storage pool
+                      to be managed by a LinstorNodeSet
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      thinVolume:
+                        description: Name of underlying lvm thin volume
+                        type: string
+                      volumeGroup:
+                        description: Name of underlying lvm group
+                        type: string
+                    required:
+                    - name
+                    - thinVolume
+                    - volumeGroup
+                    type: object
+                  nullable: true
+                  type: array
+              type: object
             tolerations:
-              description: Tolerations for scheduling the controller pod
+              description: Tolerations for scheduling the satellite pods
               items:
                 description: The pod this Toleration is attached to tolerates any
                   taint that matches the triple <key,value,effect> using the matching
@@ -724,35 +768,15 @@ spec:
               nullable: true
               type: array
           required:
-          - controllerImage
-          - dbConnectionURL
+          - drbdKernelModuleInjectionMode
           - drbdRepoCred
+          - kernelModImage
           - priorityClassName
+          - satelliteImage
           type: object
         status:
-          description: LinstorControllerSetStatus defines the observed state of LinstorControllerSet
+          description: LinstorSatelliteSetStatus defines the observed state of LinstorSatelliteSet
           properties:
-            ControllerStatus:
-              description: ControllerStatus information.
-              properties:
-                nodeName:
-                  description: The hostname of the kubelet running the node
-                  type: string
-                registeredOnController:
-                  description: Indicates if the node has been created on the controller.
-                  type: boolean
-              required:
-              - nodeName
-              - registeredOnController
-              type: object
-            DependantsMigrated:
-              description: DependantsMigrated indicated that all resources created
-                from this LinstorControllerSet have a new owner.
-              type: boolean
-            ResourceMigrated:
-              description: ResourceMigrated indicates that this LinstorControllerSet
-                was already converted into a LinstorController.
-              type: boolean
             SatelliteStatuses:
               description: SatelliteStatuses by hostname.
               items:
@@ -814,7 +838,6 @@ spec:
                 type: string
               type: array
           required:
-          - ControllerStatus
           - SatelliteStatuses
           - errors
           type: object

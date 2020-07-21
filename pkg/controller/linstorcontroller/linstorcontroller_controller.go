@@ -15,12 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package linstorcontrollerset
+package linstorcontroller
 
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -50,51 +49,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const (
-	linstorControllerFinalizer = "finalizer.linstor-controller.linbit.com"
-
-	// requeue reconciliation after connectionRetrySeconds
-	connectionRetrySeconds = 10
-)
-
-func init() {
-	logrus.SetFormatter(&logrus.TextFormatter{})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
+// newControllerReconciler returns a new reconcile.Reconciler
+func newControllerReconciler(mgr manager.Manager) reconcile.Reconciler {
+	return &ReconcileLinstorController{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
-// var log = logrus.WithFields(logrus.Fields{
-// 	"controller": "LinstorControllerSet",
-// })
-
-// Add creates a new LinstorControllerSet Controller and adds it to the Manager. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
-}
-
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileLinstorControllerSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
-}
-
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+// addControllerReconciler adds a new Controller to mgr with r as the reconcile.Reconciler
+func addControllerReconciler(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("linstorcontrollerset-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("LinstorController-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource LinstorControllerSet
-	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.LinstorControllerSet{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource LinstorController
+	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.LinstorController{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &piraeusv1alpha1.LinstorControllerSet{},
+		OwnerType:    &piraeusv1alpha1.LinstorController{},
 	})
 	if err != nil {
 		return err
@@ -103,11 +79,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileLinstorControllerSet implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileLinstorControllerSet{}
+// blank assignment to verify that ReconcileLinstorController implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileLinstorController{}
 
-// ReconcileLinstorControllerSet reconciles a LinstorControllerSet object
-type ReconcileLinstorControllerSet struct {
+// ReconcileLinstorController reconciles a LinstorController object
+type ReconcileLinstorController struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
@@ -115,30 +91,22 @@ type ReconcileLinstorControllerSet struct {
 	linstorClient *lc.HighLevelClient
 }
 
-// Reconcile reads that state of the cluster for a LinstorControllerSet object and makes changes based
-// on the state read and what is in the LinstorControllerSet.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-// This function is a mini-main function and has a lot of boilerplate code that doesn't make a lot of
-// sense to put elsewhere, so don't lint it for cyclomatic complexity.
-// nolint:gocyclo
-func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log := logrus.WithFields(logrus.Fields{
+// Reconcile reads that state of the cluster for a LinstorController object and makes changes based
+// on the state read and what is in the LinstorController.Spec
+func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	log := log.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
 	})
 
-	log.Info("CS Reconcile: Entering")
+	log.Info("controller Reconcile: Entering")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	// Fetch the LinstorControllerSet instance
-	pcs := &piraeusv1alpha1.LinstorControllerSet{}
-	err := r.client.Get(ctx, request.NamespacedName, pcs)
+	// Fetch the LinstorController instance
+	controllerResource := &piraeusv1alpha1.LinstorController{}
+	err := r.client.Get(ctx, request.NamespacedName, controllerResource)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -150,70 +118,70 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	if pcs.Status.ControllerStatus == nil {
-		pcs.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{}
+	if controllerResource.Status.ControllerStatus == nil {
+		controllerResource.Status.ControllerStatus = &piraeusv1alpha1.NodeStatus{}
 	}
 
-	if pcs.Status.SatelliteStatuses == nil {
-		pcs.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, 0)
+	if controllerResource.Status.SatelliteStatuses == nil {
+		controllerResource.Status.SatelliteStatuses = make([]*piraeusv1alpha1.SatelliteStatus, 0)
 	}
 
-	if pcs.Spec.DrbdRepoCred == "" {
-		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter drbdRepoCred: outdated schema")
+	if controllerResource.Spec.DrbdRepoCred == "" {
+		return reconcile.Result{}, fmt.Errorf("controller Reconcile: missing required parameter drbdRepoCred: outdated schema")
 	}
 
-	if pcs.Spec.ControllerImage == "" {
-		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter controllerImage: outdated schema")
+	if controllerResource.Spec.ControllerImage == "" {
+		return reconcile.Result{}, fmt.Errorf("controller Reconcile: missing required parameter controllerImage: outdated schema")
 	}
 
-	if pcs.Spec.DBConnectionURL == "" {
-		return reconcile.Result{}, fmt.Errorf("CS Reconcile: missing required parameter dbConnectionURL: outdated schema")
+	if controllerResource.Spec.DBConnectionURL == "" {
+		return reconcile.Result{}, fmt.Errorf("controller Reconcile: missing required parameter dbConnectionURL: outdated schema")
 	}
 
-	log.Info("reconciling LinstorControllerSet")
+	log.Info("reconciling LinstorController")
 
 	getSecret := func(secretName string) (map[string][]byte, error) {
 		secret := corev1.Secret{}
-		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: pcs.Namespace}, &secret)
+		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: controllerResource.Namespace}, &secret)
 		if err != nil {
 			return nil, err
 		}
 		return secret.Data, nil
 	}
 
-	endpoint := expectedEndpoint(pcs)
-	r.linstorClient, err = lc.NewHighLevelLinstorClientFromConfig(endpoint, &pcs.Spec.LinstorClientConfig, getSecret)
+	endpoint := expectedEndpoint(controllerResource)
+	r.linstorClient, err = lc.NewHighLevelLinstorClientFromConfig(endpoint, &controllerResource.Spec.LinstorClientConfig, getSecret)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	markedForDeletion := pcs.GetDeletionTimestamp() != nil
+	markedForDeletion := controllerResource.GetDeletionTimestamp() != nil
 	if markedForDeletion {
-		result, err := r.finalizeControllerSet(ctx, pcs)
+		result, err := r.finalizeControllerSet(ctx, controllerResource)
 
 		log.WithFields(logrus.Fields{
 			"result": result,
 			"err":    err,
-		}).Info("CS Reconcile: reconcile loop end")
+		}).Info("controller Reconcile: reconcile loop end")
 
 		return result, err
 	}
 
-	if err := r.addFinalizer(ctx, pcs); err != nil {
+	if err := r.addFinalizer(ctx, controllerResource); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Define a service for the controller.
-	ctrlService := newServiceForPCS(pcs)
-	// Set LinstorControllerSet instance as the owner and controller
-	if err := controllerutil.SetControllerReference(pcs, ctrlService, r.scheme); err != nil {
+	ctrlService := newServiceForPCS(controllerResource)
+	// Set LinstorController instance as the owner and controller
+	if err := controllerutil.SetControllerReference(controllerResource, ctrlService, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundSrv := &corev1.Service{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: ctrlService.Name, Namespace: ctrlService.Namespace}, foundSrv)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("CS Reconcile: creating a new Service")
+		log.Info("controller Reconcile: creating a new Service")
 
 		err = r.client.Create(ctx, ctrlService)
 		if err != nil {
@@ -223,22 +191,22 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	log.Debug("CS Reconcile: CS already exists")
+	log.Debug("controller Reconcile: controller already exists")
 
 	// Define a configmap for the controller.
-	configMap, err := NewConfigMapForPCS(pcs)
+	configMap, err := NewConfigMapForPCS(controllerResource)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	// Set LinstorControllerSet instance as the owner and controller
-	if err := controllerutil.SetControllerReference(pcs, configMap, r.scheme); err != nil {
+	// Set LinstorController instance as the owner and controller
+	if err := controllerutil.SetControllerReference(controllerResource, configMap, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundConfigMap := &corev1.ConfigMap{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("CS Reconcile: creating a new ConfigMap")
+		log.Info("controller Reconcile: creating a new ConfigMap")
 
 		err = r.client.Create(ctx, configMap)
 		if err != nil {
@@ -248,22 +216,22 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	log.Debug("CS Reconcile: controllerConfigMap already exists")
+	log.Debug("controller Reconcile: controllerConfigMap already exists")
 
 	// Define a new Deployment object
-	ctrlSet := newDeploymentForResource(pcs)
+	ctrlDeployment := newDeploymentForResource(controllerResource)
 
-	// Set LinstorControllerSet instance as the owner and controller
-	if err := controllerutil.SetControllerReference(pcs, ctrlSet, r.scheme); err != nil {
+	// Set LinstorController instance as the owner and controller
+	if err := controllerutil.SetControllerReference(controllerResource, ctrlDeployment, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	found := &appsv1.Deployment{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: ctrlSet.Name, Namespace: ctrlSet.Namespace}, found)
+	err = r.client.Get(ctx, types.NamespacedName{Name: ctrlDeployment.Name, Namespace: ctrlDeployment.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("CS Reconcile: creating a new Deployment")
+		log.Info("controller Reconcile: creating a new Deployment")
 
-		err = r.client.Create(ctx, ctrlSet)
+		err = r.client.Create(ctx, ctrlDeployment)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -274,11 +242,11 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
-	log.Debug("CS Reconcile: Deployment already exists")
+	log.Debug("controller Reconcile: Deployment already exists")
 
-	resErr := r.reconcileControllers(ctx, pcs)
+	resErr := r.reconcileControllers(ctx, controllerResource)
 
-	statusErr := r.reconcileStatus(ctx, pcs, resErr)
+	statusErr := r.reconcileStatus(ctx, controllerResource, resErr)
 	if statusErr != nil {
 		log.Warnf("failed to update status. original error: %v", resErr)
 		return reconcile.Result{}, statusErr
@@ -289,18 +257,18 @@ func (r *ReconcileLinstorControllerSet) Reconcile(request reconcile.Request) (re
 	log.WithFields(logrus.Fields{
 		"result": result,
 		"err":    err,
-	}).Info("CS Reconcile: reconcile loop end")
+	}).Info("controller Reconcile: reconcile loop end")
 
 	return result, err
 }
 
-func (r *ReconcileLinstorControllerSet) reconcileControllers(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) error {
-	log := logrus.WithFields(logrus.Fields{
+func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, pcs *piraeusv1alpha1.LinstorController) error {
+	log := log.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
-	log.Info("CS Reconcile: reconciling CS Nodes")
+	log.Info("controller Reconcile: reconciling controller Nodes")
 
 	log.Debug("wait for controller service to come online")
 
@@ -387,8 +355,8 @@ func (r *ReconcileLinstorControllerSet) reconcileControllers(ctx context.Context
 	return nil
 }
 
-func (r *ReconcileLinstorControllerSet) reconcileStatus(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet, resErr error) error {
-	log := logrus.WithFields(logrus.Fields{
+func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *piraeusv1alpha1.LinstorController, resErr error) error {
+	log := log.WithFields(logrus.Fields{
 		"Name":      pcs.Name,
 		"Namespace": pcs.Namespace,
 	})
@@ -459,7 +427,7 @@ func (r *ReconcileLinstorControllerSet) reconcileStatus(ctx context.Context, pcs
 	return r.client.Status().Update(ctx, pcs)
 }
 
-func (r *ReconcileLinstorControllerSet) findActiveControllerPod(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.Pod, error) {
+func (r *ReconcileLinstorController) findActiveControllerPod(ctx context.Context, pcs *piraeusv1alpha1.LinstorController) (*corev1.Pod, error) {
 	ourPods := &corev1.PodList{}
 	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
 	err := r.client.List(ctx, ourPods, client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
@@ -489,13 +457,13 @@ func (r *ReconcileLinstorControllerSet) findActiveControllerPod(ctx context.Cont
 }
 
 // finalizeControllerSet returns whether it is finished as well as potentially an error
-func (r *ReconcileLinstorControllerSet) finalizeControllerSet(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) (reconcile.Result, error) {
-	log := logrus.WithFields(logrus.Fields{
+func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, pcs *piraeusv1alpha1.LinstorController) (reconcile.Result, error) {
+	log := log.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
-	log.Info("CS finalizeControllerSet: found LinstorControllerSet marked for deletion, finalizing...")
+	log.Info("controller finalizeControllerSet: found LinstorController marked for deletion, finalizing...")
 
 	if !mdutil.HasFinalizer(pcs, linstorControllerFinalizer) {
 		return reconcile.Result{}, nil
@@ -513,7 +481,7 @@ func (r *ReconcileLinstorControllerSet) finalizeControllerSet(ctx context.Contex
 		return reconcileutil.ToReconcileResult(nodesOnControllerErr)
 	}
 
-	log.Info("CS finalizing finished, removing finalizer")
+	log.Info("controller finalizing finished, removing finalizer")
 
 	err := r.deleteFinalizer(ctx, pcs)
 
@@ -521,21 +489,21 @@ func (r *ReconcileLinstorControllerSet) finalizeControllerSet(ctx context.Contex
 }
 
 // returns an error if nodes are still registered.
-func (r *ReconcileLinstorControllerSet) ensureNoNodesOnController(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) error {
-	log := logrus.WithFields(logrus.Fields{
+func (r *ReconcileLinstorController) ensureNoNodesOnController(ctx context.Context, pcs *piraeusv1alpha1.LinstorController) error {
+	log := log.WithFields(logrus.Fields{
 		"name":      pcs.Name,
 		"namespace": pcs.Namespace,
 		"spec":      fmt.Sprintf("%+v", pcs.Spec),
 	})
 	if pcs.Status.ControllerStatus.NodeName == "" {
-		log.Info("CS never deployed; finalization OK")
+		log.Info("controller never deployed; finalization OK")
 		return nil
 	}
 
 	nodes, err := r.linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		if err != lapi.NotFoundError {
-			return fmt.Errorf("CS unable to get cluster nodes: %v", err)
+			return fmt.Errorf("controller unable to get cluster nodes: %v", err)
 		}
 	}
 
@@ -548,7 +516,7 @@ func (r *ReconcileLinstorControllerSet) ensureNoNodesOnController(ctx context.Co
 
 	if len(nodeNames) != 0 {
 		return &reconcileutil.TemporaryError{
-			Source:       fmt.Errorf("CS controller still has active satellites which must be cleared before deletion: %v", nodeNames),
+			Source:       fmt.Errorf("controller controller still has active satellites which must be cleared before deletion: %v", nodeNames),
 			RequeueAfter: 1 * time.Minute,
 		}
 	}
@@ -556,7 +524,7 @@ func (r *ReconcileLinstorControllerSet) ensureNoNodesOnController(ctx context.Co
 	return nil
 }
 
-func (r *ReconcileLinstorControllerSet) addFinalizer(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) error {
+func (r *ReconcileLinstorController) addFinalizer(ctx context.Context, pcs *piraeusv1alpha1.LinstorController) error {
 	mdutil.AddFinalizer(pcs, linstorControllerFinalizer)
 
 	err := r.client.Update(ctx, pcs)
@@ -566,7 +534,7 @@ func (r *ReconcileLinstorControllerSet) addFinalizer(ctx context.Context, pcs *p
 	return nil
 }
 
-func (r *ReconcileLinstorControllerSet) deleteFinalizer(ctx context.Context, pcs *piraeusv1alpha1.LinstorControllerSet) error {
+func (r *ReconcileLinstorController) deleteFinalizer(ctx context.Context, pcs *piraeusv1alpha1.LinstorController) error {
 	mdutil.DeleteFinalizer(pcs, linstorControllerFinalizer)
 
 	err := r.client.Update(ctx, pcs)
@@ -576,7 +544,7 @@ func (r *ReconcileLinstorControllerSet) deleteFinalizer(ctx context.Context, pcs
 	return nil
 }
 
-func newDeploymentForResource(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1.Deployment {
+func newDeploymentForResource(pcs *piraeusv1alpha1.LinstorController) *appsv1.Deployment {
 	labels := pcsLabels(pcs)
 
 	env := []corev1.EnvVar{
@@ -763,7 +731,7 @@ func newDeploymentForResource(pcs *piraeusv1alpha1.LinstorControllerSet) *appsv1
 	}
 }
 
-func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service {
+func newServiceForPCS(pcs *piraeusv1alpha1.LinstorController) *corev1.Service {
 	port := lc.DefaultHttpPort
 	if pcs.Spec.LinstorHttpsControllerSecret != "" {
 		port = lc.DefaultHttpsPort
@@ -790,7 +758,7 @@ func newServiceForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) *corev1.Service
 	}
 }
 
-func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.ConfigMap, error) {
+func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorController) (*corev1.ConfigMap, error) {
 	dbCertificatePath := ""
 	dbClientCertPath := ""
 	dbClientKeyPath := ""
@@ -847,14 +815,14 @@ func NewConfigMapForPCS(pcs *piraeusv1alpha1.LinstorControllerSet) (*corev1.Conf
 	return cm, nil
 }
 
-func expectedEndpoint(pcs *piraeusv1alpha1.LinstorControllerSet) string {
+func expectedEndpoint(pcs *piraeusv1alpha1.LinstorController) string {
 	serviceName := types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}
 	useHTTPS := pcs.Spec.LinstorHttpsClientSecret != ""
 
 	return lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
 }
 
-func pcsLabels(pcs *piraeusv1alpha1.LinstorControllerSet) map[string]string {
+func pcsLabels(pcs *piraeusv1alpha1.LinstorController) map[string]string {
 	return map[string]string{
 		"app":  pcs.Name,
 		"role": kubeSpec.ControllerRole,
