@@ -10,8 +10,8 @@
       "type": "integer"
     },
     "resources": {
-      "description": "resource requirements for the snapshotter container",
-      "$ref": "https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.18/api/openapi-spec/swagger.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+      "description": "resource requirements for the snapshotter container. See https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "type": "object"
     }
   },
   "required": [

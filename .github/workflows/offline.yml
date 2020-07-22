@@ -1,0 +1,25 @@
+name: test helm deployment in offline environment
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  pull_request:
+jobs:
+  test:
+    # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+    # includes helm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: verify that helm runs offline
+        run: docker run --rm --volume $PWD:/work:ro --volume $(which helm):/usr/local/bin/helm --net=none alpine:latest helm template /work/charts/piraeus
+      - name: verify all pull policies can be set
+        run: |
+          ALL_PULL_POLICIES="$(helm template charts/piraeus | grep -c imagePullPolicy)"
+          CHANGED_PULL_POLICIES="$(helm template charts/piraeus --set global.imagePullPolicy=MyChangedValue | grep -c MyChangedValue)"
+          if [ "${ALL_PULL_POLICIES}" -ne "${CHANGED_PULL_POLICIES}" ] ; then
+            echo "not all pull policies updated!" >&2
+            exit 1
+          fi
