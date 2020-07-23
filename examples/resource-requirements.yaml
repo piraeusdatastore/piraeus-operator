@@ -39,3 +39,10 @@ operator:
       requests:
         cpu: "0.1"
         memory: "300Mi"
+    kernelModuleInjectionResources:
+      limits:
+        cpu: "1.0"
+        memory: "1Gi"
+      requests:
+        cpu: "0.5"
+        memory: "750Mi"
