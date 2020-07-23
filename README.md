@@ -99,7 +99,7 @@ The Helm chart can be configured to use this database instead of deploying an
 etcd cluster by adding the following to the Helm install command:
 
 ```
---set etcd.enabled=false --set "operator.controllerSet.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
+--set etcd.enabled=false --set "operator.controller.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
 ```
 
 ### Image mirror for CN users
@@ -206,9 +206,9 @@ kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --dock
 First you need to create the resource definitions
 
 ```
-kubectl create -f charts/piraeus/crds/operator-controllerset-crd.yaml
-kubectl create -f charts/piraeus/crds/operator-nodeset-crd.yaml
-kubectl create -f charts/piraeus/crds/csinodeinfos.csi.storage.k8s.io.yaml
+kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcsidrivers_crd.yaml
+kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorsatellitesets_crd.yaml
+kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcontrollers_crd.yaml
 ```
 
 Inspect the basic deployment example (examples/piraeus-operator-part-1.yaml), it may be deployed by:
@@ -227,24 +227,7 @@ kubectl create -f examples/piraeus-operator-part-2.yaml
 
 ## Upgrading
 
-While the API version remains at `v1alpha1`, this project does not maintain
-stability of or provide conversion of the Custom Resource Definitions.
-
-If you are using the Helm deployment, you may find that upgrades fail with
-errors similar to the following:
-
-```
-UPGRADE FAILED: cannot patch "piraeus-op-cs" with kind LinstorControllerSet: LinstorControllerSet.piraeus.linbit.com "piraeus-op-cs" is invalid: spec.etcdURL: Required value
-```
-
-The simplest solution in this case is to manually replace the CRD:
-
-```
-kubectl replace -f charts/piraeus/crds/operator-controllerset-crd.yaml
-```
-
-Then continue with the Helm upgrade. Values that are lost during the
-replacement will be set again by Helm.
+Please see the dedicated [UPGRADE document](./UPGRADE.md)
 
 ## License
 

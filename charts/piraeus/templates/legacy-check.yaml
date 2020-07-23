@@ -1,0 +1,10 @@
+{{/*
+Update check to make sure no legacy settings are used
+*/}}
+{{- if .Values.operator.controllerSet -}}
+  {{ fail "Detected use of legacy key 'operator.controllerSet'. Use 'operator.controller' instead" }}
+{{- end -}}
+
+{{- if .Values.operator.nodeSet -}}
+  {{ fail "Detected use of legacy key 'operator.nodeSet'. Use 'operator.satelliteSet' instead" }}
+{{- end -}}

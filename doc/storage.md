@@ -13,11 +13,11 @@ are block devices that:
 * do not contain partition information
 * have more than 1 GiB
 
-Any such device will be prepared according to the value of `operator.nodeSet.automaticStorageType`. Devices are
+Any such device will be prepared according to the value of `operator.satelliteSet.automaticStorageType`. Devices are
 added to a storage pool based on the device name (i.e. all `/dev/nvme1` devices will be part of the pool
 `nvme1`)
 
-The possible values for `operator.nodeSet.automaticStorageType`:
+The possible values for `operator.satelliteSet.automaticStorageType`:
 
 * `None` no automatic set up (default)
 * `LVM` create a LVM (thick) storage pool
@@ -51,13 +51,13 @@ There are two ways to configure storage pools
 
 ### At install time
 
-At install time, by setting the value of `operator.nodeSet.storagePools` when running helm install.
+At install time, by setting the value of `operator.satelliteSet.storagePools` when running helm install.
 
 First create a file with the storage configuration like:
 
 ```yaml
 operator:
-  nodeSet:
+  satelliteSet:
     storagePools:
       lvmPools:
       - name: lvm-thick
