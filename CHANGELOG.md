@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `operator.resources` for operator containers
   * `operator.controller.resources` for LINSTOR controller containers
   * `operator.satelliteSet.resources` for LINSTOR satellite containers
+  * `operator.satelliteSet.kernelModuleInjectionResources` for kernel module injector/builder containers
 * Components deployed by the operator can now run with multiple replicas. Components
   elect a leader, that will take on the actual work as long as it is active. Should one
   pod go down, another replica will take over.

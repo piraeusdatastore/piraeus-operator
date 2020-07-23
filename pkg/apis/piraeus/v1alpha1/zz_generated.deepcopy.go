@@ -569,6 +569,7 @@ func (in *LinstorSatelliteSetSpec) DeepCopyInto(out *LinstorSatelliteSetSpec) {
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	in.KernelModuleInjectionResources.DeepCopyInto(&out.KernelModuleInjectionResources)
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
 		*out = new(v1.Affinity)

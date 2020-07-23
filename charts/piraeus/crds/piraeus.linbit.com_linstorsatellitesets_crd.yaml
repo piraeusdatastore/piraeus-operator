@@ -640,6 +640,26 @@ spec:
               description: kernelModImage is the image (location + tag) for the LINSTOR/DRBD
                 kernel module injector container
               type: string
+            kernelModuleInjectionResources:
+              description: Resource requirements for the kernel module builder/injector
+                container
+              nullable: true
+              properties:
+                limits:
+                  additionalProperties:
+                    type: string
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    type: string
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
             linstorHttpsClientSecret:
               description: 'Name of the secret containing: (a) `ca.pem`: root certificate
                 used to validate HTTPS connections with Linstor (PEM format, without
@@ -653,7 +673,7 @@ spec:
                 the node pods
               type: string
             resources:
-              description: Resource requirements for the LINSTOR satellite pod
+              description: Resource requirements for the LINSTOR satellite container
               nullable: true
               properties:
                 limits:

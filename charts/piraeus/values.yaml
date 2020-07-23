@@ -63,3 +63,4 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
+    kernelModuleInjectionResources: {}

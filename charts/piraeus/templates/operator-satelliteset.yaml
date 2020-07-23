@@ -16,6 +16,7 @@ spec:
   affinity: {{ .Values.operator.satelliteSet.affinity | toJson }}
   tolerations: {{ .Values.operator.satelliteSet.tolerations | toJson}}
   resources: {{ .Values.operator.satelliteSet.resources | toJson }}
+  kernelModuleInjectionResources: {{ .Values.operator.satelliteSet.kernelModuleInjectionResources | toJson }}
   {{- if .Values.operator.satelliteSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.satelliteSet.storagePools | indent 4 }}

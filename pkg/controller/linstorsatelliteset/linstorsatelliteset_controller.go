@@ -896,6 +896,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 					MountPath: kubeSpec.ModulesDir,
 				},
 			},
+			Resources: pns.Spec.KernelModuleInjectionResources,
 		},
 	}
 
