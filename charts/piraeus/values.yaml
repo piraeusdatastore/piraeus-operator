@@ -44,7 +44,7 @@ operator:
   replicas: 1 # <- number of replicas for the operator deployment
   image: quay.io/piraeusdatastore/piraeus-operator:latest
   resources: {}
-  controllerSet:
+  controller:
     controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
     luksSecret: ""
     dbCertSecret: ""
@@ -53,7 +53,7 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
-  nodeSet:
+  satelliteSet:
     drbdKernelModuleInjectionMode: Compile
     satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
     kernelModImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.24

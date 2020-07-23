@@ -4,16 +4,16 @@ metadata:
   name: {{ template "operator.fullname" . }}-cs
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
-  dbConnectionURL:  {{ .Values.operator.controllerSet.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}
-  luksSecret: {{ .Values.operator.controllerSet.luksSecret }}
-  sslSecret: {{ .Values.operator.controllerSet.sslSecret }}
-  dbCertSecret: {{ .Values.operator.controllerSet.dbCertSecret | default "" }}
-  dbUseClientCert: {{ .Values.operator.controllerSet.dbUseClientCert }}
+  dbConnectionURL:  {{ .Values.operator.controller.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}
+  luksSecret: {{ .Values.operator.controller.luksSecret }}
+  sslSecret: {{ .Values.operator.controller.sslSecret }}
+  dbCertSecret: {{ .Values.operator.controller.dbCertSecret | default "" }}
+  dbUseClientCert: {{ .Values.operator.controller.dbUseClientCert }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
-  controllerImage: {{ .Values.operator.controllerSet.controllerImage }}
+  controllerImage: {{ .Values.operator.controller.controllerImage }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
-  affinity: {{ .Values.operator.controllerSet.affinity | toJson }}
-  tolerations: {{ .Values.operator.controllerSet.tolerations | toJson}}
-  resources: {{ .Values.operator.controllerSet.resources | toJson }}
+  affinity: {{ .Values.operator.controller.affinity | toJson }}
+  tolerations: {{ .Values.operator.controller.tolerations | toJson}}
+  resources: {{ .Values.operator.controller.resources | toJson }}

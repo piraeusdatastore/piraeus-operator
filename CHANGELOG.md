@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `csi.resources` for all CSI related containers. for brevity, there is only one setting for ALL CSI containers. They
     are all stateless go process which use the same amount of resources.
   * `operator.resources` for operator containers
-  * `operator.controllerSet.resources` for LINSTOR controller containers
-  * `operator.nodeSet.resources` for LINSTOR satellite containers
+  * `operator.controller.resources` for LINSTOR controller containers
+  * `operator.satelliteSet.resources` for LINSTOR satellite containers
 * Components deployed by the operator can now run with multiple replicas. Components
   elect a leader, that will take on the actual work as long as it is active. Should one
   pod go down, another replica will take over.
@@ -37,23 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Renamed `LinstorNodeSet` to `LinstorSatelliteSet`. This brings the operator in line with other LINSTOR resources.
-  Existing `LinstorNodeSet` resources will automatically be migrated to `LinstorSatelliteSet`. The old resources will
-  not be deleted. You can verify that migration was successful by running the following command:
-  ```
-  $ kubectl get linstornodesets.piraeus.linbit.com -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.ResourceMigrated}{"\t"}{.status.DependantsMigrated}{"\n"}{end}'
-  piraeus-op-ns true    true
-  ```
-  If both values are `true`, migration was successful. The old resource can be removed after migration.
-
+  Existing `LinstorNodeSet` resources will automatically be migrated to `LinstorSatelliteSet`.
 * Renamed `LinstorControllerSet` to `LinstorController`. The old name implied the existence of multiple (separate)
-  controllers. Existing `LinstorControllerSet` resources will automatically be migrated to `LinstorController`. The old
-  resources will not be deleted. You can verify that migration was successful by running the following command:
-  ```
-  $ kubectl get linstorcontrollersets.piraeus.linbit.com -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.ResourceMigrated}{"\t"}{.status.DependantsMigrated}{"\n"}{end}'
-  piraeus-op-cs true    true
-  ```
-  If both values are `true`, migration was successful. The old resource can be removed after migration.
-
+  controllers. Existing `LinstorControllerSet` resources will automatically be migrated to `LinstorController`.
+* Helm values renamed to align with new CRD names:
+  * `operator.controllerSet` to `operator.controller`
+  * `operator.nodeSet` to `operator.satelliteSet`
 * Node scheduling no longer relies on `linstor.linbit.com/piraeus-node` labels. Instead, all CRDs support
   setting pod [affinity] and [tolerations].
   In detail:
@@ -69,26 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * `affinity` affinity passed to the linstor controller pod
     * `tolerations` tolerations passed to the linstor controller pod
 
-    Previously, linstor satellite pods required nodes marked with `linstor.linbit.com/piraeus-node=true`. The new
-    default value does not place this restriction on nodes. To restore the old behaviour, set the following affinity:
-    ```yaml
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: linstor.linbit.com/piraeus-node
-              operator: In
-              values:
-              - "true"
-    ```
-
 [affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 [tolerations]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-
 * Controller is now a Deployment instead of StatefulSet.
-  This means a controller can be re-scheduled more easily should anything happen to the pod/node.
-  Please make sure any deployed StatefulSet for the controller is removed first.
 
 ## [v0.5.0] - 2020-06-29
 

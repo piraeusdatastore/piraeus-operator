@@ -10,7 +10,7 @@ kubernetes secret. The secret has to contain the key `ca.pem` with the PEM encod
 
 The secret can then be passed to the controller by passing the following argument to `helm install`
 ```
---set operator.controllerSet.dbCertSecret=<secret name>
+--set operator.controller.dbCertSecret=<secret name>
 ```
 
 ### Authentication with `etcd` using certificates
@@ -18,7 +18,7 @@ The secret can then be passed to the controller by passing the following argumen
 If you want to use TLS certificates to authenticate with an `etcd` database, you need to set the following option on
 helm install:
 ```
---set operator.controllerSet.dbUseClientCert=true
+--set operator.controller.dbUseClientCert=true
 ```
 
 If this option is active, the secret specified in the above section must contain two additional keys:
@@ -53,7 +53,7 @@ follow these steps:
   ```
 * Pass the names of the created secrets to `helm install`
   ```
-  --set operator.nodeSet.sslSecret=node-secret --set operator.controllerSet.sslSecret=control-secret
+  --set operator.satelliteSet.sslSecret=node-secret --set operator.controller.sslSecret=control-secret
   ```
 
 :warning: It is currently **NOT** possible to change the keystore password. LINSTOR expects the passwords to be
@@ -132,5 +132,5 @@ kubectl create secret generic linstor-pass --from-literal=MASTER_PASSPHRASE=<pas
 On install, add the following arguments to the helm command:
 
 ```
---set operator.controllerSet.luksSecret=linstor-pass
+--set operator.controller.luksSecret=linstor-pass
 ```

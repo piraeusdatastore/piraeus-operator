@@ -4,19 +4,19 @@ metadata:
   name: {{ template "operator.fullname" . }}-ns
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
-  sslSecret: {{ .Values.operator.nodeSet.sslSecret }}
-  drbdKernelModuleInjectionMode: {{ .Values.operator.nodeSet.drbdKernelModuleInjectionMode }}
+  sslSecret: {{ .Values.operator.satelliteSet.sslSecret }}
+  drbdKernelModuleInjectionMode: {{ .Values.operator.satelliteSet.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
-  satelliteImage: {{ .Values.operator.nodeSet.satelliteImage }}
-  kernelModImage: {{ .Values.operator.nodeSet.kernelModImage }}
+  satelliteImage: {{ .Values.operator.satelliteSet.satelliteImage }}
+  kernelModImage: {{ .Values.operator.satelliteSet.kernelModImage }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   controllerEndpoint: {{ template "controller.endpoint" . }}
-  automaticStorageType: {{ .Values.operator.nodeSet.automaticStorageType | default "None" | quote }}
-  affinity: {{ .Values.operator.nodeSet.affinity | toJson }}
-  tolerations: {{ .Values.operator.nodeSet.tolerations | toJson}}
-  resources: {{ .Values.operator.nodeSet.resources | toJson }}
-  {{- if .Values.operator.nodeSet.storagePools }}
+  automaticStorageType: {{ .Values.operator.satelliteSet.automaticStorageType | default "None" | quote }}
+  affinity: {{ .Values.operator.satelliteSet.affinity | toJson }}
+  tolerations: {{ .Values.operator.satelliteSet.tolerations | toJson}}
+  resources: {{ .Values.operator.satelliteSet.resources | toJson }}
+  {{- if .Values.operator.satelliteSet.storagePools }}
   storagePools:
-{{ toYaml .Values.operator.nodeSet.storagePools | indent 4 }}
+{{ toYaml .Values.operator.satelliteSet.storagePools | indent 4 }}
   {{- end }}
