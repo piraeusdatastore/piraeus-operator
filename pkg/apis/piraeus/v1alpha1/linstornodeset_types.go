@@ -27,6 +27,17 @@ import (
 // LinstorNodeSetSpec defines the desired state of LinstorNodeSet
 type LinstorNodeSetSpec struct {
 	LinstorSatelliteSetSpec `json:",inline"`
+
+	// kernelModImage is the image (location + tag) for the LINSTOR/DRBD kernel module injector container
+	// DEPRECATED: use kernelModuleInjectionImage
+	// +optional
+	KernelModImage string `json:"kernelModImage"`
+
+	// drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
+	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
+	// DEPRECATED: use kernelModuleInjectionMode
+	// +optional
+	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 }
 
 // LinstorNodeSetStatus defines the observed state of LinstorNodeSet

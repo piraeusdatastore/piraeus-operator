@@ -5,17 +5,17 @@ metadata:
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   sslSecret: {{ .Values.operator.satelliteSet.sslSecret }}
-  drbdKernelModuleInjectionMode: {{ .Values.operator.satelliteSet.drbdKernelModuleInjectionMode }}
   drbdRepoCred: {{ .Values.drbdRepoCred }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   satelliteImage: {{ .Values.operator.satelliteSet.satelliteImage }}
-  kernelModImage: {{ .Values.operator.satelliteSet.kernelModImage }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   controllerEndpoint: {{ template "controller.endpoint" . }}
   automaticStorageType: {{ .Values.operator.satelliteSet.automaticStorageType | default "None" | quote }}
   affinity: {{ .Values.operator.satelliteSet.affinity | toJson }}
   tolerations: {{ .Values.operator.satelliteSet.tolerations | toJson}}
   resources: {{ .Values.operator.satelliteSet.resources | toJson }}
+  kernelModuleInjectionMode: {{ .Values.operator.satelliteSet.kernelModuleInjectionMode | quote }}
+  kernelModuleInjectionImage: {{ .Values.operator.satelliteSet.kernelModuleInjectionImage | quote }}
   kernelModuleInjectionResources: {{ .Values.operator.satelliteSet.kernelModuleInjectionResources | toJson }}
   {{- if .Values.operator.satelliteSet.storagePools }}
   storagePools:

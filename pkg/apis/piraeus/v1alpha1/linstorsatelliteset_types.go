@@ -39,10 +39,6 @@ type LinstorSatelliteSetSpec struct {
 	// +kubebuilder:validation:Enum=None;LVM;LVMTHIN;ZFS
 	AutomaticStorageType string `json:"automaticStorageType"`
 
-	// drbdKernelModuleInjectionMode selects the source for the DRBD kernel module
-	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
-	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
-
 	// Name of k8s secret that holds the SSL key for a node (called `keystore.jks`) and
 	// the trusted certificates (called `certificates.jks`)
 	// +optional
@@ -59,9 +55,6 @@ type LinstorSatelliteSetSpec struct {
 	// satelliteImage is the image (location + tag) for the LINSTOR satellite container
 	SatelliteImage string `json:"satelliteImage"`
 
-	// kernelModImage is the image (location + tag) for the LINSTOR/DRBD kernel module injector container
-	KernelModImage string `json:"kernelModImage"`
-
 	// Cluster URL of the linstor controller.
 	// If not set, will be determined from the current resource name.
 	// +optional
@@ -71,6 +64,15 @@ type LinstorSatelliteSetSpec struct {
 	// +optional
 	// +nullable
 	Resources corev1.ResourceRequirements `json:"resources"`
+
+	// kernelModuleInjectionImage is the image (location + tag) for the LINSTOR/DRBD kernel module injector
+	// +optional
+	KernelModuleInjectionImage string `json:"kernelModuleInjectionImage"`
+
+	// kernelModuleInjectionMode selects the source for the DRBD kernel module
+	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
+	// +optional
+	KernelModuleInjectionMode KernelModuleInjectionMode `json:"kernelModuleInjectionMode"`
 
 	// Resource requirements for the kernel module builder/injector container
 	// +optional

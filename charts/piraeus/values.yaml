@@ -54,13 +54,13 @@ operator:
     tolerations: []
     resources: {}
   satelliteSet:
-    drbdKernelModuleInjectionMode: Compile
     satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
-    kernelModImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.24
     storagePools: null
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.24
+    kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
