@@ -247,8 +247,8 @@ func checkRequiredSpec(pns *piraeusv1alpha1.LinstorSatelliteSet) error {
 		return fmt.Errorf("satellite Reconcile: missing required parameter satelliteImage: outdated schema")
 	}
 
-	if pns.Spec.KernelModImage == "" {
-		return fmt.Errorf("satellite Reconcile: missing required parameter kernelModImage: outdated schema")
+	if pns.Spec.KernelModuleInjectionImage == "" {
+		return fmt.Errorf("satellite Reconcile: missing required parameter kernelModuleInjectionImage: outdated schema")
 	}
 
 	return nil
@@ -853,7 +853,7 @@ func reconcileSatelliteConfiguration(ctx context.Context, pns *piraeusv1alpha1.L
 func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1alpha1.LinstorSatelliteSet) *apps.DaemonSet {
 	var kernelModHow string
 
-	mode := pns.Spec.DRBDKernelModuleInjectionMode
+	mode := pns.Spec.KernelModuleInjectionMode
 	switch mode {
 	case piraeusv1alpha1.ModuleInjectionNone:
 		log.WithField("drbdKernelModuleInjectionMode", mode).Warnf("using deprecated injection mode: beginning with injector image version 9.0.23, it is recommended to use '%s' instead", piraeusv1alpha1.ModuleInjectionDepsOnly)
@@ -873,8 +873,8 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, pns *piraeusv1al
 
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
-			Name:            "drbd-kernel-module-injector",
-			Image:           pns.Spec.KernelModImage,
+			Name:            "kernel-module-injector",
+			Image:           pns.Spec.KernelModuleInjectionImage,
 			ImagePullPolicy: pns.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			Env: []corev1.EnvVar{

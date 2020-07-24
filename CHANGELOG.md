@@ -62,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 [tolerations]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 * Controller is now a Deployment instead of StatefulSet.
+* Renamed `kernelModImage` to `kernelModuleInjectionImage`
+* Renamed `drbdKernelModuleInjectionMode` to `KernelModuleInjectionMode`
 
 ## [v0.5.0] - 2020-06-29
 

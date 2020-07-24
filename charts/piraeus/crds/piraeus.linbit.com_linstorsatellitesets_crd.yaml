@@ -620,15 +620,6 @@ spec:
               description: Cluster URL of the linstor controller. If not set, will
                 be determined from the current resource name.
               type: string
-            drbdKernelModuleInjectionMode:
-              description: drbdKernelModuleInjectionMode selects the source for the
-                DRBD kernel module
-              enum:
-              - None
-              - Compile
-              - ShippedModules
-              - DepsOnly
-              type: string
             drbdRepoCred:
               description: drbdRepoCred is the name of the kubernetes secret that
                 holds the credential for the DRBD repositories
@@ -636,9 +627,18 @@ spec:
             imagePullPolicy:
               description: Pull policy applied to all pods started from this controller
               type: string
-            kernelModImage:
-              description: kernelModImage is the image (location + tag) for the LINSTOR/DRBD
-                kernel module injector container
+            kernelModuleInjectionImage:
+              description: kernelModuleInjectionImage is the image (location + tag)
+                for the LINSTOR/DRBD kernel module injector
+              type: string
+            kernelModuleInjectionMode:
+              description: kernelModuleInjectionMode selects the source for the DRBD
+                kernel module
+              enum:
+              - None
+              - Compile
+              - ShippedModules
+              - DepsOnly
               type: string
             kernelModuleInjectionResources:
               description: Resource requirements for the kernel module builder/injector
@@ -788,9 +788,7 @@ spec:
               nullable: true
               type: array
           required:
-          - drbdKernelModuleInjectionMode
           - drbdRepoCred
-          - kernelModImage
           - priorityClassName
           - satelliteImage
           type: object

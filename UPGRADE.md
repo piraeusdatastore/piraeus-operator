@@ -60,6 +60,10 @@ an upgrade from v0.5.0.
 [affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 [tolerations]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
+* Other changed helm settings:
+  `drbdKernelModuleInjectionMode`: renamed to `kernelModuleInjectionMode`
+  `kernelModImage`: renamed to `kernelModuleInjectionImage`
+  If old settings are used, Helm will return an error.
 
 # Upgrade between v0.* versions
 

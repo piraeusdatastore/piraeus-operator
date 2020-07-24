@@ -96,6 +96,14 @@ func (r *ReconcileLegacyLinstorNodeSet) Reconcile(request reconcile.Request) (re
 		Status: nodeSet.Status.LinstorSatelliteSetStatus,
 	}
 
+	if satelliteSet.Spec.KernelModuleInjectionImage == "" {
+		satelliteSet.Spec.KernelModuleInjectionImage = nodeSet.Spec.KernelModImage
+	}
+
+	if satelliteSet.Spec.KernelModuleInjectionMode == "" {
+		satelliteSet.Spec.KernelModuleInjectionMode = nodeSet.Spec.DRBDKernelModuleInjectionMode
+	}
+
 	resourceErr := r.Client.Create(ctx, satelliteSet)
 	if errors.IsAlreadyExists(resourceErr) {
 		log.Debug("LinstorSatelliteSet already exists")

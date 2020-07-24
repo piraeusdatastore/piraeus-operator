@@ -621,8 +621,8 @@ spec:
                 be determined from the current resource name.
               type: string
             drbdKernelModuleInjectionMode:
-              description: drbdKernelModuleInjectionMode selects the source for the
-                DRBD kernel module
+              description: 'drbdKernelModuleInjectionMode selects the source for the
+                DRBD kernel module DEPRECATED: use kernelModuleInjectionMode'
               enum:
               - None
               - Compile
@@ -637,8 +637,21 @@ spec:
               description: Pull policy applied to all pods started from this controller
               type: string
             kernelModImage:
-              description: kernelModImage is the image (location + tag) for the LINSTOR/DRBD
-                kernel module injector container
+              description: 'kernelModImage is the image (location + tag) for the LINSTOR/DRBD
+                kernel module injector container DEPRECATED: use kernelModuleInjectionImage'
+              type: string
+            kernelModuleInjectionImage:
+              description: kernelModuleInjectionImage is the image (location + tag)
+                for the LINSTOR/DRBD kernel module injector
+              type: string
+            kernelModuleInjectionMode:
+              description: kernelModuleInjectionMode selects the source for the DRBD
+                kernel module
+              enum:
+              - None
+              - Compile
+              - ShippedModules
+              - DepsOnly
               type: string
             kernelModuleInjectionResources:
               description: Resource requirements for the kernel module builder/injector
@@ -788,9 +801,7 @@ spec:
               nullable: true
               type: array
           required:
-          - drbdKernelModuleInjectionMode
           - drbdRepoCred
-          - kernelModImage
           - priorityClassName
           - satelliteImage
           type: object

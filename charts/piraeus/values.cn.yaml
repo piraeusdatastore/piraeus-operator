@@ -54,13 +54,13 @@ operator:
     tolerations: []
     resources: {}
   satelliteSet:
-    drbdKernelModuleInjectionMode: Compile
     satelliteImage: daocloud.io/piraeus/piraeus-server:v1.7.1
-    kernelModImage: daocloud.io/piraeus/drbd9-bionic:v9.0.24
     storagePools: null
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
+    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.24
+    kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
