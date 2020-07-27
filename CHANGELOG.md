@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* `v1` of all CRDs
 * Central value for controller image pull policy of all pods. Use `--set global.imagePullPolicy=<value>` on
   helm deployment.
 * `charts/piraeus/values.cn.yaml` a set of helm values for faster image download for CN users.

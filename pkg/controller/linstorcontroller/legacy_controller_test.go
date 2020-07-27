@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorcontroller"
 
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
@@ -57,7 +59,7 @@ var (
 	}
 
 	TestControllerStatus = v1alpha1.LinstorControllerStatus{
-		SatelliteStatuses: []*v1alpha1.SatelliteStatus{{NodeStatus: v1alpha1.NodeStatus{NodeName: "example"}}},
+		SatelliteStatuses: []*shared.SatelliteStatus{{NodeStatus: shared.NodeStatus{NodeName: "example"}}},
 		Errors:            []string{},
 	}
 

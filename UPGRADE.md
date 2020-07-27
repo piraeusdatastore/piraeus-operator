@@ -5,6 +5,13 @@ The following document describes how to convert
 Upgrades from v0.* versions to v1.0 are best-effort only. The following guide assumes
 an upgrade from v0.5.0.
 
+* CRDs have been updated and set to version `v1`. You need to replace any existing CRDs with these new ones:
+  ```
+  kubectl replace -f charts/piraeus/crds/piraeus.linbit.com_linstorcontrollers_crd.yaml
+  kubectl replace -f charts/piraeus/crds/piraeus.linbit.com_linstorcsidrivers_crd.yaml
+  kubectl replace -f charts/piraeus/crds/piraeus.linbit.com_linstorsatellitesets_crd.yaml
+  ```
+
 * Renamed `LinstorNodeSet` to `LinstorSatelliteSet`. This brings the operator in line with other LINSTOR resources.
   Existing `LinstorNodeSet` resources will automatically be migrated to `LinstorSatelliteSet`. The old resources will
   not be deleted. You can verify that migration was successful by running the following command:

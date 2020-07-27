@@ -1,5 +1,5 @@
 {{- if .Values.csi.enabled }}
-apiVersion: piraeus.linbit.com/v1alpha1
+apiVersion: piraeus.linbit.com/v1
 kind: LinstorCSIDriver
 metadata:
   name: {{ template "operator.fullname" . }}

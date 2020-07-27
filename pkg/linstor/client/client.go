@@ -10,8 +10,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+
 	lapi "github.com/LINBIT/golinstor/client"
-	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +62,7 @@ type SecretFetcher func(string) (map[string][]byte, error)
 
 // NewHighLevelLinstorClientFromConfig configures a HighLevelClient with an
 // in-cluster url based on service naming convention.
-func NewHighLevelLinstorClientFromConfig(endpoint string, config *piraeusv1alpha1.LinstorClientConfig, secretFetcher SecretFetcher) (*HighLevelClient, error) {
+func NewHighLevelLinstorClientFromConfig(endpoint string, config *shared.LinstorClientConfig, secretFetcher SecretFetcher) (*HighLevelClient, error) {
 	tlsConfig, err := newTLSConfigFromConfig(config, secretFetcher)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create TLSSecret for HTTP client: %w", err)
@@ -93,7 +94,7 @@ func NewHighLevelLinstorClientFromConfig(endpoint string, config *piraeusv1alpha
 }
 
 // Convert an ApiResource (i.e. secret name) into a go tls configration useable for HTTP clients.
-func newTLSConfigFromConfig(cfg *piraeusv1alpha1.LinstorClientConfig, secretFetcher SecretFetcher) (*tls.Config, error) {
+func newTLSConfigFromConfig(cfg *shared.LinstorClientConfig, secretFetcher SecretFetcher) (*tls.Config, error) {
 	if cfg.LinstorHttpsClientSecret == "" {
 		return nil, nil
 	}
@@ -273,7 +274,7 @@ func (c *HighLevelClient) GetAllStorageNodes(ctx context.Context) ([]StorageNode
 }
 
 // Create a client config from an API resource.
-func NewClientConfigForAPIResource(endpoint string, resource *piraeusv1alpha1.LinstorClientConfig) *LinstorClientConfig {
+func NewClientConfigForAPIResource(endpoint string, resource *shared.LinstorClientConfig) *LinstorClientConfig {
 	clientCAPath := ""
 	clientCertPath := ""
 	clientKeyPath := ""
@@ -326,7 +327,7 @@ const (
 
 // Convert a LinstorClientConfig into env variables understood by the CSI plugins and golinstor client
 // See also: https://pkg.go.dev/github.com/LINBIT/golinstor/client?tab=doc#NewClient
-func APIResourceAsEnvVars(endpoint string, resource *piraeusv1alpha1.LinstorClientConfig) []corev1.EnvVar {
+func APIResourceAsEnvVars(endpoint string, resource *shared.LinstorClientConfig) []corev1.EnvVar {
 	env := []corev1.EnvVar{
 		{
 			Name:  "LS_CONTROLLERS",

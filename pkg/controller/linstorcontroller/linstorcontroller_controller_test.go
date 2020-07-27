@@ -4,7 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,20 +14,20 @@ import (
 func TestNewConfigMapForPCS(t *testing.T) {
 	testcases := []struct {
 		name     string
-		spec     *piraeusv1alpha1.LinstorController
+		spec     *piraeusv1.LinstorController
 		expected *corev1.ConfigMap
 	}{
 		{
 			name: "default-settings",
-			spec: &piraeusv1alpha1.LinstorController{
+			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default-ns",
 				},
-				Spec: piraeusv1alpha1.LinstorControllerSpec{
+				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:     "etcd://etcd.svc:5000/",
 					DBCertSecret:        "",
-					LinstorClientConfig: piraeusv1alpha1.LinstorClientConfig{},
+					LinstorClientConfig: shared.LinstorClientConfig{},
 				},
 			},
 			expected: &corev1.ConfigMap{
@@ -59,15 +61,15 @@ controllers = http://test.default-ns.svc:3370
 		},
 		{
 			name: "with-ssl-without-client-cert",
-			spec: &piraeusv1alpha1.LinstorController{
+			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default-ns",
 				},
-				Spec: piraeusv1alpha1.LinstorControllerSpec{
+				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:     "etcd://secure.etcd.svc:443/",
 					DBCertSecret:        "mysecret",
-					LinstorClientConfig: piraeusv1alpha1.LinstorClientConfig{},
+					LinstorClientConfig: shared.LinstorClientConfig{},
 				},
 			},
 			expected: &corev1.ConfigMap{
@@ -102,16 +104,16 @@ controllers = http://test.default-ns.svc:3370
 		},
 		{
 			name: "with-ssl-with-client-cert",
-			spec: &piraeusv1alpha1.LinstorController{
+			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default-ns",
 				},
-				Spec: piraeusv1alpha1.LinstorControllerSpec{
+				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:     "etcd://secure.etcd.svc:443/",
 					DBCertSecret:        "mysecret",
 					DBUseClientCert:     true,
-					LinstorClientConfig: piraeusv1alpha1.LinstorClientConfig{},
+					LinstorClientConfig: shared.LinstorClientConfig{},
 				},
 			},
 			expected: &corev1.ConfigMap{
@@ -148,16 +150,16 @@ controllers = http://test.default-ns.svc:3370
 		},
 		{
 			name: "with-https-auth",
-			spec: &piraeusv1alpha1.LinstorController{
+			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default-ns",
 				},
-				Spec: piraeusv1alpha1.LinstorControllerSpec{
+				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:              "etcd://etcd.svc:5000/",
 					DBCertSecret:                 "",
 					LinstorHttpsControllerSecret: "controller-secret",
-					LinstorClientConfig: piraeusv1alpha1.LinstorClientConfig{
+					LinstorClientConfig: shared.LinstorClientConfig{
 						LinstorHttpsClientSecret: "secret",
 					},
 				},

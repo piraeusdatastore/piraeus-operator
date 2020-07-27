@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,7 +38,7 @@ type LinstorNodeSetSpec struct {
 	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
 	// DEPRECATED: use kernelModuleInjectionMode
 	// +optional
-	DRBDKernelModuleInjectionMode KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
+	DRBDKernelModuleInjectionMode shared.KernelModuleInjectionMode `json:"drbdKernelModuleInjectionMode"`
 }
 
 // LinstorNodeSetStatus defines the observed state of LinstorNodeSet

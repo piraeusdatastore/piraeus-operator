@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1
 
 import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
@@ -127,7 +127,7 @@ type LinstorCSIDriverStatus struct {
 // +kubebuilder:resource:path=linstorcsidrivers,scope=Namespaced
 // +kubebuilder:printcolumn:name="NodeReady",type="boolean",JSONPath=".status.NodeReady"
 // +kubebuilder:printcolumn:name="ControllerReady",type="boolean",JSONPath=".status.ControllerReady"
-// DEPRECATED: use v1
+// +kubebuilder:storageversion
 type LinstorCSIDriver struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -30,7 +30,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -70,7 +70,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource LinstorCSIDriver
-	err = c.Watch(&source.Kind{Type: &piraeusv1alpha1.LinstorCSIDriver{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &piraeusv1.LinstorCSIDriver{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	for _, createdResource := range createdResources {
 		err = c.Watch(&source.Kind{Type: createdResource}, &handler.EnqueueRequestForOwner{
 			IsController: true,
-			OwnerType:    &piraeusv1alpha1.LinstorCSIDriver{},
+			OwnerType:    &piraeusv1.LinstorCSIDriver{},
 		})
 		if err != nil {
 			return err
@@ -115,7 +115,7 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 	reqLogger.Info("Reconciling LinstorCSIDriver")
 
 	// Fetch the LinstorCSIDriver instance
-	csiResource := &piraeusv1alpha1.LinstorCSIDriver{}
+	csiResource := &piraeusv1.LinstorCSIDriver{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, csiResource)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -145,7 +145,7 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 	return reconcile.Result{}, statusErr
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"Name":      csiResource.Name,
 		"Namespace": csiResource.Namespace,
@@ -234,7 +234,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 	return nil
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
 	err := r.reconcileNodeDaemonSet(ctx, csiResource)
 	if err != nil {
 		return err
@@ -253,7 +253,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResour
 	return nil
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver, specError error) error {
+func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver, specError error) error {
 	nodeReady := false
 	controllerReady := false
 
@@ -296,7 +296,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	return err
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"Name":      csiResource.Name,
 		"Namespace": csiResource.Namespace,
@@ -307,7 +307,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, 
 	return r.createOrReplaceWithOwner(ctx, nodeDaemonSet, csiResource)
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"Name":      csiResource.Name,
 		"Namespace": csiResource.Namespace,
@@ -318,7 +318,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Co
 	return r.createOrReplaceWithOwner(ctx, controllerDeployment, csiResource)
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"Name":      csiResource.Name,
 		"Namespace": csiResource.Namespace,
@@ -337,7 +337,7 @@ var (
 	HostPathDirectory             = corev1.HostPathDirectory
 )
 
-func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.DaemonSet {
+func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.DaemonSet {
 	registrationDir := corev1.Volume{
 		Name: "registration-dir",
 		VolumeSource: corev1.VolumeSource{
@@ -489,7 +489,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.
 	}
 }
 
-func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *appsv1.Deployment {
+func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Deployment {
 	const socketDirPath = "/var/lib/csi/sockets/pluginproxy/"
 
 	socketAddress := corev1.EnvVar{
@@ -645,7 +645,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1alpha1.LinstorCSIDriver) *
 	}
 }
 
-func newCSIDriver(csiResource *piraeusv1alpha1.LinstorCSIDriver) *storagev1beta1.CSIDriver {
+func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDriver {
 	// should be const, but required to be var so that we can take the address to get a *bool
 	attachRequired := true
 	podInfoOnMount := true
@@ -663,7 +663,7 @@ func newCSIDriver(csiResource *piraeusv1alpha1.LinstorCSIDriver) *storagev1beta1
 	}
 }
 
-func makeMeta(csiResource *piraeusv1alpha1.LinstorCSIDriver, namePostfix string) metav1.ObjectMeta {
+func makeMeta(csiResource *piraeusv1.LinstorCSIDriver, namePostfix string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      csiResource.Name + namePostfix,
 		Namespace: csiResource.Namespace,
@@ -671,7 +671,7 @@ func makeMeta(csiResource *piraeusv1alpha1.LinstorCSIDriver, namePostfix string)
 	}
 }
 
-func defaultLabels(csiResource *piraeusv1alpha1.LinstorCSIDriver) map[string]string {
+func defaultLabels(csiResource *piraeusv1.LinstorCSIDriver) map[string]string {
 	return map[string]string{
 		"app": csiResource.Name,
 	}
@@ -700,7 +700,7 @@ func (r *ReconcileLinstorCSIDriver) createOrReplace(ctx context.Context, obj run
 // Create a resource at current owning resource scope.
 //
 // Once the owning resource is cleaned up, the created items will be removed as well.
-func (r *ReconcileLinstorCSIDriver) createOrReplaceWithOwner(ctx context.Context, obj GCRuntimeObject, csiResource *piraeusv1alpha1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) createOrReplaceWithOwner(ctx context.Context, obj GCRuntimeObject, csiResource *piraeusv1.LinstorCSIDriver) error {
 	err := controllerutil.SetControllerReference(csiResource, obj, r.scheme)
 	// If it is already owned, we don't treat the SetControllerReference() call as a failure condition
 	if err != nil {
