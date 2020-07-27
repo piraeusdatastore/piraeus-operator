@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1
 
 import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
@@ -106,7 +106,7 @@ type LinstorSatelliteSetStatus struct {
 // LinstorSatelliteSet is the Schema for the linstorsatellitesets API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=linstorsatellitesets,scope=Namespaced
-// DEPRECATED: use v1
+// +kubebuilder:storageversion
 type LinstorSatelliteSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

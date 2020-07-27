@@ -21,7 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+
 	corev1 "k8s.io/api/core/v1"
 
 	lapi "github.com/LINBIT/golinstor/client"
@@ -128,13 +129,13 @@ func TestFilterNode(t *testing.T) {
 func TestNewClientConfigForApiResource(t *testing.T) {
 	testcases := []struct {
 		name           string
-		clientConfig   piraeusv1alpha1.LinstorClientConfig
+		clientConfig   shared.LinstorClientConfig
 		endpoint       string
 		expectedConfig LinstorClientConfig
 	}{
 		{
 			name:         "default",
-			clientConfig: piraeusv1alpha1.LinstorClientConfig{},
+			clientConfig: shared.LinstorClientConfig{},
 			endpoint:     "http://default.test.svc:3370",
 			expectedConfig: LinstorClientConfig{
 				Global: GlobalLinstorClientConfig{
@@ -144,7 +145,7 @@ func TestNewClientConfigForApiResource(t *testing.T) {
 		},
 		{
 			name: "with-https-client-auth",
-			clientConfig: piraeusv1alpha1.LinstorClientConfig{
+			clientConfig: shared.LinstorClientConfig{
 				LinstorHttpsClientSecret: "secret",
 			},
 			endpoint: "https://with-https-client-auth.test.svc:3371",
@@ -220,13 +221,13 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 
 	testcases := []struct {
 		name           string
-		clientConfig   piraeusv1alpha1.LinstorClientConfig
+		clientConfig   shared.LinstorClientConfig
 		endpoint       string
 		expectedConfig []corev1.EnvVar
 	}{
 		{
 			name:         "default",
-			clientConfig: piraeusv1alpha1.LinstorClientConfig{},
+			clientConfig: shared.LinstorClientConfig{},
 			endpoint:     "http://controller.test.svc:3370",
 			expectedConfig: []corev1.EnvVar{
 				expectedHttpControllerVar,
@@ -234,7 +235,7 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 		},
 		{
 			name: "with-https-client-auth",
-			clientConfig: piraeusv1alpha1.LinstorClientConfig{
+			clientConfig: shared.LinstorClientConfig{
 				LinstorHttpsClientSecret: "secret",
 			},
 			endpoint: "https://controller.test.svc:3371",
