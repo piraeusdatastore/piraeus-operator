@@ -42,7 +42,7 @@ linstorHttpsControllerSecret: "" # <- name of secret containing linstor server c
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.io/piraeusdatastore/piraeus-operator:v1.0.0-rc1
+  image: quay.io/piraeusdatastore/piraeus-operator:latest
   resources: {}
   controller:
     controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
