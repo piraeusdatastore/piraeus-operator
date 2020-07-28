@@ -47,7 +47,8 @@ release:
 		exit 1 ; \
 	fi
 	# check that version has expected format
-	@if ! echo -e "$(VERSION)" | grep -qP '^\d+\.\d+\.\d+$$' ; then \
+	# regex taken from https://semver.org/
+	@if ! echo -e "$(VERSION)" | grep -qP '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$$' ; then \
 		echo "version format: <maj>.<min>.<patch>" >&2 ; \
 		exit 1 ; \
 	fi
