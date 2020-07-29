@@ -657,6 +657,11 @@ spec:
               description: priorityClassName is the name of the PriorityClass for
                 the controller pods
               type: string
+            replicas:
+              description: Number of replicas in the controller deployment
+              format: int32
+              nullable: true
+              type: integer
             resources:
               description: Resource requirements for the LINSTOR controller pod
               nullable: true
@@ -676,6 +681,10 @@ spec:
                     value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                   type: object
               type: object
+            serviceAccountName:
+              description: Name of the service account that runs leader elections
+                for linstor
+              type: string
             sslSecret:
               description: Name of k8s secret that holds the SSL key for a node (called
                 `keystore.jks`) and the trusted certificates (called `certificates.jks`)

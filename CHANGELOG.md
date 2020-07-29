@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+* The LINSTOR controller image given in `operator.controller.controllerImage` has to have
+  its entrypoint set to [`k8s-await-election v0.2.0`](https://github.com/LINBIT/k8s-await-election/)
+  or newer. Learn more in the [upgrade guide](./UPGRADE.md#upgrade-from-v10-to-head).
+
 ### Added
 
+* LINSTOR controller can be started with multiple replicas. See [`operator.controller.replicas`](./doc/helm-values.adoc#operatorcontrollerreplicas).
+  NOTE: This requires support from the container. You need `piraeus-server:v1.8.0` or newer.
 * The `pv-hostpath` helper chart automatically sets up permissions for non-root etcd containers.
 * Disable securityContext enforcement by setting `global.setSecurityContext=false`.
 * Add cluster roles to work with OpenShift's SCC system.
@@ -20,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Default values:
+  * `operator.controller.controllerImage`: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
+  * `operator.satelliteSet.satelliteImage`: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
+  * `operator.satelliteSet.kernelModuleInjectionImage`: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.25`
 * linstor-controller no longer starts in a privileged container.
 
 ### Removed

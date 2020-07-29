@@ -19,6 +19,7 @@ package linstorcontroller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -33,6 +34,7 @@ import (
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 
 	"github.com/BurntSushi/toml"
+	awaitelection "github.com/linbit/k8s-await-election/pkg/consts"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -345,14 +347,6 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 		}
 	}
 
-	if len(ourPods.Items) > 1 {
-		log.WithField("#controllerPods", len(ourPods.Items)).Debug("requeue because multiple controller pods are present")
-		return &reconcileutil.TemporaryError{
-			RequeueAfter: time.Minute,
-			Source:       fmt.Errorf("multiple controller pods present"),
-		}
-	}
-
 	return nil
 }
 
@@ -364,14 +358,10 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 	log.Info("reconcile status")
 
 	log.Debug("find active controller pod")
-	pod, err := r.findActiveControllerPod(ctx, pcs)
+
+	controllerName, err := r.findActiveControllerPodName(ctx)
 	if err != nil {
 		log.Warnf("failed to find active controller pod: %v", err)
-	}
-
-	controllerName := ""
-	if pod != nil {
-		controllerName = pod.Name
 	}
 
 	pcs.Status.ControllerStatus = &shared.NodeStatus{
@@ -387,7 +377,7 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 	}
 
 	for _, node := range allNodes {
-		if pod != nil && node.Name == pod.Name {
+		if node.Name == controllerName {
 			pcs.Status.ControllerStatus.RegisteredOnController = true
 		}
 	}
@@ -428,33 +418,28 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 	return r.client.Status().Update(ctx, pcs)
 }
 
-func (r *ReconcileLinstorController) findActiveControllerPod(ctx context.Context, pcs *piraeusv1.LinstorController) (*corev1.Pod, error) {
-	ourPods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
-	err := r.client.List(ctx, ourPods, client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
+func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Context) (string, error) {
+	allNodes, err := r.linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("failed to fetch nodes from linstor: %w", err)
 	}
 
-	// Find the single currently serving pod
-	var candidatePods []corev1.Pod
-	for _, pod := range ourPods.Items {
-		for _, condition := range pod.Status.Conditions {
-			if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
-				candidatePods = append(candidatePods, pod)
-				break
-			}
+	var onlineControllers []*lapi.Node
+
+	for i := range allNodes {
+		node := &allNodes[i]
+
+		registrar, ok := node.Props[kubeSpec.LinstorRegistrationProperty]
+		if ok && registrar == kubeSpec.Name && node.Type == lc.Controller && node.ConnectionStatus == lc.Online {
+			onlineControllers = append(onlineControllers, node)
 		}
 	}
 
-	switch len(candidatePods) {
-	case 1:
-		return &candidatePods[0], nil
-	case 0:
-		return nil, nil
-	default:
-		return nil, fmt.Errorf("expected one controller pod, got multiple: %v", candidatePods)
+	if len(onlineControllers) != 1 {
+		return "", fmt.Errorf("expected one online controller, instead got: %v", onlineControllers)
 	}
+
+	return onlineControllers[0].Name, nil
 }
 
 // finalizeControllerSet returns whether it is finished as well as potentially an error
@@ -553,11 +538,74 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: pcs.Spec.DrbdRepoCred})
 	}
 
+	const healthzPort = 9999
+	port := lc.DefaultHttpPort
+	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+		port = lc.DefaultHttpsPort
+	}
+
+	servicePorts := []corev1.EndpointPort{
+		{Name: pcs.Name, Port: int32(port)},
+	}
+
+	servicePortsJSON, err := json.Marshal(servicePorts)
+	if err != nil {
+		panic(err)
+	}
+
 	env := []corev1.EnvVar{
 		{
 			Name: kubeSpec.JavaOptsName,
 			// Workaround for https://github.com/LINBIT/linstor-server/issues/123
 			Value: "-Djdk.tls.acknowledgeCloseNotify=true",
+		},
+		{
+			Name:  awaitelection.AwaitElectionEnabledKey,
+			Value: "1",
+		},
+		{
+			Name:  awaitelection.AwaitElectionNameKey,
+			Value: "linstor-controller",
+		},
+		{
+			Name:  awaitelection.AwaitElectionLockNameKey,
+			Value: pcs.Name,
+		},
+		{
+			Name:  awaitelection.AwaitElectionLockNamespaceKey,
+			Value: pcs.Namespace,
+		},
+		{
+			Name: awaitelection.AwaitElectionIdentityKey,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		{
+			Name: awaitelection.AwaitElectionPodIP,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.podIP",
+				},
+			},
+		},
+		{
+			Name:  awaitelection.AwaitElectionServiceName,
+			Value: pcs.Name,
+		},
+		{
+			Name:  awaitelection.AwaitElectionServiceNamespace,
+			Value: pcs.Namespace,
+		},
+		{
+			Name:  awaitelection.AwaitElectionServicePortsJson,
+			Value: string(servicePortsJSON),
+		},
+		{
+			Name:  awaitelection.AwaitElectionStatusEndpointKey,
+			Value: fmt.Sprintf(":%d", healthzPort),
 		},
 	}
 
@@ -662,6 +710,17 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		})
 	}
 
+	// This probe should be able to deal with "new" images which start a leader election process,
+	// as well as images without leader election helper
+	livenessProbe := corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/",
+				Port: intstr.FromInt(healthzPort),
+			},
+		},
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pcs.Name + "-controller",
@@ -669,8 +728,8 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
+			Replicas: pcs.Spec.Replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pcs.Name + "-controller",
@@ -678,8 +737,8 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName: pcs.Spec.ServiceAccountName,
 					PriorityClassName:  pcs.Spec.PriorityClassName.GetName(pcs.Namespace),
-					ServiceAccountName: kubeSpec.LinstorControllerServiceAccount,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
@@ -688,39 +747,22 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 							ImagePullPolicy: pcs.Spec.ImagePullPolicy,
 							Ports: []corev1.ContainerPort{
 								{
-									HostPort:      3376,
 									ContainerPort: 3376,
 								},
 								{
-									HostPort:      3377,
 									ContainerPort: 3377,
 								},
 								{
-									HostPort:      lc.DefaultHttpPort,
 									ContainerPort: lc.DefaultHttpPort,
 								},
 								{
-									HostPort:      lc.DefaultHttpsPort,
 									ContainerPort: lc.DefaultHttpsPort,
 								},
 							},
-							VolumeMounts: volumeMounts,
-							Env:          env,
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path: "/",
-										// Http is always enabled (it will redirect to https if configured)
-										Scheme: corev1.URISchemeHTTP,
-										Port:   intstr.FromInt(lc.DefaultHttpPort),
-									},
-								},
-								TimeoutSeconds:      10,
-								PeriodSeconds:       20,
-								FailureThreshold:    10,
-								InitialDelaySeconds: 5,
-							},
-							Resources: pcs.Spec.Resources,
+							VolumeMounts:  volumeMounts,
+							Env:           env,
+							LivenessProbe: &livenessProbe,
+							Resources:     pcs.Spec.Resources,
 						},
 					},
 					Volumes:          volumes,
@@ -745,7 +787,7 @@ func newServiceForPCS(pcs *piraeusv1.LinstorController) *corev1.Service {
 			Namespace: pcs.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: "None",
+			ClusterIP: "",
 			Ports: []corev1.ServicePort{
 				{
 					Name:       pcs.Name,
@@ -754,8 +796,7 @@ func newServiceForPCS(pcs *piraeusv1.LinstorController) *corev1.Service {
 					TargetPort: intstr.FromInt(port),
 				},
 			},
-			Selector: pcsLabels(pcs),
-			Type:     corev1.ServiceTypeClusterIP,
+			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
 }

@@ -1,4 +1,13 @@
-The following document describes how to convert
+# Upgrade from v1.0 to HEAD
+
+* The LINSTOR controller image given in `operator.controller.controllerImage` has to have
+  its entrypoint set to [`k8s-await-election v0.2.0`](https://github.com/LINBIT/k8s-await-election/)
+  or newer. All images starting with `piraeus-server:v1.8.0` meet this requirement.
+
+  Older images will not work, as the `Service` will not automatically pick up on the active pod.
+
+  To upgrade, first update the deployed LINSTOR image to a compatible version, then upgrade the
+  operator.
 
 # Upgrade to v1.0
 

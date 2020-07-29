@@ -238,6 +238,11 @@ func (in *LinstorControllerSpec) DeepCopyInto(out *LinstorControllerSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	out.LinstorClientConfig = in.LinstorClientConfig
 	return
 }

@@ -51,7 +51,7 @@ operator:
   image: quay.io/piraeusdatastore/piraeus-operator:latest
   resources: {}
   controller:
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -59,14 +59,15 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
+    replicas: 1
   satelliteSet:
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
     storagePools: null
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.24
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.25
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
