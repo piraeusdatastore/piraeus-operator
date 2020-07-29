@@ -51,7 +51,7 @@ operator:
   image: daocloud.io/piraeus/piraeus-operator:latest
   resources: {}
   controller:
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.7.1
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.9.0
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -59,14 +59,15 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
+    replicas: 1
   satelliteSet:
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.7.1
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.9.0
     storagePools: null
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.24
+    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.25
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}

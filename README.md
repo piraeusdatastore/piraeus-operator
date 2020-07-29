@@ -115,6 +115,24 @@ this [example chart configuration.](./examples/resource-requirements.yaml)
 
 [resource requests and limits]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 
+### Running multiple replicas
+
+Running multiple replicas of pods is recommended for high availability and fast error recovery.
+The following components can be started with multiple replicas:
+
+* Operator: Set [`operator.replicas`] to the desired number of operator pods.
+* CSI: Set [`csi.controllerReplicas`] to the desired number of CSI Controller pods.
+* Linstor Controller: Set [`operator.controller.replicas`] to the desired number of LINSTOR controller pods.
+* CSI Snapshotter: Set [`csi-snapshotter.replicas`] to the desired number of CSI Snapshot Controller pods.
+* Etcd: Set [`etcd.replicas`] to the desired number of Etcd pods.
+* Stork: Set [`stork.replicas`] to the desired number of both Stork plugin and Stork scheduler pods.
+
+[`operator.replicas`]: ./doc/helm-values.adoc#operatorreplicas
+[`csi.controllerReplicas`]: ./doc/helm-values.adoc#csicontrollerreplicas
+[`operator.controller.replicas`]: ./doc/helm-values.adoc#operatorcontrollerreplicas
+[`csi-snapshotter.replicas`]: ./doc/helm-values.adoc#csi-snapshotterreplicas
+[`etcd.replicas`]: ./doc/helm-values.adoc#etcdreplicas
+[`stork.replicas`]: ./doc/helm-values.adoc#storkreplicas
 
 ### Terminating Helm deployment
 

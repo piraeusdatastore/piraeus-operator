@@ -88,6 +88,15 @@ type LinstorControllerSpec struct {
 	// +nullable
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
+	// Number of replicas in the controller deployment
+	// +optional
+	// +nullable
+	Replicas *int32 `json:"replicas"`
+
+	// Name of the service account that runs leader elections for linstor
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

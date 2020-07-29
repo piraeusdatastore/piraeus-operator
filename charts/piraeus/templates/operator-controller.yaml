@@ -17,3 +17,5 @@ spec:
   affinity: {{ .Values.operator.controller.affinity | toJson }}
   tolerations: {{ .Values.operator.controller.tolerations | toJson}}
   resources: {{ .Values.operator.controller.resources | toJson }}
+  replicas: {{ .Values.operator.controller.replicas }}
+  serviceAccountName: linstor-controller

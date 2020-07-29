@@ -208,7 +208,7 @@ Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-po
 Description:: Affinity settings for controller pods. Can be used to restrict the pods to specific nodes.
 
 === `operator.controller.controllerImage`
-Default:: `quay.io/piraeusdatastore/piraeus-server:v1.7.1`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
 Valid values:: image ref
 Description:: Name of the image to use for the controller.
 
@@ -228,6 +228,11 @@ Description:: Enable to use client certificates when authenticating on the datab
 Default:: `""`
 Valid values:: secret name
 Description:: Name of the secret that contains the master passphrase to use for encrypted volumes. Check link:./security.md#automatically-set-the-passphrase-for-encrypted-volumes[the security guide].
+
+=== `operator.controller.replicas`
+Default:: `1`
+Valid values:: number
+Description:: Number of replicas to use for the Linstor controller.
 
 === `operator.controller.resources`
 Default:: `{}`
@@ -269,7 +274,7 @@ Description::  Automatically create storage pools of the specified type. Check t
 * `ZFS`: create a ZFS based storage pool
 
 === `operator.satelliteSet.kernelModuleInjectionImage`
-Default:: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.24`
+Default:: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.25`
 Valid values:: image ref
 Description:: Name of the image to use for loading kernel modules. This is specific to the nodes host system. Check https://quay.io/organization/piraeusdatastore[the available `drbd9` images]
 
@@ -302,7 +307,7 @@ Description:: Resource requests and limits to apply to the satellite containers.
 Note: at least 750MiB memory is recommended.
 
 === `operator.satelliteSet.satelliteImage`
-Default:: `quay.io/piraeusdatastore/piraeus-server:v1.7.1`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
 Valid values:: image ref
 Description:: Name of the image to use for the satellites.
 
