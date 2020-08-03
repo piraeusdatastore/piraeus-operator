@@ -56,6 +56,7 @@ type LinstorControllerSet struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // LinstorControllerSetList contains a list of LinstorControllerSet
+// DEPRECATED: use LinstorControllerList.
 type LinstorControllerSetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
