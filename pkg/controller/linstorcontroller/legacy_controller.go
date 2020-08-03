@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+
 	piraeusv1alpha1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1alpha1"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
@@ -31,6 +33,17 @@ func addLegacyReconciler(mgr manager.Manager, r reconcile.Reconciler) error {
 	c, err := controller.New("LinstorControllerSet-legacy-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
+	}
+
+	crdCheckCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	controllerSets := &piraeusv1alpha1.LinstorControllerSetList{}
+
+	err = mgr.GetClient().List(crdCheckCtx, controllerSets)
+	if meta.IsNoMatchError(err) {
+		// No CRD found, no legacy resources to reconcile
+		return nil
 	}
 
 	// Watch for changes to primary resource LinstorControllerSet
