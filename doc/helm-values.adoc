@@ -1,0 +1,348 @@
+= Helm Reference Table
+
+== Global Settings
+
+=== `drbdRepoCred`
+
+Default:: `drbdiocred`
+Valid values:: secret name
+Description:: Names a secret containing registry credentials to pull LINSTOR container images.
+
+=== `global.imagePullPolicy`
+Default:: `IfNotPresent`
+Valid values::
+* `""`
+* `Always`
+* `IfNotPresent`
+* `Never`
+Description:: Global pull policy to apply to all images. Can be set to `""` to use kubernetes default behaviour. See https://kubernetes.io/docs/concepts/containers/images/#updating-images[pull policy].
+
+=== `linstorHttpsClientSecret`
+Default:: `""`
+Valid values:: secret name
+Description:: References the secret to use when configuring LINSTOR clients to use HTTPS. Check out link:./security.md#configuring-secure-communications-for-the-linstor-api[the security guide]
+
+=== `linstorHttpsControllerSecret`
+Default:: `""`
+Valid values:: secret name
+Description:: References the secret to use when configuring LINSTOR contoller to use HTTPS. Check out link:./security.md#configuring-secure-communications-for-the-linstor-api[the security guide]
+
+=== `priorityClassName`
+Default:: `""`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass[priority class] name
+Description:: Name of the priority class with which the LINSTOR components should be scheduled.
+
+
+== Operator
+
+=== `operator.image`
+Default:: `quay.io/piraeusdatastore/piraeus-operator:<tag>`
+Valid values:: image ref
+Description:: Image to use for the operator deployment.
+
+Note: prefer to use a pinned version (i.e. `:v1.0.0`) over a rolling tag (i.e. `:latest`). During development, the default value will be `:latest`, on release it will match the release tag.
+
+=== `operator.replicas`
+Default:: `1`
+Valid values:: number
+Description:: Number of replicas of the operator.
+
+=== `operator.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the operator containers.
+
+
+== Cluster Snapshot Controller
+
+=== `csi-snapshotter.enabled`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: Enable deployment of the cluster-wide CSI snapshot controller. Your cluster may already provide this.
+
+=== `csi-snapshotter.image`
+Default:: `quay.io/k8scsi/snapshot-controller:v2.1.0`
+Valid values:: image ref
+Description:: Image to use for the CSI snapshot controller. https://kubernetes-csi.github.io/docs/snapshot-controller.html[csi docs]
+
+=== `csi-snapshotter.replicas`
+Default:: `1`
+Valid values:: number
+Description:: Number of replicas of the CSI snapshot controller.
+
+=== `csi-snapshotter.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the CSI snapshot controller containers.
+
+
+== CSI Driver
+
+=== `csi.controllerAffinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Affinity settings for controller pods. Can be used to pin controller pods to specific nodes.
+
+=== `csi.controllerReplicas`
+Default:: `1`
+Valid values:: number
+Description:: Number of replicas for the LINSTOR CSI controller.
+
+=== `csi.controllerTolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the LINSTOR CSI controller.
+
+=== `csi.csiAttacherImage`
+Default:: `quay.io/k8scsi/csi-attacher:v2.2.0`
+Valid values:: image ref
+Description:: Image to use for LINSTOR CSI's attacher container: https://kubernetes-csi.github.io/docs/external-attacher.html[csi docs]
+
+=== `csi.csiNodeDriverRegistrarImage`
+Default:: `quay.io/k8scsi/csi-node-driver-registrar:v1.3.0`
+Valid values:: image ref
+Description:: Image to use for LINSTOR CSI's node registrar container: https://kubernetes-csi.github.io/docs/node-driver-registrar.html[csi docs]
+
+=== `csi.csiProvisionerImage`
+Default:: `quay.io/k8scsi/csi-provisioner:v1.6.0`
+Valid values:: image ref
+Description:: Image to use for LINSTOR CSI's provision container: https://kubernetes-csi.github.io/docs/external-provisioner.html[csi docs]
+
+=== `csi.csiResizerImage`
+Default:: `quay.io/k8scsi/csi-resizer:v0.5.0`
+Valid values:: image ref
+Description:: Image to use for LINSTOR CSI's resizer container: https://kubernetes-csi.github.io/docs/external-resizer.html[csi docs]
+
+=== `csi.csiSnapshotterImage`
+Default:: `quay.io/k8scsi/csi-snapshotter:v2.1.0`
+Valid values:: image ref
+Description:: Image to use for LINSTOR CSI's snapshotter container: https://kubernetes-csi.github.io/docs/external-snapshotter.html[csi docs]
+
+=== `csi.enabled`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: Enable deployment of the LINSTOR CSI driver.
+
+=== `csi.nodeAffinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Affinity settings for node pods. Can be used to restrict csi pods to specific nodes.
+
+=== `csi.nodeTolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the csi node pods.
+
+=== `csi.pluginImage`
+Default:: `quay.io/piraeusdatastore/piraeus-csi:v0.9.0`
+Valid values:: image ref
+Description:: Image to use for LINSTOR CSI plugin containers (both node and controller). https://github.com/piraeusdatastore/linstor-csi[Project page]
+
+=== `csi.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the CSI driver pods.
+
+Note: This will apply to every container individually, their resource usage is quite similar.
+
+== ETCD
+
+=== `etcd.image.repository`
+Default:: `gcr.io/etcd-development/etcd`
+Valid values:: image name
+Description:: Image name for etcd. Will be joined with `.tag`.
+
+=== `etcd.image.tag`
+Default:: `v3.4.9`
+Valid values:: image tag
+Description:: Image tag for etcd. Will be joined with `.repository`.
+
+=== `etcd.persistentVolume.enabled`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: Use persistent volumes for etcd. Requires private volumes to be available outside of linstor.
+
+=== `etcd.persistentVolume.storage`
+Default:: `1Gi`
+Valid values:: resource unit
+Description:: Size of the volume claim use to store etcd data.
+
+=== `etcd.replicas`
+Default:: `1`
+Valid values:: number
+Description:: number of replicas to use for ETCD. An odd number is preferred.
+
+=== `etcd.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the etcd containers. See https://etcd.io/docs/v3.4.0/faq/#system-requirements[etcd docs]
+
+
+
+== Piraeus Controller
+
+=== `operator.controller.affinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Affinity settings for controller pods. Can be used to restrict the pods to specific nodes.
+
+=== `operator.controller.controllerImage`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.7.1`
+Valid values:: image ref
+Description:: Name of the image to use for the controller.
+
+=== `operator.controller.dbCertSecret`
+Default:: `""`
+Valid values:: secret name
+Description:: Name of the secret that contains the necessary values for securely connecting to the database. Check link:./security.md#secure-communication-with-an-existing-etcd-instance[the security guide].
+
+=== `operator.controller.dbUseClientCert`
+Default:: `False`
+Valid values::
+* `True`
+* `False`
+Description:: Enable to use client certificates when authenticating on the database. Check link:./security.md#authentication-with-etcd-using-certificates[the security guide].
+
+=== `operator.controller.luksSecret`
+Default:: `""`
+Valid values:: secret name
+Description:: Name of the secret that contains the master passphrase to use for encrypted volumes. Check link:./security.md#automatically-set-the-passphrase-for-encrypted-volumes[the security guide].
+
+=== `operator.controller.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the controller containers.
+
+Note: at least 750MiB memory is recommended.
+
+=== `operator.controller.sslSecret`
+Default:: `""`
+Valid values:: secret name
+Description:: Name of the secret to use for secure communication between controller and satellites. Check link:./security.md#configuring-secure-communication-between-linstor-components[the security guide].
+
+=== `operator.controller.tolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the controller pods.
+
+
+== Piraeus Satellites
+
+=== `operator.satelliteSet.affinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Affinity settings for satellite pods. Can be used to restrict the pods to specific nodes.
+
+=== `operator.satelliteSet.automaticStorageType`
+Default::  `None`
+Valid values::
+* `None`
+* `LVM`
+* `LVMTHIN`
+* `ZFS`
+Description::  Automatically create storage pools of the specified type. Check the link:./storage.md#preparing-physical-devices[storage guide].
+
+* `None`: no automatic set up (default)
+* `LVM`: create a LVM (thick) storage pool
+* `LVMTHIN`: create a LVM thin storage pool
+* `ZFS`: create a ZFS based storage pool
+
+=== `operator.satelliteSet.kernelModuleInjectionImage`
+Default:: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.24`
+Valid values:: image ref
+Description:: Name of the image to use for loading kernel modules. This is specific to the nodes host system. Check https://quay.io/organization/piraeusdatastore[the available `drbd9` images]
+
+=== `operator.satelliteSet.kernelModuleInjectionMode`
+Default:: `Compile`
+Valid values::
+* `None`
+* `Compile`
+* `ShippedModules`
+* `DepsOnly`
+Description::  Determine how the required kernel modules are injected in the host kernel
+
+* `None`: disable module injection (deprecated, use `DepsOnly` instead)
+* `Compile`: will compile DRBD from source and load the other modules from the host
+* `ShippedModules`: loads a pre-built DRBD from the container
+* `DepsOnly`: will only load modules from the host without DRBD
+
+=== `operator.satelliteSet.kernelModuleInjectionResources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the kernel module injection init containers.
+
+Note: When using `kernelModuleInjectionMode: Compile`, at least 500MiB of memory is required.
+
+=== `operator.satelliteSet.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the satellite containers.
+
+Note: at least 750MiB memory is recommended.
+
+=== `operator.satelliteSet.satelliteImage`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.7.1`
+Valid values:: image ref
+Description:: Name of the image to use for the satellites.
+
+=== `operator.satelliteSet.sslSecret`
+Default:: `""`
+Valid values:: secret name
+Description:: Name of the secret to use for secure communication between controller and satellites. Check link:./security.md#configuring-secure-communication-between-linstor-components[the security guide].
+
+=== `operator.satelliteSet.storagePools`
+Default:: `None`
+Valid values:: map
+Description:: See the link:./storage.md#configuring-storage-pool-creation[guide on storage pool creation]
+
+=== `operator.satelliteSet.tolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the satellite pods.
+
+
+
+== Stork Scheduler
+
+=== `stork.enabled`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: Enable deployment of stork scheduler
+
+=== `stork.replicas`
+Default:: `1`
+Valid values:: number
+Description:: Number of replicas for both stork plugin and kube-scheduler pods.
+
+=== `stork.schedulerResources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the kube scheduler containers.
+
+=== `stork.schedulerImage`
+Default:: `gcr.io/google_containers/kube-scheduler-amd64`
+Valid values:: image name
+Description:: (Base) name of the kube-scheduler image. Will be joined with `schedulerTag`
+
+=== `stork.schedulerTag`
+Default:: `""`
+Valid values:: image tag
+Description:: Tag of the scheduler image to use. If left empty, will default to the tag matching the kubernetes version.
+
+=== `stork.storkImage`
+Default:: `docker.io/linbit/stork:latest`
+Valid values:: image ref
+Description:: Name of the image to use for the stork plugin
+
+=== `stork.storkResources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the stork containers.
