@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Reference docs for all helm settings. [Link](./doc/helm-values.adoc)
+
 ## [v1.0.0-rc1] - 2020-07-28
 
 ### Added

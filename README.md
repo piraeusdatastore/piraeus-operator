@@ -69,6 +69,8 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
     helm install piraeus-op ./charts/piraeus
     ```
 
+  A full list of all available options to pass to helm can be found [here](./doc/helm-values.adoc).
+
 ### LINSTOR etcd `hostPath` persistence
 
 You can use the included Helm templates to create `hostPath` persistent volumes.

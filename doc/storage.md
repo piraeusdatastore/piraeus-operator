@@ -30,7 +30,7 @@ The piraeus operator installed by helm can be used to create storage pools. Crea
 LinstorNodeSet resource:
 
 ```
-$ kubectl get LinstorNodeSet.piraeus.linbit.com piraeus-op-ns -o yaml                                                                                       [24/1880]
+$ kubectl get LinstorNodeSet.piraeus.linbit.com piraeus-op-ns -o yaml
 kind: LinstorNodeSet
 metadata:
 ..
