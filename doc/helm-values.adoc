@@ -378,7 +378,7 @@ Valid values:: image tag
 Description:: Tag of the scheduler image to use. If left empty, will default to the tag matching the kubernetes version.
 
 === `stork.storkImage`
-Default:: `docker.io/linbit/stork:latest`
+Default:: `docker.io/openstorage/stork:2.5.0`
 Valid values:: image ref
 Description:: Name of the image to use for the stork plugin
 
