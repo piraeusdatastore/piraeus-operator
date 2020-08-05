@@ -196,7 +196,7 @@ spec:
             - --snapshotter=false
             - --cluster-domain-controllers=false
           imagePullPolicy: "IfNotPresent"
-          image: docker.io/linbit/stork:latest
+          image: docker.io/openstorage/stork:2.5.0
           ports:
             - containerPort: 8099
               name: extender

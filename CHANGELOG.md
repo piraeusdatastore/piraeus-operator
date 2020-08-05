@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `operator.controller.controllerImage`: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
   * `operator.satelliteSet.satelliteImage`: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
   * `operator.satelliteSet.kernelModuleInjectionImage`: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.25`
+  * `stork.storkImage`: `docker.io/openstorage/stork:2.5.0`
 * linstor-controller no longer starts in a privileged container.
 
 ### Removed

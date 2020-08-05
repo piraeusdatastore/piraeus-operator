@@ -18,7 +18,7 @@ csi-snapshotter:
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
-  storkImage: docker.io/linbit/stork:latest
+  storkImage: docker.io/openstorage/stork:2.5.0
   schedulerImage: gcr.io/google_containers/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1

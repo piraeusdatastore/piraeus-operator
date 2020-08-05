@@ -18,7 +18,7 @@ csi-snapshotter:
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
-  storkImage: daocloud.io/piraeus/stork:latest
+  storkImage: daocloud.io/piraeus/stork:2.5.0
   schedulerImage: daocloud.io/piraeus/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1
