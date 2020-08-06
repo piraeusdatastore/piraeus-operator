@@ -19,7 +19,7 @@ spec:
       serviceAccountName: piraeus-op
       containers:
         - name: piraeus-operator
-          image: quay.io/piraeusdatastore/piraeus-operator:v1.0.0
+          image: quay.io/piraeusdatastore/piraeus-operator:latest
           imagePullPolicy: "IfNotPresent"
           env:
             - name: WATCH_NAMESPACE
