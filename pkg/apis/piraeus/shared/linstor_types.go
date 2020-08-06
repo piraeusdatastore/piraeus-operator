@@ -68,11 +68,11 @@ func NewStoragePoolStatus(pool *lapi.StoragePool) *StoragePoolStatus {
 
 // StoragePools hold lists of linstor storage pools supported by this operator.
 type StoragePools struct {
-	// LVMPools for LinstorNodeSet to manage.
+	// LVMPools for LinstorSatelliteSet to manage.
 	// +optional
 	// +nullable
 	LVMPools []*StoragePoolLVM `json:"lvmPools"`
-	// LVMThinPools for LinstorNodeSet to manage.
+	// LVMThinPools for LinstorSatelliteSet to manage.
 	// +optional
 	// +nullable
 	LVMThinPools []*StoragePoolLVMThin `json:"lvmThinPools"`
@@ -84,7 +84,7 @@ type StoragePool interface {
 }
 
 // StoragePoolLVM represents LVM storage pool to be managed by a
-// LinstorNodeSet
+// LinstorSatelliteSet
 type StoragePoolLVM struct {
 	// Name of the storage pool.
 	Name string `json:"name"`
@@ -104,7 +104,7 @@ func (s *StoragePoolLVM) ToLinstorStoragePool() lapi.StoragePool {
 }
 
 // StoragePoolLVMThin represents LVM Thin storage pool to be
-// managed by a LinstorNodeSet
+// managed by a LinstorSatelliteSet
 type StoragePoolLVMThin struct {
 	StoragePoolLVM `json:",inline"`
 	// Name of underlying lvm thin volume

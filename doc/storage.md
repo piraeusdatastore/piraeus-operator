@@ -27,11 +27,11 @@ The possible values for `operator.satelliteSet.automaticStorageType`:
 ## Configuring storage pool creation
 
 The piraeus operator installed by helm can be used to create storage pools. Creation is under control of the
-LinstorNodeSet resource:
+LinstorSatelliteSet resource:
 
 ```
-$ kubectl get LinstorNodeSet.piraeus.linbit.com piraeus-op-ns -o yaml
-kind: LinstorNodeSet
+$ kubectl get LinstorSatelliteSet.piraeus.linbit.com piraeus-op-ns -o yaml
+kind: LinstorSatelliteSet
 metadata:
 ..
 spec:
@@ -74,10 +74,10 @@ helm install -f <file> charts/piraeus-op
 ### After install
 
 On a cluster with the operator already configured (i.e. after `helm install`),
-you can edit the nodeset configuration like this:
+you can edit the satelliteset configuration like this:
 
 ```
-$ kubectl edit LinstorNodeSet.piraeus.linbit.com <nodesetname>
+$ kubectl edit LinstorSatelliteSet.piraeus.linbit.com <satellitesetname>
 ```
 
 The storage pool configuration can be updated like in the example above.

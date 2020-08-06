@@ -28,7 +28,7 @@ type LinstorSatelliteSetSpec struct {
 	// priorityClassName is the name of the PriorityClass for the node pods
 	PriorityClassName shared.PriorityClassName `json:"priorityClassName"`
 
-	// StoragePools is a list of StoragePools for LinstorNodeSet to manage.
+	// StoragePools is a list of StoragePools for LinstorSatelliteSet to manage.
 	// +optional
 	// +nullable
 	StoragePools *shared.StoragePools `json:"storagePools"`

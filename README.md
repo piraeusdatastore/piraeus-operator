@@ -140,12 +140,12 @@ to perform some manual steps before deleting a Helm deployment.
 
 2. Delete the LINSTOR controller and satellite resources.
 
-   Deployment of LINSTOR satellite and controller is controlled by the `linstornodeset` and `linstorcontrollerset`
+   Deployment of LINSTOR satellite and controller is controlled by the `linstorsatelliteset` and `linstorcontroller`
    resources. You can delete the resources associated with your deployment using `kubectl`
 
    ```
-   kubectl delete linstorcontrollerset <helm-deploy-name>-cs
-   kubectl delete linstornodeset <helm-deploy-name>-ns
+   kubectl delete linstorsatelliteset <helm-deploy-name>-ns
+   kubectl delete linstorcontroller <helm-deploy-name>-cs
    ```
 
    After a short wait, the controller and satellite pods should terminate. If they continue to run, you can
@@ -160,7 +160,7 @@ to perform some manual steps before deleting a Helm deployment.
    ```
 
    However due to the Helm's current policy, the Custom Resource Definitions named
-   `linstorcontrollerset` and `linstornodeset` will __not__ be deleted by the
+   `linstorcontroller` and `linstorsatelliteset` will __not__ be deleted by the
    command.
 
    More information regarding Helm's current position on CRD's can be found

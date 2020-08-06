@@ -23,7 +23,7 @@ csi:
   resources: *minimal-resources
 operator:
   resources: *minimal-resources
-  controllerSet:
+  controller:
     resources:
       limits:
         cpu: "1.0"
@@ -31,7 +31,7 @@ operator:
       requests:
         cpu: "0.3"
         memory: "500Mi"
-  nodeSet:
+  satelliteSet:
     resources:
       limits:
         cpu: "1.0"
