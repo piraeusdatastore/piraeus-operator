@@ -19,6 +19,7 @@ stork:
   enabled: true
   storkImage: docker.io/linbit/stork:latest
   schedulerImage: gcr.io/google_containers/kube-scheduler-amd64
+  schedulerTag: ""
   replicas: 1
   storkResources: {} # resources requirements for the stork plugin containers
   schedulerResources: {} # resource requirements for the kube-scheduler containers

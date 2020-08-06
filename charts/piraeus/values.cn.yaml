@@ -19,6 +19,7 @@ stork:
   enabled: true
   storkImage: daocloud.io/piraeus/stork:latest
   schedulerImage: daocloud.io/piraeus/kube-scheduler-amd64
+  schedulerTag: ""
   replicas: 1
   storkResources: {} # resources requirements for the stork plugin containers
   schedulerResources: {} # resource requirements for the kube-scheduler containers
