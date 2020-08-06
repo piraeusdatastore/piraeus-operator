@@ -1,0 +1,21 @@
+---
+# Source: piraeus/templates/operator-controller.yaml
+apiVersion: piraeus.linbit.com/v1
+kind: LinstorController
+metadata:
+  name: piraeus-op-cs
+spec:
+  priorityClassName: ""
+  dbConnectionURL:  etcd://piraeus-op-etcd:2379
+  luksSecret: 
+  sslSecret: 
+  dbCertSecret: 
+  dbUseClientCert: false
+  drbdRepoCred: drbdiocred
+  controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
+  imagePullPolicy: "IfNotPresent"
+  linstorHttpsControllerSecret: ""
+  linstorHttpsClientSecret: ""
+  affinity: {}
+  tolerations: []
+  resources: {}

@@ -171,29 +171,7 @@ to perform some manual steps before deleting a Helm deployment.
 ### Configuration
 
 The operator must be deployed within the cluster in order for it to have access
-to the controller endpoint, which is a kubernetes service. See the operator-sdk
-guide on the Operator Framework for more information.
-
-### Etcd
-
-An etcd cluster must be running and reachable to use this operator. By default,
-the controller will try to connect to `piraeus-etcd` on port `2379`
-
-A simple in-memory etcd cluster can be set up using helm:
-
-```
-kubectl create -f examples/etcd-env-vars.yaml
-helm install piraeus-etcd charts/piraeus/charts/etcd --set replicas=3 -f examples/etcd-values.yaml
-```
-
-If you are using Helm 2 and encountering difficulties with the above steps, you
-may need to set RBAC rules for the tiller component of helm:
-
-```
-kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
-```
+to the controller endpoint, which is a kubernetes service.
 
 ### Kubernetes Secret for Repo Access
 
@@ -215,18 +193,14 @@ kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorsatellitesets_cr
 kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcontrollers_crd.yaml
 ```
 
-Inspect the basic deployment example (examples/piraeus-operator-part-1.yaml), it may be deployed by:
+Then, take a look at the files in [`deploy/piraeus`](./deploy/piraeus) and make changes as
+you see fit. For example, you can edit the storage pool configuration by editing
+[`operator-satelliteset.yaml`](deploy/piraeus/templates/operator-satelliteset.yaml)
+like shown in [the storage guide](./doc/storage.md#configuring-storage-pool-creation).
 
-```
-kubectl create -f examples/piraeus-operator-part-1.yaml
-```
-
-Lastly, edit the storage pool configuration in examples/piraeus-operator-part-2.yaml.
-For examples, see [above](#configuring-storage-pool-creation)
 Now you can finally deploy the LINSTOR cluster with:
-
 ```
-kubectl create -f examples/piraeus-operator-part-2.yaml
+kubectl create -Rf deploy/piraeus/
 ```
 
 ## Upgrading
