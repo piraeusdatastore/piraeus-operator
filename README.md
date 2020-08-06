@@ -31,8 +31,10 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 * Prepare the hosts for DRBD deployment. There are several options:
   * Install DRBD directly on the hosts as
     [documented](https://www.linbit.com/drbd-user-guide/users-guide-9-0/#p-build-install-configure).
-  * Install the appropriate kernel headers package for your distribution. Then
-    the operator will compile and load the required modules.
+  * Install the appropriate kernel headers package for your distribution and
+    choose the appropriate
+    [kernel module injector](doc/helm-values.adoc#operatorsatellitesetkernelmoduleinjectionimage).
+    Then the operator will compile and load the required modules.
 
 - If you are deploying with images from private repositories, create
   a kubernetes secret to allow obtaining the images.  This example will create
