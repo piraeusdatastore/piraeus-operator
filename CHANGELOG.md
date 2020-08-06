@@ -8,13 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-* Reference docs for all helm settings. [Link](./doc/helm-values.adoc)
-* `stork.schedulerTag` can override the automatically chosen tag for the `kube-scheduler` image.
-  Previously, the tag always matched the kubernetes release.
-
-## [v1.0.0-rc1] - 2020-07-28
-
-### Added
 
 * `v1` of all CRDs
 * Central value for controller image pull policy of all pods. Use `--set global.imagePullPolicy=<value>` on
@@ -40,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * `snapshot-controller` => set `csi-snapshotter.replicas` to the desired count for cluster-wide CSI snapshot controller
   * `csi-controller` => set `csi.controllerReplicas` to the desired count for the linstor CSI controller
   * `operator` => set `operator.replicas` to have multiple replicas of the operator running
+* Reference docs for all helm settings. [Link](./doc/helm-values.adoc)
+* `stork.schedulerTag` can override the automatically chosen tag for the `kube-scheduler` image.
+  Previously, the tag always matched the kubernetes release.
 
 [resource requirements]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 
@@ -259,7 +255,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial public version with docs
 
-[v1.0.0-rc1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.5.0...v1.0.0-rc1
 [v0.5.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.4.1...v0.5.0
 [v0.4.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.3.0...v0.4.0
@@ -269,4 +264,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v0.2.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.1.4...v0.2.0
 [v0.1.4]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.0.1...v0.1.4
 [v0.0.1]: https://github.com/piraeusdatastore/piraeus-operator/tree/v0.0.1
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.0.0-rc1...HEAD
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v0.5.0...HEAD
