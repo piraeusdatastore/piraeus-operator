@@ -714,15 +714,15 @@ spec:
               nullable: true
               type: string
             storagePools:
-              description: StoragePools is a list of StoragePools for LinstorNodeSet
+              description: StoragePools is a list of StoragePools for LinstorSatelliteSet
                 to manage.
               nullable: true
               properties:
                 lvmPools:
-                  description: LVMPools for LinstorNodeSet to manage.
+                  description: LVMPools for LinstorSatelliteSet to manage.
                   items:
                     description: StoragePoolLVM represents LVM storage pool to be
-                      managed by a LinstorNodeSet
+                      managed by a LinstorSatelliteSet
                     properties:
                       name:
                         description: Name of the storage pool.
@@ -737,10 +737,10 @@ spec:
                   nullable: true
                   type: array
                 lvmThinPools:
-                  description: LVMThinPools for LinstorNodeSet to manage.
+                  description: LVMThinPools for LinstorSatelliteSet to manage.
                   items:
                     description: StoragePoolLVMThin represents LVM Thin storage pool
-                      to be managed by a LinstorNodeSet
+                      to be managed by a LinstorSatelliteSet
                     properties:
                       name:
                         description: Name of the storage pool.
