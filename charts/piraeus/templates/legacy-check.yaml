@@ -14,5 +14,5 @@ Update check to make sure no legacy settings are used
 {{- end -}}
 
 {{- if .Values.operator.satelliteSet.kernelModImage -}}
-  {{ fail "Detected use of legacy key 'operator.satelliteSet.kernelModImage'. Use 'operator.satelliteSet.kernelModImage' instead" }}
+  {{ fail "Detected use of legacy key 'operator.satelliteSet.kernelModImage'. Use 'operator.satelliteSet.kernelModuleInjectionImage' instead" }}
 {{- end -}}
