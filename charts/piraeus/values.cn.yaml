@@ -43,7 +43,7 @@ linstorHttpsControllerSecret: "" # <- name of secret containing linstor server c
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: daocloud.io/piraeus/piraeus-operator:v1.0.0
+  image: daocloud.io/piraeus/piraeus-operator:latest
   resources: {}
   controller:
     controllerImage: daocloud.io/piraeus/piraeus-server:v1.7.1
