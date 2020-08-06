@@ -1,0 +1,24 @@
+---
+# Source: piraeus/charts/etcd/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+metadata:
+  name: piraeus-op-etcd
+  labels:
+    heritage: "Helm"
+    release: "piraeus-op"
+    chart: "etcd-0.7.4"
+    app: etcd
+spec:
+  ports:
+  - port: 2380
+    name: etcd-server
+  - port: 2379
+    name: etcd-client
+  clusterIP: None
+  selector:
+    app: etcd
+    release: "piraeus-op"

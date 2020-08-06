@@ -1,0 +1,14 @@
+---
+# Source: piraeus/templates/csi-node-rbac.yml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-node
+  namespace: default
+---
+# Source: piraeus/templates/csi-node-rbac.yml
+# This YAML file contains all RBAC objects that are necessary to run a
+# CSI controller pod
+#
+# This file was created by looking at the documentation for:
+# node-driver-registrar v1.3.0: https://github.com/kubernetes-csi/node-driver-registrar/tree/v1.3.0#required-permissions

@@ -1,0 +1,27 @@
+---
+# Source: piraeus/templates/operator-csi-driver.yaml
+apiVersion: piraeus.linbit.com/v1
+kind: LinstorCSIDriver
+metadata:
+  name: piraeus-op
+spec:
+  enabled: true
+  imagePullSecret: "drbdiocred"
+  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.9.0"
+  imagePullPolicy: "IfNotPresent"
+  csiControllerServiceAccountName: csi-controller
+  csiNodeServiceAccountName: csi-node
+  csiAttacherImage: "quay.io/k8scsi/csi-attacher:v2.2.0"
+  csiNodeDriverRegistrarImage: "quay.io/k8scsi/csi-node-driver-registrar:v1.3.0"
+  csiProvisionerImage: "quay.io/k8scsi/csi-provisioner:v1.6.0"
+  csiResizerImage: "quay.io/k8scsi/csi-resizer:v0.5.0"
+  csiSnapshotterImage: "quay.io/k8scsi/csi-snapshotter:v2.1.0"
+  linstorHttpsClientSecret: ""
+  priorityClassName: ""
+  controllerReplicas: 1
+  controllerEndpoint: http://piraeus-op-cs.default.svc:3370
+  nodeAffinity: {}
+  nodeTolerations: []
+  controllerAffinity: {}
+  controllerTolerations: []
+  resources: {}

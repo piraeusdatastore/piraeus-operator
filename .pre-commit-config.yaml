@@ -5,6 +5,7 @@ repos:
     rev: v2.4.0
     hooks:
       - id: trailing-whitespace
+        exclude: 'deploy/piraeus/'
       - id: end-of-file-fixer
       - id: check-yaml
         exclude: 'charts/'
@@ -42,3 +43,9 @@ repos:
         files: '^charts/piraeus/values.*\.yaml'
         pass_filenames: false
         entry: make helm-values
+      - id: generate-piraeus-yaml
+        name: generate full yaml deployment from helm templates
+        language: system
+        files: '(^charts/piraeus/.*)|(^deploy/piraeus/.*)'
+        pass_filenames: false
+        entry: make deploy/piraeus

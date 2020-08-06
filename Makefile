@@ -73,6 +73,8 @@ release:
 	# set operator image to tagged version
 	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:v$(VERSION)"
 	yq w -i charts/piraeus/values.cn.yaml operator.image "daocloud.io/piraeus/piraeus-operator:v$(VERSION)"
+	# update full yaml deployment
+	$(MAKE) deploy/piraeus
 	git add --update
 	# commit as current release + tag
 	git commit -aevm "Release v$(VERSION)"
@@ -83,5 +85,13 @@ release:
 	# set operator image back to :latest during development
 	yq w -i charts/piraeus/values.yaml operator.image "quay.io/piraeusdatastore/piraeus-operator:latest"
 	yq w -i charts/piraeus/values.cn.yaml operator.image "daocloud.io/piraeus/piraeus-operator:latest"
+	# reset full yaml deployment
+	$(MAKE) deploy/piraeus
 	# commit begin of new dev cycle
 	git commit -aevm "Prepare next dev cycle"
+
+.PHONY: deploy/piraeus
+deploy/piraeus:
+	rm -rf "$@"
+	mkdir -p "$@"
+	helm template piraeus-op charts/piraeus --output-dir deploy >/dev/null
