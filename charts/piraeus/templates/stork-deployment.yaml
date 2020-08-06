@@ -249,7 +249,7 @@ spec:
             - --policy-configmap-namespace={{ .Release.Namespace }}
             - --leader-elect-resource-name={{ .Release.Name }}-stork-scheduler
             - --leader-elect-resource-namespace={{ .Release.Namespace }}
-          image: "{{ .Values.stork.schedulerImage }}:{{ .Capabilities.KubeVersion }}"
+          image: "{{ .Values.stork.schedulerImage }}:{{ .Values.stork.schedulerTag | default .Capabilities.KubeVersion.Version }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           livenessProbe:
             httpGet:

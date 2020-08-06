@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Reference docs for all helm settings. [Link](./doc/helm-values.adoc)
+* `stork.schedulerTag` can override the automatically chosen tag for the `kube-scheduler` image.
+  Previously, the tag always matched the kubernetes release.
 
 ## [v1.0.0-rc1] - 2020-07-28
 
