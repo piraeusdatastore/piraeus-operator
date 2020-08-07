@@ -67,11 +67,17 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 ### LINSTOR etcd `hostPath` persistence
 
 You can use the included Helm templates to create `hostPath` persistent volumes.
-Create as many PVs as needed to satisfy your configured etcd `replicaCount`
-(default 3).
+Create as many PVs as needed to satisfy your configured etcd `replicas`
+(default 1).
 
 Create the `hostPath` persistent volumes, substituting cluster node names
-accordingly in the `nodes=` option:
+accordingly in the `nodes=` option. For 1 replica:
+
+```
+helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE>}"
+```
+
+For 3 replicas:
 
 ```
 helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE0>,<NODE1>,<NODE2>}"
