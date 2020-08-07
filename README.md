@@ -15,21 +15,6 @@ associated Helm chart:
 * CSI snapshotter
 * Stork scheduler with LINSTOR integration
 
-## Contributing
-
-If you'd like to contribute, please visit https://github.com/piraeusdatastore/piraeus-operator
-and look through the issues to see if there is something you'd like to work on. If
-you'd like to contribute something not in an existing issue, please open a new
-issue beforehand.
-
-If you'd like to report an issue, please use the issues interface in this
-project's github page.
-
-## Building and Development
-
-This project is built using the operator-sdk (version 0.16.0). Please refer to
-the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.16.x).
-
 ## Deployment with Helm v3 Chart
 
 The operator can be deployed with Helm v3 chart in /charts as follows:
@@ -212,6 +197,21 @@ kubectl create -Rf deploy/piraeus/
 ## Upgrading
 
 Please see the dedicated [UPGRADE document](./UPGRADE.md)
+
+## Contributing
+
+If you'd like to contribute, please visit https://github.com/piraeusdatastore/piraeus-operator
+and look through the issues to see if there is something you'd like to work on. If
+you'd like to contribute something not in an existing issue, please open a new
+issue beforehand.
+
+If you'd like to report an issue, please use the issues interface in this
+project's github page.
+
+## Building and Development
+
+This project is built using the operator-sdk (version 0.16.0). Please refer to
+the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.16.x).
 
 ## License
 
