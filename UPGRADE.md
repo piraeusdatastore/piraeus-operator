@@ -74,7 +74,7 @@ an upgrade from v0.5.0.
 
 # Upgrade between v0.* versions
 
-While the API version remains at `v1alpha1`, this project does not maintain
+While the API version was `v1alpha1`, this project did not maintain
 stability of or provide conversion of the Custom Resource Definitions.
 
 If you are using the Helm deployment, you may find that upgrades fail with
