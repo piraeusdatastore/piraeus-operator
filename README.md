@@ -1,16 +1,21 @@
-# Piraeus Operator
-
-This is the initial public alpha for the Piraeus Operator. Currently, it is
-suitable for testing and development.
-
-## Contributing
-
-
 [![Release](https://img.shields.io/github/v/release/piraeusdatastore/piraeus-operator)](https://github.com/piraeusdatastore/piraeus-operator/releases)
 ![](https://github.com/piraeusdatastore/piraeus-operator/workflows/check%20and%20build%20piraeus-operator/badge.svg)
 
-This Operator is currently under heavy development: documentation and examples
-will change frequently. Always use the latest release.
+# Piraeus Operator
+
+The Piraeus Operator manages
+[LINSTOR](https://github.com/LINBIT/linstor-server) clusters in Kubernetes.
+
+All components of the LINSTOR software stack can be managed by the operator and
+associated Helm chart:
+* DRBD
+* etcd cluster for LINSTOR
+* LINSTOR
+* LINSTOR CSI driver
+* CSI snapshotter
+* Stork scheduler with LINSTOR integration
+
+## Contributing
 
 If you'd like to contribute, please visit https://github.com/piraeusdatastore/piraeus-operator
 and look through the issues to see if there is something you'd like to work on. If
