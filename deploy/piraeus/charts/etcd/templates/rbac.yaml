@@ -1,0 +1,11 @@
+---
+# Source: piraeus/charts/etcd/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etcd
+  namespace: default
+---
+# Source: piraeus/charts/etcd/templates/rbac.yaml
+# This YAML file contains all RBAC objects that are necessary to run a
+# etcd

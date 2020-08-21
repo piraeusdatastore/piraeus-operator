@@ -1,0 +1,8 @@
+# This YAML file contains all RBAC objects that are necessary to run a
+# LINSTOR controller pod
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: linstor-controller
+  namespace: {{ .Release.Namespace }}

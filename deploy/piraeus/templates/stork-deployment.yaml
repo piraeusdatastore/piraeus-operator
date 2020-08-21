@@ -207,12 +207,13 @@ spec:
           resources:
             {}
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
             privileged: false
           name: stork
           env:
             - name: LS_CONTROLLERS
               value: http://piraeus-op-cs.default.svc:3370
-      hostPID: false
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -266,14 +267,16 @@ spec:
               port: 10251
             initialDelaySeconds: 15
           name: piraeus-op-stork-scheduler
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            privileged: false
           readinessProbe:
             httpGet:
               path: /healthz
               port: 10251
           resources:
             {}
-          securityContext:
-            privileged: false
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

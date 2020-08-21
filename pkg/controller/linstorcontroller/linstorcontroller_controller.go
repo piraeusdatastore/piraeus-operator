@@ -674,14 +674,14 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					PriorityClassName: pcs.Spec.PriorityClassName.GetName(pcs.Namespace),
+					PriorityClassName:  pcs.Spec.PriorityClassName.GetName(pcs.Namespace),
+					ServiceAccountName: kubeSpec.LinstorControllerServiceAccount,
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
 							Image:           pcs.Spec.ControllerImage,
 							Args:            []string{"startController"}, // Run linstor-controller.
 							ImagePullPolicy: pcs.Spec.ImagePullPolicy,
-							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
 								{
 									HostPort:      3376,

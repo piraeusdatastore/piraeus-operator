@@ -27,6 +27,7 @@ spec:
         chart: "etcd-0.7.4"
         app: etcd
     spec:
+      serviceAccountName: "etcd"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -41,6 +42,10 @@ spec:
       - name: piraeus-op-etcd
         image: "gcr.io/etcd-development/etcd:v3.4.9"
         imagePullPolicy: "IfNotPresent"
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
         ports:
         - containerPort: 2380
           name: peer

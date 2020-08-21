@@ -655,11 +655,12 @@ func newDaemonSetforPNS(pns *piraeusv1.LinstorSatelliteSet, config *corev1.Confi
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					Affinity:          pns.Spec.Affinity,
-					Tolerations:       pns.Spec.Tolerations,
-					HostNetwork:       true, // INFO: Per Roland, set to true
-					DNSPolicy:         corev1.DNSClusterFirstWithHostNet,
-					PriorityClassName: pns.Spec.PriorityClassName.GetName(pns.Namespace),
+					Affinity:           pns.Spec.Affinity,
+					Tolerations:        pns.Spec.Tolerations,
+					HostNetwork:        true, // INFO: Per Roland, set to true
+					DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
+					PriorityClassName:  pns.Spec.PriorityClassName.GetName(pns.Namespace),
+					ServiceAccountName: kubeSpec.LinstorSatelliteServiceAccount,
 					Containers: []corev1.Container{
 						{
 							Name:  "linstor-satellite",

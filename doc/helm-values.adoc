@@ -306,7 +306,27 @@ Default:: `[]`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
 Description:: Tolerations to pass to the satellite pods.
 
+== PSP
 
+=== `psp.privilegedRole`
+Default:: `""`
+Valid values:: role name
+Description:: All service accounts of pods that need to run as privileged containers will be bound to this role.
++
+Currently, two components require this:
++
+- csi-nodes
+- linstor-satellites
++
+They require:
+- running as root (UID 0)
+- running as privileged containers
+- the `SYS_ADMIN` capability
+
+=== `psp.unprivilegedRole`
+Default:: `""`
+Valid values:: role name
+Description:: All service accounts of pods that do not require special privileges will be bound to this role.
 
 == Stork Scheduler
 

@@ -19,6 +19,10 @@ spec:
         - name: piraeus-operator
           image: {{ .Values.operator.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            privileged: false
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

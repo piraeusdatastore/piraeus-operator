@@ -433,9 +433,8 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Args:            []string{"--csi-endpoint=unix://$(CSI_ENDPOINT)", "--node=$(KUBE_NODE_NAME)", "--linstor-endpoint=$(LS_CONTROLLERS)", "--log-level=debug"},
 		Env:             env,
 		SecurityContext: &corev1.SecurityContext{
-			Privileged:               &IsPrivileged,
-			Capabilities:             &corev1.Capabilities{Add: []corev1.Capability{"SYS_ADMIN"}},
-			AllowPrivilegeEscalation: &IsPrivileged,
+			Privileged:   &IsPrivileged,
+			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"SYS_ADMIN"}},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

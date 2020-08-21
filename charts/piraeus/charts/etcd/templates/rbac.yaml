@@ -1,0 +1,8 @@
+# This YAML file contains all RBAC objects that are necessary to run a
+# etcd
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etcd
+  namespace: {{ .Release.Namespace }}

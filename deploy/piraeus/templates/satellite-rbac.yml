@@ -1,0 +1,11 @@
+---
+# Source: piraeus/templates/satellite-rbac.yml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: linstor-satellite
+  namespace: default
+---
+# Source: piraeus/templates/satellite-rbac.yml
+# This YAML file contains all RBAC objects that are necessary to run a
+# LINSTOR satellite pod

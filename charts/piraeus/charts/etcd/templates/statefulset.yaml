@@ -28,6 +28,7 @@ spec:
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         app: {{ template "etcd.name" . }}
     spec:
+      serviceAccountName: "etcd"
 {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
@@ -44,6 +45,10 @@ spec:
       - name: {{ template "etcd.fullname" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          privileged: false
         ports:
         - containerPort: {{ .Values.peerPort }}
           name: peer

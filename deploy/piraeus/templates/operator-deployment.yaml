@@ -21,6 +21,10 @@ spec:
         - name: piraeus-operator
           image: quay.io/piraeusdatastore/piraeus-operator:latest
           imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            privileged: false
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

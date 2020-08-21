@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: etcd-env-vars
-  annotations:
-    "helm.sh/hook": pre-install
-data:
-  ETCD_MAX_TXN_OPS: "1024"
