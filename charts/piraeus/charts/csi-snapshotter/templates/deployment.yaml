@@ -24,6 +24,10 @@ spec:
       serviceAccountName: snapshot-controller
       containers:
         - name: snapshot-controller
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            privileged: false
           image: {{ .Values.image }}
           args:
             - "--v=5"

@@ -64,6 +64,8 @@ const (
 const (
 	SystemNamespace                 = "kube-system"
 	SystemCriticalPriorityClassName = "system-node-critical"
+	LinstorControllerServiceAccount = "linstor-controller"
+	LinstorSatelliteServiceAccount  = "linstor-satellite"
 )
 
 // Shared consts common to container volumes. These need to be vars, so they

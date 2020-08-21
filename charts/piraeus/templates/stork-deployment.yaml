@@ -123,11 +123,12 @@ spec:
           resources:
 {{ .Values.stork.storkResources | toYaml | indent 12}}
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
             privileged: false
           name: stork
           env:
 {{ include "stork.config" . | indent 12 }}
-      hostPID: false
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -257,14 +258,16 @@ spec:
               port: 10251
             initialDelaySeconds: 15
           name: {{ .Release.Name }}-stork-scheduler
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            privileged: false
           readinessProbe:
             httpGet:
               path: /healthz
               port: 10251
           resources:
 {{ .Values.stork.schedulerResources | toYaml | indent 12}}
-          securityContext:
-            privileged: false
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

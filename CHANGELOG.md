@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* All pods use a dedicated service account to allow for fine-grained permission control.
+* The new [helm section `psp.*`](./doc/helm-values.adoc#psp) can automatically configure the ServiceAccount
+  of all components to use the appropriate [PSP](https://kubernetes.io/docs/concepts/policy/pod-security-policy/) roles.
+
+### Changed
+
+* linstor-controller no longer starts in a privileged container.
+
 ## [v1.0.0] - 2020-08-06
 
 ### Added
