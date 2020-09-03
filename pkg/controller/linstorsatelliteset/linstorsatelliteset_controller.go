@@ -130,11 +130,6 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 
 	log.Debug("check if all required fields are filled")
 
-	err = checkRequiredSpec(pns)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	err = r.reconcileResource(ctx, pns)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -238,22 +233,6 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 	}).Info("satellite Reconcile: reconcile loop end")
 
 	return result, err
-}
-
-func checkRequiredSpec(pns *piraeusv1.LinstorSatelliteSet) error {
-	if pns.Spec.DrbdRepoCred == "" {
-		return fmt.Errorf("satellite Reconcile: missing required parameter drbdRepoCred: outdated schema")
-	}
-
-	if pns.Spec.SatelliteImage == "" {
-		return fmt.Errorf("satellite Reconcile: missing required parameter satelliteImage: outdated schema")
-	}
-
-	if pns.Spec.KernelModuleInjectionImage == "" {
-		return fmt.Errorf("satellite Reconcile: missing required parameter kernelModuleInjectionImage: outdated schema")
-	}
-
-	return nil
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileResource(ctx context.Context, pns *piraeusv1.LinstorSatelliteSet) error {
@@ -640,6 +619,11 @@ func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, nodeS
 func newDaemonSetforPNS(pns *piraeusv1.LinstorSatelliteSet, config *corev1.ConfigMap) *apps.DaemonSet {
 	labels := pnsLabels(pns)
 
+	var pullSecrets []corev1.LocalObjectReference
+	if pns.Spec.DrbdRepoCred != "" {
+		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: pns.Spec.DrbdRepoCred})
+	}
+
 	ds := &apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pns.Name + "-node",
@@ -747,11 +731,7 @@ func newDaemonSetforPNS(pns *piraeusv1.LinstorSatelliteSet, config *corev1.Confi
 							},
 						},
 					},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{
-							Name: pns.Spec.DrbdRepoCred,
-						},
-					},
+					ImagePullSecrets: pullSecrets,
 				},
 			},
 		},

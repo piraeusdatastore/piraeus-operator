@@ -395,6 +395,11 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		kubeNodeName,
 	}
 
+	var pullSecrets []corev1.LocalObjectReference
+	if csiResource.Spec.ImagePullSecret != "" {
+		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: csiResource.Spec.ImagePullSecret})
+	}
+
 	env = append(env, linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)...)
 
 	driverRegistrar := corev1.Container{
@@ -475,13 +480,11 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 						podsMountDir,
 						registrationDir,
 					},
-					HostNetwork: true,
-					DNSPolicy:   corev1.DNSClusterFirstWithHostNet,
-					ImagePullSecrets: []corev1.LocalObjectReference{{
-						Name: csiResource.Spec.ImagePullSecret,
-					}},
-					Affinity:    csiResource.Spec.NodeAffinity,
-					Tolerations: csiResource.Spec.NodeTolerations,
+					HostNetwork:      true,
+					DNSPolicy:        corev1.DNSClusterFirstWithHostNet,
+					ImagePullSecrets: pullSecrets,
+					Affinity:         csiResource.Spec.NodeAffinity,
+					Tolerations:      csiResource.Spec.NodeTolerations,
 				},
 			},
 		},
@@ -511,6 +514,11 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
+	}
+
+	var pullSecrets []corev1.LocalObjectReference
+	if csiResource.Spec.ImagePullSecret != "" {
+		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: csiResource.Spec.ImagePullSecret})
 	}
 
 	linstorEnvVars := linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)
@@ -632,12 +640,10 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 						csiResizer,
 						linstorPlugin,
 					},
-					ImagePullSecrets: []corev1.LocalObjectReference{{
-						Name: csiResource.Spec.ImagePullSecret,
-					}},
-					Volumes:     []corev1.Volume{socketVolume},
-					Affinity:    csiResource.Spec.ControllerAffinity,
-					Tolerations: csiResource.Spec.ControllerTolerations,
+					ImagePullSecrets: pullSecrets,
+					Volumes:          []corev1.Volume{socketVolume},
+					Affinity:         csiResource.Spec.ControllerAffinity,
+					Tolerations:      csiResource.Spec.ControllerTolerations,
 				},
 			},
 		},

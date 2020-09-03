@@ -9,7 +9,7 @@ spec:
   sslSecret: {{ .Values.operator.controller.sslSecret }}
   dbCertSecret: {{ .Values.operator.controller.dbCertSecret | default "" }}
   dbUseClientCert: {{ .Values.operator.controller.dbUseClientCert }}
-  drbdRepoCred: {{ .Values.drbdRepoCred }}
+  drbdRepoCred: {{ .Values.drbdRepoCred | quote }}
   controllerImage: {{ .Values.operator.controller.controllerImage }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}

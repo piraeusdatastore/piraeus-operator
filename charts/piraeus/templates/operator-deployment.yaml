@@ -36,5 +36,7 @@ spec:
               value: "piraeus-operator"
           resources:
 {{ .Values.operator.resources | toYaml | indent 12}}
+{{- if .Values.drbdRepoCred }}
       imagePullSecrets:
-      - name: {{ .Values.drbdRepoCred }}
+        - name: {{ .Values.drbdRepoCred | quote }}
+{{- end }}

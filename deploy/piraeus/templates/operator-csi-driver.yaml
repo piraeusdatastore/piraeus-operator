@@ -6,7 +6,7 @@ metadata:
   name: piraeus-op
 spec:
   enabled: true
-  imagePullSecret: "drbdiocred"
+  imagePullSecret: ""
   linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.9.0"
   imagePullPolicy: "IfNotPresent"
   csiControllerServiceAccountName: csi-controller
