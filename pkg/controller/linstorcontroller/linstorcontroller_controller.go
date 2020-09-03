@@ -128,18 +128,6 @@ func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (recon
 		controllerResource.Status.SatelliteStatuses = make([]*shared.SatelliteStatus, 0)
 	}
 
-	if controllerResource.Spec.DrbdRepoCred == "" {
-		return reconcile.Result{}, fmt.Errorf("controller Reconcile: missing required parameter drbdRepoCred: outdated schema")
-	}
-
-	if controllerResource.Spec.ControllerImage == "" {
-		return reconcile.Result{}, fmt.Errorf("controller Reconcile: missing required parameter controllerImage: outdated schema")
-	}
-
-	if controllerResource.Spec.DBConnectionURL == "" {
-		return reconcile.Result{}, fmt.Errorf("controller Reconcile: missing required parameter dbConnectionURL: outdated schema")
-	}
-
 	log.Info("reconciling LinstorController")
 
 	getSecret := func(secretName string) (map[string][]byte, error) {
@@ -549,6 +537,11 @@ func (r *ReconcileLinstorController) deleteFinalizer(ctx context.Context, pcs *p
 func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployment {
 	labels := pcsLabels(pcs)
 
+	var pullSecrets []corev1.LocalObjectReference
+	if pcs.Spec.DrbdRepoCred != "" {
+		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: pcs.Spec.DrbdRepoCred})
+	}
+
 	env := []corev1.EnvVar{
 		{
 			Name: kubeSpec.JavaOptsName,
@@ -719,14 +712,10 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 							Resources: pcs.Spec.Resources,
 						},
 					},
-					Volumes: volumes,
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{
-							Name: pcs.Spec.DrbdRepoCred,
-						},
-					},
-					Affinity:    pcs.Spec.Affinity,
-					Tolerations: pcs.Spec.Tolerations,
+					Volumes:          volumes,
+					ImagePullSecrets: pullSecrets,
+					Affinity:         pcs.Spec.Affinity,
+					Tolerations:      pcs.Spec.Tolerations,
 				},
 			},
 		},

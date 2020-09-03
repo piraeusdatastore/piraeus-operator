@@ -39,10 +39,5 @@ func Add(mgr manager.Manager) error {
 		return err
 	}
 
-	err = addLegacyReconciler(mgr, newLegacyReconciler(mgr))
-	if err != nil {
-		return err
-	}
-
 	return err
 }

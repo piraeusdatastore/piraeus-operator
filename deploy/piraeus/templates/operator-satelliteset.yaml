@@ -7,7 +7,7 @@ metadata:
 spec:
   priorityClassName: ""
   sslSecret: 
-  drbdRepoCred: drbdiocred
+  drbdRepoCred: ""
   imagePullPolicy: "IfNotPresent"
   satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.7.1
   linstorHttpsClientSecret: ""

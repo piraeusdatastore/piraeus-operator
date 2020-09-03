@@ -5,7 +5,7 @@ metadata:
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   sslSecret: {{ .Values.operator.satelliteSet.sslSecret }}
-  drbdRepoCred: {{ .Values.drbdRepoCred }}
+  drbdRepoCred: {{ .Values.drbdRepoCred | quote }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   satelliteImage: {{ .Values.operator.satelliteSet.satelliteImage }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}

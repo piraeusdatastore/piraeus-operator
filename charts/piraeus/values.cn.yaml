@@ -38,7 +38,7 @@ csi:
   controllerTolerations: []
   resources: {}
 priorityClassName: ""
-drbdRepoCred: drbdiocred # <- Specify the kubernetes secret name here
+drbdRepoCred: "" # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: "" # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
 psp:

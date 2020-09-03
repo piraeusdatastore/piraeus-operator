@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * linstor-controller no longer starts in a privileged container.
 
+### Removed
+
+* legacy CRDs (LinstorControllerSet, LinstorNodeSet) have been removed.
+* `v1alpha` CRD versions have been removed.
+* default pull secret `drbdiocred` removed. To keep using it, use `--set drbdRepoCred=drbdiocred`.
+
 ## [v1.0.0] - 2020-08-06
 
 ### Added

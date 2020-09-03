@@ -4,7 +4,7 @@
 
 === `drbdRepoCred`
 
-Default:: `drbdiocred`
+Default:: `""`
 Valid values:: secret name
 Description:: Names a secret containing registry credentials to pull LINSTOR container images.
 

@@ -28,7 +28,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
     Then the operator will compile and load the required modules.
 
 - If you are deploying with images from private repositories, create
-  a kubernetes secret to allow obtaining the images.  This example will create
+  a kubernetes secret to allow obtaining the images. This example will create
   a secret named `drbdiocred`:
 
     ```
@@ -36,7 +36,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
     ```
 
     The name of this secret must match the one specified in the Helm values, by
-    default `drbdiocred`.
+    passing `--set drbdRepoCred=drbdiocred` to helm.
 
 * Configure storage for the LINSTOR etcd instance.
   There are various options for configuring the etcd instance for LINSTOR:

@@ -38,5 +38,3 @@ spec:
               value: "piraeus-operator"
           resources:
             {}
-      imagePullSecrets:
-      - name: drbdiocred
