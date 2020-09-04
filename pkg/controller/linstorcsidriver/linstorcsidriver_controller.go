@@ -22,6 +22,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+
 	linstorClient "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -114,9 +117,12 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 	})
 	reqLogger.Info("Reconciling LinstorCSIDriver")
 
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
 	// Fetch the LinstorCSIDriver instance
 	csiResource := &piraeusv1.LinstorCSIDriver{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, csiResource)
+	err := r.client.Get(ctx, request.NamespacedName, csiResource)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -128,7 +134,23 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	reqLogger.Debug("reconcile spec with env")
+
+	specs := []reconcileutil.EnvSpec{
+		{Env: kubeSpec.ImageCSIPluginEnv, Target: &csiResource.Spec.LinstorPluginImage},
+		{Env: kubeSpec.ImageCSIAttacherEnv, Target: &csiResource.Spec.CSIAttacherImage},
+		{Env: kubeSpec.ImageCSINodeRegistrarEnv, Target: &csiResource.Spec.CSINodeDriverRegistrarImage},
+		{Env: kubeSpec.ImageCSIProvisionerEnv, Target: &csiResource.Spec.CSIProvisionerImage},
+		{Env: kubeSpec.ImageCSIResizerEnv, Target: &csiResource.Spec.CSIResizerImage},
+		{Env: kubeSpec.ImageCSISnapshotterEnv, Target: &csiResource.Spec.CSISnapshotterImage},
+	}
+
+	err = reconcileutil.UpdateFromEnv(ctx, r.client, csiResource, specs...)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	reqLogger.Debug("reconcile spec with resources")
 
 	resourceErr := r.reconcileResource(ctx, csiResource)
 	if resourceErr != nil {
