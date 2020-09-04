@@ -128,6 +128,18 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 		return reconcile.Result{}, err
 	}
 
+	log.Debug("reconcile spec with env")
+
+	specs := []reconcileutil.EnvSpec{
+		{Env: kubeSpec.ImageLinstorSatelliteEnv, Target: &pns.Spec.SatelliteImage},
+		{Env: kubeSpec.ImageKernelModuleInjectionEnv, Target: &pns.Spec.KernelModuleInjectionImage},
+	}
+
+	err = reconcileutil.UpdateFromEnv(ctx, r.client, pns, specs...)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	log.Debug("check if all required fields are filled")
 
 	err = r.reconcileResource(ctx, pns)

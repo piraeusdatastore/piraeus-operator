@@ -128,6 +128,17 @@ func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (recon
 		controllerResource.Status.SatelliteStatuses = make([]*shared.SatelliteStatus, 0)
 	}
 
+	log.Info("reconcile spec with env")
+
+	specs := []reconcileutil.EnvSpec{
+		{Env: kubeSpec.ImageLinstorControllerEnv, Target: &controllerResource.Spec.ControllerImage},
+	}
+
+	err = reconcileutil.UpdateFromEnv(ctx, r.client, controllerResource, specs...)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	log.Info("reconciling LinstorController")
 
 	getSecret := func(secretName string) (map[string][]byte, error) {

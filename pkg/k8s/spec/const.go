@@ -68,6 +68,19 @@ const (
 	LinstorSatelliteServiceAccount  = "linstor-satellite"
 )
 
+// ocp: special environment variables for certified operators
+const (
+	ImageLinstorControllerEnv     = "RELATED_IMAGE_LINSTOR_CONTROLLER"
+	ImageLinstorSatelliteEnv      = "RELATED_IMAGE_LINSTOR_SATELLITE"
+	ImageKernelModuleInjectionEnv = "RELATED_IMAGE_KERNEL_MODULE_INJECTION"
+	ImageCSIPluginEnv             = "RELATED_IMAGE_CSI_PLUGIN"
+	ImageCSIAttacherEnv           = "RELATED_IMAGE_CSI_ATTACHER"
+	ImageCSINodeRegistrarEnv      = "RELATED_IMAGE_CSI_NODE_REGISTRAR"
+	ImageCSIProvisionerEnv        = "RELATED_IMAGE_CSI_PROVISIONER"
+	ImageCSISnapshotterEnv        = "RELATED_IMAGE_CSI_SNAPSHOTTER"
+	ImageCSIResizerEnv            = "RELATED_IMAGE_CSI_RESIZER"
+)
+
 // Shared consts common to container volumes. These need to be vars, so they
 // are addressible.
 var (
