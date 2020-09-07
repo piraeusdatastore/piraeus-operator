@@ -683,6 +683,10 @@ spec:
             csiSnapshotterImage:
               description: Name of the CSI external snapshotter image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html
               type: string
+            enableTopology:
+              description: Enable CSI topology feature to control volume accessibility
+                on cluster nodes
+              type: boolean
             imagePullPolicy:
               description: Pull policy applied to all pods started from this controller
               type: string

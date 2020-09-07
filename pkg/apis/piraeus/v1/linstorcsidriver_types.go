@@ -105,6 +105,10 @@ type LinstorCSIDriverSpec struct {
 	// +nullable
 	ControllerTolerations []corev1.Toleration `json:"controllerTolerations"`
 
+	// Enable CSI topology feature to control volume accessibility on cluster nodes
+	// +optional
+	EnableTopology bool `json:"enableTopology"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

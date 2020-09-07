@@ -19,6 +19,7 @@ package linstorcsidriver
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -553,7 +554,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--provisioner=linstor.csi.linbit.com",
 			"--csi-address=$(ADDRESS)",
 			"--v=5",
-			"--feature-gates=Topology=false",
+			fmt.Sprintf("--feature-gates=Topology=%t", csiResource.Spec.EnableTopology),
 			"--connection-timeout=4m",
 			"--enable-leader-election=true",
 			"--leader-election-type=leases",

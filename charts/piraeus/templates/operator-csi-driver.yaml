@@ -23,5 +23,6 @@ spec:
   nodeTolerations: {{ .Values.csi.nodeTolerations | toJson}}
   controllerAffinity: {{ .Values.csi.controllerAffinity | toJson }}
   controllerTolerations: {{ .Values.csi.controllerTolerations | toJson}}
+  enableTopology: {{ .Values.csi.enableTopology }}
   resources: {{ .Values.csi.resources | toJson }}
   {{- end }}

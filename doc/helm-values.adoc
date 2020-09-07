@@ -127,6 +127,14 @@ Valid values::
 * `False`
 Description:: Enable deployment of the LINSTOR CSI driver.
 
+=== `csi.enableTopology`
+Default:: `False`
+Value values::
+* `True`
+* `False`
+Description:: Enable the CSI Topology feature. This feature ensures that pods are always assigned to nodes that can
+access persistent volumes. This is especially important for volumes without a networking layer (DRBD).
+
 === `csi.nodeAffinity`
 Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
