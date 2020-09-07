@@ -24,4 +24,5 @@ spec:
   nodeTolerations: []
   controllerAffinity: {}
   controllerTolerations: []
+  enableTopology: false
   resources: {}

@@ -36,6 +36,7 @@ csi:
   nodeTolerations: []
   controllerAffinity: {}
   controllerTolerations: []
+  enableTopology: false
   resources: {}
 priorityClassName: ""
 drbdRepoCred: "" # <- Specify the kubernetes secret name here
