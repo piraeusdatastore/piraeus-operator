@@ -17,6 +17,13 @@ Valid values::
 * `Never`
 Description:: Global pull policy to apply to all images. Can be set to `""` to use kubernetes default behaviour. See https://kubernetes.io/docs/concepts/containers/images/#updating-images[pull policy].
 
+=== `global.setSecurityContext`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: If true, all non-privileged containers start with a fixed UID of 1000 and GID of 1000.
+
 === `linstorHttpsClientSecret`
 Default:: `""`
 Valid values:: secret name

@@ -79,3 +79,13 @@ Environment to pass to stork
       key: ca.pem
 {{- end -}}
 {{- end -}}
+{{/*
+Sets the default security context for all pods
+*/}}
+{{- define "operator.securitycontext" -}}
+{{- if .Values.global.setSecurityContext -}}
+runAsUser: 1000
+runAsGroup: 1000
+privileged: false
+{{- end -}}
+{{- end -}}

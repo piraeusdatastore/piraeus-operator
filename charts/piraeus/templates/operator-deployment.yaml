@@ -20,9 +20,7 @@ spec:
           image: {{ .Values.operator.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            privileged: false
+{{ include "operator.securitycontext" . | indent 12 }}
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

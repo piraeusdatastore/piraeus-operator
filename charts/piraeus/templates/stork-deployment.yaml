@@ -123,9 +123,7 @@ spec:
           resources:
 {{ .Values.stork.storkResources | toYaml | indent 12}}
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            privileged: false
+{{ include "operator.securitycontext" . | indent 12 }}
           name: stork
           env:
 {{ include "stork.config" . | indent 12 }}
@@ -259,9 +257,7 @@ spec:
             initialDelaySeconds: 15
           name: {{ .Release.Name }}-stork-scheduler
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            privileged: false
+{{ include "operator.securitycontext" . | indent 12 }}
           readinessProbe:
             httpGet:
               path: /healthz
