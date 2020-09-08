@@ -1,5 +1,6 @@
 global:
   imagePullPolicy: IfNotPresent # empty pull policy means k8s default is used ("always" if tag == ":latest", "ifnotpresent" else)
+  setSecurityContext: true # Force non-privileged containers to run as non-root users
 # Dependency charts
 etcd:
   persistentVolume:

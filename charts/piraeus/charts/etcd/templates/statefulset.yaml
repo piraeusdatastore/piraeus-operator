@@ -46,9 +46,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
         securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          privileged: false
+{{ include "operator.securitycontext" . | indent 10 }}
         ports:
         - containerPort: {{ .Values.peerPort }}
           name: peer

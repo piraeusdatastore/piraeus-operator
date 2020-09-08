@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Disable securityContext enforcement by setting `global.setSecurityContext=false`.
+* Add cluster roles to work with OpenShift's SCC system.
 * Control volume placement and accessibility by using CSIs Topology feature. Controlled by setting
   [`csi.enableTopology`](./doc/helm-values.adoc#csienabletopology).
 * All pods use a dedicated service account to allow for fine-grained permission control.
