@@ -11,7 +11,8 @@ spec:
   accessModes:
   - ReadWriteOnce
   hostPath:
-    path: {{ required "A valid .Values.size entry required!" $.Values.path }}
+    path: {{ required "A valid .Values.path entry required!" $.Values.path }}
+    type: DirectoryOrCreate
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -20,5 +21,42 @@ spec:
           operator: In
           values:
           - {{ . }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: {{ $.Release.Service | quote }}
+    app.kubernetes.io/instance: {{ $.Release.Name | quote }}
+    app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+    helm.sh/chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded
+  name: {{ $.Release.Name }}-{{ . }}-chown
+  namespace: {{ $.Release.Namespace | default "default" }}
+spec:
+  template:
+    metadata:
+      name: {{ $.Release.Name }}-{{ . }}-chown
+      namespace: {{ $.Release.Namespace | default "default" }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: chown
+          image: busybox
+          command:
+            - chown
+            - -R
+            - {{ $.Values.uid | default 1000 }}:{{ $.Values.uid | default 1000 }}
+            - /volume
+          volumeMounts:
+            - mountPath: /volume
+              name: pv
+      volumes:
+        - name: pv
+          hostPath:
+            type: DirectoryOrCreate
+            path: {{ required "A valid .Values.path entry required!" $.Values.path }}
 ---
 {{ end }}

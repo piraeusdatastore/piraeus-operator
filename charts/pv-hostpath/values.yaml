@@ -1,2 +1,4 @@
 size: 1Gi
 path: /var/lib/linstor-etcd
+uid: 1000
+gid: 1000

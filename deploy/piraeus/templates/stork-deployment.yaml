@@ -206,10 +206,6 @@ spec:
               protocol: TCP
           resources:
             {}
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            privileged: false
           name: stork
           env:
             - name: LS_CONTROLLERS
@@ -225,6 +221,10 @@ spec:
                       - stork
               topologyKey: "kubernetes.io/hostname"
       serviceAccountName: stork-account
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
 # Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-scheduler.yaml
 ---
 # Source: piraeus/templates/stork-deployment.yaml
@@ -267,10 +267,6 @@ spec:
               port: 10251
             initialDelaySeconds: 15
           name: piraeus-op-stork-scheduler
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            privileged: false
           readinessProbe:
             httpGet:
               path: /healthz
@@ -288,6 +284,10 @@ spec:
                       - piraeus-op-stork-scheduler
               topologyKey: "kubernetes.io/hostname"
       hostPID: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       serviceAccountName: stork-scheduler-account
 ---
 # Source: piraeus/templates/stork-deployment.yaml
