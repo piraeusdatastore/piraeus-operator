@@ -22,10 +22,10 @@ spec:
         app: snapshot-controller
     spec:
       serviceAccountName: snapshot-controller
+      securityContext:
+{{ include "operator.podsecuritycontext" . | indent 8 }}
       containers:
         - name: snapshot-controller
-          securityContext:
-{{ include "operator.securitycontext" . | indent 12 }}
           image: {{ .Values.image }}
           args:
             - "--v=5"

@@ -16,12 +16,12 @@ spec:
         app: snapshot-controller
     spec:
       serviceAccountName: snapshot-controller
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: snapshot-controller
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            privileged: false
           image: quay.io/k8scsi/snapshot-controller:v2.1.0
           args:
             - "--v=5"

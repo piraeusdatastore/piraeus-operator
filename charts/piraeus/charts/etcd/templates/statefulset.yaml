@@ -41,12 +41,12 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
 {{- end }}
+      securityContext:
+{{ include "operator.podsecuritycontext" . | indent 8 }}
       containers:
       - name: {{ template "etcd.fullname" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
-        securityContext:
-{{ include "operator.securitycontext" . | indent 10 }}
         ports:
         - containerPort: {{ .Values.peerPort }}
           name: peer

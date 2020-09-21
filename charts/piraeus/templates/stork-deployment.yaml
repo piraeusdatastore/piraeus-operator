@@ -122,8 +122,6 @@ spec:
               protocol: TCP
           resources:
 {{ .Values.stork.storkResources | toYaml | indent 12}}
-          securityContext:
-{{ include "operator.securitycontext" . | indent 12 }}
           name: stork
           env:
 {{ include "stork.config" . | indent 12 }}
@@ -138,6 +136,8 @@ spec:
                       - stork
               topologyKey: "kubernetes.io/hostname"
       serviceAccountName: stork-account
+      securityContext:
+{{ include "operator.podsecuritycontext" . | indent 8 }}
 # Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-scheduler.yaml
 ---
 apiVersion: v1
@@ -256,8 +256,6 @@ spec:
               port: 10251
             initialDelaySeconds: 15
           name: {{ .Release.Name }}-stork-scheduler
-          securityContext:
-{{ include "operator.securitycontext" . | indent 12 }}
           readinessProbe:
             httpGet:
               path: /healthz
@@ -275,5 +273,7 @@ spec:
                       - {{ .Release.Name }}-stork-scheduler
               topologyKey: "kubernetes.io/hostname"
       hostPID: false
+      securityContext:
+{{ include "operator.podsecuritycontext" . | indent 8 }}
       serviceAccountName: stork-scheduler-account
 {{- end }}

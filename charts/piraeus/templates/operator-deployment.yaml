@@ -15,12 +15,12 @@ spec:
         name: {{ template "operator.fullname" . }}-operator
     spec:
       serviceAccountName: {{ template "operator.fullname" . }}
+      securityContext:
+{{ include "operator.podsecuritycontext" . | indent 8 }}
       containers:
         - name: piraeus-operator
           image: {{ .Values.operator.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
-          securityContext:
-{{ include "operator.securitycontext" . | indent 12 }}
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

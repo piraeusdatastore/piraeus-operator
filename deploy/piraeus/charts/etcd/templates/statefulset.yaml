@@ -38,14 +38,14 @@ spec:
                 values:
                 - etcd
             topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
       - name: piraeus-op-etcd
         image: "gcr.io/etcd-development/etcd:v3.4.9"
         imagePullPolicy: "IfNotPresent"
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          privileged: false
         ports:
         - containerPort: 2380
           name: peer

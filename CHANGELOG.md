@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* The `pv-hostpath` helper chart automatically sets up permissions for non-root etcd containers.
 * Disable securityContext enforcement by setting `global.setSecurityContext=false`.
 * Add cluster roles to work with OpenShift's SCC system.
 * Control volume placement and accessibility by using CSIs Topology feature. Controlled by setting
