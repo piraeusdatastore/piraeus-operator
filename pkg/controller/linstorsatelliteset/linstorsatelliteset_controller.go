@@ -576,7 +576,11 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, node
 		return nodeSet.Status.SatelliteStatuses[i].NodeName < nodeSet.Status.SatelliteStatuses[j].NodeName
 	})
 
-	return r.client.Status().Update(ctx, nodeSet)
+	// Status update should always happen, even if the actual update context is canceled
+	updateCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	return r.client.Status().Update(updateCtx, nodeSet)
 }
 
 func satelliteStatusFromLinstor(pod *corev1.Pod, node *lapi.Node, pools []lapi.StoragePool) *shared.SatelliteStatus {
