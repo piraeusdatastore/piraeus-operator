@@ -305,7 +305,11 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	csiResource.Status.NodeReady = nodeReady
 	csiResource.Status.ControllerReady = controllerReady
 
-	err = r.client.Status().Update(ctx, csiResource)
+	// Status update should always happen, even if the actual update context is canceled
+	updateCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = r.client.Status().Update(updateCtx, csiResource)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"requestName":      csiResource.Name,

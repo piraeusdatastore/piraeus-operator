@@ -415,7 +415,11 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 
 	log.Debug("update status in resource")
 
-	return r.client.Status().Update(ctx, pcs)
+	// Status update should always happen, even if the actual update context is canceled
+	updateCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	return r.client.Status().Update(updateCtx, pcs)
 }
 
 func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Context) (string, error) {
