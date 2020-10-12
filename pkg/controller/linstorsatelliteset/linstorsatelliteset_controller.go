@@ -325,6 +325,16 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 	})
 	logger.Debug("start per-node reconciliation")
 
+	logger.Debug("ensure LINSTOR controller is reachable")
+
+	err := r.controllerReachable(ctx)
+	if err != nil {
+		return []error{&reconcileutil.TemporaryError{
+			Source:       fmt.Errorf("failed to contact controller: %w", err),
+			RequeueAfter: connectionRetrySeconds * time.Second,
+		}}
+	}
+
 	pods, err := r.getAllNodePods(ctx, nodeSet)
 	if err != nil {
 		return []error{err}
@@ -366,20 +376,9 @@ func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, nodeSet
 		"podNameSpace": pod.Namespace,
 		"Op":           "reconcilePod",
 	})
-
-	podLog.Debug("ensure LINSTOR controller is reachable")
-
-	_, err := r.linstorClient.Nodes.GetControllerVersion(ctx)
-	if err != nil {
-		return &reconcileutil.TemporaryError{
-			Source:       err,
-			RequeueAfter: connectionRetrySeconds * time.Second,
-		}
-	}
-
 	podLog.Debug("reconcile node registration")
 
-	err = r.reconcileSingleNodeRegistration(ctx, nodeSet, pod)
+	err := r.reconcileSingleNodeRegistration(ctx, nodeSet, pod)
 	if err != nil {
 		return err
 	}
@@ -525,6 +524,15 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, node
 	})
 	logger.Debug("reconcile status of all nodes")
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	err := r.controllerReachable(ctx)
+	if err != nil {
+		logger.Debug("controller not reachable, status checks will be skipped")
+		cancel()
+	}
+
 	logger.Debug("reconcile error list")
 
 	nodeSet.Status.Errors = reconcileutil.ErrorStrings(errs...)
@@ -577,8 +585,8 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, node
 	})
 
 	// Status update should always happen, even if the actual update context is canceled
-	updateCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	updateCtx, updateCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer updateCancel()
 
 	return r.client.Status().Update(updateCtx, nodeSet)
 }
@@ -1085,4 +1093,14 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context,
 	}
 
 	return reconcileutil.ToReconcileResult(errs...)
+}
+
+// Check if the controller is currently reachable.
+func (r *ReconcileLinstorSatelliteSet) controllerReachable(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	_, err := r.linstorClient.Nodes.GetControllerVersion(ctx)
+
+	return err
 }

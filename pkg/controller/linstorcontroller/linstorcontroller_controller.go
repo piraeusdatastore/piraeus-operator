@@ -275,10 +275,10 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 
 	log.Debug("wait for controller service to come online")
 
-	_, err := r.linstorClient.Nodes.GetControllerVersion(ctx)
+	err := r.controllerReachable(ctx)
 	if err != nil {
 		return &reconcileutil.TemporaryError{
-			Source:       err,
+			Source:       fmt.Errorf("failed to contact controller: %w", err),
 			RequeueAfter: connectionRetrySeconds * time.Second,
 		}
 	}
@@ -359,6 +359,15 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 
 	log.Debug("find active controller pod")
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	err := r.controllerReachable(ctx)
+	if err != nil {
+		log.Debug("controller not reachable, status checks will be skipped")
+		cancel()
+	}
+
 	controllerName, err := r.findActiveControllerPodName(ctx)
 	if err != nil {
 		log.Warnf("failed to find active controller pod: %v", err)
@@ -416,8 +425,8 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 	log.Debug("update status in resource")
 
 	// Status update should always happen, even if the actual update context is canceled
-	updateCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	updateCtx, updateCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer updateCancel()
 
 	return r.client.Status().Update(updateCtx, pcs)
 }
@@ -532,6 +541,16 @@ func (r *ReconcileLinstorController) deleteFinalizer(ctx context.Context, pcs *p
 		return err
 	}
 	return nil
+}
+
+// Check if the controller is currently reachable.
+func (r *ReconcileLinstorController) controllerReachable(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	_, err := r.linstorClient.Nodes.GetControllerVersion(ctx)
+
+	return err
 }
 
 func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployment {
