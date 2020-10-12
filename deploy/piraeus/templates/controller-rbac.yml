@@ -13,12 +13,26 @@ metadata:
   name: linstor-leader-elector
   namespace: default
 rules:
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["get", "watch", "list", "delete", "update", "create"]
-  - apiGroups: [""]
-    resources: ["endpoints"]
-    verbs: ["create", "patch", "update"]
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - watch
+      - list
+      - delete
+      - update
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+      - endpoints/restricted
+    verbs:
+      - create
+      - patch
+      - update
 ---
 # Source: piraeus/templates/controller-rbac.yml
 kind: RoleBinding
