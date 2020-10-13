@@ -760,7 +760,7 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: pcs.Spec.ServiceAccountName,
+					ServiceAccountName: getServiceAccountName(pcs),
 					PriorityClassName:  pcs.Spec.PriorityClassName.GetName(pcs.Namespace),
 					Containers: []corev1.Container{
 						{
@@ -879,6 +879,14 @@ func NewConfigMapForPCS(pcs *piraeusv1.LinstorController) (*corev1.ConfigMap, er
 	}
 
 	return cm, nil
+}
+
+func getServiceAccountName(lc *piraeusv1.LinstorController) string {
+	if lc.Spec.ServiceAccountName == "" {
+		return kubeSpec.LinstorControllerServiceAccount
+	}
+
+	return lc.Spec.ServiceAccountName
 }
 
 func expectedEndpoint(pcs *piraeusv1.LinstorController) string {

@@ -668,7 +668,7 @@ func newDaemonSetforPNS(pns *piraeusv1.LinstorSatelliteSet, config *corev1.Confi
 					HostNetwork:        true, // INFO: Per Roland, set to true
 					DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
 					PriorityClassName:  pns.Spec.PriorityClassName.GetName(pns.Namespace),
-					ServiceAccountName: kubeSpec.LinstorSatelliteServiceAccount,
+					ServiceAccountName: getServiceAccountName(pns),
 					Containers: []corev1.Container{
 						{
 							Name:  "linstor-satellite",
@@ -968,6 +968,14 @@ func daemonSetWithHttpsConfiguration(ds *apps.DaemonSet, pns *piraeusv1.LinstorS
 	}
 
 	return ds
+}
+
+func getServiceAccountName(lsset *piraeusv1.LinstorSatelliteSet) string {
+	if lsset.Spec.ServiceAccountName == "" {
+		return kubeSpec.LinstorSatelliteServiceAccount
+	}
+
+	return lsset.Spec.ServiceAccountName
 }
 
 func pnsLabels(pns *piraeusv1.LinstorSatelliteSet) map[string]string {
