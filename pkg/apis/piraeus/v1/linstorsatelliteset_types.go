@@ -90,6 +90,10 @@ type LinstorSatelliteSetSpec struct {
 	// +nullable
 	Tolerations []corev1.Toleration `json:"tolerations"`
 
+	// Name of the service account to be used for the created pods
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

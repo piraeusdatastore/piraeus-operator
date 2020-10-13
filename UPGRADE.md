@@ -1,4 +1,4 @@
-# Upgrade from v1.0 to HEAD
+# Upgrade from v1.0 to v1.1
 
 * The LINSTOR controller image given in `operator.controller.controllerImage` has to have
   its entrypoint set to [`k8s-await-election v0.2.0`](https://github.com/LINBIT/k8s-await-election/)

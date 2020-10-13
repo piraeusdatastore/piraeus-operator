@@ -20,4 +20,3 @@ spec:
   tolerations: []
   resources: {}
   replicas: 1
-  serviceAccountName: linstor-controller
