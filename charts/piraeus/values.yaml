@@ -48,7 +48,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.io/piraeusdatastore/piraeus-operator:v1.1.0
+  image: quay.io/piraeusdatastore/piraeus-operator:latest
   resources: {}
   controller:
     controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
