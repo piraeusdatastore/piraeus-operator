@@ -1,4 +1,4 @@
 name: pv-hostpath
 description: Hostpath volumes for etcd persistence
-version: 0.2.1
-appVersion: 0.2.1
+version: 0.2.2
+appVersion: 0.2.2

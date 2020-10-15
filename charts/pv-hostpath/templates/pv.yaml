@@ -58,5 +58,14 @@ spec:
           hostPath:
             type: DirectoryOrCreate
             path: {{ required "A valid .Values.path entry required!" $.Values.path }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - {{ . }}
 ---
 {{ end }}
