@@ -18,6 +18,8 @@ limitations under the License.
 package shared
 
 import (
+	"fmt"
+
 	lapiconst "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 
@@ -72,54 +74,220 @@ type StoragePools struct {
 	// +optional
 	// +nullable
 	LVMPools []*StoragePoolLVM `json:"lvmPools"`
+
 	// LVMThinPools for LinstorSatelliteSet to manage.
 	// +optional
 	// +nullable
 	LVMThinPools []*StoragePoolLVMThin `json:"lvmThinPools"`
+
+	// ZFSPools for LinstorSatelliteSet to manage
+	// +optional
+	// +nullable
+	ZFSPools []*StoragePoolZFS `json:"zfsPools"`
+}
+
+func (in *StoragePools) All() []StoragePool {
+	all := make([]StoragePool, 0)
+	for _, p := range in.LVMPools {
+		all = append(all, p)
+	}
+
+	for _, p := range in.LVMThinPools {
+		all = append(all, p)
+	}
+
+	for _, p := range in.ZFSPools {
+		all = append(all, p)
+	}
+
+	return all
+}
+
+func (in *StoragePools) AllPhysicalStorageCreators() []PhysicalStorageCreator {
+	all := make([]PhysicalStorageCreator, 0)
+	for _, p := range in.LVMPools {
+		all = append(all, p)
+	}
+
+	for _, p := range in.LVMThinPools {
+		all = append(all, p)
+	}
+
+	return all
 }
 
 // StoragePool is the generalized type of storage pools.
 type StoragePool interface {
+	GetName() string
 	ToLinstorStoragePool() lapi.StoragePool
+}
+
+type PhysicalStorageCreator interface {
+	StoragePool
+	GetDevicePaths() []string
+	ToPhysicalStorageCreate() lapi.PhysicalStorageCreate
+}
+
+type CommonStoragePoolOptions struct {
+	// Name of the storage pool.
+	Name string `json:"name"`
+}
+
+type CommonPhysicalStorageOptions struct {
+	// List of device paths that should make up the VG
+	// +optional
+	DevicePaths []string `json:"devicePaths,omitempty"`
 }
 
 // StoragePoolLVM represents LVM storage pool to be managed by a
 // LinstorSatelliteSet
 type StoragePoolLVM struct {
-	// Name of the storage pool.
-	Name string `json:"name"`
+	CommonStoragePoolOptions     `json:",inline"`
+	CommonPhysicalStorageOptions `json:",inline"`
+
 	// Name of underlying lvm group
 	VolumeGroup string `json:"volumeGroup"`
+
+	// Enable the Virtual Data Optimizer (VDO) on the volume group.
+	// +optional
+	VDO bool `json:"vdo,omitempty"`
+
+	// Set LVM RaidLevel
+	// +optional
+	RaidLevel string `json:"raidLevel,omitempty"`
+
+	// Set VDO logical volume size
+	VdoLogicalSizeKib int32 `json:"vdoLogicalSizeKib,omitempty"`
+
+	// Set VDO slab size
+	VdoSlabSizeKib int32 `json:"vdoSlabSizeKib,omitempty"`
+}
+
+// StoragePoolLVMThin represents LVM Thin storage pool to be
+// managed by a LinstorSatelliteSet.
+type StoragePoolLVMThin struct {
+	CommonStoragePoolOptions     `json:",inline"`
+	CommonPhysicalStorageOptions `json:",inline"`
+
+	// Name of underlying lvm group
+	VolumeGroup string `json:"volumeGroup"`
+
+	// Name of underlying lvm thin volume
+	ThinVolume string `json:"thinVolume"`
+
+	// Set LVM RaidLevel
+	// +optional
+	RaidLevel string `json:"raidLevel,omitempty"`
+}
+
+//  StoragePoolZFS represents
+type StoragePoolZFS struct {
+	CommonStoragePoolOptions `json:",inline"`
+
+	// Name of the zpool to use.
+	ZPool string `json:"zPool"`
+
+	// use thin provisioning
+	Thin bool `json:"thin"`
+}
+
+func (in *CommonStoragePoolOptions) GetName() string {
+	return in.Name
+}
+
+func (in *CommonPhysicalStorageOptions) GetDevicePaths() []string {
+	return in.DevicePaths
+}
+
+func (in *StoragePoolLVM) props() map[string]string {
+	return map[string]string{
+		"StorDriver/LvmVg":               in.VolumeGroup,
+		spec.LinstorRegistrationProperty: spec.Name,
+	}
 }
 
 // ToLinstorStoragePool returns lapi.StoragePool presentation of the StoragePoolLVM
-func (s *StoragePoolLVM) ToLinstorStoragePool() lapi.StoragePool {
+func (in *StoragePoolLVM) ToLinstorStoragePool() lapi.StoragePool {
 	return lapi.StoragePool{
-		StoragePoolName: s.Name,
+		StoragePoolName: in.Name,
 		ProviderKind:    lapi.LVM,
-		Props: map[string]string{
-			"StorDriver/LvmVg": s.VolumeGroup,
+		Props:           in.props(),
+	}
+}
+
+func (in *StoragePoolLVM) ToPhysicalStorageCreate() lapi.PhysicalStorageCreate {
+	return lapi.PhysicalStorageCreate{
+		DevicePaths:       in.DevicePaths,
+		PoolName:          in.VolumeGroup,
+		ProviderKind:      lapi.LVM,
+		VdoEnable:         in.VDO,
+		RaidLevel:         in.RaidLevel,
+		VdoLogicalSizeKib: in.VdoLogicalSizeKib,
+		VdoSlabSizeKib:    in.VdoSlabSizeKib,
+		WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
+			Name:  in.Name,
+			Props: in.props(),
 		},
 	}
 }
 
-// StoragePoolLVMThin represents LVM Thin storage pool to be
-// managed by a LinstorSatelliteSet
-type StoragePoolLVMThin struct {
-	StoragePoolLVM `json:",inline"`
-	// Name of underlying lvm thin volume
-	ThinVolume string `json:"thinVolume"`
+func (in *StoragePoolLVMThin) CreatedVolumeGroup() string {
+	if len(in.DevicePaths) != 0 {
+		return fmt.Sprintf("linstor_%s", in.ThinVolume)
+	}
+
+	return in.VolumeGroup
+}
+
+func (in *StoragePoolLVMThin) props() map[string]string {
+	vg := in.CreatedVolumeGroup()
+	return map[string]string{
+		"StorDriver/LvmVg":               vg,
+		"StorDriver/ThinPool":            in.ThinVolume,
+		"StorDriver/StorPoolName":        fmt.Sprintf("%s/%s", vg, in.ThinVolume),
+		spec.LinstorRegistrationProperty: spec.Name,
+	}
 }
 
 // ToLinstorStoragePool returns lapi.StoragePool presentation of the StoragePoolLVMThin
-func (s *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
+func (in *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
 	return lapi.StoragePool{
-		StoragePoolName: s.Name,
+		StoragePoolName: in.Name,
 		ProviderKind:    lapi.LVM_THIN,
-		Props: map[string]string{
-			"StorDriver/LvmVg":    s.VolumeGroup,
-			"StorDriver/ThinPool": s.ThinVolume,
+		Props:           in.props(),
+	}
+}
+
+func (in *StoragePoolLVMThin) ToPhysicalStorageCreate() lapi.PhysicalStorageCreate {
+	return lapi.PhysicalStorageCreate{
+		DevicePaths:  in.DevicePaths,
+		PoolName:     in.ThinVolume,
+		ProviderKind: lapi.LVM_THIN,
+		RaidLevel:    in.RaidLevel,
+		WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
+			Name:  in.Name,
+			Props: in.props(),
 		},
+	}
+}
+
+func (in *StoragePoolZFS) props() map[string]string {
+	return map[string]string{
+		"StorDriver/StorPoolName":        in.ZPool,
+		spec.LinstorRegistrationProperty: spec.Name,
+	}
+}
+
+func (in *StoragePoolZFS) ToLinstorStoragePool() lapi.StoragePool {
+	kind := lapi.ZFS
+	if in.Thin {
+		kind = lapi.ZFS_THIN
+	}
+
+	return lapi.StoragePool{
+		StoragePoolName: in.Name,
+		ProviderKind:    kind,
+		Props:           in.props(),
 	}
 }
 

@@ -35,7 +35,9 @@ type LinstorSatelliteSetSpec struct {
 
 	// If set, the operator will automatically create storage pools of the specified type for all devices that can
 	// be found. The name of the storage pools matches the device name. For example, all devices `/dev/sdc` will be
-	// part of the `sdc` storage pool.
+	// part of the `autopool-sdc` storage pool.
+	// Note: Using this attribute is discouraged. Using the "storagePools" to set up devices allows for more control on
+	// device creation.
 	// +optional
 	// +kubebuilder:validation:Enum=None;LVM;LVMTHIN;ZFS
 	AutomaticStorageType string `json:"automaticStorageType"`

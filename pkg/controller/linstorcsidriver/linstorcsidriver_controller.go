@@ -32,12 +32,9 @@ import (
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -331,7 +328,8 @@ func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, 
 	})
 	logger.Debugf("creating csi node daemon set")
 	nodeDaemonSet := newCSINodeDaemonSet(csiResource)
-	return r.createOrReplaceWithOwner(ctx, nodeDaemonSet, csiResource)
+
+	return reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, nodeDaemonSet, csiResource)
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
@@ -342,7 +340,8 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Co
 	})
 	logger.Debugf("creating csi controller deployment")
 	controllerDeployment := newCSIControllerDeployment(csiResource)
-	return r.createOrReplaceWithOwner(ctx, controllerDeployment, csiResource)
+
+	return reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, controllerDeployment, csiResource)
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
@@ -354,7 +353,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiR
 	logger.Debugf("creating csi driver resource")
 	csiDriver := newCSIDriver(csiResource)
 
-	return r.createOrReplace(ctx, csiDriver)
+	return reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, csiDriver, csiResource)
 }
 
 var (
@@ -707,60 +706,6 @@ func defaultLabels(csiResource *piraeusv1.LinstorCSIDriver) map[string]string {
 	return map[string]string{
 		"app": csiResource.Name,
 	}
-}
-
-// Create a resource at the cluster scope.
-//
-// cluster scoped resource are not allowed to have owner references, so these objects will not be cleaned up
-// automatically.
-func (r *ReconcileLinstorCSIDriver) createOrReplace(ctx context.Context, obj runtime.Object) error {
-	err := r.client.Create(ctx, obj)
-	if err == nil {
-		return nil
-	}
-
-	if !apierrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	// TODO: support update operation.
-	// Updates automatically trigger reconciliation, which means we get an endless loop of .Reconcile() calls. To
-	// support this properly we would need to check for spec equality in some way.
-	return nil
-}
-
-// Create a resource at current owning resource scope.
-//
-// Once the owning resource is cleaned up, the created items will be removed as well.
-func (r *ReconcileLinstorCSIDriver) createOrReplaceWithOwner(ctx context.Context, obj GCRuntimeObject, csiResource *piraeusv1.LinstorCSIDriver) error {
-	err := controllerutil.SetControllerReference(csiResource, obj, r.scheme)
-	// If it is already owned, we don't treat the SetControllerReference() call as a failure condition
-	if err != nil {
-		_, isAlreadyOwned := err.(*controllerutil.AlreadyOwnedError)
-		if !isAlreadyOwned {
-			return err
-		}
-	}
-
-	return r.createOrReplace(ctx, obj)
-}
-
-func (r *ReconcileLinstorCSIDriver) deleteIfExists(ctx context.Context, obj GCRuntimeObject) error {
-	err := r.client.Delete(ctx, obj)
-	if err == nil {
-		return nil
-	}
-
-	if !apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	return err
-}
-
-type GCRuntimeObject interface {
-	metav1.Object
-	runtime.Object
 }
 
 const (
