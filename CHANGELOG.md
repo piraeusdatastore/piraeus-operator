@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* `storagePools` can now also set up devices similar to `automaticStorageType`, but with more fine grained control.
+  See the [updated storage guide](./doc/storage.md#preparing-physical-devices)
+
 ### Changed
+
 * Fixed a bug in `pv-hostpath` where permissions on the created directory are not applied on all nodes.
+
+### Deprecation
+
+* Using `automaticStorageType` is deprecated. Use the `storagePools` values instead.
 
 ## [v1.1.0] - 2020-10-13
 

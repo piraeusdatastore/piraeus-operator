@@ -150,26 +150,6 @@ func NewHighLevelClient(options ...lapi.Option) (*HighLevelClient, error) {
 	return &HighLevelClient{*c}, nil
 }
 
-// GetStoragePoolOrCreateOnNode gets a linstor storage pool, creating it on the
-// node if it is not already present.
-func (c *HighLevelClient) GetStoragePoolOrCreateOnNode(ctx context.Context, pool lapi.StoragePool, nodeName string) (lapi.StoragePool, error) {
-	foundPool, err := c.Nodes.GetStoragePool(ctx, nodeName, pool.StoragePoolName)
-
-	// StoragePool doesn't exists, create it.
-	if err != nil && err == lapi.NotFoundError {
-		if err := c.Nodes.CreateStoragePool(ctx, nodeName, pool); err != nil {
-			return pool, fmt.Errorf("unable to create storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
-		}
-		return c.Nodes.GetStoragePool(ctx, nodeName, pool.StoragePoolName)
-	}
-	// Other error.
-	if err != nil {
-		return pool, fmt.Errorf("unable to get storage pool %s on node %s: %v", pool.StoragePoolName, nodeName, err)
-	}
-
-	return foundPool, nil
-}
-
 // GetNodeOrCreate gets a linstor node, creating it if it is not already present.
 func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (lapi.Node, error) {
 	n, err := c.Nodes.Get(ctx, node.Name)

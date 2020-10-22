@@ -606,10 +606,12 @@ spec:
                   type: object
               type: object
             automaticStorageType:
-              description: If set, the operator will automatically create storage
+              description: 'If set, the operator will automatically create storage
                 pools of the specified type for all devices that can be found. The
                 name of the storage pools matches the device name. For example, all
-                devices `/dev/sdc` will be part of the `sdc` storage pool.
+                devices `/dev/sdc` will be part of the `autopool-sdc` storage pool.
+                Note: Using this attribute is discouraged. Using the "storagePools"
+                to set up devices allows for more control on device creation.'
               enum:
               - None
               - LVM
@@ -715,9 +717,30 @@ spec:
                     description: StoragePoolLVM represents LVM storage pool to be
                       managed by a LinstorSatelliteSet
                     properties:
+                      devicePaths:
+                        description: List of device paths that should make up the
+                          VG
+                        items:
+                          type: string
+                        type: array
                       name:
                         description: Name of the storage pool.
                         type: string
+                      raidLevel:
+                        description: Set LVM RaidLevel
+                        type: string
+                      vdo:
+                        description: Enable the Virtual Data Optimizer (VDO) on the
+                          volume group.
+                        type: boolean
+                      vdoLogicalSizeKib:
+                        description: Set VDO logical volume size
+                        format: int32
+                        type: integer
+                      vdoSlabSizeKib:
+                        description: Set VDO slab size
+                        format: int32
+                        type: integer
                       volumeGroup:
                         description: Name of underlying lvm group
                         type: string
@@ -731,10 +754,19 @@ spec:
                   description: LVMThinPools for LinstorSatelliteSet to manage.
                   items:
                     description: StoragePoolLVMThin represents LVM Thin storage pool
-                      to be managed by a LinstorSatelliteSet
+                      to be managed by a LinstorSatelliteSet.
                     properties:
+                      devicePaths:
+                        description: List of device paths that should make up the
+                          VG
+                        items:
+                          type: string
+                        type: array
                       name:
                         description: Name of the storage pool.
+                        type: string
+                      raidLevel:
+                        description: Set LVM RaidLevel
                         type: string
                       thinVolume:
                         description: Name of underlying lvm thin volume
@@ -746,6 +778,27 @@ spec:
                     - name
                     - thinVolume
                     - volumeGroup
+                    type: object
+                  nullable: true
+                  type: array
+                zfsPools:
+                  description: ZFSPools for LinstorSatelliteSet to manage
+                  items:
+                    description: ' StoragePoolZFS represents'
+                    properties:
+                      name:
+                        description: Name of the storage pool.
+                        type: string
+                      thin:
+                        description: use thin provisioning
+                        type: boolean
+                      zPool:
+                        description: Name of the zpool to use.
+                        type: string
+                    required:
+                    - name
+                    - thin
+                    - zPool
                     type: object
                   nullable: true
                   type: array
