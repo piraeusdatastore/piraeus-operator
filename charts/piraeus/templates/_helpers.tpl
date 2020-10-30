@@ -48,10 +48,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Endpoint URL of LINSTOR controller
 */}}
 {{- define "controller.endpoint" -}}
-  {{- if empty .Values.linstorHttpsClientSecret -}}
-    http://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3370
+  {{- if .Values.controllerEndpoint -}}
+    {{ .Values.controllerEndpoint }}
   {{- else -}}
-    https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
+    {{- if empty .Values.linstorHttpsClientSecret -}}
+      http://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3370
+    {{- else -}}
+      https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 

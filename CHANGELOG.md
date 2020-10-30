@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `storagePools` can now also set up devices similar to `automaticStorageType`, but with more fine grained control.
   See the [updated storage guide](./doc/storage.md#preparing-physical-devices)
+* New Helm options to disable creation of LinstorController and LinstorSatelliteSet resource
+  `operator.controller.enabled` and `operator.satelliteSet.enabled`.
+* New Helm option to override the generated controller endpoint: `controllerEndpoint`
 
 ### Changed
 

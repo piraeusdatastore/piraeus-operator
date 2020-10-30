@@ -43,6 +43,7 @@ priorityClassName: ""
 drbdRepoCred: "" # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: "" # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
+controllerEndpoint: "" # <- override to the generated controller endpoint. use if controller is not deployed via operator
 psp:
   privilegedRole: ""
   unprivilegedRole: ""
@@ -51,6 +52,7 @@ operator:
   image: quay.io/piraeusdatastore/piraeus-operator:latest
   resources: {}
   controller:
+    enabled: true
     controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
     luksSecret: ""
     dbCertSecret: ""
@@ -61,6 +63,7 @@ operator:
     resources: {}
     replicas: 1
   satelliteSet:
+    enabled: true
     satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
     storagePools: null
     sslSecret: ""
