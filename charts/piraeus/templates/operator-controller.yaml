@@ -1,3 +1,4 @@
+{{- if .Values.operator.controller.enabled }}
 apiVersion: piraeus.linbit.com/v1
 kind: LinstorController
 metadata:
@@ -18,3 +19,4 @@ spec:
   tolerations: {{ .Values.operator.controller.tolerations | toJson}}
   resources: {{ .Values.operator.controller.resources | toJson }}
   replicas: {{ .Values.operator.controller.replicas }}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.operator.satelliteSet.enabled }}
 apiVersion: piraeus.linbit.com/v1
 kind: LinstorSatelliteSet
 metadata:
@@ -21,3 +22,4 @@ spec:
   storagePools:
 {{ toYaml .Values.operator.satelliteSet.storagePools | indent 4 }}
   {{- end }}
+{{- end }}

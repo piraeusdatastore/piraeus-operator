@@ -39,6 +39,10 @@ Default:: `""`
 Valid values:: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass[priority class] name
 Description:: Name of the priority class with which the LINSTOR components should be scheduled.
 
+=== `controllerEndpoint`
+Default:: `""`
+Valid values:: HTTP/S URL
+Description:: Override the generated URL for the LINSTOR controller deployment. Useful if the controller is not deployed via the operator.
 
 == Operator
 
@@ -202,6 +206,13 @@ Description:: Resource requests and limits to apply to the etcd containers. See 
 
 == Piraeus Controller
 
+=== `operator.controller.enabled`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: If set to false, no LinstorController resource will be created by Helm. This means no LINSTOR controller will be deployed.
+
 === `operator.controller.affinity`
 Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
@@ -253,6 +264,13 @@ Description:: Tolerations to pass to the controller pods.
 
 
 == Piraeus Satellites
+
+=== `operator.satelliteSet.enabled`
+Default:: `True`
+Valid values::
+* `True`
+* `False`
+Description:: If set to false, no LinstorSatelliteSet resource will be created by Helm. This means no LINSTOR satellites will be deployed.
 
 === `operator.satelliteSet.affinity`
 Default:: `{}`
