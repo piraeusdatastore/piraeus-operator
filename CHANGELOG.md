@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Fixed a bug in `pv-hostpath` where permissions on the created directory are not applied on all nodes.
+* Default value for affinity on LINSTOR controller and CSI controller changed. The new default is to distribute the pods
+  across all available nodes.
 
 ### Deprecation
 

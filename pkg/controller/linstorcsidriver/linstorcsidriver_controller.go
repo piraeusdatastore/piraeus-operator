@@ -277,7 +277,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	nodeReady := false
 	controllerReady := false
 
-	dsMeta := makeMeta(csiResource, NodeDaemonSet)
+	dsMeta := makeMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
 	ds := appsv1.DaemonSet{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: dsMeta.Name, Namespace: dsMeta.Namespace}, &ds)
 	// We ignore these errors, they most likely mean the resource is not yet ready
@@ -285,7 +285,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 		nodeReady = ds.Status.DesiredNumberScheduled == ds.Status.NumberReady
 	}
 
-	deployMeta := makeMeta(csiResource, ControllerDeployment)
+	deployMeta := makeMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
 	deploy := appsv1.Deployment{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: deployMeta.Name, Namespace: deployMeta.Namespace}, &deploy)
 	// We ignore these errors, they most likely mean the resource is not yet ready
@@ -486,13 +486,13 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 	}
 
 	return &appsv1.DaemonSet{
-		ObjectMeta: makeMeta(csiResource, NodeDaemonSet),
+		ObjectMeta: makeMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole),
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(csiResource),
+				MatchLabels: defaultLabels(csiResource, kubeSpec.CSINodeRole),
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: makeMeta(csiResource, NodeDaemonSet),
+				ObjectMeta: makeMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole),
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
@@ -648,14 +648,14 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 	}
 
 	return &appsv1.Deployment{
-		ObjectMeta: makeMeta(csiResource, ControllerDeployment),
+		ObjectMeta: makeMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole),
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(csiResource),
+				MatchLabels: defaultLabels(csiResource, kubeSpec.CSIControllerRole),
 			},
 			Replicas: csiResource.Spec.ControllerReplicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: makeMeta(csiResource, ControllerDeployment),
+				ObjectMeta: makeMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole),
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
@@ -668,12 +668,29 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 					},
 					ImagePullSecrets: pullSecrets,
 					Volumes:          []corev1.Volume{socketVolume},
-					Affinity:         csiResource.Spec.ControllerAffinity,
+					Affinity:         getControllerAffinity(csiResource),
 					Tolerations:      csiResource.Spec.ControllerTolerations,
 				},
 			},
 		},
 	}
+}
+
+func getControllerAffinity(resource *piraeusv1.LinstorCSIDriver) *corev1.Affinity {
+	if resource.Spec.ControllerAffinity == nil {
+		return &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{MatchLabels: defaultLabels(resource, kubeSpec.CSIControllerRole)},
+						TopologyKey:   kubeSpec.DefaultTopologyKey,
+					},
+				},
+			},
+		}
+	}
+
+	return resource.Spec.ControllerAffinity
 }
 
 func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDriver {
@@ -694,17 +711,18 @@ func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDr
 	}
 }
 
-func makeMeta(csiResource *piraeusv1.LinstorCSIDriver, namePostfix string) metav1.ObjectMeta {
+func makeMeta(csiResource *piraeusv1.LinstorCSIDriver, namePostfix, role string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      csiResource.Name + namePostfix,
 		Namespace: csiResource.Namespace,
-		Labels:    defaultLabels(csiResource),
+		Labels:    defaultLabels(csiResource, role),
 	}
 }
 
-func defaultLabels(csiResource *piraeusv1.LinstorCSIDriver) map[string]string {
+func defaultLabels(csiResource *piraeusv1.LinstorCSIDriver, role string) map[string]string {
 	return map[string]string{
-		"app": csiResource.Name,
+		"app":  csiResource.Name,
+		"role": role,
 	}
 }
 
