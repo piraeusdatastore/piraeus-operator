@@ -92,9 +92,22 @@ Description:: Resource requests and limits to apply to the CSI snapshot controll
 == CSI Driver
 
 === `csi.controllerAffinity`
-Default:: `{}`
+Default:: `null`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
-Description:: Affinity settings for controller pods. Can be used to pin controller pods to specific nodes.
+Description:: Affinity settings for controller pods. Can be used to pin controller pods to specific nodes. The default will expand to:
++
+[source,yaml]
+----
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchLabels:
+          app: piraeus
+          role: csi-controller
+      topologyKey: kubernetes.io/hostname
+----
+
 
 === `csi.controllerReplicas`
 Default:: `1`
@@ -214,9 +227,21 @@ Valid values::
 Description:: If set to false, no LinstorController resource will be created by Helm. This means no LINSTOR controller will be deployed.
 
 === `operator.controller.affinity`
-Default:: `{}`
+Default:: `null`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
-Description:: Affinity settings for controller pods. Can be used to restrict the pods to specific nodes.
+Description:: Affinity settings for controller pods. Can be used to restrict the pods to specific nodes. The default will expand to:
++
+[source,yaml]
+----
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchLabels:
+          app: piraeus-op
+          role: piraeus-controller
+      topologyKey: kubernetes.io/hostname
+----
 
 === `operator.controller.controllerImage`
 Default:: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
