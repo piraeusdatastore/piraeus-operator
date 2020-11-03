@@ -143,7 +143,9 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 		"err":    err,
 	}).Info("satellite Reconcile: reconcile loop end")
 
-	return result, err
+	triggerStatusUpdate := reconcile.Result{RequeueAfter: 1 * time.Minute}
+
+	return reconcileutil.CombineReconcileResults(result, triggerStatusUpdate), err
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) []error {
@@ -194,19 +196,23 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
 
-	err = reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, configMap, satelliteSet)
+	changed, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
+
+	log.WithField("changed", changed).Debug("reconcile satellite configmap: done")
 
 	log.Debug("reconcile satellite daemonset")
 
 	ds := newSatelliteDaemonSet(satelliteSet, configMap)
 
-	err = reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, ds, satelliteSet)
+	changed, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite daemonset: %w", err)}
 	}
+
+	log.WithField("changed", changed).Debug("reconcile satellite daemonset: done")
 
 	return r.reconcileAllNodesOnController(ctx, satelliteSet)
 }
@@ -811,6 +817,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, config *
 								{
 									HostPort:      satelliteSet.Spec.SslConfig.Port(),
 									ContainerPort: satelliteSet.Spec.SslConfig.Port(),
+									Protocol:      "TCP",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

@@ -329,7 +329,9 @@ func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, 
 	logger.Debugf("creating csi node daemon set")
 	nodeDaemonSet := newCSINodeDaemonSet(csiResource)
 
-	return reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, nodeDaemonSet, csiResource)
+	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, nodeDaemonSet, csiResource)
+
+	return err
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
@@ -341,7 +343,9 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Co
 	logger.Debugf("creating csi controller deployment")
 	controllerDeployment := newCSIControllerDeployment(csiResource)
 
-	return reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, controllerDeployment, csiResource)
+	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, controllerDeployment, csiResource)
+
+	return err
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
@@ -353,7 +357,9 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiR
 	logger.Debugf("creating csi driver resource")
 	csiDriver := newCSIDriver(csiResource)
 
-	return reconcileutil.CreateOrReplaceWithOwner(ctx, r.client, r.scheme, csiDriver, csiResource)
+	_, err := reconcileutil.CreateOrUpdate(ctx, r.client, r.scheme, csiDriver)
+
+	return err
 }
 
 var (
@@ -701,8 +707,7 @@ func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDr
 	return &storagev1beta1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
 			// Name must match exactly the one reported by the CSI plugin
-			Name:      "linstor.csi.linbit.com",
-			Namespace: csiResource.Namespace,
+			Name: "linstor.csi.linbit.com",
 		},
 		Spec: storagev1beta1.CSIDriverSpec{
 			AttachRequired: &attachRequired,

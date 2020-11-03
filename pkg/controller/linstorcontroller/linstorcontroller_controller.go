@@ -46,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -90,9 +89,8 @@ var _ reconcile.Reconciler = &ReconcileLinstorController{}
 type ReconcileLinstorController struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client        client.Client
-	scheme        *runtime.Scheme
-	linstorClient *lc.HighLevelClient
+	client client.Client
+	scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a LinstorController object and makes changes based
@@ -122,132 +120,7 @@ func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
-	if controllerResource.Status.ControllerStatus == nil {
-		controllerResource.Status.ControllerStatus = &shared.NodeStatus{}
-	}
-
-	if controllerResource.Status.SatelliteStatuses == nil {
-		controllerResource.Status.SatelliteStatuses = make([]*shared.SatelliteStatus, 0)
-	}
-
-	log.Info("reconcile spec with env")
-
-	specs := []reconcileutil.EnvSpec{
-		{Env: kubeSpec.ImageLinstorControllerEnv, Target: &controllerResource.Spec.ControllerImage},
-	}
-
-	err = reconcileutil.UpdateFromEnv(ctx, r.client, controllerResource, specs...)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	log.Info("reconciling LinstorController")
-
-	getSecret := func(secretName string) (map[string][]byte, error) {
-		secret := corev1.Secret{}
-		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: controllerResource.Namespace}, &secret)
-		if err != nil {
-			return nil, err
-		}
-		return secret.Data, nil
-	}
-
-	endpoint := expectedEndpoint(controllerResource)
-	r.linstorClient, err = lc.NewHighLevelLinstorClientFromConfig(endpoint, &controllerResource.Spec.LinstorClientConfig, getSecret)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	markedForDeletion := controllerResource.GetDeletionTimestamp() != nil
-	if markedForDeletion {
-		result, err := r.finalizeControllerSet(ctx, controllerResource)
-
-		log.WithFields(logrus.Fields{
-			"result": result,
-			"err":    err,
-		}).Info("controller Reconcile: reconcile loop end")
-
-		return result, err
-	}
-
-	if err := r.addFinalizer(ctx, controllerResource); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Define a service for the controller.
-	ctrlService := newServiceForPCS(controllerResource)
-	// Set LinstorController instance as the owner and controller
-	if err := controllerutil.SetControllerReference(controllerResource, ctrlService, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	foundSrv := &corev1.Service{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: ctrlService.Name, Namespace: ctrlService.Namespace}, foundSrv)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("controller Reconcile: creating a new Service")
-
-		err = r.client.Create(ctx, ctrlService)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	log.Debug("controller Reconcile: controller already exists")
-
-	// Define a configmap for the controller.
-	configMap, err := NewConfigMapForPCS(controllerResource)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	// Set LinstorController instance as the owner and controller
-	if err := controllerutil.SetControllerReference(controllerResource, configMap, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	foundConfigMap := &corev1.ConfigMap{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("controller Reconcile: creating a new ConfigMap")
-
-		err = r.client.Create(ctx, configMap)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	log.Debug("controller Reconcile: controllerConfigMap already exists")
-
-	// Define a new Deployment object
-	ctrlDeployment := newDeploymentForResource(controllerResource)
-
-	// Set LinstorController instance as the owner and controller
-	if err := controllerutil.SetControllerReference(controllerResource, ctrlDeployment, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	found := &appsv1.Deployment{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: ctrlDeployment.Name, Namespace: ctrlDeployment.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("controller Reconcile: creating a new Deployment")
-
-		err = r.client.Create(ctx, ctrlDeployment)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		// Pod created successfully - requeue for registration
-		return reconcile.Result{Requeue: true}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	log.Debug("controller Reconcile: Deployment already exists")
-
-	resErr := r.reconcileControllers(ctx, controllerResource)
+	resErr := r.reconcileSpec(ctx, controllerResource)
 
 	statusErr := r.reconcileStatus(ctx, controllerResource, resErr)
 	if statusErr != nil {
@@ -262,20 +135,92 @@ func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (recon
 		"err":    err,
 	}).Info("controller Reconcile: reconcile loop end")
 
-	return result, err
+	triggerStatusUpdate := reconcile.Result{RequeueAfter: 1 * time.Minute}
+
+	return reconcileutil.CombineReconcileResults(result, triggerStatusUpdate), err
 }
 
-func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, pcs *piraeusv1.LinstorController) error {
+func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
 	log := log.WithFields(logrus.Fields{
-		"name":      pcs.Name,
-		"namespace": pcs.Namespace,
-		"spec":      fmt.Sprintf("%+v", pcs.Spec),
+		"Op":         "reconcileSpec",
+		"Controller": "linstorcontroller",
+		"Spec":       controllerResource.Spec,
+	})
+
+	log.Info("reconcile spec with env")
+
+	specs := []reconcileutil.EnvSpec{
+		{Env: kubeSpec.ImageLinstorControllerEnv, Target: &controllerResource.Spec.ControllerImage},
+	}
+
+	err := reconcileutil.UpdateFromEnv(ctx, r.client, controllerResource, specs...)
+	if err != nil {
+		return err
+	}
+
+	log.Debug("check for deletion flag")
+
+	markedForDeletion := controllerResource.GetDeletionTimestamp() != nil
+	if markedForDeletion {
+		return r.finalizeControllerSet(ctx, controllerResource)
+	}
+
+	log.Debug("reconcile finalizer")
+
+	err = r.addFinalizer(ctx, controllerResource)
+	if err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
+	}
+
+	log.Debug("reconcile LINSTOR Service")
+
+	ctrlService := newServiceForResource(controllerResource)
+	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlService, controllerResource)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile LINSTOR Service: %w", err)
+	}
+
+	log.Debug("reconcile LINSTOR Controller ConfigMap")
+
+	configMap, err := NewConfigMapForResource(controllerResource)
+	if err != nil {
+		return fmt.Errorf("failed to render config for LINSTOR: %w", err)
+	}
+
+	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, controllerResource)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile LINSTOR Controller ConfigMap: %w", err)
+	}
+
+	log.Debug("reconcile LINSTOR Controller Deployment")
+
+	ctrlDeployment := newDeploymentForResource(controllerResource)
+	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlDeployment, controllerResource)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile LINSTOR Controller Deployment: %w", err)
+	}
+
+	log.Debug("reconcile LINSTOR")
+
+	return r.reconcileControllers(ctx, controllerResource)
+}
+
+func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
+	log := log.WithFields(logrus.Fields{
+		"name":      controllerResource.Name,
+		"namespace": controllerResource.Namespace,
+		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
 	})
 	log.Info("controller Reconcile: reconciling controller Nodes")
 
+	linstorClient, err := r.getLinstorClient(ctx, controllerResource)
+	if err != nil {
+		return err
+	}
+
 	log.Debug("wait for controller service to come online")
 
-	err := r.controllerReachable(ctx)
+	err = r.controllerReachable(ctx, linstorClient)
 	if err != nil {
 		return &reconcileutil.TemporaryError{
 			Source:       fmt.Errorf("failed to contact controller: %w", err),
@@ -283,7 +228,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 		}
 	}
 
-	allNodes, err := r.linstorClient.Nodes.GetAll(ctx)
+	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -297,8 +242,8 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 	}
 
 	ourPods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(pcsLabels(pcs))
-	err = r.client.List(ctx, ourPods, client.InNamespace(pcs.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
+	labelSelector := labels.SelectorFromSet(resourceLabels(controllerResource))
+	err = r.client.List(ctx, ourPods, client.InNamespace(controllerResource.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
 	if err != nil {
 		return err
 	}
@@ -307,15 +252,15 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 
 	for _, pod := range ourPods.Items {
 		log.WithField("pod", pod.Name).Debug("register controller pod")
-		_, err := r.linstorClient.GetNodeOrCreate(ctx, lapi.Node{
+		_, err := linstorClient.GetNodeOrCreate(ctx, lapi.Node{
 			Name: pod.Name,
 			Type: lc.Controller,
 			NetInterfaces: []lapi.NetInterface{
 				{
 					Name:                    "default",
 					Address:                 pod.Status.PodIP,
-					SatellitePort:           pcs.Spec.SslConfig.Port(),
-					SatelliteEncryptionType: pcs.Spec.SslConfig.Type(),
+					SatellitePort:           controllerResource.Spec.SslConfig.Port(),
+					SatelliteEncryptionType: controllerResource.Spec.SslConfig.Type(),
 				},
 			},
 			Props: map[string]string{
@@ -340,7 +285,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 
 		if !found {
 			log.WithField("node", linstorController.Name).Debug("remove controller pod")
-			err = r.linstorClient.Nodes.Delete(ctx, linstorController.Name)
+			err = linstorClient.Nodes.Delete(ctx, linstorController.Name)
 			if err != nil {
 				return err
 			}
@@ -350,61 +295,86 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, p
 	return nil
 }
 
-func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *piraeusv1.LinstorController, resErr error) error {
+func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, controllerResource *piraeusv1.LinstorController, resErr error) error {
 	log := log.WithFields(logrus.Fields{
-		"Name":      pcs.Name,
-		"Namespace": pcs.Namespace,
+		"Name":      controllerResource.Name,
+		"Namespace": controllerResource.Namespace,
 	})
 	log.Info("reconcile status")
 
-	log.Debug("find active controller pod")
+	linstorStatusErr := r.reconcileLinstorStatus(ctx, controllerResource)
+
+	controllerResource.Status.Errors = reconcileutil.ErrorStrings(resErr, linstorStatusErr)
+
+	log.Debug("update status in resource")
+
+	// Status update should always happen, even if the actual update context is canceled
+	updateCtx, updateCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer updateCancel()
+
+	return r.client.Status().Update(updateCtx, controllerResource)
+}
+
+func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
+	log := log.WithFields(logrus.Fields{
+		"Name":      controllerResource.Name,
+		"Namespace": controllerResource.Namespace,
+		"Op":        "reconcileLinstorStatus",
+	})
+
+	linstorClient, err := r.getLinstorClient(ctx, controllerResource)
+	if err != nil {
+		return err
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err := r.controllerReachable(ctx)
+	err = r.controllerReachable(ctx, linstorClient)
 	if err != nil {
 		log.Debug("controller not reachable, status checks will be skipped")
 		cancel()
 	}
 
-	controllerName, err := r.findActiveControllerPodName(ctx)
+	log.Debug("find active controller pod")
+
+	controllerName, err := r.findActiveControllerPodName(ctx, linstorClient)
 	if err != nil {
 		log.Warnf("failed to find active controller pod: %v", err)
 	}
 
-	pcs.Status.ControllerStatus = &shared.NodeStatus{
+	controllerResource.Status.ControllerStatus = &shared.NodeStatus{
 		NodeName:               controllerName,
 		RegisteredOnController: false,
 	}
 
 	log.Debug("check if controller pod is registered")
 
-	allNodes, err := r.linstorClient.Nodes.GetAll(ctx)
+	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		log.Warnf("failed to fetch list of LINSTOR nodes: %v", err)
 	}
 
 	for _, node := range allNodes {
 		if node.Name == controllerName {
-			pcs.Status.ControllerStatus.RegisteredOnController = true
+			controllerResource.Status.ControllerStatus.RegisteredOnController = true
 		}
 	}
 
 	log.Debug("fetch information about storage nodes")
 
-	nodes, err := r.linstorClient.GetAllStorageNodes(ctx)
+	nodes, err := linstorClient.GetAllStorageNodes(ctx)
 	if err != nil {
 		log.Warnf("unable to get LINSTOR storage nodes: %v, continue with empty node list", err)
 		nodes = nil
 	}
 
-	pcs.Status.SatelliteStatuses = make([]*shared.SatelliteStatus, len(nodes))
+	controllerResource.Status.SatelliteStatuses = make([]*shared.SatelliteStatus, len(nodes))
 
 	for i := range nodes {
 		node := &nodes[i]
 
-		pcs.Status.SatelliteStatuses[i] = &shared.SatelliteStatus{
+		controllerResource.Status.SatelliteStatuses[i] = &shared.SatelliteStatus{
 			NodeStatus: shared.NodeStatus{
 				NodeName:               node.Name,
 				RegisteredOnController: true,
@@ -416,23 +386,33 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, pcs *p
 		for j := range node.StoragePools {
 			pool := &node.StoragePools[j]
 
-			pcs.Status.SatelliteStatuses[i].StoragePoolStatuses[j] = shared.NewStoragePoolStatus(pool)
+			controllerResource.Status.SatelliteStatuses[i].StoragePoolStatuses[j] = shared.NewStoragePoolStatus(pool)
 		}
 	}
 
-	pcs.Status.Errors = reconcileutil.ErrorStrings(resErr)
-
-	log.Debug("update status in resource")
-
-	// Status update should always happen, even if the actual update context is canceled
-	updateCtx, updateCancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer updateCancel()
-
-	return r.client.Status().Update(updateCtx, pcs)
+	return nil
 }
 
-func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Context) (string, error) {
-	allNodes, err := r.linstorClient.Nodes.GetAll(ctx)
+func (r *ReconcileLinstorController) getLinstorClient(ctx context.Context, controllerResource *piraeusv1.LinstorController) (*lc.HighLevelClient, error) {
+	log.Debug("get linstor client")
+
+	getSecret := func(secretName string) (map[string][]byte, error) {
+		secret := corev1.Secret{}
+
+		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: controllerResource.Namespace}, &secret)
+		if err != nil {
+			return nil, err
+		}
+
+		return secret.Data, nil
+	}
+
+	endpoint := expectedEndpoint(controllerResource)
+	return lc.NewHighLevelLinstorClientFromConfig(endpoint, &controllerResource.Spec.LinstorClientConfig, getSecret)
+}
+
+func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Context, linstorClient *lc.HighLevelClient) (string, error) {
+	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch nodes from linstor: %w", err)
 	}
@@ -456,50 +436,53 @@ func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Con
 }
 
 // finalizeControllerSet returns whether it is finished as well as potentially an error
-func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, pcs *piraeusv1.LinstorController) (reconcile.Result, error) {
+func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
 	log := log.WithFields(logrus.Fields{
-		"name":      pcs.Name,
-		"namespace": pcs.Namespace,
-		"spec":      fmt.Sprintf("%+v", pcs.Spec),
+		"name":      controllerResource.Name,
+		"namespace": controllerResource.Namespace,
+		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
 	})
 	log.Info("controller finalizeControllerSet: found LinstorController marked for deletion, finalizing...")
 
-	if !mdutil.HasFinalizer(pcs, linstorControllerFinalizer) {
-		return reconcile.Result{}, nil
+	if !mdutil.HasFinalizer(controllerResource, linstorControllerFinalizer) {
+		return nil
 	}
 
-	nodesOnControllerErr := r.ensureNoNodesOnController(ctx, pcs)
+	linstorClient, err := r.getLinstorClient(ctx, controllerResource)
+	if err != nil {
+		return err
+	}
 
-	statusErr := r.reconcileStatus(ctx, pcs, nodesOnControllerErr)
+	nodesOnControllerErr := r.ensureNoNodesOnController(ctx, controllerResource, linstorClient)
+
+	statusErr := r.reconcileStatus(ctx, controllerResource, nodesOnControllerErr)
 	if statusErr != nil {
 		log.Warnf("failed to update status. original error: %v", nodesOnControllerErr)
-		return reconcile.Result{}, statusErr
+		return statusErr
 	}
 
 	if nodesOnControllerErr != nil {
-		return reconcileutil.ToReconcileResult(nodesOnControllerErr)
+		return nodesOnControllerErr
 	}
 
 	log.Info("controller finalizing finished, removing finalizer")
 
-	err := r.deleteFinalizer(ctx, pcs)
-
-	return reconcile.Result{}, err
+	return r.deleteFinalizer(ctx, controllerResource)
 }
 
 // returns an error if nodes are still registered.
-func (r *ReconcileLinstorController) ensureNoNodesOnController(ctx context.Context, pcs *piraeusv1.LinstorController) error {
+func (r *ReconcileLinstorController) ensureNoNodesOnController(ctx context.Context, controllerResource *piraeusv1.LinstorController, linstorClient *lc.HighLevelClient) error {
 	log := log.WithFields(logrus.Fields{
-		"name":      pcs.Name,
-		"namespace": pcs.Namespace,
-		"spec":      fmt.Sprintf("%+v", pcs.Spec),
+		"name":      controllerResource.Name,
+		"namespace": controllerResource.Namespace,
+		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
 	})
-	if pcs.Status.ControllerStatus.NodeName == "" {
+	if controllerResource.Status.ControllerStatus.NodeName == "" {
 		log.Info("controller never deployed; finalization OK")
 		return nil
 	}
 
-	nodes, err := r.linstorClient.Nodes.GetAll(ctx)
+	nodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		if err != lapi.NotFoundError {
 			return fmt.Errorf("controller unable to get cluster nodes: %v", err)
@@ -523,20 +506,20 @@ func (r *ReconcileLinstorController) ensureNoNodesOnController(ctx context.Conte
 	return nil
 }
 
-func (r *ReconcileLinstorController) addFinalizer(ctx context.Context, pcs *piraeusv1.LinstorController) error {
-	mdutil.AddFinalizer(pcs, linstorControllerFinalizer)
+func (r *ReconcileLinstorController) addFinalizer(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
+	mdutil.AddFinalizer(controllerResource, linstorControllerFinalizer)
 
-	err := r.client.Update(ctx, pcs)
+	err := r.client.Update(ctx, controllerResource)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *ReconcileLinstorController) deleteFinalizer(ctx context.Context, pcs *piraeusv1.LinstorController) error {
-	mdutil.DeleteFinalizer(pcs, linstorControllerFinalizer)
+func (r *ReconcileLinstorController) deleteFinalizer(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
+	mdutil.DeleteFinalizer(controllerResource, linstorControllerFinalizer)
 
-	err := r.client.Update(ctx, pcs)
+	err := r.client.Update(ctx, controllerResource)
 	if err != nil {
 		return err
 	}
@@ -544,31 +527,31 @@ func (r *ReconcileLinstorController) deleteFinalizer(ctx context.Context, pcs *p
 }
 
 // Check if the controller is currently reachable.
-func (r *ReconcileLinstorController) controllerReachable(ctx context.Context) error {
+func (r *ReconcileLinstorController) controllerReachable(ctx context.Context, linstorClient *lc.HighLevelClient) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	_, err := r.linstorClient.Nodes.GetControllerVersion(ctx)
+	_, err := linstorClient.Nodes.GetControllerVersion(ctx)
 
 	return err
 }
 
-func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployment {
-	labels := pcsLabels(pcs)
+func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *appsv1.Deployment {
+	labels := resourceLabels(controllerResource)
 
 	var pullSecrets []corev1.LocalObjectReference
-	if pcs.Spec.DrbdRepoCred != "" {
-		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: pcs.Spec.DrbdRepoCred})
+	if controllerResource.Spec.DrbdRepoCred != "" {
+		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: controllerResource.Spec.DrbdRepoCred})
 	}
 
 	const healthzPort = 9999
 	port := lc.DefaultHttpPort
-	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
 		port = lc.DefaultHttpsPort
 	}
 
 	servicePorts := []corev1.EndpointPort{
-		{Name: pcs.Name, Port: int32(port)},
+		{Name: controllerResource.Name, Port: int32(port)},
 	}
 
 	servicePortsJSON, err := json.Marshal(servicePorts)
@@ -592,11 +575,11 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		},
 		{
 			Name:  awaitelection.AwaitElectionLockNameKey,
-			Value: pcs.Name,
+			Value: controllerResource.Name,
 		},
 		{
 			Name:  awaitelection.AwaitElectionLockNamespaceKey,
-			Value: pcs.Namespace,
+			Value: controllerResource.Namespace,
 		},
 		{
 			Name: awaitelection.AwaitElectionIdentityKey,
@@ -616,11 +599,11 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		},
 		{
 			Name:  awaitelection.AwaitElectionServiceName,
-			Value: pcs.Name,
+			Value: controllerResource.Name,
 		},
 		{
 			Name:  awaitelection.AwaitElectionServiceNamespace,
-			Value: pcs.Namespace,
+			Value: controllerResource.Namespace,
 		},
 		{
 			Name:  awaitelection.AwaitElectionServicePortsJson,
@@ -638,7 +621,7 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: pcs.Name + "-config",
+						Name: controllerResource.Name + "-config",
 					},
 				},
 			},
@@ -652,13 +635,13 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		},
 	}
 
-	if pcs.Spec.LuksSecret != "" {
+	if controllerResource.Spec.LuksSecret != "" {
 		env = append(env, corev1.EnvVar{
 			Name: kubeSpec.LinstorLUKSPassphraseEnvName,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: pcs.Spec.LuksSecret,
+						Name: controllerResource.Spec.LuksSecret,
 					},
 					Key: kubeSpec.LinstorLUKSPassphraseEnvName,
 				},
@@ -666,12 +649,12 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		})
 	}
 
-	if pcs.Spec.DBCertSecret != "" {
+	if controllerResource.Spec.DBCertSecret != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorCertDirName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pcs.Spec.DBCertSecret,
+					SecretName: controllerResource.Spec.DBCertSecret,
 				},
 			},
 		})
@@ -683,12 +666,12 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		})
 	}
 
-	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorHttpsCertDirName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pcs.Spec.LinstorHttpsControllerSecret,
+					SecretName: controllerResource.Spec.LinstorHttpsControllerSecret,
 				},
 			},
 		})
@@ -700,12 +683,12 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		})
 	}
 
-	if pcs.Spec.LinstorHttpsClientSecret != "" {
+	if controllerResource.Spec.LinstorHttpsClientSecret != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorClientDirName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pcs.Spec.LinstorHttpsClientSecret,
+					SecretName: controllerResource.Spec.LinstorHttpsClientSecret,
 				},
 			},
 		})
@@ -716,12 +699,12 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 		})
 	}
 
-	if !pcs.Spec.SslConfig.IsPlain() {
+	if !controllerResource.Spec.SslConfig.IsPlain() {
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorSslDirName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: string(*pcs.Spec.SslConfig),
+					SecretName: string(*controllerResource.Spec.SslConfig),
 				},
 			},
 		})
@@ -746,65 +729,69 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pcs.Name + "-controller",
-			Namespace: pcs.Namespace,
+			Name:      controllerResource.Name + "-controller",
+			Namespace: controllerResource.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
-			Replicas: pcs.Spec.Replicas,
+			Replicas: controllerResource.Spec.Replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      pcs.Name + "-controller",
-					Namespace: pcs.Namespace,
+					Name:      controllerResource.Name + "-controller",
+					Namespace: controllerResource.Namespace,
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: getServiceAccountName(pcs),
-					PriorityClassName:  pcs.Spec.PriorityClassName.GetName(pcs.Namespace),
+					ServiceAccountName: getServiceAccountName(controllerResource),
+					PriorityClassName:  controllerResource.Spec.PriorityClassName.GetName(controllerResource.Namespace),
 					Containers: []corev1.Container{
 						{
 							Name:            "linstor-controller",
-							Image:           pcs.Spec.ControllerImage,
+							Image:           controllerResource.Spec.ControllerImage,
 							Args:            []string{"startController"}, // Run linstor-controller.
-							ImagePullPolicy: pcs.Spec.ImagePullPolicy,
+							ImagePullPolicy: controllerResource.Spec.ImagePullPolicy,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 3376,
+									Protocol:      "TCP",
 								},
 								{
 									ContainerPort: 3377,
+									Protocol:      "TCP",
 								},
 								{
 									ContainerPort: lc.DefaultHttpPort,
+									Protocol:      "TCP",
 								},
 								{
 									ContainerPort: lc.DefaultHttpsPort,
+									Protocol:      "TCP",
 								},
 							},
 							VolumeMounts:  volumeMounts,
 							Env:           env,
 							LivenessProbe: &livenessProbe,
-							Resources:     pcs.Spec.Resources,
+							Resources:     controllerResource.Spec.Resources,
 						},
 					},
 					Volumes:          volumes,
 					ImagePullSecrets: pullSecrets,
-					Affinity:         getDeploymentAffinity(pcs),
-					Tolerations:      pcs.Spec.Tolerations,
+					Affinity:         getDeploymentAffinity(controllerResource),
+					Tolerations:      controllerResource.Spec.Tolerations,
 				},
 			},
 		},
 	}
 }
 
-func getDeploymentAffinity(pcs *piraeusv1.LinstorController) *corev1.Affinity {
-	if pcs.Spec.Affinity == nil {
+func getDeploymentAffinity(controllerResource *piraeusv1.LinstorController) *corev1.Affinity {
+	if controllerResource.Spec.Affinity == nil {
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
-						LabelSelector: &metav1.LabelSelector{MatchLabels: pcsLabels(pcs)},
+						LabelSelector: &metav1.LabelSelector{MatchLabels: resourceLabels(controllerResource)},
 						TopologyKey:   kubeSpec.DefaultTopologyKey,
 					},
 				},
@@ -812,25 +799,25 @@ func getDeploymentAffinity(pcs *piraeusv1.LinstorController) *corev1.Affinity {
 		}
 	}
 
-	return pcs.Spec.Affinity
+	return controllerResource.Spec.Affinity
 }
 
-func newServiceForPCS(pcs *piraeusv1.LinstorController) *corev1.Service {
+func newServiceForResource(controllerResource *piraeusv1.LinstorController) *corev1.Service {
 	port := lc.DefaultHttpPort
-	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
 		port = lc.DefaultHttpsPort
 	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pcs.Name,
-			Namespace: pcs.Namespace,
+			Name:      controllerResource.Name,
+			Namespace: controllerResource.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{
 				{
-					Name:       pcs.Name,
+					Name:       controllerResource.Name,
 					Port:       int32(port),
 					Protocol:   "TCP",
 					TargetPort: intstr.FromInt(port),
@@ -841,20 +828,20 @@ func newServiceForPCS(pcs *piraeusv1.LinstorController) *corev1.Service {
 	}
 }
 
-func NewConfigMapForPCS(pcs *piraeusv1.LinstorController) (*corev1.ConfigMap, error) {
+func NewConfigMapForResource(controllerResource *piraeusv1.LinstorController) (*corev1.ConfigMap, error) {
 	dbCertificatePath := ""
 	dbClientCertPath := ""
 	dbClientKeyPath := ""
-	if pcs.Spec.DBCertSecret != "" {
+	if controllerResource.Spec.DBCertSecret != "" {
 		dbCertificatePath = kubeSpec.LinstorCertDir + "/ca.pem"
-		if pcs.Spec.DBUseClientCert {
+		if controllerResource.Spec.DBUseClientCert {
 			dbClientCertPath = kubeSpec.LinstorCertDir + "/client.cert"
 			dbClientKeyPath = kubeSpec.LinstorCertDir + "/client.key"
 		}
 	}
 
 	https := lapi.ControllerConfigHttps{}
-	if pcs.Spec.LinstorHttpsControllerSecret != "" {
+	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
 		https.Enabled = true
 		https.Keystore = kubeSpec.LinstorHttpsCertDir + "/keystore.jks"
 		https.KeystorePassword = kubeSpec.LinstorHttpsCertPassword
@@ -864,7 +851,7 @@ func NewConfigMapForPCS(pcs *piraeusv1.LinstorController) (*corev1.ConfigMap, er
 
 	linstorControllerConfig := lapi.ControllerConfig{
 		Db: lapi.ControllerConfigDb{
-			ConnectionUrl:     pcs.Spec.DBConnectionURL,
+			ConnectionUrl:     controllerResource.Spec.DBConnectionURL,
 			CaCertificate:     dbCertificatePath,
 			ClientCertificate: dbClientCertPath,
 			ClientKeyPkcs8Pem: dbClientKeyPath,
@@ -877,8 +864,8 @@ func NewConfigMapForPCS(pcs *piraeusv1.LinstorController) (*corev1.ConfigMap, er
 		return nil, err
 	}
 
-	endpoint := expectedEndpoint(pcs)
-	clientConfig := lc.NewClientConfigForAPIResource(endpoint, &pcs.Spec.LinstorClientConfig)
+	endpoint := expectedEndpoint(controllerResource)
+	clientConfig := lc.NewClientConfigForAPIResource(endpoint, &controllerResource.Spec.LinstorClientConfig)
 	clientConfigFile, err := clientConfig.ToConfigFile()
 	if err != nil {
 		return nil, err
@@ -886,8 +873,8 @@ func NewConfigMapForPCS(pcs *piraeusv1.LinstorController) (*corev1.ConfigMap, er
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pcs.Name + "-config",
-			Namespace: pcs.Namespace,
+			Name:      controllerResource.Name + "-config",
+			Namespace: controllerResource.Namespace,
 		},
 		Data: map[string]string{
 			kubeSpec.LinstorControllerConfigFile: controllerConfigBuilder.String(),
@@ -906,16 +893,16 @@ func getServiceAccountName(lc *piraeusv1.LinstorController) string {
 	return lc.Spec.ServiceAccountName
 }
 
-func expectedEndpoint(pcs *piraeusv1.LinstorController) string {
-	serviceName := types.NamespacedName{Name: pcs.Name, Namespace: pcs.Namespace}
-	useHTTPS := pcs.Spec.LinstorHttpsClientSecret != ""
+func expectedEndpoint(controllerResource *piraeusv1.LinstorController) string {
+	serviceName := types.NamespacedName{Name: controllerResource.Name, Namespace: controllerResource.Namespace}
+	useHTTPS := controllerResource.Spec.LinstorHttpsClientSecret != ""
 
 	return lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
 }
 
-func pcsLabels(pcs *piraeusv1.LinstorController) map[string]string {
+func resourceLabels(controllerResource *piraeusv1.LinstorController) map[string]string {
 	return map[string]string{
-		"app":  pcs.Name,
+		"app":  controllerResource.Name,
 		"role": kubeSpec.ControllerRole,
 	}
 }
