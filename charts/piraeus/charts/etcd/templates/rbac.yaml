@@ -6,3 +6,19 @@ kind: ServiceAccount
 metadata:
   name: etcd
   namespace: {{ .Release.Namespace }}
+{{ if .Values.global.openshift }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: piraeus-etcd-scc-privileged
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: etcd
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: system:openshift:scc:privileged
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

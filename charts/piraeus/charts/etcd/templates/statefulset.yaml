@@ -42,7 +42,9 @@ spec:
 {{ toYaml .Values.tolerations | indent 8 }}
 {{- end }}
       securityContext:
+{{- if not .Values.global.openshift }}
 {{ include "operator.podsecuritycontext" . | indent 8 }}
+{{- end }}
       containers:
       - name: {{ template "etcd.fullname" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -87,6 +89,10 @@ spec:
         {{- end }}
 {{- if .Values.extraEnv }}
 {{ toYaml .Values.extraEnv | indent 8 }}
+{{- end }}
+{{- if .Values.global.openshift }}
+        securityContext:
+          privileged: true
 {{- end }}
         volumeMounts:
         - name: datadir

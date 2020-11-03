@@ -87,9 +87,11 @@ Environment to pass to stork
 Sets the default security context for all pods
 */}}
 {{- define "operator.podsecuritycontext" -}}
-{{- if .Values.global.setSecurityContext -}}
+{{- if and (eq .Values.global.setSecurityContext true) (eq .Values.global.openshift false) -}}
 runAsUser: 1000
 runAsGroup: 1000
 fsGroup: 1000
 {{- end -}}
 {{- end -}}
+
+

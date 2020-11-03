@@ -22,6 +22,7 @@ spec:
           values:
           - {{ . }}
 ---
+{{ if not $.Values.openshift }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -68,4 +69,5 @@ spec:
                 values:
                 - {{ . }}
 ---
+{{ end }}
 {{ end }}

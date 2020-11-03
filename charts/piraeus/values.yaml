@@ -1,6 +1,7 @@
 global:
   imagePullPolicy: IfNotPresent # empty pull policy means k8s default is used ("always" if tag == ":latest", "ifnotpresent" else)
   setSecurityContext: true # Force non-privileged containers to run as non-root users
+  openshift: false
 # Dependency charts
 etcd:
   persistentVolume:
@@ -8,6 +9,7 @@ etcd:
     storage: 1Gi
   replicas: 1 # How many instances of etcd will be added to the initial cluster.
   resources: {} # resource requirements for etcd containers
+  tolerations: []
   image:
     repository: gcr.io/etcd-development/etcd
     tag: v3.4.9

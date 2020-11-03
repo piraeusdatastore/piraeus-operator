@@ -19,7 +19,10 @@ subjects:
 
 {{ if .Values.psp.unprivilegedRole }}
 ---
-{{ $unprivAccounts := list (include "operator.fullname" .) "linstor-controller" "csi-controller" "stork-scheduler-account" "stork-account" "snapshot-controller" "etcd" }}
+{{ $unprivAccounts := list (include "operator.fullname" .) "linstor-controller" "csi-controller" "stork-scheduler-account" "stork-account" "snapshot-controller" }}
+{{ if not .Values.global.openshift }}
+{{ append $unprivAccounts "etcd" }}
+{{ end }}
 {{ template "bind-role" (dict "Prefix" .Release.Name "Role" .Values.psp.unprivilegedRole "Namespace" .Release.Namespace "Accounts" $unprivAccounts) }}
 ---
 {{ end }}
