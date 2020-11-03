@@ -35,8 +35,7 @@ var (
 	}
 	DefaultCSIDriver = storagev1beta1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "linstor.csi.linbit.com",
-			Namespace: "bar",
+			Name: "linstor.csi.linbit.com",
 		},
 		Spec: storagev1beta1.CSIDriverSpec{
 			AttachRequired: &CSIDriverAttachRequired,

@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Default value for affinity on LINSTOR controller and CSI controller changed. The new default is to distribute the pods
   across all available nodes.
 * Default value for tolerations for etcd pods changed. They are now able to run on master nodes.
+* Updates to LinstorController, LinstorSatelliteSet and LinstorCSIDriver are now propagated across all created resources
 
 ### Deprecation
 

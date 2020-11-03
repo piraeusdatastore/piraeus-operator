@@ -205,7 +205,7 @@ keyfile     = /etc/linstor/client/client.key
 
 	for _, test := range testcases {
 		t.Run(test.name, func(t *testing.T) {
-			actualCM, err := NewConfigMapForPCS(test.spec)
+			actualCM, err := NewConfigMapForResource(test.spec)
 			if err != nil {
 				t.Fatalf("config map creation failed: %v", err)
 			}
