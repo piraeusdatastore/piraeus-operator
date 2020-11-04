@@ -62,16 +62,10 @@ memoryMode: false
 ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
 ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
 nodeSelector: {}
-tolerations: []
-affinity:
-  # Ensures only one pod is scheduled per node
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-            - key: app
-              operator: In
-              values:
-                - etcd
-        topologyKey: "kubernetes.io/hostname"
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: "Exists"
+    effect: "NoSchedule"
+affinity: {}
+podsecuritycontext: {}
 extraEnv: []

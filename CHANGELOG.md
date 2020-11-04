@@ -14,12 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * New Helm options to disable creation of LinstorController and LinstorSatelliteSet resource
   `operator.controller.enabled` and `operator.satelliteSet.enabled`.
 * New Helm option to override the generated controller endpoint: `controllerEndpoint`
+* Allow overriding the default `securityContext` on a component basis:
+  - `etcd.podsecuritycontext` sets the securityContext of etcd pods
+  - `stork.podsecuritycontext` sets the securityContext of stork plugin and scheduler pods
+  - `csi-snapshotter.podsecuritycontext` sets the securityContext of the CSI-Snapshotter pods
+  - `operator.podsecuritycontext` sets the securityContext of the operator pods
+* Example settings for openshift
 
 ### Changed
 
 * Fixed a bug in `pv-hostpath` where permissions on the created directory are not applied on all nodes.
+* Volumes created by `pv-hostpath` are now group writable. This makes them easier to integrate with `fsGroup` settings.
 * Default value for affinity on LINSTOR controller and CSI controller changed. The new default is to distribute the pods
   across all available nodes.
+* Default value for tolerations for etcd pods changed. They are now able to run on master nodes.
 
 ### Deprecation
 

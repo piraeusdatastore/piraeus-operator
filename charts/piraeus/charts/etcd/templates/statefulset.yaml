@@ -32,6 +32,15 @@ spec:
 {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
+{{ else }}
+      affinity:
+        # Ensures only one pod is scheduled per node
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: {{ template "etcd.name" . }}
+              topologyKey: "kubernetes.io/hostname"
 {{- end }}
 {{- if .Values.nodeSelector }}
       nodeSelector:
@@ -42,7 +51,11 @@ spec:
 {{ toYaml .Values.tolerations | indent 8 }}
 {{- end }}
       securityContext:
-{{ include "operator.podsecuritycontext" . | indent 8 }}
+{{- if .Values.podsecuritycontext }}
+{{ toYaml .Values.podsecuritycontext | indent 8 }}
+{{- else }}
+{{ include "operator.defaultpodsecuritycontext" $ | indent 8 }}
+{{- end }}
       containers:
       - name: {{ template "etcd.fullname" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

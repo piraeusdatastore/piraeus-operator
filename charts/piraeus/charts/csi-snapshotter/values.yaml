@@ -1,3 +1,12 @@
 image: quay.io/k8scsi/snapshot-controller:v2.0.1
 replicas: 1
 resources: {}
+podsecuritycontext: {}
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app: snapshot-controller
+        topologyKey: "kubernetes.io/hostname"
+tolerations: []

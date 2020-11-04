@@ -63,6 +63,22 @@ Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
 Description:: Resource requests and limits to apply to the operator containers.
 
+=== `operator.podsecuritycontext`
+Default:: `{}`
+Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
+Description:: Override for the default security context passed to the operator pods. See <<_global_setsecuritycontext>>
+
+=== `operator.affinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Set the operator pod affinity. The default expands to allow only one operator pod per node.
+
+=== `operator.tolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the operator pod.
+
+
 
 == Cluster Snapshot Controller
 
@@ -87,6 +103,30 @@ Description:: Number of replicas of the CSI snapshot controller.
 Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
 Description:: Resource requests and limits to apply to the CSI snapshot controller containers.
+
+=== `csi-snapshotter.podsecuritycontext`
+Default:: `{}`
+Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
+Description:: Override for the default security context passed to the csi-snapshotter pods. See <<_global_setsecuritycontext>>
+
+=== `csi-snapshotter.affinity`
+Default::
+[source,yaml]
+----
+podAntiAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+  - labelSelector:
+      matchLabels:
+        app: snapshot-controller
+    topologyKey: "kubernetes.io/hostname"
+----
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Set the pod affinity. The default forces pod to be assigned to different nodes.
+
+=== `csi-snapshotter.tolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the CSI snapshot controller.
 
 
 == CSI Driver
@@ -210,11 +250,31 @@ Default:: `1`
 Valid values:: number
 Description:: number of replicas to use for ETCD. An odd number is preferred.
 
+=== `etcd.affinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Affinity settings for etcd pods. The default allows scheduling on master nodes.
+
 === `etcd.resources`
 Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
 Description:: Resource requests and limits to apply to the etcd containers. See https://etcd.io/docs/v3.4.0/faq/#system-requirements[etcd docs]
 
+=== `etcd.tolerations`
+Default::
+[source]
+----
+- key: node-role.kubernetes.io/master
+  operator: "Exists"
+  effect: "NoSchedule"
+----
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Set the tolerations for etcd. Defaults to allow scheduling on master nodes.
+
+=== `etcd.podsecuritycontext`
+Default:: `{}`
+Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
+Description:: Override for the default security context passed to the etcd pods. See <<_global_setsecuritycontext>>
 
 
 == Piraeus Controller
@@ -429,3 +489,8 @@ Description:: Name of the image to use for the stork plugin
 Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
 Description:: Resource requests and limits to apply to the stork containers.
+
+=== `stork.podsecuritycontext`
+Default:: `{}`
+Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
+Description:: Override for the default security context passed to the stork and scheduler pods. See <<_global_setsecuritycontext>>

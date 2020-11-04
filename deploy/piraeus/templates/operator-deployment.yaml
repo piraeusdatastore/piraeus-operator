@@ -38,3 +38,11 @@ spec:
               value: "piraeus-operator"
           resources:
             {}
+      tolerations: []
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  name: piraeus-op-operator

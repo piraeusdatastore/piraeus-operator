@@ -137,7 +137,11 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       serviceAccountName: stork-account
       securityContext:
-{{ include "operator.podsecuritycontext" . | indent 8 }}
+{{- if .Values.stork.podsecuritycontext }}
+{{ .Values.stork.podsecuritycontext | toYaml | indent 8 }}
+{{- else }}
+{{ include "operator.defaultpodsecuritycontext" $ | indent 8 }}
+{{- end }}
 # Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-scheduler.yaml
 ---
 apiVersion: v1
@@ -274,6 +278,10 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       hostPID: false
       securityContext:
-{{ include "operator.podsecuritycontext" . | indent 8 }}
+{{- if .Values.stork.podsecuritycontext }}
+{{ .Values.stork.podsecuritycontext | toYaml | indent 8 }}
+{{- else }}
+{{ include "operator.defaultpodsecuritycontext" $ | indent 8 }}
+{{- end }}
       serviceAccountName: stork-scheduler-account
 {{- end }}
