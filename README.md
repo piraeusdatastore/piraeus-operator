@@ -62,6 +62,12 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
     helm install piraeus-op ./charts/piraeus
     ```
 
+  You can pick from a number of example settings:
+
+  * default values [`values.yaml`](./charts/piraeus/values.yaml)
+  * images optimized for CN [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
+  * override for Openshift [`values-openshift.yaml`](./charts/piraeus/values-openshift.yaml)
+
   A full list of all available options to pass to helm can be found [here](./doc/helm-values.adoc).
 
 ### LINSTOR etcd `hostPath` persistence
@@ -85,6 +91,11 @@ helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE0>,<NODE1>,<NO
 
 Persistence for etcd is enabled by default.
 
+#### `hostPath` volumes and SELinux
+
+Clusters with SELinux enabled hosts (for example: OpenShift clusters) need to relabel the created directory. This
+can be done automatically by passing `--set selinux=true` to the above `helm install` command.
+
 ### Using an existing database
 
 LINSTOR can connect to an existing PostgreSQL, MariaDB or etcd database. For
@@ -102,11 +113,6 @@ etcd cluster by adding the following to the Helm install command:
 ```
 --set etcd.enabled=false --set "operator.controller.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
 ```
-
-### Image mirror for CN users
-
-The chart contains a values file prepared for chinese users [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
-It replaces the default image locations with images hosted on daocloud.io.
 
 ### Pod resources
 
@@ -133,6 +139,10 @@ The following components can be started with multiple replicas:
 [`csi-snapshotter.replicas`]: ./doc/helm-values.adoc#csi-snapshotterreplicas
 [`etcd.replicas`]: ./doc/helm-values.adoc#etcdreplicas
 [`stork.replicas`]: ./doc/helm-values.adoc#storkreplicas
+
+### Influence pod scheduling
+
+You can influence the assignement of various components to specific nodes. See the [scheduling guide.](./doc/scheduling.md)
 
 ### Terminating Helm deployment
 

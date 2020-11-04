@@ -29,6 +29,14 @@ spec:
           imagePullPolicy: "IfNotPresent"
           resources:
             {}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: snapshot-controller
+            topologyKey: kubernetes.io/hostname
+      tolerations: []
 ---
 # Source: piraeus/charts/csi-snapshotter/templates/deployment.yaml
 # This YAML file shows how to deploy the snapshot controller

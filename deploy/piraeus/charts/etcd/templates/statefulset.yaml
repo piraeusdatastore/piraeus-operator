@@ -29,15 +29,17 @@ spec:
     spec:
       serviceAccountName: "etcd"
       affinity:
+        # Ensures only one pod is scheduled per node
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - etcd
-            topologyKey: kubernetes.io/hostname
+            - labelSelector:
+                matchLabels:
+                  app: etcd
+              topologyKey: "kubernetes.io/hostname"
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000

@@ -23,7 +23,11 @@ spec:
     spec:
       serviceAccountName: snapshot-controller
       securityContext:
-{{ include "operator.podsecuritycontext" . | indent 8 }}
+{{- if .Values.podsecuritycontext }}
+{{ .Values.podsecuritycontext | toYaml | indent 8 }}
+{{- else }}
+{{ include "operator.defaultpodsecuritycontext" $ | indent 8 }}
+{{- end }}
       containers:
         - name: snapshot-controller
           image: {{ .Values.image }}
@@ -33,3 +37,6 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           resources:
 {{ .Values.resources | toYaml | indent 12 }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      tolerations: {{ toJson .Values.tolerations }}
