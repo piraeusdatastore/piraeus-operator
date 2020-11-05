@@ -93,5 +93,3 @@ runAsGroup: 1000
 fsGroup: 1000
 {{- end -}}
 {{- end -}}
-
-
