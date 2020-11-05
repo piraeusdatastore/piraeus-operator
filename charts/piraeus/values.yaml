@@ -37,7 +37,7 @@ csi:
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
-  controllerAffinity: {}
+  controllerAffinity: null
   controllerTolerations: []
   enableTopology: false
   resources: {}
@@ -60,7 +60,7 @@ operator:
     dbCertSecret: ""
     dbUseClientCert: false
     sslSecret: ""
-    affinity: {}
+    affinity: null
     tolerations: []
     resources: {}
     replicas: 1

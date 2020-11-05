@@ -29,6 +29,12 @@ const (
 	// NodeRole is the role for the node set
 	NodeRole = "piraeus-node"
 
+	// CSIControllerRole is the role for the CSI Controller Workloads
+	CSIControllerRole = "csi-controller"
+
+	// CSINodeRole is the role for the CSI Node Workloads
+	CSINodeRole = "csi-node"
+
 	// Name is the name of the operator
 	Name = "piraeus-operator"
 

@@ -790,12 +790,29 @@ func newDeploymentForResource(pcs *piraeusv1.LinstorController) *appsv1.Deployme
 					},
 					Volumes:          volumes,
 					ImagePullSecrets: pullSecrets,
-					Affinity:         pcs.Spec.Affinity,
+					Affinity:         getDeploymentAffinity(pcs),
 					Tolerations:      pcs.Spec.Tolerations,
 				},
 			},
 		},
 	}
+}
+
+func getDeploymentAffinity(pcs *piraeusv1.LinstorController) *corev1.Affinity {
+	if pcs.Spec.Affinity == nil {
+		return &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{MatchLabels: pcsLabels(pcs)},
+						TopologyKey:   kubeSpec.DefaultTopologyKey,
+					},
+				},
+			},
+		}
+	}
+
+	return pcs.Spec.Affinity
 }
 
 func newServiceForPCS(pcs *piraeusv1.LinstorController) *corev1.Service {

@@ -64,6 +64,7 @@ const (
 const (
 	SystemNamespace                 = "kube-system"
 	SystemCriticalPriorityClassName = "system-node-critical"
+	DefaultTopologyKey              = "kubernetes.io/hostname"
 	LinstorControllerServiceAccount = "linstor-controller"
 	LinstorSatelliteServiceAccount  = "linstor-satellite"
 )

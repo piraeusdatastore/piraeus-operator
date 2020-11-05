@@ -16,7 +16,7 @@ spec:
   imagePullPolicy: "IfNotPresent"
   linstorHttpsControllerSecret: ""
   linstorHttpsClientSecret: ""
-  affinity: {}
+  affinity: null
   tolerations: []
   resources: {}
   replicas: 1
