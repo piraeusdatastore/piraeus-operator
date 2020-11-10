@@ -11,4 +11,4 @@ if [ ! -x "${HOME}/operator-sdk/bin/operator-sdk" ] ; then
   chmod +x "${HOME}/operator-sdk/bin/operator-sdk"
 fi
 
-echo "::add-path::${HOME}/operator-sdk/bin/"
+echo "${HOME}/operator-sdk/bin/" >> "${GITHUB_PATH}"
