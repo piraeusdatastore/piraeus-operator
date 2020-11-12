@@ -3,6 +3,7 @@ package reconcileutil
 import (
 	"context"
 	"fmt"
+	"time"
 
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,6 +24,7 @@ type GCRuntimeObject interface {
 
 const (
 	lastAppliedAnnotation = kubeSpec.APIGroup + "/last-applied-configuration"
+	restartAnnotation     = kubeSpec.APIGroup + "/restarted-at"
 	fieldOwner            = kubeSpec.APIGroup + "/pkg/k8s/reconcileutil"
 )
 
@@ -99,6 +101,18 @@ func CreateOrUpdateWithOwner(ctx context.Context, kubeClient client.Client, sche
 	}
 
 	return CreateOrUpdate(ctx, kubeClient, scheme, obj)
+}
+
+// "kubectl rollout restart" in go
+//
+// Works for Deployments, StatefulSets, DaemonSets and maybe others. Restart is trigger by setting/updating an
+// annotation on the pod template.
+func RestartRollout(ctx context.Context, kubeClient client.Client, obj runtime.Object) error {
+	nowString := time.Now().Format(time.RFC3339)
+
+	patchData := fmt.Sprintf("{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"%s\":\"%s\"}}}}}", restartAnnotation, nowString)
+
+	return kubeClient.Patch(ctx, obj, client.ConstantPatch(types.MergePatchType, []byte(patchData)))
 }
 
 // Returns the current state of the given object, as stored in Kubernetes.
