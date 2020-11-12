@@ -187,7 +187,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		return fmt.Errorf("failed to render config for LINSTOR: %w", err)
 	}
 
-	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, controllerResource)
+	configmapChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, controllerResource)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile LINSTOR Controller ConfigMap: %w", err)
 	}
@@ -195,9 +195,18 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 	log.Debug("reconcile LINSTOR Controller Deployment")
 
 	ctrlDeployment := newDeploymentForResource(controllerResource)
-	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlDeployment, controllerResource)
+	deploymentChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlDeployment, controllerResource)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile LINSTOR Controller Deployment: %w", err)
+	}
+
+	if configmapChanged && !deploymentChanged {
+		log.Debug("restart LINSTOR Controller")
+
+		err := reconcileutil.RestartRollout(ctx, r.client, ctrlDeployment)
+		if err != nil {
+			return fmt.Errorf("failed to restart LINSTOR Controller after ConfigMap change: %w", err)
+		}
 	}
 
 	log.Debug("reconcile LINSTOR")

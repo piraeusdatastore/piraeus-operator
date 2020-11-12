@@ -196,23 +196,32 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
 
-	changed, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, satelliteSet)
+	configmapChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
 
-	log.WithField("changed", changed).Debug("reconcile satellite configmap: done")
+	log.WithField("changed", configmapChanged).Debug("reconcile satellite configmap: done")
 
 	log.Debug("reconcile satellite daemonset")
 
 	ds := newSatelliteDaemonSet(satelliteSet, configMap)
 
-	changed, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet)
+	daemonsetChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite daemonset: %w", err)}
 	}
 
-	log.WithField("changed", changed).Debug("reconcile satellite daemonset: done")
+	log.WithField("changed", daemonsetChanged).Debug("reconcile satellite daemonset: done")
+
+	if configmapChanged && !daemonsetChanged {
+		log.Debug("restart LINSTOR Satellites")
+
+		err := reconcileutil.RestartRollout(ctx, r.client, ds)
+		if err != nil {
+			return []error{fmt.Errorf("failed to restart LINSTOR Controller after ConfigMap change: %w", err)}
+		}
+	}
 
 	return r.reconcileAllNodesOnController(ctx, satelliteSet)
 }
