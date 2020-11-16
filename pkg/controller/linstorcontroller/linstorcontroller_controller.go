@@ -788,10 +788,15 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 					ImagePullSecrets: pullSecrets,
 					Affinity:         getDeploymentAffinity(controllerResource),
 					Tolerations:      controllerResource.Spec.Tolerations,
+					SecurityContext:  getSecurityContext(),
 				},
 			},
 		},
 	}
+}
+
+func getSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{SupplementalGroups: []int64{kubeSpec.LinstorControllerGID}}
 }
 
 func getDeploymentAffinity(controllerResource *piraeusv1.LinstorController) *corev1.Affinity {

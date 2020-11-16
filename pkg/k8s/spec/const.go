@@ -43,6 +43,7 @@ const (
 	LinstorControllerConfigFile = "linstor.toml"
 	LinstorSatelliteConfigFile  = "linstor_satellite.toml"
 	LinstorClientConfigFile     = "linstor-client.conf"
+	LinstorControllerGID        = 1000
 )
 
 // Special strings for communicating with the module injector

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `csi-snapshotter.podsecuritycontext` sets the securityContext of the CSI-Snapshotter pods
   - `operator.podsecuritycontext` sets the securityContext of the operator pods
 * Example settings for openshift
+* LINSTOR controller runs with additional GID 1000, to ensure write access to log directory
 
 ### Changed
 
