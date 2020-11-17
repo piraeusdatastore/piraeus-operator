@@ -10,7 +10,7 @@ jobs:
   test:
     # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     # includes helm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: verify that helm runs offline

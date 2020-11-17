@@ -10,10 +10,10 @@ env:
   OPERATOR_SDK_VERSION: v0.16.0
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2.0.3
+      - uses: actions/setup-go@v2
       # Cache operator-sdk
       - uses: actions/cache@v1
         id: operator-sdk-cache
@@ -34,38 +34,30 @@ jobs:
         run: go mod download
 
   golangci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: prepare
     steps:
       - uses: actions/checkout@v2
-      # Use go cache
-      - uses: actions/cache@v1
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-build-
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v1
+        uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.26
           only-new-issues: true
           # Lints are more guidelines than actual rules
           args: --issues-exit-code=0
 
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: prepare
     env:
       # These hooks will run separately in github actions
       SKIP: golangci-lint
     steps:
       - name: Setup Go environment
-        uses: actions/setup-go@v2.0.3
+        uses: actions/setup-go@v2
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
       - name: set PY
-        run: echo "::set-env name=PY::$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')"
+        run: echo "PY=$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')" >> ${GITHUB_ENV}
       # Cache pre-commit repos
       - uses: actions/cache@v1
         with:
@@ -88,17 +80,17 @@ jobs:
             ${{ runner.os }}-build-
       # Checks
       - name: Run pre-commit checks on changes files
-        uses: pre-commit/action@v1.1.0
+        uses: pre-commit/action@v2.0.0
 
   build:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - checks
       - golangci
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2.0.3
+      - uses: actions/setup-go@v2
       # use operator-sdk
       - uses: actions/cache@v1
         id: operator-sdk-cache
