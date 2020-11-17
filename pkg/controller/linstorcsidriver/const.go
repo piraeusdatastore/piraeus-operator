@@ -1,9 +1,10 @@
 package linstorcsidriver
 
 const (
-	DefaultAttacherImage            = "quay.io/k8scsi/csi-attacher:v2.1.1"
-	DefaultNodeDriverRegistrarImage = "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
-	DefaultProvisionerImage         = "quay.io/k8scsi/csi-provisioner:v1.5.0"
-	DefaultSnapshotterImage         = "quay.io/k8scsi/csi-snapshotter:v2.0.1"
-	DefaultResizerImage             = "quay.io/k8scsi/csi-resizer:v0.5.0"
+	DefaultAttacherImage            = "k8s.gcr.io/sig-storage/csi-attacher:v3.0.2"
+	DefaultLivenessProbeImage       = "k8s.gcr.io/sig-storage/livenessprobe:v2.1.0"
+	DefaultNodeDriverRegistrarImage = "k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1"
+	DefaultProvisionerImage         = "k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4"
+	DefaultSnapshotterImage         = "k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2"
+	DefaultResizerImage             = "k8s.gcr.io/sig-storage/csi-resizer:v1.0.1"
 )

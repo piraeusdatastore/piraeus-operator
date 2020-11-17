@@ -23,6 +23,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 
@@ -182,6 +184,13 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 		changed = true
 
 		logger.Infof("set csi attacher image to '%s'", csiResource.Spec.CSIAttacherImage)
+	}
+
+	if csiResource.Spec.CSILivenessProbeImage == "" {
+		csiResource.Spec.CSILivenessProbeImage = DefaultLivenessProbeImage
+		changed = true
+
+		logger.Infof("set csi liveness probe image to '%s'", csiResource.Spec.CSILivenessProbeImage)
 	}
 
 	if csiResource.Spec.CSINodeDriverRegistrarImage == "" {
@@ -367,6 +376,7 @@ var (
 	MountPropagationBidirectional = corev1.MountPropagationBidirectional
 	HostPathDirectoryOrCreate     = corev1.HostPathDirectoryOrCreate
 	HostPathDirectory             = corev1.HostPathDirectory
+	DefaultHealthPort             = 9808
 )
 
 func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.DaemonSet {
@@ -434,6 +444,18 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 
 	env = append(env, linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)...)
 
+	csiLivenessProbe := corev1.Container{
+		Name:            "csi-livenessprobe",
+		Image:           csiResource.Spec.CSILivenessProbeImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Args:            []string{"--csi-address=$(CSI_ENDPOINT)"},
+		VolumeMounts: []corev1.VolumeMount{{
+			Name:      pluginDir.Name,
+			MountPath: "/csi/",
+		}},
+		Env: []corev1.EnvVar{csiEndpoint},
+	}
+
 	driverRegistrar := corev1.Container{
 		Name:            "csi-node-driver-registrar",
 		Image:           csiResource.Spec.CSINodeDriverRegistrarImage,
@@ -489,6 +511,15 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 			},
 		},
 		Resources: csiResource.Spec.Resources,
+		// Set the liveness probe on the plugin container, it's the component that probably needs the restart
+		LivenessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/healthz",
+					Port: intstr.FromInt(DefaultHealthPort),
+				},
+			},
+		},
 	}
 
 	return &appsv1.DaemonSet{
@@ -504,6 +535,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 					ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
 					Containers: []corev1.Container{
 						driverRegistrar,
+						csiLivenessProbe,
 						linstorPluginContainer,
 					},
 					Volumes: []corev1.Volume{
@@ -555,18 +587,28 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 
 	linstorEnvVars := linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)
 
+	csiLivenessProbe := corev1.Container{
+		Name:            "csi-livenessprobe",
+		Image:           csiResource.Spec.CSILivenessProbeImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Args:            []string{"--csi-address=$(ADDRESS)"},
+		VolumeMounts: []corev1.VolumeMount{{
+			Name:      socketVolume.Name,
+			MountPath: socketDirPath,
+		}},
+		Env: []corev1.EnvVar{socketAddress},
+	}
 	csiProvisioner := corev1.Container{
 		Name:            "csi-provisioner",
 		Image:           csiResource.Spec.CSIProvisionerImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
-			"--provisioner=linstor.csi.linbit.com",
 			"--csi-address=$(ADDRESS)",
 			"--v=5",
+			// restore old default fstype
+			"--default-fstype=ext4",
 			fmt.Sprintf("--feature-gates=Topology=%t", csiResource.Spec.EnableTopology),
-			"--connection-timeout=4m",
-			"--enable-leader-election=true",
-			"--leader-election-type=leases",
+			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace},
@@ -618,7 +660,9 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Args: []string{
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
-			"--csiTimeout=4m",
+			"--timeout=4m",
+			// LINSTOR can resize while in use, no need to check if volume is in use
+			"--handle-volume-inuse-error=false",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
 		},
@@ -648,9 +692,18 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		),
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
-			MountPath: "/var/lib/csi/sockets/pluginproxy/",
+			MountPath: socketDirPath,
 		}},
 		Resources: csiResource.Spec.Resources,
+		// Set the liveness probe on the plugin container, it's the component that probably needs the restart
+		LivenessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/healthz",
+					Port: intstr.FromInt(DefaultHealthPort),
+				},
+			},
+		},
 	}
 
 	return &appsv1.Deployment{
@@ -667,6 +720,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 					ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
 					Containers: []corev1.Container{
 						csiAttacher,
+						csiLivenessProbe,
 						csiProvisioner,
 						csiSnapshotter,
 						csiResizer,

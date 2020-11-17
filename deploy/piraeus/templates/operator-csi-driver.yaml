@@ -7,15 +7,16 @@ metadata:
 spec:
   enabled: true
   imagePullSecret: ""
-  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.9.0"
+  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.10.0"
   imagePullPolicy: "IfNotPresent"
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node
-  csiAttacherImage: "quay.io/k8scsi/csi-attacher:v2.2.0"
-  csiNodeDriverRegistrarImage: "quay.io/k8scsi/csi-node-driver-registrar:v1.3.0"
-  csiProvisionerImage: "quay.io/k8scsi/csi-provisioner:v1.6.0"
-  csiResizerImage: "quay.io/k8scsi/csi-resizer:v0.5.0"
-  csiSnapshotterImage: "quay.io/k8scsi/csi-snapshotter:v2.1.0"
+  csiAttacherImage: "k8s.gcr.io/sig-storage/csi-attacher:v3.0.2"
+  csiLivenessProbeImage: "k8s.gcr.io/sig-storage/livenessprobe:v2.1.0"
+  csiNodeDriverRegistrarImage: "k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1"
+  csiProvisionerImage: "k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4"
+  csiResizerImage: "k8s.gcr.io/sig-storage/csi-resizer:v1.0.1"
+  csiSnapshotterImage: "k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2"
   linstorHttpsClientSecret: ""
   priorityClassName: ""
   controllerReplicas: 1

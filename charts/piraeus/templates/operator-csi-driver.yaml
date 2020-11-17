@@ -11,6 +11,7 @@ spec:
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node
   csiAttacherImage: {{ .Values.csi.csiAttacherImage | quote }}
+  csiLivenessProbeImage: {{ .Values.csi.csiLivenessProbeImage | quote }}
   csiNodeDriverRegistrarImage: {{ .Values.csi.csiNodeDriverRegistrarImage | quote }}
   csiProvisionerImage: {{ .Values.csi.csiProvisionerImage | quote }}
   csiResizerImage: {{ .Values.csi.csiResizerImage | quote }}

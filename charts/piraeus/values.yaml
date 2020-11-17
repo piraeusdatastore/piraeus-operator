@@ -13,7 +13,7 @@ etcd:
     tag: v3.4.9
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
-  image: quay.io/k8scsi/snapshot-controller:v2.1.0
+  image: k8s.gcr.io/sig-storage/snapshot-controller:v3.0.2
   replicas: 1
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
@@ -27,12 +27,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.9.0
-  csiAttacherImage: quay.io/k8scsi/csi-attacher:v2.2.0
-  csiNodeDriverRegistrarImage: quay.io/k8scsi/csi-node-driver-registrar:v1.3.0
-  csiProvisionerImage: quay.io/k8scsi/csi-provisioner:v1.6.0
-  csiSnapshotterImage: quay.io/k8scsi/csi-snapshotter:v2.1.0
-  csiResizerImage: quay.io/k8scsi/csi-resizer:v0.5.0
+  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.10.0
+  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.0.2
+  csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.1.0
+  csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1
+  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4
+  csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2
+  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.0.1
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
@@ -57,7 +58,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.10.0
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -71,7 +72,7 @@ operator:
     replicas: 1
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.9.0
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.10.0
     storagePools: null
     sslSecret: ""
     automaticStorageType: None

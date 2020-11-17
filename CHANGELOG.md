@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   across all available nodes.
 * Default value for tolerations for etcd pods changed. They are now able to run on master nodes.
 * Updates to LinstorController, LinstorSatelliteSet and LinstorCSIDriver are now propagated across all created resources
+* Updated default images:
+  - csi sidecar containers updated (compatible with Kubernetes v1.17+)
+  - LINSTOR 1.10.0
+  - LINSTOR CSI 0.10.0
 
 ### Deprecation
 

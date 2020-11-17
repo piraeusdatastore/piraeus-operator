@@ -668,6 +668,9 @@ spec:
               description: Name of the service account used by the CSI controller
                 pods
               type: string
+            csiLivenessProbeImage:
+              description: Name of the CSI liveness probe image. See https://kubernetes-csi.github.io/docs/livenessprobe.html
+              type: string
             csiNodeDriverRegistrarImage:
               description: Name of the CSI node driver registrar image. See https://kubernetes-csi.github.io/docs/node-driver-registrar.html
               type: string
