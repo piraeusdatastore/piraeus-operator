@@ -13,7 +13,7 @@ etcd:
     tag: v3.4.9
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
-  image: daocloud.io/piraeus/snapshot-controller:v2.1.0
+  image: daocloud.io/piraeus/snapshot-controller:v3.0.2
   replicas: 1
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
@@ -27,12 +27,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.9.0
-  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v2.2.0
-  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v1.3.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v1.6.0
-  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v2.1.0
-  csiResizerImage: daocloud.io/piraeus/csi-resizer:v0.5.0
+  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.10.0
+  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.0.2
+  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.1.0
+  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.0.1
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.0.4
+  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v3.0.2
+  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.0.1
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
@@ -57,7 +58,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.9.0
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.10.0
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -71,7 +72,7 @@ operator:
     replicas: 1
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.9.0
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.10.0
     storagePools: null
     sslSecret: ""
     automaticStorageType: None

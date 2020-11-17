@@ -29,6 +29,10 @@ type LinstorCSIDriverSpec struct {
 	// See https://kubernetes-csi.github.io/docs/external-attacher.html
 	// +optional
 	CSIAttacherImage string `json:"csiAttacherImage"`
+	// Name of the CSI liveness probe image.
+	// See https://kubernetes-csi.github.io/docs/livenessprobe.html
+	// +optional
+	CSILivenessProbeImage string `json:"csiLivenessProbeImage"`
 	// Name of the CSI node driver registrar image.
 	// See https://kubernetes-csi.github.io/docs/node-driver-registrar.html
 	// +optional
@@ -41,7 +45,6 @@ type LinstorCSIDriverSpec struct {
 	// See https://kubernetes-csi.github.io/docs/external-snapshotter.html
 	// +optional
 	CSISnapshotterImage string `json:"csiSnapshotterImage"`
-
 	// Name of the CSI external resizer image.
 	// See https://kubernetes-csi.github.io/docs/external-resizer.html
 	// +optional

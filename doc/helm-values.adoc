@@ -90,7 +90,7 @@ Valid values::
 Description:: Enable deployment of the cluster-wide CSI snapshot controller. Your cluster may already provide this.
 
 === `csi-snapshotter.image`
-Default:: `quay.io/k8scsi/snapshot-controller:v2.1.0`
+Default:: `k8s.gcr.io/sig-storage/snapshot-controller:v3.0.2`
 Valid values:: image ref
 Description:: Image to use for the CSI snapshot controller. https://kubernetes-csi.github.io/docs/snapshot-controller.html[csi docs]
 
@@ -160,27 +160,32 @@ Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and
 Description:: Tolerations to pass to the LINSTOR CSI controller.
 
 === `csi.csiAttacherImage`
-Default:: `quay.io/k8scsi/csi-attacher:v2.2.0`
+Default:: `k8s.gcr.io/sig-storage/csi-attacher:v3.0.2`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's attacher container: https://kubernetes-csi.github.io/docs/external-attacher.html[csi docs]
 
+=== `csi.livenessProbeImage`
+Default:: `k8s.gcr.io/sig-storage/livenessprobe:v2.1.0`
+Valid values:: image ref
+Description: Image to use for LINSTOR CSI's liveness probe: https://kubernetes-csi.github.io/docs/livenessprobe.html
+
 === `csi.csiNodeDriverRegistrarImage`
-Default:: `quay.io/k8scsi/csi-node-driver-registrar:v1.3.0`
+Default:: `k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's node registrar container: https://kubernetes-csi.github.io/docs/node-driver-registrar.html[csi docs]
 
 === `csi.csiProvisionerImage`
-Default:: `quay.io/k8scsi/csi-provisioner:v1.6.0`
+Default:: `k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's provision container: https://kubernetes-csi.github.io/docs/external-provisioner.html[csi docs]
 
 === `csi.csiResizerImage`
-Default:: `quay.io/k8scsi/csi-resizer:v0.5.0`
+Default:: `k8s.gcr.io/sig-storage/csi-resizer:v1.0.1`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's resizer container: https://kubernetes-csi.github.io/docs/external-resizer.html[csi docs]
 
 === `csi.csiSnapshotterImage`
-Default:: `quay.io/k8scsi/csi-snapshotter:v2.1.0`
+Default:: `k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's snapshotter container: https://kubernetes-csi.github.io/docs/external-snapshotter.html[csi docs]
 
@@ -210,7 +215,7 @@ Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and
 Description:: Tolerations to pass to the csi node pods.
 
 === `csi.pluginImage`
-Default:: `quay.io/piraeusdatastore/piraeus-csi:v0.9.0`
+Default:: `quay.io/piraeusdatastore/piraeus-csi:v0.10.0`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI plugin containers (both node and controller). https://github.com/piraeusdatastore/linstor-csi[Project page]
 
@@ -304,7 +309,7 @@ affinity:
 ----
 
 === `operator.controller.controllerImage`
-Default:: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.10.0`
 Valid values:: image ref
 Description:: Name of the image to use for the controller.
 
@@ -410,7 +415,7 @@ Description:: Resource requests and limits to apply to the satellite containers.
 Note: at least 750MiB memory is recommended.
 
 === `operator.satelliteSet.satelliteImage`
-Default:: `quay.io/piraeusdatastore/piraeus-server:v1.9.0`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.10.0`
 Valid values:: image ref
 Description:: Name of the image to use for the satellites.
 

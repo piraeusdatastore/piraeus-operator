@@ -22,7 +22,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: snapshot-controller
-          image: quay.io/k8scsi/snapshot-controller:v2.1.0
+          image: k8s.gcr.io/sig-storage/snapshot-controller:v3.0.2
           args:
             - "--v=5"
             - "--leader-election=true"

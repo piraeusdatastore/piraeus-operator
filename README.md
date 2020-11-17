@@ -64,7 +64,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 
   You can pick from a number of example settings:
 
-  * default values [`values.yaml`](./charts/piraeus/values.yaml)
+  * default values (Kubernetes v1.17+) [`values.yaml`](./charts/piraeus/values.yaml)
   * images optimized for CN [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
   * override for Openshift [`values-openshift.yaml`](./charts/piraeus/values-openshift.yaml)
 

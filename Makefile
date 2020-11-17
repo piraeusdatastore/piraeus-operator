@@ -38,6 +38,7 @@ helm-values:
 	sed 's|docker.io/openstorage/stork|daocloud.io/piraeus/stork|' -i ./charts/piraeus/values.cn.yaml
 	sed 's|gcr.io/google_containers/kube-scheduler-amd64|daocloud.io/piraeus/kube-scheduler-amd64|' -i ./charts/piraeus/values.cn.yaml
 	sed 's|quay.io/piraeusdatastore|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
+	sed 's|k8s.gcr.io/sig-storage|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
 	sed 's|quay.io/k8scsi|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
 
 release:
