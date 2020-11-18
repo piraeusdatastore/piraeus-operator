@@ -77,6 +77,7 @@ const (
 	ImageKernelModuleInjectionEnv = "RELATED_IMAGE_KERNEL_MODULE_INJECTION"
 	ImageCSIPluginEnv             = "RELATED_IMAGE_CSI_PLUGIN"
 	ImageCSIAttacherEnv           = "RELATED_IMAGE_CSI_ATTACHER"
+	ImageCSILivenessProbeEnv      = "RELATED_IMAGE_CSI_LIVENESSPROBE"
 	ImageCSINodeRegistrarEnv      = "RELATED_IMAGE_CSI_NODE_REGISTRAR"
 	ImageCSIProvisionerEnv        = "RELATED_IMAGE_CSI_PROVISIONER"
 	ImageCSISnapshotterEnv        = "RELATED_IMAGE_CSI_SNAPSHOTTER"

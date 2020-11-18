@@ -139,6 +139,7 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconc
 	specs := []reconcileutil.EnvSpec{
 		{Env: kubeSpec.ImageCSIPluginEnv, Target: &csiResource.Spec.LinstorPluginImage},
 		{Env: kubeSpec.ImageCSIAttacherEnv, Target: &csiResource.Spec.CSIAttacherImage},
+		{Env: kubeSpec.ImageCSILivenessProbeEnv, Target: &csiResource.Spec.CSILivenessProbeImage},
 		{Env: kubeSpec.ImageCSINodeRegistrarEnv, Target: &csiResource.Spec.CSINodeDriverRegistrarImage},
 		{Env: kubeSpec.ImageCSIProvisionerEnv, Target: &csiResource.Spec.CSIProvisionerImage},
 		{Env: kubeSpec.ImageCSIResizerEnv, Target: &csiResource.Spec.CSIResizerImage},
