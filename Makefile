@@ -95,4 +95,4 @@ release:
 deploy/piraeus:
 	rm -rf "$@"
 	mkdir -p "$@"
-	helm template -n default piraeus-op charts/piraeus --set stork.schedulerTag=v1.16.0 --output-dir deploy >/dev/null
+	helm template -n default piraeus-op charts/piraeus --set stork.schedulerTag=v1.18.0 --output-dir deploy >/dev/null
