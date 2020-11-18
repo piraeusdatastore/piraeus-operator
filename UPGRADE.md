@@ -1,3 +1,34 @@
+# Upgrade from v1.1 to v1.2
+
+Piraeus v1.2 is supported on Kubernets 1.17+. If you are using an older Kubernetes distribution, you may need
+to change the default settings (for example [the CSI provisioner](https://kubernetes-csi.github.io/docs/external-provisioner.html))
+
+To start the upgrade process, ensure you have a backup of the LINSTOR Controller database. If you are using
+the etcd deployment included in Piraeus, you can create a backup using:
+
+```
+kubectl exec piraeus-op-etcd-0 -- etcdctl snapshot save /tmp/save.db
+kubectl cp piraeus-op-etcd-0:/tmp/save.db save.db
+```
+
+IMPORTANT: Upgrade using the Piraeus etcd deployment require etcd to use persistent storage. Only follow these steps if
+etcd was deployed using `etcd.persistentVolume.enabled=true`
+
+Now you can start the upgrade process. Simply run `helm upgrade piraeus-op ./charts/piraeus`. If you installed Piraeus
+with customization, pass the same options you used for `helm install` to `helm upgrade`. This will cause the operator
+pod to be re-created and shortly after all other Piraeus pods.
+
+IMPORTANT: During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
+volumes and volumes already in use by a pod will continue to work without interruption.
+
+There is a known issue when updating the CSI components: the pods will not be updated to the newest image and the
+`errors` section of the LinstorCSIDrivers resource shows an error updating the DaemonSet. In this case, manually
+delete `deployment/piraeus-op-csi-controller` and `daemonset/piraeus-op-csi-node`. They will be re-created by the
+operator.
+
+After a short wait, all pods should be running and ready. Check that no errors are listed in the status section of
+LinstorControllers, LinstorSatelliteSets and LinstorCSIDrivers.
+
 # Upgrade from v1.0 to v1.1
 
 * The LINSTOR controller image given in `operator.controller.controllerImage` has to have
