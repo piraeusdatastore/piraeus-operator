@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+* Fixed Helm warnings when setting "csi.controllerAffinity", "operator.controller.affinity" and
+  "operator.satelliteSet.storagePools".
+
 ## [v1.2.0] - 2020-11-18
 
 ### Added

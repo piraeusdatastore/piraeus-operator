@@ -15,7 +15,9 @@ spec:
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+{{- if .Values.operator.controller.affinity }}
   affinity: {{ .Values.operator.controller.affinity | toJson }}
+{{- end }}
   tolerations: {{ .Values.operator.controller.tolerations | toJson}}
   resources: {{ .Values.operator.controller.resources | toJson }}
   replicas: {{ .Values.operator.controller.replicas }}

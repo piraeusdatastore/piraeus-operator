@@ -22,7 +22,9 @@ spec:
   controllerEndpoint: {{ template "controller.endpoint" . }}
   nodeAffinity: {{ .Values.csi.nodeAffinity | toJson }}
   nodeTolerations: {{ .Values.csi.nodeTolerations | toJson}}
+{{- if .Values.csi.controllerAffinity }}
   controllerAffinity: {{ .Values.csi.controllerAffinity | toJson }}
+{{- end }}
   controllerTolerations: {{ .Values.csi.controllerTolerations | toJson}}
   enableTopology: {{ .Values.csi.enableTopology }}
   resources: {{ .Values.csi.resources | toJson }}
