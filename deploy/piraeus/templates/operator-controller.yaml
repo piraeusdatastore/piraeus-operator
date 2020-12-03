@@ -16,7 +16,6 @@ spec:
   imagePullPolicy: "IfNotPresent"
   linstorHttpsControllerSecret: ""
   linstorHttpsClientSecret: ""
-  affinity: null
   tolerations: [{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"}]
   resources: {}
   replicas: 1

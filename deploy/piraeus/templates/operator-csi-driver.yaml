@@ -23,7 +23,6 @@ spec:
   controllerEndpoint: http://piraeus-op-cs.default.svc:3370
   nodeAffinity: {}
   nodeTolerations: []
-  controllerAffinity: null
   controllerTolerations: []
   enableTopology: false
   resources: {}

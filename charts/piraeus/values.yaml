@@ -37,7 +37,7 @@ csi:
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
-  controllerAffinity: null
+  controllerAffinity: {}
   controllerTolerations: []
   enableTopology: false
   resources: {}
@@ -63,7 +63,7 @@ operator:
     dbCertSecret: ""
     dbUseClientCert: false
     sslSecret: ""
-    affinity: null
+    affinity: {}
     tolerations:
       - key: node-role.kubernetes.io/master
         operator: "Exists"
@@ -73,7 +73,7 @@ operator:
   satelliteSet:
     enabled: true
     satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.10.0
-    storagePools: null
+    storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}

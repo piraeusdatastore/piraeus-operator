@@ -132,7 +132,7 @@ Description:: Tolerations to pass to the CSI snapshot controller.
 == CSI Driver
 
 === `csi.controllerAffinity`
-Default:: `null`
+Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
 Description:: Affinity settings for controller pods. Can be used to pin controller pods to specific nodes. The default will expand to:
 +
@@ -147,7 +147,8 @@ affinity:
           role: csi-controller
       topologyKey: kubernetes.io/hostname
 ----
-
++
+To not use any affinity settings, set the value to `nodeAffinity: {}`
 
 === `csi.controllerReplicas`
 Default:: `1`
@@ -292,7 +293,7 @@ Valid values::
 Description:: If set to false, no LinstorController resource will be created by Helm. This means no LINSTOR controller will be deployed.
 
 === `operator.controller.affinity`
-Default:: `null`
+Default:: `{}`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
 Description:: Affinity settings for controller pods. Can be used to restrict the pods to specific nodes. The default will expand to:
 +
@@ -307,6 +308,8 @@ affinity:
           role: piraeus-controller
       topologyKey: kubernetes.io/hostname
 ----
++
+To not use any affinity settings, set the value to `nodeAffinity: {}`
 
 === `operator.controller.controllerImage`
 Default:: `quay.io/piraeusdatastore/piraeus-server:v1.10.0`
@@ -425,7 +428,7 @@ Valid values:: secret name
 Description:: Name of the secret to use for secure communication between controller and satellites. Check link:./security.md#configuring-secure-communication-between-linstor-components[the security guide].
 
 === `operator.satelliteSet.storagePools`
-Default:: `None`
+Default:: `{}`
 Valid values:: map
 Description:: See the link:./storage.md#configuring-storage-pool-creation[guide on storage pool creation]
 
