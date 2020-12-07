@@ -244,8 +244,8 @@ project's github page.
 
 ## Building and Development
 
-This project is built using the operator-sdk (version 0.16.0). Please refer to
-the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.16.x).
+This project is built using the operator-sdk (version 0.19.4). Please refer to
+the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.19.x).
 
 ## License
 

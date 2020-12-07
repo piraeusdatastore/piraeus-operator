@@ -7,7 +7,7 @@ on:
       - master
   pull_request:
 env:
-  OPERATOR_SDK_VERSION: v0.16.0
+  OPERATOR_SDK_VERSION: v0.19.4
 jobs:
   prepare:
     runs-on: ubuntu-20.04

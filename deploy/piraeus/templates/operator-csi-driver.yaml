@@ -5,7 +5,6 @@ kind: LinstorCSIDriver
 metadata:
   name: piraeus-op
 spec:
-  enabled: true
   imagePullSecret: ""
   linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.10.0"
   imagePullPolicy: "IfNotPresent"

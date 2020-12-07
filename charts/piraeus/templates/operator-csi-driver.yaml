@@ -4,7 +4,6 @@ kind: LinstorCSIDriver
 metadata:
   name: {{ template "operator.fullname" . }}
 spec:
-  enabled: {{ .Values.csi.enabled }}
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
   linstorPluginImage: {{ .Values.csi.pluginImage | quote }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}

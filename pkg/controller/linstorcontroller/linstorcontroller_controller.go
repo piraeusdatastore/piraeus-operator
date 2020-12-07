@@ -540,7 +540,7 @@ func (r *ReconcileLinstorController) controllerReachable(ctx context.Context, li
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	_, err := linstorClient.Nodes.GetControllerVersion(ctx)
+	_, err := linstorClient.Controller.GetVersion(ctx)
 
 	return err
 }

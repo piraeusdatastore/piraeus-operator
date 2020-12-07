@@ -1199,7 +1199,7 @@ func (r *ReconcileLinstorSatelliteSet) controllerReachable(ctx context.Context, 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	_, err := linstorClient.Nodes.GetControllerVersion(ctx)
+	_, err := linstorClient.Controller.GetVersion(ctx)
 
 	return err
 }
