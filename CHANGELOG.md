@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Updated `operator-sdk` to v0.19.4
+
 ### Fixed
 
 * Fixed Helm warnings when setting "csi.controllerAffinity", "operator.controller.affinity" and

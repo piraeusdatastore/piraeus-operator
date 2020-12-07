@@ -41,10 +41,13 @@ func TestNewConfigMapForPCS(t *testing.T) {
 [debug]
 
 [log]
+  LevelGlobal = ""
+  LevelLinstorGlobal = ""
 
 [db]
   connection_url = "etcd://etcd.svc:5000/"
   [db.etcd]
+    Prefix = ""
 
 [http]
 
@@ -83,11 +86,14 @@ controllers = http://test.default-ns.svc:3370
 [debug]
 
 [log]
+  LevelGlobal = ""
+  LevelLinstorGlobal = ""
 
 [db]
   connection_url = "etcd://secure.etcd.svc:443/"
   ca_certificate = "/etc/linstor/certs/ca.pem"
   [db.etcd]
+    Prefix = ""
 
 [http]
 
@@ -127,6 +133,8 @@ controllers = http://test.default-ns.svc:3370
 [debug]
 
 [log]
+  LevelGlobal = ""
+  LevelLinstorGlobal = ""
 
 [db]
   connection_url = "etcd://secure.etcd.svc:443/"
@@ -134,6 +142,7 @@ controllers = http://test.default-ns.svc:3370
   client_certificate = "/etc/linstor/certs/client.cert"
   client_key_pkcs8_pem = "/etc/linstor/certs/client.key"
   [db.etcd]
+    Prefix = ""
 
 [http]
 
@@ -175,10 +184,13 @@ controllers = http://test.default-ns.svc:3370
 [debug]
 
 [log]
+  LevelGlobal = ""
+  LevelLinstorGlobal = ""
 
 [db]
   connection_url = "etcd://etcd.svc:5000/"
   [db.etcd]
+    Prefix = ""
 
 [http]
 
