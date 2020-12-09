@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Enable strict checking of DRBD parameter to disable usermode helper in container environments.
+
 ### Changed
 
 * Updated `operator-sdk` to v0.19.4

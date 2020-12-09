@@ -1008,6 +1008,10 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 					Name:  kubeSpec.LinstorKernelModHow,
 					Value: kernelModHow,
 				},
+				{
+					Name:  kubeSpec.LinstorKernelModHelperCheck,
+					Value: kubeSpec.LinstorKernelModHelperCheckEnabled,
+				},
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
