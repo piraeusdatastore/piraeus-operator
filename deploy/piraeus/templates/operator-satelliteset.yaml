@@ -4,6 +4,7 @@ apiVersion: piraeus.linbit.com/v1
 kind: LinstorSatelliteSet
 metadata:
   name: piraeus-op-ns
+  namespace: default
 spec:
   priorityClassName: ""
   sslSecret: 

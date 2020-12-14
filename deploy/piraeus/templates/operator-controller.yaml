@@ -4,6 +4,7 @@ apiVersion: piraeus.linbit.com/v1
 kind: LinstorController
 metadata:
   name: piraeus-op-cs
+  namespace: default
 spec:
   priorityClassName: ""
   dbConnectionURL:  etcd://piraeus-op-etcd:2379

@@ -3,6 +3,7 @@ apiVersion: piraeus.linbit.com/v1
 kind: LinstorController
 metadata:
   name: {{ template "operator.fullname" . }}-cs
+  namespace: {{ .Release.Namespace }}
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   dbConnectionURL:  {{ .Values.operator.controller.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}

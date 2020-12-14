@@ -3,6 +3,7 @@ apiVersion: piraeus.linbit.com/v1
 kind: LinstorCSIDriver
 metadata:
   name: {{ template "operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
   linstorPluginImage: {{ .Values.csi.pluginImage | quote }}

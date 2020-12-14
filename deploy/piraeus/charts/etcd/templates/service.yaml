@@ -3,10 +3,10 @@
 apiVersion: v1
 kind: Service
 metadata:
+  name: piraeus-op-etcd
+  namespace: default
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-metadata:
-  name: piraeus-op-etcd
   labels:
     heritage: "Helm"
     release: "piraeus-op"
