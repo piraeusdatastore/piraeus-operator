@@ -4,6 +4,7 @@ apiVersion: piraeus.linbit.com/v1
 kind: LinstorCSIDriver
 metadata:
   name: piraeus-op
+  namespace: default
 spec:
   imagePullSecret: ""
   linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.10.0"

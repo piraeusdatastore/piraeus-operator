@@ -4,6 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: piraeus-op-operator
+  namespace: default
   labels:
     name: piraeus-op-operator
 spec:

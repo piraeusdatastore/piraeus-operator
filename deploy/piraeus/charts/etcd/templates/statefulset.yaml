@@ -4,6 +4,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: piraeus-op-etcd
+  namespace: default
   labels:
     heritage: "Helm"
     release: "piraeus-op"

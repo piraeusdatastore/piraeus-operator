@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "operator.fullname" . }}-operator
+  namespace: {{ .Release.Namespace }}
   labels:
     name: {{ template "operator.fullname" . }}-operator
 spec:
