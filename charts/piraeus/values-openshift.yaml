@@ -1,5 +1,6 @@
 global:
   setSecurityContext: false
+  openshift: true
 csi-snapshotter:
   # already configured by OCP
   enabled: false
