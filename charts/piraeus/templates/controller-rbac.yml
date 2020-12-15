@@ -46,3 +46,33 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: linstor-controller
+{{- if .Values.global.openshift }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linstor-controller-anyuid
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - anyuid
+    verbs:
+      - use
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linstor-controller-anyuid
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: linstor-controller-anyuid
+subjects:
+  - kind: ServiceAccount
+    name: linstor-controller
+{{- end }}
