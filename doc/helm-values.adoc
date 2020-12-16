@@ -502,3 +502,53 @@ Description:: Resource requests and limits to apply to the stork containers.
 Default:: `{}`
 Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
 Description:: Override for the default security context passed to the stork and scheduler pods. See <<_global_setsecuritycontext>>
+
+== High Availability Controller
+
+=== `haController.enabled`
+Default:: `true`
+Valid values::
+* `True`
+* `False`
+Description:: Enable deployment of Piraeus High Availability Controller
+
+=== `haController.image`
+Default:: `quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.0`
+Valid values:: image ref
+Description:: Name of image to use for the HA Controller
+
+=== `haController.replicas`
+Default:: `1`
+Valid values:: number
+Description:: Number of replicas to create for the HA Controller
+
+=== `operator.controller.affinity`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
+Description:: Affinity settings for HA Controller pods. Can be used to restrict the pods to specific nodes. The default will expand to:
++
+[source,yaml]
+----
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - topologyKey: kubernetes.io/hostname
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: piraeus-op-ha-controller
+----
+
+=== `haController.tolerations`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
+Description:: Tolerations to pass to the HA Controller pods.
+
+=== `haController.resources`
+Default:: `{}`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
+Description:: Resource requests and limits to apply to the HA Controller containers.
+
+=== `haController.podsecuritycontext`
+Default:: `{}`
+Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
+Description:: Override for the default security context passed to the HA Controller pods. See <<_global_setsecuritycontext>>

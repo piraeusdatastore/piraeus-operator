@@ -60,9 +60,9 @@ Endpoint URL of LINSTOR controller
 {{- end -}}
 
 {{/*
-Environment to pass to stork
+Environment to pass to any containers using golinstor
 */}}
-{{- define "stork.config" -}}
+{{- define "linstor-env" -}}
 - name: LS_CONTROLLERS
   value: {{ template "controller.endpoint" . }}
 {{- if not (empty .Values.linstorHttpsClientSecret) }}

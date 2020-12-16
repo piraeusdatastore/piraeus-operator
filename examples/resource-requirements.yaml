@@ -46,3 +46,5 @@ operator:
       requests:
         cpu: "0.5"
         memory: "750Mi"
+haController:
+  resources: *minimal-resources

@@ -124,7 +124,7 @@ spec:
 {{ .Values.stork.storkResources | toYaml | indent 12}}
           name: stork
           env:
-{{ include "stork.config" . | indent 12 }}
+{{ include "linstor-env" . | indent 12 }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
