@@ -86,6 +86,57 @@ spec:
       storage: 500Mi
 ```
 
+## High Availability Controller
+
+The [Piraeus High Availability (HA) Controller] will speed up the fail over process for stateful workloads using Piraeus for
+storage. Using the HA Controller reduces the time it takes for Kubernetes to reschedule a Pod using faulty storage from
+15min to 45seconds (exact times depend on your Kubernetes set up).
+
+[Piraeus High Availability (HA) Controller]: https://github.com/piraeusdatastore/piraeus-ha-controller
+
+To mark your stateful applications as managed by Piraeus, use the `linstor.csi.linbit.com/on-storage-lost: remove` label.
+For example, Pod Templates in a StatefulSet should look like:
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-stateful-app
+spec:
+  serviceName: my-stateful-app
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: my-stateful-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: my-stateful-app
+        linstor.csi.linbit.com/on-storage-lost: remove
+    ...
+```
+
+This way, the Piraeus High Availability Controller will not interfere with applications that do not benefit or even
+support it's primary use.
+
+To disable deployment of the HA Controller use:
+
+```
+--set haController.enabled=false
+```
+
+### Usage with STORK
+
+STORK is a scheduler extender plugin and storage health monitoring tool (see below). There is considerable overlap
+between the functionality of STORK and the HA Controller.
+
+Like the HA Controller, STORK will also delete Pods which use faulty volumes. In contrast to the HA Controller, STORK
+does not discriminate based on labels on the Pod.
+
+Another difference between the two is that the HA Controller reacts faster on storage failures, as it watches the
+raw event stream from Piraeus, while STORK just periodically checks the volume status.
+
+While they overlap in functionality, there are no known compatibility issues when running both STORK and the HA Controller.
+
 ## Scheduler components
 
 Stork is a scheduler extender plugin for Kubernetes which allows a storage driver to give the Kubernetes scheduler

@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* New component: `haController` will deploy the [Piraeus High Availability Controller].
+  More information is available in the [optional components page](./doc/optional-components.md#high-availability-controller)
 * Enable strict checking of DRBD parameter to disable usermode helper in container environments.
+
+[Piraeus High Availability Controller]: https://github.com/piraeusdatastore/piraeus-ha-controller
 
 ### Changed
 
