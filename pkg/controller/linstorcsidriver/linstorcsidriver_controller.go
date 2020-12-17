@@ -461,7 +461,13 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Name:            "csi-node-driver-registrar",
 		Image:           csiResource.Spec.CSINodeDriverRegistrarImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
-		Args:            []string{"--v=5", "--csi-address=$(CSI_ENDPOINT)", "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"},
+		Args: []string{
+			"--v=5",
+			// No --timeout here, it's a very recent addition and not very useful for a single call that should return
+			// static information
+			"--csi-address=$(CSI_ENDPOINT)",
+			"--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)",
+		},
 		Lifecycle: &corev1.Lifecycle{
 			PreStop: &corev1.Handler{
 				Exec: &corev1.ExecAction{Command: []string{"/bin/sh", "-c", "rm -rf /registration/linstor.csi.linbit.com /registration/linstor.csi.linbit.com-reg.sock"}},
@@ -606,6 +612,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Args: []string{
 			"--csi-address=$(ADDRESS)",
 			"--v=5",
+			"--timeout=1m",
 			// restore old default fstype
 			"--default-fstype=ext4",
 			fmt.Sprintf("--feature-gates=Topology=%t", csiResource.Spec.EnableTopology),
@@ -626,7 +633,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Args: []string{
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
-			"--timeout=4m",
+			"--timeout=1m",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
 		},
@@ -642,8 +649,8 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Image:           csiResource.Spec.CSISnapshotterImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
-			"-timeout=4m",
-			"-csi-address=$(ADDRESS)",
+			"--timeout=1m",
+			"--csi-address=$(ADDRESS)",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
 		},
@@ -661,7 +668,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Args: []string{
 			"--v=5",
 			"--csi-address=$(ADDRESS)",
-			"--timeout=4m",
+			"--timeout=1m",
 			// LINSTOR can resize while in use, no need to check if volume is in use
 			"--handle-volume-inuse-error=false",
 			"--leader-election=true",
