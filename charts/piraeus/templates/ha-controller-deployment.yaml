@@ -42,7 +42,11 @@ spec:
           resources:
 {{ toYaml .Values.haController.resources | indent 12 }}
 {{- end}}
-      {{- if .Values.haController.tolerations }}
+{{- if .Values.drbdRepoCred }}
+      imagePullSecrets:
+        - name: {{ .Values.drbdRepoCred | quote }}
+{{- end }}
+{{- if .Values.haController.tolerations }}
       tolerations:
 {{ toYaml .Values.haController.tolerations | indent 8 }}
 {{- end }}
