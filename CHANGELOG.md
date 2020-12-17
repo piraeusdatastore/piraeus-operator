@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Updated `operator-sdk` to v0.19.4
+* Set CSI component timeout to 1 minute to reduce the number of retries in the CSI driver
 
 ### Fixed
 
