@@ -7,7 +7,7 @@ metadata:
   namespace: default
 spec:
   imagePullSecret: ""
-  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.10.0"
+  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.11.0"
   imagePullPolicy: "IfNotPresent"
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node

@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Updated `operator-sdk` to v0.19.4
 * Set CSI component timeout to 1 minute to reduce the number of retries in the CSI driver
+* Default images updated:
+  * `operator.controller.controllerImage`: `quay.io/piraeusdatastore/piraeus-server:v1.11.0`
+  * `operator.satelliteSet.satelliteImage`: `quay.io/piraeusdatastore/piraeus-server:v1.11.0`
+  * `operator.satelliteSet.kernelModuleInjectionImage`: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.26`
+  * `csi.pluginImage`: `quay.io/piraeusdatastore/piraeus-csi:v0.11.0`
 
 ### Fixed
 
