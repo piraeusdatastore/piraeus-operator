@@ -112,7 +112,7 @@ spec:
         - name: chown
           securityContext:
             privileged: true
-          image: library/centos:8
+          image: {{ $.Values.chownerImage | quote }}
           command:
             - sh
             - -ce

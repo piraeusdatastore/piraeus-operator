@@ -96,6 +96,12 @@ Persistence for etcd is enabled by default.
 Clusters with SELinux enabled hosts (for example: OpenShift clusters) need to relabel the created directory. This
 can be done automatically by passing `--set selinux=true` to the above `helm install` command.
 
+#### Override the default choice of chown job image
+
+The `pv-hostpath` chart will create a job for each created PV. The jobs are meant to ensure the host volumes are set up
+with the correct permission, so that etcd can run as a non-privileged container. To override the default choice of
+`centos:8`, use `--set chownerImage=<my-image>`.
+
 ### Using an existing database
 
 LINSTOR can connect to an existing PostgreSQL, MariaDB or etcd database. For

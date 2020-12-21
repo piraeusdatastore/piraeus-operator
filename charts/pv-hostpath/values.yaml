@@ -2,6 +2,8 @@ size: 1Gi
 path: /var/lib/linstor-etcd
 uid: 1000
 gid: 1000
+# Container image used to set up permissions for host volumes. Should contain `chown`, `chmod` and `chcon` (if `selinux=true`)
+chownerImage: library/centos:8
 tolerations:
   - key: node-role.kubernetes.io/master
     operator: "Exists"

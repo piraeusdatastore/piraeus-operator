@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * New component: `haController` will deploy the [Piraeus High Availability Controller].
   More information is available in the [optional components page](./doc/optional-components.md#high-availability-controller)
 * Enable strict checking of DRBD parameter to disable usermode helper in container environments.
+* Override the image used in "chown" jobs in the `pv-hostpath` chart by using `--set chownerImage=<my-image>`.
 
 [Piraeus High Availability Controller]: https://github.com/piraeusdatastore/piraeus-ha-controller
 
