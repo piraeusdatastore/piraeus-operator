@@ -51,7 +51,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.io/piraeusdatastore/piraeus-operator:latest
+  image: quay.io/piraeusdatastore/piraeus-operator:v1.3.0
   affinity: {}
   tolerations: []
   resources: {}
@@ -85,7 +85,7 @@ operator:
 haController:
   enabled: true
   image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.1
-  affinity: { }
-  tolerations: [ ]
-  resources: { }
+  affinity: {}
+  tolerations: []
+  resources: {}
   replicas: 1
