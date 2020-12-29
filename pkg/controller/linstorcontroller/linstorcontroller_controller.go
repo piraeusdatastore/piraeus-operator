@@ -745,6 +745,7 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Replicas: controllerResource.Spec.Replicas,
+			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      controllerResource.Name + "-controller",
