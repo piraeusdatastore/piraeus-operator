@@ -71,6 +71,8 @@ are block devices that:
 * do not contain partition information
 * have more than 1 GiB
 
+Note: You need to use the actual device name, symlinks are not supported, i.e. use `/dev/nvme0n1` instead of `/dev/disk/by-id/nvme-eui.001b448b465c62be`.
+
 To enable automatic configuration of devices, set the `devicePaths` key on `storagePools` entries:
 
 ```yaml
