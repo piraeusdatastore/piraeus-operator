@@ -48,12 +48,15 @@ const (
 
 // Special strings for communicating with the module injector
 const (
-	LinstorKernelModHow                = "LB_HOW"
-	LinstorKernelModCompile            = "compile"
-	LinstorKernelModShippedModules     = "shipped_modules"
-	LinstorKernelModDepsOnly           = "deps_only"
-	LinstorKernelModHelperCheck        = "LB_FAIL_IF_USERMODE_HELPER_NOT_DISABLED"
-	LinstorKernelModHelperCheckEnabled = "yes"
+	LinstorKernelModHow                   = "LB_HOW"
+	LinstorKernelModCompile               = "compile"
+	LinstorKernelModShippedModules        = "shipped_modules"
+	LinstorKernelModDepsOnly              = "deps_only"
+	LinstorKernelModHelperCheck           = "LB_FAIL_IF_USERMODE_HELPER_NOT_DISABLED"
+	LinstorKernelModHelperCheckEnabled    = "yes"
+	LinstorKernelHeadersLocation          = "KERNEL_HEADERS_LOCATION"
+	LinstorKernelHeadersLocationHost      = "host"
+	LinstorKernelHeadersLocationContainer = "container"
 )
 
 // Special strings when configuring Linstor

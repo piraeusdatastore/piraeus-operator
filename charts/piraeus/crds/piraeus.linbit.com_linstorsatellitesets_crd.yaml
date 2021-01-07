@@ -648,6 +648,13 @@ spec:
               imagePullPolicy:
                 description: Pull policy applied to all pods started from this controller
                 type: string
+              kernelModuleInjectionHeadersLocation:
+                description: KernelModuleInjectionHeadersLocation defines linux kernel
+                  headers location
+                enum:
+                - Container
+                - Host
+                type: string
               kernelModuleInjectionImage:
                 description: kernelModuleInjectionImage is the image (location + tag)
                   for the LINSTOR/DRBD kernel module injector

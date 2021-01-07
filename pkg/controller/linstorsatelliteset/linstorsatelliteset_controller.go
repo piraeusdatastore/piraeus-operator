@@ -997,6 +997,29 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 		return ds
 	}
 
+	var kernelHeadersLocation string
+	HeadersLocation := satelliteSet.Spec.KernelModuleInjectionHeadersLocation
+
+	volumeMounts := []corev1.VolumeMount{
+		// VolumumeSource for this directory is already present on the base
+		// daemonset.
+		{
+			Name:      kubeSpec.ModulesDirName,
+			MountPath: kubeSpec.ModulesDir,
+		},
+	}
+
+	if HeadersLocation == shared.ModuleInjectionHeadersLocationHost {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.SrcDirName,
+			MountPath: kubeSpec.SrcDir,
+			ReadOnly:  true,
+		})
+		kernelHeadersLocation = kubeSpec.LinstorKernelHeadersLocationHost
+	} else {
+		kernelHeadersLocation = kubeSpec.LinstorKernelHeadersLocationContainer
+	}
+
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "kernel-module-injector",
@@ -1012,21 +1035,13 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 					Name:  kubeSpec.LinstorKernelModHelperCheck,
 					Value: kubeSpec.LinstorKernelModHelperCheckEnabled,
 				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      kubeSpec.SrcDirName,
-					MountPath: kubeSpec.SrcDir,
-					ReadOnly:  true,
-				},
-				// VolumumeSource for this directory is already present on the base
-				// daemonset.
-				{
-					Name:      kubeSpec.ModulesDirName,
-					MountPath: kubeSpec.ModulesDir,
+					Name:  kubeSpec.LinstorKernelHeadersLocation,
+					Value: kernelHeadersLocation,
 				},
 			},
-			Resources: satelliteSet.Spec.KernelModuleInjectionResources,
+			VolumeMounts: volumeMounts,
+			Resources:    satelliteSet.Spec.KernelModuleInjectionResources,
 		},
 	}
 

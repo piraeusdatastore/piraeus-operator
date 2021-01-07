@@ -82,3 +82,4 @@ operator:
     kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.25
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
+    kernelModuleInjectionHeadersLocation: "Host"

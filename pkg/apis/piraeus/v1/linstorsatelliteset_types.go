@@ -77,6 +77,11 @@ type LinstorSatelliteSetSpec struct {
 	// +optional
 	KernelModuleInjectionMode shared.KernelModuleInjectionMode `json:"kernelModuleInjectionMode"`
 
+	// KernelModuleInjectionHeadersLocation defines linux kernel headers location
+	// +kubebuilder:validation:Enum=Container;Host
+	// +optional
+	KernelModuleInjectionHeadersLocation shared.KernelModuleInjectionHeadersLocation `json:"kernelModuleInjectionHeadersLocation"`
+
 	// Resource requirements for the kernel module builder/injector container
 	// +optional
 	// +nullable

@@ -354,3 +354,12 @@ const (
 	// ModuleInjectionDepsOnly means we only inject already present modules on the host for LINSTOR layers
 	ModuleInjectionDepsOnly = "DepsOnly"
 )
+
+type KernelModuleInjectionHeadersLocation string
+
+const (
+	// ModuleInjectionHeadersLocationHost means that kernel headers are available on the host
+	ModuleInjectionHeadersLocationHost = "Host"
+	// ModuleInjectionHeadersLocationContainer means that kernel headers are avaiable in container
+	ModuleInjectionHeadersLocationContainer = "Container"
+)
