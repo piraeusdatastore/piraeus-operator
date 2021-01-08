@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Default image updated:
+  * `pv-hostpath`: `chownerImage`: `quay.io/centos/centos:8`
+
 ## [v1.3.0] - 2020-12-21
 
 ### Added
