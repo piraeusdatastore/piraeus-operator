@@ -19,13 +19,8 @@ associated Helm chart:
 
 The operator can be deployed with Helm v3 chart in /charts as follows:
 
-* Prepare the hosts for DRBD deployment. There are several options:
-  * Install DRBD directly on the hosts as
-    [documented](https://www.linbit.com/drbd-user-guide/users-guide-9-0/#p-build-install-configure).
-  * Install the appropriate kernel headers package for your distribution and
-    choose the appropriate
-    [kernel module injector](doc/helm-values.adoc#operatorsatellitesetkernelmoduleinjectionimage).
-    Then the operator will compile and load the required modules.
+- Prepare the hosts for DRBD deployment. This depends on your host OS. You can find more information on the available
+  options in the [host setup guide](./doc/host-setup.md).
 
 - If you are deploying with images from private repositories, create
   a kubernetes secret to allow obtaining the images. This example will create
@@ -38,7 +33,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
     The name of this secret must match the one specified in the Helm values, by
     passing `--set drbdRepoCred=drbdiocred` to helm.
 
-* Configure storage for the LINSTOR etcd instance.
+- Configure storage for the LINSTOR etcd instance.
   There are various options for configuring the etcd instance for LINSTOR:
   * Use an existing storage provisioner with a default `StorageClass`.
   * [Use `hostPath` volumes](#linstor-etcd-hostpath-persistence).
