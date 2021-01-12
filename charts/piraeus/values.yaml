@@ -79,12 +79,12 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
-    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.26
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.27
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
 haController:
   enabled: true
-  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.1
+  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.2
   affinity: {}
   tolerations: []
   resources: {}
