@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Default image updated:
+  * `operator.satelliteSet.kernelModuleInjectionImage`: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.27`
+  * `haController.image`: `quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.2`
   * `pv-hostpath`: `chownerImage`: `quay.io/centos/centos:8`
 
 ## [v1.3.0] - 2020-12-21
