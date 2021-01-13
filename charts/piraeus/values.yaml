@@ -19,7 +19,7 @@ csi-snapshotter:
 stork:
   enabled: true
   storkImage: docker.io/openstorage/stork:2.5.0
-  schedulerImage: gcr.io/google_containers/kube-scheduler-amd64
+  schedulerImage: k8s.gcr.io/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1
   storkResources: {} # resources requirements for the stork plugin containers
