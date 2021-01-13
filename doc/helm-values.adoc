@@ -479,7 +479,7 @@ Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resource
 Description:: Resource requests and limits to apply to the kube scheduler containers.
 
 === `stork.schedulerImage`
-Default:: `gcr.io/google_containers/kube-scheduler-amd64`
+Default:: `k8s.gcr.io/kube-scheduler-amd64`
 Valid values:: image name
 Description:: (Base) name of the kube-scheduler image. Will be joined with `schedulerTag`
 

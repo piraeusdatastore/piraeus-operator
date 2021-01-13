@@ -259,7 +259,7 @@ spec:
             - --policy-configmap-namespace=default
             - --leader-elect-resource-name=piraeus-op-stork-scheduler
             - --leader-elect-resource-namespace=default
-          image: "gcr.io/google_containers/kube-scheduler-amd64:v1.18.0"
+          image: "k8s.gcr.io/kube-scheduler-amd64:v1.18.0"
           imagePullPolicy: "IfNotPresent"
           livenessProbe:
             httpGet:
