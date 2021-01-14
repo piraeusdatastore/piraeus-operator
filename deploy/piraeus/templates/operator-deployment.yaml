@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: piraeus-operator
-          image: quay.io/piraeusdatastore/piraeus-operator:latest
+          image: quay.io/piraeusdatastore/piraeus-operator:v1.3.1
           imagePullPolicy: "IfNotPresent"
           env:
             - name: WATCH_NAMESPACE
