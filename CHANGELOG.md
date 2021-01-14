@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* New guide on host preparation [here.](./doc/host-setup.md)
+
 ### Changed
 
 * Default image updated:
   * `operator.satelliteSet.kernelModuleInjectionImage`: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.27`
-  * `haController.image`: `quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.2`
+  * `operator.satelliteSet.satelliteImage`: `quay.io/piraeusdatastore/piraeus-server:v1.11.1`
+  * `operator.controller.controllerImage`: `quay.io/piraeusdatastore/piraeus-server:v1.11.1`
+  * `haController.image`: `quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.3`
   * `pv-hostpath`: `chownerImage`: `quay.io/centos/centos:8`
 
 ## [v1.3.0] - 2020-12-21
