@@ -58,7 +58,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.11.0
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.11.1
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -72,7 +72,7 @@ operator:
     replicas: 1
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.11.0
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.11.1
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
@@ -84,7 +84,7 @@ operator:
     kernelModuleInjectionResources: {}
 haController:
   enabled: true
-  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.2
+  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.1.3
   affinity: {}
   tolerations: []
   resources: {}

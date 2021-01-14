@@ -58,7 +58,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.11.0
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.11.1
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -72,7 +72,7 @@ operator:
     replicas: 1
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.11.0
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.11.1
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
@@ -84,7 +84,7 @@ operator:
     kernelModuleInjectionResources: {}
 haController:
   enabled: true
-  image: daocloud.io/piraeus/piraeus-ha-controller:v0.1.2
+  image: daocloud.io/piraeus/piraeus-ha-controller:v0.1.3
   affinity: {}
   tolerations: []
   resources: {}

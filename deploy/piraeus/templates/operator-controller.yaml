@@ -13,7 +13,7 @@ spec:
   dbCertSecret: 
   dbUseClientCert: false
   drbdRepoCred: ""
-  controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.11.0
+  controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.11.1
   imagePullPolicy: "IfNotPresent"
   linstorHttpsControllerSecret: ""
   linstorHttpsClientSecret: ""
