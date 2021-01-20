@@ -607,6 +607,14 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 			},
 		},
 		{
+			Name: awaitelection.AwaitElectionNodeName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "spec.nodeName",
+				},
+			},
+		},
+		{
 			Name:  awaitelection.AwaitElectionServiceName,
 			Value: controllerResource.Name,
 		},

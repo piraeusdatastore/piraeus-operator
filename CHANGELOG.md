@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Set node name variable for Controller Pods, enabling [k8s-await-election] to correctly set up the endpoint for
+  hairpin mode.
+
+[k8s-await-election]: https://github.com/LINBIT/k8s-await-election/commit/60748fcec722e4c32b8881c4c84957cc50543db2
+
 ## [v1.3.1] - 2021-01-14
 
 ### Added
