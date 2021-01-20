@@ -75,6 +75,7 @@ linters:
     - gochecknoinits
     - dupl
     - goerr113
+    - exhaustivestruct
   fast: false
 
 issues:
