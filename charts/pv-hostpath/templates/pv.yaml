@@ -94,7 +94,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ $.Release.Name }}-{{ . }}-chown
+  name: {{ $.Release.Name }}-{{ . | trunc 43 }}-chown
   namespace: {{ $.Release.Namespace | default "default" }}
   labels:
 {{ include "post-install-labels" $ | indent 4 }}
