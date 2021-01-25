@@ -86,6 +86,34 @@ spec:
       storage: 500Mi
 ```
 
+### CSI Volume Cloning
+
+Based on the concept of snapshots LINSTOR also supports cloning of persistent volumes - or to be more precise: of existing
+persistent volume claims (PVC). The CSI specification mentions some restrictions regarding namespace and storage classes
+of a PVC clone (see [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/volume-pvc-datasource/) for details).
+In regard to LINSTOR a clone requires that the volume was created using a LINSTOR storage pool which supports snapshots
+(i.e. a LVMTHIN pool). The new volume will be placed on the same nodes as the original (this can later change during
+use, but you can't directly clone to a completely different node).
+
+To clone a volume create a new PVC and define the origin PVC in the dataSource:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-cloned-pvc
+spec:
+  storageClassName: linstor-basic-storage-class
+  dataSource:
+    name: my-origin-linstor-pvc
+    kind: PersistentVolumeClaim
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+```
+
 ## High Availability Controller
 
 The [Piraeus High Availability (HA) Controller] will speed up the fail over process for stateful workloads using Piraeus for
