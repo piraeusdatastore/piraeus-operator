@@ -28,6 +28,59 @@ You can set the image by passing `--set operator.satelliteSet.kernelModuleInject
 [InitContainer]: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 [#137]: https://github.com/piraeusdatastore/piraeus-operator/issues/137
 
+### Injector image for compiling without headers on host
+
+Installing the kernel headers is not always feasible on the host. A prime example is Fedora CoreOS (FCOS), which uses
+older versions of the mainline Fedora kernel. Often, the matching kernel-headers are no longer available to install and
+manually manipulating the `ostree` is cumbersome. In this section we will show you how to build your own injector image
+that automatically fetches the right kernel headers using FCOS as example.
+
+**Note**: While DRBD tries to stay compatible with the mainline kernel, there is no guarantee that a released version
+will compile for every kernel.
+
+For our custom injector image for FCOS we will need two files, a `entry-override.sh` script and a `Dockerfile`. We will
+use `entry-override.sh` as our entrypoint in the injector image, i.e. the script that gets executed when the container
+starts running. It will download the kernel headers and invoke the DRBD build process:
+```shell
+# download package matching the current kernel from build artifacts
+koji download-build --rpm --arch=x86_64 kernel-devel-$(uname -r)
+# unpack the kernel headers in the /opt directory. The default /usr/src directory is mounted read only at this point and cannot be used
+rpm2cpio ./kernel-devel-$(uname -r).rpm | cpio -idD /opt
+
+# set the KDIR variable, telling DRBD to search for the headers in /opt
+export KDIR=/opt/usr/src/kernels/$(uname -r)
+exec /entry.sh "$@"
+```
+
+The `/entry.sh` script is taken from the existing injector image. It will invoke the right build steps and ensure all
+kernel modules are loaded. We only influence where it searches for the kernel headers by setting the `KDIR` variable.
+
+For our `Dockerfile`, we first pull in an existing injector image to access the DRBD source and the regular injector
+image entrypoint. We base our actual injector image on Fedora 33 as the FCOS kernel (currently) also comes from that
+distribution.
+```dockerfile
+# Pull in DRBD sources and entrypoint
+FROM quay.io/piraeusdatastore/drbd9-centos8:latest as SOURCE
+
+FROM fedora:33
+
+# Packages needed for the DRBD build process.
+RUN yum install -y gcc make coccinelle koji cpio patch perl-interpreter diffutils kmod \
+  && yum clean all
+
+# Our script from above
+COPY entry-override.sh /
+# The DRBD sources and build script from an existing injector image
+COPY --from=SOURCE /entry.sh /drbd.tar.gz /
+
+ENV LB_HOW=compile
+# Use our download script as entrypoint
+ENTRYPOINT ["sh", "-e", "/entry-override.sh"]
+```
+
+Build the image, tag it and push it to a registry accessible to your cluster. You can start using your custom injector
+image by passing `--set operator.satelliteSet.kernelModuleInjectionImage=<your-custom-image>` to Helm.
+
 ## Install DRBD on the host
 
 Some users may prefer to install the DRBD directly on the host. While a DRBD package is available on some distributions,
