@@ -243,6 +243,20 @@ func (in *LinstorControllerSpec) DeepCopyInto(out *LinstorControllerSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.AdditionalEnv != nil {
+		in, out := &in.AdditionalEnv, &out.AdditionalEnv
+		*out = make([]corev1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.AdditionalProperties != nil {
+		in, out := &in.AdditionalProperties, &out.AdditionalProperties
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	out.LinstorClientConfig = in.LinstorClientConfig
 	return
 }
@@ -279,6 +293,13 @@ func (in *LinstorControllerStatus) DeepCopyInto(out *LinstorControllerStatus) {
 				*out = new(shared.SatelliteStatus)
 				(*in).DeepCopyInto(*out)
 			}
+		}
+	}
+	if in.ControllerProperties != nil {
+		in, out := &in.ControllerProperties, &out.ControllerProperties
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
 		}
 	}
 	return

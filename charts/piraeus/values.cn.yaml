@@ -70,6 +70,8 @@ operator:
         effect: "NoSchedule"
     resources: {}
     replicas: 1
+    additionalEnv: []
+    additionalProperties: {}
   satelliteSet:
     enabled: true
     satelliteImage: daocloud.io/piraeus/piraeus-server:v1.11.1

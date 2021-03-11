@@ -22,4 +22,6 @@ spec:
   tolerations: {{ .Values.operator.controller.tolerations | toJson}}
   resources: {{ .Values.operator.controller.resources | toJson }}
   replicas: {{ .Values.operator.controller.replicas }}
+  additionalEnv: {{ .Values.operator.controller.additionalEnv | toJson }}
+  additionalProperties: {{ .Values.operator.controller.additionalProperties | toJson }}
 {{- end }}

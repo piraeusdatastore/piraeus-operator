@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Additional environment variables and Linstor properties can now be set in the `LinstorController` CRD.
 * Set node name variable for Controller Pods, enabling [k8s-await-election] to correctly set up the endpoint for
   hairpin mode.
 

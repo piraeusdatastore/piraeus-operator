@@ -237,6 +237,28 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		}
 	}
 
+	log.Debug("ensuring additional properties are set")
+
+	allProperties, err := linstorClient.Controller.GetProps(ctx)
+	if err != nil {
+		return fmt.Errorf("could not fetch existing properties: %w", err)
+	}
+
+	modify := lapi.GenericPropsModify{OverrideProps: make(lapi.OverrideProps)}
+
+	for k, v := range controllerResource.Spec.AdditionalProperties {
+		existing, ok := allProperties[k]
+		if !ok || existing != v {
+			modify.OverrideProps[k] = v
+		}
+	}
+
+	err = linstorClient.Controller.Modify(ctx, modify)
+	if err != nil {
+		return fmt.Errorf("could not reconcile additional properties: %w", err)
+	}
+
+	log.Debug("find existing controller nodes")
 	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		return err
@@ -369,6 +391,20 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 			controllerResource.Status.ControllerStatus.RegisteredOnController = true
 		}
 	}
+
+	log.Debug("fetch all properties set on controller")
+
+	allProps, err := linstorClient.Controller.GetProps(ctx)
+	if err != nil {
+		log.Warnf("failed to fetch list of properties from controller: %v", err)
+	}
+
+	if allProps == nil {
+		// No nil values in the status
+		allProps = make(map[string]string)
+	}
+
+	controllerResource.Status.ControllerProperties = allProps
 
 	log.Debug("fetch information about storage nodes")
 
@@ -631,6 +667,7 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 			Value: fmt.Sprintf(":%d", healthzPort),
 		},
 	}
+	env = append(env, controllerResource.Spec.AdditionalEnv...)
 
 	volumes := []corev1.Volume{
 		{
