@@ -93,6 +93,16 @@ type LinstorControllerSpec struct {
 	// +nullable
 	Replicas *int32 `json:"replicas"`
 
+	// AdditionalEnv is a list of extra environments variables to pass to the controller container
+	// +optional
+	// +nullable
+	AdditionalEnv []corev1.EnvVar `json:"additionalEnv"`
+
+	// AdditionalProperties is a map of additional properties to set on the Linstor controller
+	// +optional
+	// +nullable
+	AdditionalProperties map[string]string `json:"additionalProperties"`
+
 	// Name of the service account that runs leader elections for linstor
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName"`
@@ -108,6 +118,8 @@ type LinstorControllerStatus struct {
 	ControllerStatus *shared.NodeStatus `json:"ControllerStatus"`
 	// SatelliteStatuses by hostname.
 	SatelliteStatuses []*shared.SatelliteStatus `json:"SatelliteStatuses"`
+	// properties set on the Linstor controller
+	ControllerProperties map[string]string `json:"controllerProperties"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -356,6 +356,18 @@ Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and
 Description:: Tolerations to pass to the controller pods.
 
 
+=== `operator.controller.additonalEnv`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/[EnvVar list]
+Description:: A list of additional environment variables to pass to the Linstor controller container.
+
+
+=== `operator.controller.additionalProperties`
+Default:: `{}`
+Valid values:: A map with string keys and values
+Description:: A map of properties to set on the Linstor Controller, equivalent to
+calling `linstor controller set-property <key> <value>`
+
 == Piraeus Satellites
 
 === `operator.satelliteSet.enabled`
