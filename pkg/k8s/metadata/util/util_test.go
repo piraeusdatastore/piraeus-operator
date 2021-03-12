@@ -23,7 +23,7 @@ import (
 )
 
 func TestContains(t *testing.T) {
-	var tableTest = []struct {
+	tableTest := []struct {
 		in       []string
 		has      string
 		expected bool
@@ -48,7 +48,7 @@ func TestContains(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	var tableTest = []struct {
+	tableTest := []struct {
 		in       []string
 		remove   string
 		expected []string
