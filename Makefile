@@ -3,6 +3,15 @@ REGISTRY ?= piraeusdatastore
 TAG ?= latest
 NOCACHE ?= false
 
+# Some operator-sdk versions struggle when these are not set, even if go
+# is perfectly content with using sane defaults. So we just query go on
+# what these defaults are
+GOROOT ?= $(shell go env GOROOT)
+GOPATH ?= $(shell go env GOPATH)
+OPERATORSDK ?= operator-sdk
+
+OPERATORSDKCMD := GOROOT=$(GOROOT) GOPATH=$(GOPATH) $(OPERATORSDK)
+
 help:
 	@echo "Useful targets: 'update', 'upload'"
 
@@ -10,7 +19,7 @@ all: update upload
 
 .PHONY: update
 update:
-	operator-sdk build --image-build-args "--no-cache=$(NOCACHE)" $(PROJECT):$(TAG)
+	$(OPERATORSDKCMD) build --image-build-args "--no-cache=$(NOCACHE)" $(PROJECT):$(TAG)
 	docker tag $(PROJECT):$(TAG) $(PROJECT):latest
 
 .PHONY: upload
@@ -26,10 +35,10 @@ test:
 	go test ./...
 
 deep-copy:
-	operator-sdk generate k8s
+	$(OPERATORSDKCMD) generate k8s
 
 crds:
-	operator-sdk generate crds
+	$(OPERATORSDKCMD) generate crds
 	mv ./deploy/crds/* ./charts/piraeus/crds
 
 helm-values:
