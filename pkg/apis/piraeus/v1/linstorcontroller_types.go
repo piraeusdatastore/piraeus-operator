@@ -119,7 +119,8 @@ type LinstorControllerStatus struct {
 	// SatelliteStatuses by hostname.
 	SatelliteStatuses []*shared.SatelliteStatus `json:"SatelliteStatuses"`
 	// properties set on the Linstor controller
-	ControllerProperties map[string]string `json:"controllerProperties"`
+	// +optional
+	ControllerProperties map[string]string `json:"ControllerProperties"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

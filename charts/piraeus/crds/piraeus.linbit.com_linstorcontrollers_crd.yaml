@@ -879,6 +879,11 @@ spec:
           status:
             description: LinstorControllerStatus defines the observed state of LinstorController
             properties:
+              ControllerProperties:
+                additionalProperties:
+                  type: string
+                description: properties set on the Linstor controller
+                type: object
               ControllerStatus:
                 description: ControllerStatus information.
                 properties:
@@ -947,11 +952,6 @@ spec:
                   - storagePoolStatus
                   type: object
                 type: array
-              controllerProperties:
-                additionalProperties:
-                  type: string
-                description: properties set on the Linstor controller
-                type: object
               errors:
                 description: Errors remaining that will trigger reconciliations.
                 items:
@@ -960,7 +960,6 @@ spec:
             required:
             - ControllerStatus
             - SatelliteStatuses
-            - controllerProperties
             - errors
             type: object
         type: object
