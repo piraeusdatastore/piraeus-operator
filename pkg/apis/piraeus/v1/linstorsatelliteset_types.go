@@ -96,6 +96,11 @@ type LinstorSatelliteSetSpec struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName"`
 
+	// AdditionalEnv is a list of extra environments variables to pass to the satellite container
+	// +optional
+	// +nullable
+	AdditionalEnv []corev1.EnvVar `json:"additionalEnv"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

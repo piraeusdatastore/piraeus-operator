@@ -23,4 +23,5 @@ spec:
   storagePools:
 {{ toYaml .Values.operator.satelliteSet.storagePools | indent 4 }}
   {{- end }}
+  additionalEnv: {{ .Values.operator.satelliteSet.additionalEnv | toJson }}
 {{- end }}

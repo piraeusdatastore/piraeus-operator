@@ -20,3 +20,4 @@ spec:
   kernelModuleInjectionMode: "Compile"
   kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.27"
   kernelModuleInjectionResources: {}
+  additionalEnv: []

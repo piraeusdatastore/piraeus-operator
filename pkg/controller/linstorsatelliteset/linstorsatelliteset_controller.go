@@ -820,6 +820,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, config *
 							Args: []string{
 								"startSatellite",
 							}, // Run linstor-satellite.
+							Env:             satelliteSet.Spec.AdditionalEnv,
 							ImagePullPolicy: satelliteSet.Spec.ImagePullPolicy,
 							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 							Ports: []corev1.ContainerPort{
@@ -997,22 +998,25 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 		return ds
 	}
 
+	env := satelliteSet.Spec.AdditionalEnv
+	env = append(env,
+		corev1.EnvVar{
+			Name:  kubeSpec.LinstorKernelModHow,
+			Value: kernelModHow,
+		},
+		corev1.EnvVar{
+			Name:  kubeSpec.LinstorKernelModHelperCheck,
+			Value: kubeSpec.LinstorKernelModHelperCheckEnabled,
+		},
+	)
+
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "kernel-module-injector",
 			Image:           satelliteSet.Spec.KernelModuleInjectionImage,
 			ImagePullPolicy: satelliteSet.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
-			Env: []corev1.EnvVar{
-				{
-					Name:  kubeSpec.LinstorKernelModHow,
-					Value: kernelModHow,
-				},
-				{
-					Name:  kubeSpec.LinstorKernelModHelperCheck,
-					Value: kubeSpec.LinstorKernelModHelperCheckEnabled,
-				},
-			},
+			Env:             env,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      kubeSpec.SrcDirName,
