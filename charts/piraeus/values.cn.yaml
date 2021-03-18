@@ -84,6 +84,7 @@ operator:
     kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.27
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
+    additionalEnv: []
 haController:
   enabled: true
   image: daocloud.io/piraeus/piraeus-ha-controller:v0.1.3

@@ -403,6 +403,13 @@ func (in *LinstorSatelliteSetSpec) DeepCopyInto(out *LinstorSatelliteSetSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.AdditionalEnv != nil {
+		in, out := &in.AdditionalEnv, &out.AdditionalEnv
+		*out = make([]corev1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	out.LinstorClientConfig = in.LinstorClientConfig
 	return
 }

@@ -449,6 +449,12 @@ Default:: `[]`
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
 Description:: Tolerations to pass to the satellite pods.
 
+=== `operator.satelliteSet.additonalEnv`
+Default:: `[]`
+Valid values:: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/[EnvVar list]
+Description:: A list of additional environment variables to pass to the Linstor satellite containers.
+
+
 == PSP
 
 === `psp.privilegedRole`
