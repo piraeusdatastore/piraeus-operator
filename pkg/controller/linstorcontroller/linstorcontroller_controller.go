@@ -290,6 +290,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 				{
 					Name:                    "default",
 					Address:                 pod.Status.PodIP,
+					IsActive:                true,
 					SatellitePort:           controllerResource.Spec.SslConfig.Port(),
 					SatelliteEncryptionType: controllerResource.Spec.SslConfig.Type(),
 				},

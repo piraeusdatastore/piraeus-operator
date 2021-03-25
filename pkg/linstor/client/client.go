@@ -151,53 +151,52 @@ func NewHighLevelClient(options ...lapi.Option) (*HighLevelClient, error) {
 }
 
 // GetNodeOrCreate gets a linstor node, creating it if it is not already present.
-func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (lapi.Node, error) {
-	n, err := c.Nodes.Get(ctx, node.Name)
+func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (*lapi.Node, error) {
+	existingNode, err := c.Nodes.Get(ctx, node.Name)
 	if err != nil {
 		// For 404
 		if err != lapi.NotFoundError {
-			return n, fmt.Errorf("unable to get node %s: %v", node.Name, err)
-		}
-
-		if len(node.NetInterfaces) != 1 {
-			return n, fmt.Errorf("only able to create a new node with a single interface")
+			return nil, fmt.Errorf("unable to get node %s: %w", node.Name, err)
 		}
 
 		// Node doesn't exist, create it.
 		if err := c.Nodes.Create(ctx, node); err != nil {
-			return n, fmt.Errorf("unable to create node %s: %v", node.Name, err)
+			return nil, fmt.Errorf("unable to create node %s: %w", node.Name, err)
 		}
 
 		newNode, err := c.Nodes.Get(ctx, node.Name)
 		if err != nil {
-			return newNode, fmt.Errorf("unable to get newly created node %s: %v", node.Name, err)
+			return nil, fmt.Errorf("unable to get newly created node %s: %w", node.Name, err)
 		}
 
-		return newNode, c.ensureWantedInterface(ctx, newNode, node.NetInterfaces[0])
+		existingNode = newNode
 	}
 
-	return n, nil
+	for _, nic := range node.NetInterfaces {
+		err = c.ensureWantedInterface(ctx, existingNode, nic)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update network interface: %w", err)
+		}
+	}
+
+	return &existingNode, nil
 }
 
 func (c *HighLevelClient) ensureWantedInterface(ctx context.Context, node lapi.Node, wanted lapi.NetInterface) error {
-	// Make sure default network interface is to spec.
 	for _, nodeIf := range node.NetInterfaces {
-		if nodeIf.Name == wanted.Name {
-
-			// TODO: Maybe we should error out here.
-			if nodeIf.Address != wanted.Address {
-				if err := c.Nodes.ModifyNetInterface(ctx, node.Name, wanted.Name, wanted); err != nil {
-					return fmt.Errorf("unable to modify default network interface on %s: %v", node.Name, err)
-				}
-			}
-			break
+		if nodeIf.Name != wanted.Name {
+			continue
 		}
 
-		if err := c.Nodes.CreateNetInterface(ctx, node.Name, wanted); err != nil {
-			return fmt.Errorf("unable to create default network interface on %s: %v", node.Name, err)
+		if nodeIf.Address == wanted.Address {
+			return nil
 		}
+
+		return c.Nodes.ModifyNetInterface(ctx, node.Name, wanted.Name, wanted)
 	}
-	return nil
+
+	// Interface was not found, creating it now
+	return c.Nodes.CreateNetInterface(ctx, node.Name, wanted)
 }
 
 // GetAllResourcesOnNode returns a list of all resources on the specified node.

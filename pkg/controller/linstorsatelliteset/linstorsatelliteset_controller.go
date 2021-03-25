@@ -436,6 +436,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx conte
 			{
 				Name:                    "default",
 				Address:                 pod.Status.HostIP,
+				IsActive:                true,
 				SatellitePort:           satelliteSet.Spec.SslConfig.Port(),
 				SatelliteEncryptionType: satelliteSet.Spec.SslConfig.Type(),
 			},

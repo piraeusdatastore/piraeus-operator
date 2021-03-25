@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Set node name variable for Controller Pods, enabling [k8s-await-election] to correctly set up the endpoint for
   hairpin mode.
 
+### Fixed
+
+* Update the network address of controller pods if they diverged between Linstor and kubernetes. This can happen after
+  a node restart, where a pod is recreated with the same name but different IP address.
+
 [k8s-await-election]: https://github.com/LINBIT/k8s-await-election/commit/60748fcec722e4c32b8881c4c84957cc50543db2
 
 ## [v1.3.1] - 2021-01-14
