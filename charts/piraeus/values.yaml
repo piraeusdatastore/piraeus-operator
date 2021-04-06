@@ -29,7 +29,7 @@ csi:
   enabled: true
   pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.11.0
   csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.0.2
-  csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.1.0
+  csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.2.0
   csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1
   csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4
   csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2
