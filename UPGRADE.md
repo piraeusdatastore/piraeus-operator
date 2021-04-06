@@ -6,6 +6,22 @@ etcd was deployed using `etcd.persistentVolume.enabled=true`
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
+# Upgrade from v1.3 to v1.4
+
+No special steps required, unless using the newly introduced `additionalEnv` and `additionalProperties` overrides.
+
+If you plan to use the new overrides, replace the CustomResourceDefinitions before running the upgrade
+
+```
+$ kubectl replace -f ./charts/piraeus/crds
+```
+
+Then run the upgrade:
+
+```
+helm upgrade piraeus-op ./charts/piraeus -f <overrides>
+```
+
 # Upgrade from v1.2 to v1.3
 
 No special steps required. After checking out the new repo, run a simple helm upgrade:

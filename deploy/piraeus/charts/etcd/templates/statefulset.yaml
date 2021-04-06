@@ -47,7 +47,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: piraeus-op-etcd
-        image: "gcr.io/etcd-development/etcd:v3.4.9"
+        image: "gcr.io/etcd-development/etcd:v3.4.15"
         imagePullPolicy: "IfNotPresent"
         ports:
         - containerPort: 2380
