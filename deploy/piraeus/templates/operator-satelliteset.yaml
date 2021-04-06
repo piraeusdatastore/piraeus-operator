@@ -18,6 +18,5 @@ spec:
   tolerations: []
   resources: {}
   kernelModuleInjectionMode: "Compile"
-  kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.27"
+  kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.28"
   kernelModuleInjectionResources: {}
-  additionalEnv: []

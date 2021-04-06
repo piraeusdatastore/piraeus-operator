@@ -10,15 +10,15 @@ etcd:
   resources: {} # resource requirements for etcd containers
   image:
     repository: gcr.io/etcd-development/etcd
-    tag: v3.4.9
+    tag: v3.4.15
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
-  image: k8s.gcr.io/sig-storage/snapshot-controller:v3.0.2
+  image: k8s.gcr.io/sig-storage/snapshot-controller:v3.0.3
   replicas: 1
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
-  storkImage: docker.io/openstorage/stork:2.5.0
+  storkImage: docker.io/openstorage/stork:2.6.2
   schedulerImage: k8s.gcr.io/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1
@@ -27,13 +27,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.11.0
-  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.0.2
+  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.12.1
+  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.1.0
   csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.2.0
-  csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1
-  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4
-  csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2
-  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.0.1
+  csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0
+  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v2.1.1
+  csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.3
+  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.1.0
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
@@ -81,7 +81,7 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
-    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.27
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.28
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
     additionalEnv: []

@@ -10,15 +10,15 @@ etcd:
   resources: {} # resource requirements for etcd containers
   image:
     repository: daocloud.io/piraeus/etcd
-    tag: v3.4.9
+    tag: v3.4.15
 csi-snapshotter:
   enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
-  image: daocloud.io/piraeus/snapshot-controller:v3.0.2
+  image: daocloud.io/piraeus/snapshot-controller:v3.0.3
   replicas: 1
   resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
-  storkImage: daocloud.io/piraeus/stork:2.5.0
+  storkImage: daocloud.io/piraeus/stork:2.6.2
   schedulerImage: daocloud.io/piraeus/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1
@@ -27,13 +27,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.11.0
-  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.0.2
+  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.12.1
+  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.1.0
   csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.2.0
-  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.0.1
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.0.4
-  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v3.0.2
-  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.0.1
+  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.1.0
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.1.1
+  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v3.0.3
+  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.1.0
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []
@@ -81,7 +81,7 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
-    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.27
+    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.28
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
     additionalEnv: []
