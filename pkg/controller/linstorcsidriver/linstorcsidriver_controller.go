@@ -551,7 +551,6 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 						podsMountDir,
 						registrationDir,
 					},
-					HostNetwork:      true,
 					DNSPolicy:        corev1.DNSClusterFirstWithHostNet,
 					ImagePullSecrets: pullSecrets,
 					Affinity:         csiResource.Spec.NodeAffinity,
