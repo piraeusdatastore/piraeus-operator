@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CSI Nodes no longer use `hostNetwork: true`. The pods already got the correct hostname via the downwardAPI and do not
   talk to DRBD's netlink interface directly.
+- External: CSI snapshotter subchart now packages `v1` CRDs. Fixes deprecation warnings when installing
+  the snapshot controller.
 
 ## [v1.4.0] - 2021-04-07
 

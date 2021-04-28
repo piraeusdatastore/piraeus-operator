@@ -1,4 +1,4 @@
-image: quay.io/k8scsi/snapshot-controller:v2.0.1
+image: quay.io/k8scsi/snapshot-controller:v3.0.3
 replicas: 1
 resources: {}
 podsecuritycontext: {}
