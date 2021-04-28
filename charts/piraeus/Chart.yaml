@@ -9,5 +9,5 @@ dependencies:
     version: "0.7.4"
     condition: etcd.enabled
   - name: "csi-snapshotter"
-    version: "1.0.0"
+    version: "1.1.0"
     condition: csi-snapshotter.enabled
