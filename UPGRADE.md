@@ -6,6 +6,22 @@ etcd was deployed using `etcd.persistentVolume.enabled=true`
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
+# Upgrade from v1.4 to v1.5
+
+To make use of the new `monitoringImage` value in the LinstorSatelliteSet CRD, you need to replace the existing CRDs
+before running the upgrade. If the CRDs are not upgraded, the operator will not deploy the monitoring container
+alongside the satellites.
+
+```
+$ kubectl replace -f ./charts/piraeus/crds
+```
+
+Then run the upgrade:
+
+```
+helm upgrade piraeus-op ./charts/piraeus -f <overrides>
+```
+
 # Upgrade from v1.3 to v1.4
 
 No special steps required, unless using the newly introduced `additionalEnv` and `additionalProperties` overrides.

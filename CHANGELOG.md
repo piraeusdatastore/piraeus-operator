@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All operator-managed workloads apply recommended labels. This requires the recreation of Deployments and DaemonSets
   on upgrade. This is automatically handled by the operator, however any customizations applied to the deployments
   not managed by the operator will be reverted in the process.
+- Use [`drbd-reactor`](https://github.com/LINBIT/drbd-reactor/) to expose Prometheus endpoints on each satellite.
+- Configure `ServiceMonitor` resources if they are supported by the cluster (i.e. prometheus operator is configured)
 
 ### Changed
 

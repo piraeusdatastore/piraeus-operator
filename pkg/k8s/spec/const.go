@@ -44,6 +44,9 @@ const (
 	LinstorSatelliteConfigFile  = "linstor_satellite.toml"
 	LinstorClientConfigFile     = "linstor-client.conf"
 	LinstorControllerGID        = 1000
+	DrbdPrometheuscConfName     = "drbd-reactor-config"
+	MonitorungPortNumber        = 9942
+	MonitoringPortName          = "prometheus"
 )
 
 // Special strings for communicating with the module injector
@@ -77,6 +80,7 @@ const (
 	ImageLinstorControllerEnv     = "RELATED_IMAGE_LINSTOR_CONTROLLER"
 	ImageLinstorSatelliteEnv      = "RELATED_IMAGE_LINSTOR_SATELLITE"
 	ImageKernelModuleInjectionEnv = "RELATED_IMAGE_KERNEL_MODULE_INJECTION"
+	ImageMonitoringEnv            = "RELATED_IMAGE_MONITORING"
 	ImageCSIPluginEnv             = "RELATED_IMAGE_CSI_PLUGIN"
 	ImageCSIAttacherEnv           = "RELATED_IMAGE_CSI_ATTACHER"
 	ImageCSILivenessProbeEnv      = "RELATED_IMAGE_CSI_LIVENESSPROBE"

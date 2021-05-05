@@ -81,6 +81,7 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
+    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.3.0
     kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.0.28
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
