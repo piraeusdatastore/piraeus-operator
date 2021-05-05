@@ -24,16 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
-
-	lapi "github.com/LINBIT/golinstor/client"
-	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
-	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
-	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
-	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
-
 	"github.com/BurntSushi/toml"
+	lapi "github.com/LINBIT/golinstor/client"
 	awaitelection "github.com/linbit/k8s-await-election/pkg/consts"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,6 +42,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 )
 
 // newControllerReconciler returns a new reconcile.Reconciler
@@ -175,7 +174,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 	log.Debug("reconcile LINSTOR Service")
 
 	ctrlService := newServiceForResource(controllerResource)
-	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlService, controllerResource)
+	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlService, controllerResource, reconcileutil.OnPatchErrorReturn)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile LINSTOR Service: %w", err)
 	}
@@ -187,7 +186,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		return fmt.Errorf("failed to render config for LINSTOR: %w", err)
 	}
 
-	configmapChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, controllerResource)
+	configmapChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, controllerResource, reconcileutil.OnPatchErrorReturn)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile LINSTOR Controller ConfigMap: %w", err)
 	}
@@ -195,7 +194,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 	log.Debug("reconcile LINSTOR Controller Deployment")
 
 	ctrlDeployment := newDeploymentForResource(controllerResource)
-	deploymentChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlDeployment, controllerResource)
+	deploymentChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlDeployment, controllerResource, reconcileutil.OnPatchErrorRecreate)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile LINSTOR Controller Deployment: %w", err)
 	}
@@ -272,8 +271,9 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		}
 	}
 
+	meta := getObjectMeta(controllerResource, "%s-controller")
 	ourPods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(resourceLabels(controllerResource))
+	labelSelector := labels.SelectorFromSet(meta.Labels)
 	err = r.client.List(ctx, ourPods, client.InNamespace(controllerResource.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
 	if err != nil {
 		return err
@@ -583,8 +583,6 @@ func (r *ReconcileLinstorController) controllerReachable(ctx context.Context, li
 }
 
 func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *appsv1.Deployment {
-	labels := resourceLabels(controllerResource)
-
 	var pullSecrets []corev1.LocalObjectReference
 	if controllerResource.Spec.DrbdRepoCred != "" {
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: controllerResource.Spec.DrbdRepoCred})
@@ -782,22 +780,16 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		},
 	}
 
+	meta := getObjectMeta(controllerResource, "%s-controller")
+
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      controllerResource.Name + "-controller",
-			Namespace: controllerResource.Namespace,
-			Labels:    labels,
-		},
+		ObjectMeta: meta,
 		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: labels},
+			Selector: &metav1.LabelSelector{MatchLabels: meta.Labels},
 			Replicas: controllerResource.Spec.Replicas,
 			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      controllerResource.Name + "-controller",
-					Namespace: controllerResource.Namespace,
-					Labels:    labels,
-				},
+				ObjectMeta: meta,
 				Spec: corev1.PodSpec{
 					ServiceAccountName: getServiceAccountName(controllerResource),
 					PriorityClassName:  controllerResource.Spec.PriorityClassName.GetName(controllerResource.Namespace),
@@ -847,12 +839,13 @@ func getSecurityContext() *corev1.PodSecurityContext {
 }
 
 func getDeploymentAffinity(controllerResource *piraeusv1.LinstorController) *corev1.Affinity {
+	meta := getObjectMeta(controllerResource, "%s-controller")
 	if controllerResource.Spec.Affinity == nil {
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
-						LabelSelector: &metav1.LabelSelector{MatchLabels: resourceLabels(controllerResource)},
+						LabelSelector: &metav1.LabelSelector{MatchLabels: meta.Labels},
 						TopologyKey:   kubeSpec.DefaultTopologyKey,
 					},
 				},
@@ -870,10 +863,7 @@ func newServiceForResource(controllerResource *piraeusv1.LinstorController) *cor
 	}
 
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      controllerResource.Name,
-			Namespace: controllerResource.Namespace,
-		},
+		ObjectMeta: getObjectMeta(controllerResource, "%s"),
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "",
 			Ports: []corev1.ServicePort{
@@ -933,10 +923,7 @@ func NewConfigMapForResource(controllerResource *piraeusv1.LinstorController) (*
 	}
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      controllerResource.Name + "-config",
-			Namespace: controllerResource.Namespace,
-		},
+		ObjectMeta: getObjectMeta(controllerResource, "%s-config"),
 		Data: map[string]string{
 			kubeSpec.LinstorControllerConfigFile: controllerConfigBuilder.String(),
 			kubeSpec.LinstorClientConfigFile:     clientConfigFile,
@@ -961,9 +948,14 @@ func expectedEndpoint(controllerResource *piraeusv1.LinstorController) string {
 	return lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
 }
 
-func resourceLabels(controllerResource *piraeusv1.LinstorController) map[string]string {
-	return map[string]string{
-		"app":  controllerResource.Name,
-		"role": kubeSpec.ControllerRole,
+func getObjectMeta(controllerResource *piraeusv1.LinstorController, nameFmt string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      fmt.Sprintf(nameFmt, controllerResource.Name),
+		Namespace: controllerResource.Namespace,
+		Labels: map[string]string{
+			"app.kubernetes.io/name":       kubeSpec.ControllerRole,
+			"app.kubernetes.io/instance":   controllerResource.Name,
+			"app.kubernetes.io/managed-by": kubeSpec.Name,
+		},
 	}
 }

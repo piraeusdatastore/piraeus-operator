@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,6 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 )
 
 type GCRuntimeObject interface {
@@ -34,11 +35,42 @@ var defaultPreconditions = []mergepatch.PreconditionFunc{
 	mergepatch.RequireKeyUnchanged("status"),
 }
 
-// Creates or updates a resource to be in line with the given resource spec.
+type OnPatchError = func(ctx context.Context, kubeClient client.Client, current, desired GCRuntimeObject) error
+
+// OnPatchErrorReturn returns the error when applying the patch.
+var OnPatchErrorReturn OnPatchError
+
+// OnPatchErrorRecreate recreates a resource by deleting old resources before applying it again.
+func OnPatchErrorRecreate(ctx context.Context, kubeClient client.Client, current, desired GCRuntimeObject) error {
+	policy := metav1.DeletePropagationForeground
+	resourceVersion := current.GetResourceVersion()
+	uid := current.GetUID()
+	deleteOptions := &client.DeleteOptions{
+		Preconditions: &metav1.Preconditions{
+			ResourceVersion: &resourceVersion,
+			UID:             &uid,
+		},
+		PropagationPolicy: &policy,
+	}
+
+	err := kubeClient.Delete(ctx, current, deleteOptions)
+	if err != nil {
+		return fmt.Errorf("recreate failed: could not delete old resource: %w", err)
+	}
+
+	err = kubeClient.Create(ctx, desired)
+	if err != nil {
+		return fmt.Errorf("recreate failed: could not create new resource: %w", err)
+	}
+
+	return nil
+}
+
+// CreateOrUpdate reconciles a resource to be in line with the given resource spec.
 //
 // `kubectl apply` for go. First, will try to create the resource. If it already exists, it will try to compute the
 // changes based on the one previously applied and patch the resource.
-func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject) (bool, error) {
+func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject, onPatchErr OnPatchError) (bool, error) {
 	modifiedEncoded, err := ensureAppliedConfigAnnotation(scheme, obj)
 	if err != nil {
 		return false, err
@@ -83,14 +115,25 @@ func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runti
 		return false, nil
 	}
 
-	return true, kubeClient.Patch(ctx, obj, client.ConstantPatch(types.StrategicMergePatchType, patch), client.FieldOwner(fieldOwner))
+	err = kubeClient.Patch(ctx, obj, client.RawPatch(types.StrategicMergePatchType, patch), client.FieldOwner(fieldOwner))
+	if err != nil {
+		if apierrors.IsInvalid(err) && onPatchErr != nil {
+			err := onPatchErr(ctx, kubeClient, current, obj)
+
+			return err == nil, err
+		}
+
+		return false, fmt.Errorf("failed to apply patch: %w", err)
+	}
+
+	return true, nil
 }
 
-// Creates or updates a resource, ensuring the controller reference is set.
+// CreateOrUpdateWithOwner reconciles a resource, ensuring the controller reference is set.
 //
 // Sets the owner reference, ensuring that once the owning resource is cleaned up, the created items will be removed as
 // well. Then calls CreateOrUpdate.
-func CreateOrUpdateWithOwner(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject, owner metav1.Object) (bool, error) {
+func CreateOrUpdateWithOwner(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject, owner metav1.Object, onPatchErr OnPatchError) (bool, error) {
 	err := controllerutil.SetControllerReference(owner, obj, scheme)
 	// If it is already owned, we don't treat the SetControllerReference() call as a failure condition
 	if err != nil {
@@ -100,10 +143,10 @@ func CreateOrUpdateWithOwner(ctx context.Context, kubeClient client.Client, sche
 		}
 	}
 
-	return CreateOrUpdate(ctx, kubeClient, scheme, obj)
+	return CreateOrUpdate(ctx, kubeClient, scheme, obj, onPatchErr)
 }
 
-// "kubectl rollout restart" in go
+// RestartRollout is "kubectl rollout restart" in go
 //
 // Works for Deployments, StatefulSets, DaemonSets and maybe others. Restart is trigger by setting/updating an
 // annotation on the pod template.
@@ -112,7 +155,12 @@ func RestartRollout(ctx context.Context, kubeClient client.Client, obj runtime.O
 
 	patchData := fmt.Sprintf("{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"%s\":\"%s\"}}}}}", restartAnnotation, nowString)
 
-	return kubeClient.Patch(ctx, obj, client.ConstantPatch(types.MergePatchType, []byte(patchData)))
+	err := kubeClient.Patch(ctx, obj, client.RawPatch(types.MergePatchType, []byte(patchData)))
+	if err != nil {
+		return fmt.Errorf("failed to restart workload: %w", err)
+	}
+
+	return nil
 }
 
 // Returns the current state of the given object, as stored in Kubernetes.

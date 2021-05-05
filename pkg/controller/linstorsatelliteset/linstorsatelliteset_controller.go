@@ -24,18 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
-
 	"github.com/BurntSushi/toml"
-
-	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
-	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
-	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
-	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
-
 	lapi "github.com/LINBIT/golinstor/client"
-
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,10 +39,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 )
 
 func newSatelliteReconciler(mgr manager.Manager) reconcile.Reconciler {
@@ -191,30 +187,30 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 	log.Debug("reconcile satellite configmap")
 
 	// Create the satellite configuration
-	configMap, err := newSatelliteConfigMap(satelliteSet)
+	satelliteCM, err := newSatelliteConfigMap(satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
 
-	configmapChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, satelliteSet)
+	satelliteCMChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, satelliteCM, satelliteSet, reconcileutil.OnPatchErrorReturn)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
 
-	log.WithField("changed", configmapChanged).Debug("reconcile satellite configmap: done")
+	log.WithField("changed", satelliteCMChanged).Debug("reconcile satellite configmap: done")
 
 	log.Debug("reconcile satellite daemonset")
 
-	ds := newSatelliteDaemonSet(satelliteSet, configMap)
+	ds := newSatelliteDaemonSet(satelliteSet, satelliteCM)
 
-	daemonsetChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet)
+	daemonsetChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet, reconcileutil.OnPatchErrorRecreate)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite daemonset: %w", err)}
 	}
 
 	log.WithField("changed", daemonsetChanged).Debug("reconcile satellite daemonset: done")
 
-	if configmapChanged && !daemonsetChanged {
+	if satelliteCMChanged && !daemonsetChanged {
 		log.Debug("restart LINSTOR Satellites")
 
 		err := reconcileutil.RestartRollout(ctx, r.client, ds)
@@ -772,9 +768,10 @@ func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, satel
 		"Namespace": satelliteSet.Namespace,
 	}).Debug("list all node pods to register on controller")
 
+	meta := getObjectMeta(satelliteSet, "%s")
 	// Filters
 	namespaceSelector := client.InNamespace(satelliteSet.Namespace)
-	labelSelector := client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(satelliteSetLabels(satelliteSet))}
+	labelSelector := client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(meta.Labels)}
 	pods := &corev1.PodList{}
 
 	err := r.client.List(ctx, pods, namespaceSelector, labelSelector)
@@ -785,28 +782,19 @@ func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, satel
 	return pods.Items, nil
 }
 
-func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, config *corev1.ConfigMap) *apps.DaemonSet {
-	labels := satelliteSetLabels(satelliteSet)
-
+func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satelliteCM *corev1.ConfigMap) *apps.DaemonSet {
 	var pullSecrets []corev1.LocalObjectReference
 	if satelliteSet.Spec.DrbdRepoCred != "" {
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: satelliteSet.Spec.DrbdRepoCred})
 	}
 
+	meta := getObjectMeta(satelliteSet, "%s-node")
 	ds := &apps.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      satelliteSet.Name + "-node",
-			Namespace: satelliteSet.Namespace,
-			Labels:    labels,
-		},
+		ObjectMeta: meta,
 		Spec: apps.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: labels},
+			Selector: &metav1.LabelSelector{MatchLabels: meta.Labels},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      satelliteSet.Name + "-node",
-					Namespace: satelliteSet.Namespace,
-					Labels:    labels,
-				},
+				ObjectMeta: meta,
 				Spec: corev1.PodSpec{
 					Affinity:           satelliteSet.Spec.Affinity,
 					Tolerations:        satelliteSet.Spec.Tolerations,
@@ -870,7 +858,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, config *
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: config.Name,
+										Name: satelliteCM.Name,
 									},
 								},
 							},
@@ -915,11 +903,6 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, config *
 }
 
 func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1.ConfigMap, error) {
-	meta := metav1.ObjectMeta{
-		Name:      satelliteSet.Name + "-config",
-		Namespace: satelliteSet.Namespace,
-	}
-
 	// Create linstor satellite configuration
 	type SatelliteNetcomConfig struct {
 		Type                string `toml:"type,omitempty,omitzero"`
@@ -968,7 +951,7 @@ func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1
 	}
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: meta,
+		ObjectMeta: getObjectMeta(satelliteSet, "%s-config"),
 		Data: map[string]string{
 			kubeSpec.LinstorSatelliteConfigFile: tomlConfigBuilder.String(),
 			kubeSpec.LinstorClientConfigFile:    clientConfigFile,
@@ -1106,13 +1089,6 @@ func getServiceAccountName(satelliteSet *piraeusv1.LinstorSatelliteSet) string {
 	return satelliteSet.Spec.ServiceAccountName
 }
 
-func satelliteSetLabels(satelliteSet *piraeusv1.LinstorSatelliteSet) map[string]string {
-	return map[string]string{
-		"app":  satelliteSet.Name,
-		"role": kubeSpec.NodeRole,
-	}
-}
-
 func (r *ReconcileLinstorSatelliteSet) finalizeNode(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet, linstorClient *lc.HighLevelClient, nodeName string) error {
 	log := log.WithFields(logrus.Fields{
 		"name":      satelliteSet.Name,
@@ -1211,4 +1187,16 @@ func (r *ReconcileLinstorSatelliteSet) controllerReachable(ctx context.Context, 
 	_, err := linstorClient.Controller.GetVersion(ctx)
 
 	return err
+}
+
+func getObjectMeta(satelliteSet *piraeusv1.LinstorSatelliteSet, nameFmt string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      fmt.Sprintf(nameFmt, satelliteSet.Name),
+		Namespace: satelliteSet.Namespace,
+		Labels: map[string]string{
+			"app.kubernetes.io/name":       kubeSpec.NodeRole,
+			"app.kubernetes.io/instance":   satelliteSet.Name,
+			"app.kubernetes.io/managed-by": kubeSpec.Name,
+		},
+	}
 }

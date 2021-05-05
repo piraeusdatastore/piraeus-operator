@@ -287,7 +287,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	nodeReady := false
 	controllerReady := false
 
-	dsMeta := makeMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
+	dsMeta := getObjectMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
 	ds := appsv1.DaemonSet{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: dsMeta.Name, Namespace: dsMeta.Namespace}, &ds)
 	// We ignore these errors, they most likely mean the resource is not yet ready
@@ -295,7 +295,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 		nodeReady = ds.Status.DesiredNumberScheduled == ds.Status.NumberReady
 	}
 
-	deployMeta := makeMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
+	deployMeta := getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
 	deploy := appsv1.Deployment{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: deployMeta.Name, Namespace: deployMeta.Namespace}, &deploy)
 	// We ignore these errors, they most likely mean the resource is not yet ready
@@ -339,7 +339,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, 
 	logger.Debugf("creating csi node daemon set")
 	nodeDaemonSet := newCSINodeDaemonSet(csiResource)
 
-	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, nodeDaemonSet, csiResource)
+	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, nodeDaemonSet, csiResource, reconcileutil.OnPatchErrorRecreate)
 
 	return err
 }
@@ -353,7 +353,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Co
 	logger.Debugf("creating csi controller deployment")
 	controllerDeployment := newCSIControllerDeployment(csiResource)
 
-	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, controllerDeployment, csiResource)
+	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, controllerDeployment, csiResource, reconcileutil.OnPatchErrorRecreate)
 
 	return err
 }
@@ -367,7 +367,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiR
 	logger.Debugf("creating csi driver resource")
 	csiDriver := newCSIDriver(csiResource)
 
-	_, err := reconcileutil.CreateOrUpdate(ctx, r.client, r.scheme, csiDriver)
+	_, err := reconcileutil.CreateOrUpdate(ctx, r.client, r.scheme, csiDriver, reconcileutil.OnPatchErrorRecreate)
 
 	return err
 }
@@ -529,14 +529,15 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		},
 	}
 
+	meta := getObjectMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
 	return &appsv1.DaemonSet{
-		ObjectMeta: makeMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole),
+		ObjectMeta: meta,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(csiResource, kubeSpec.CSINodeRole),
+				MatchLabels: meta.Labels,
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: makeMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole),
+				ObjectMeta: meta,
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
@@ -712,16 +713,16 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			},
 		},
 	}
-
+	meta := getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
 	return &appsv1.Deployment{
-		ObjectMeta: makeMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole),
+		ObjectMeta: meta,
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: defaultLabels(csiResource, kubeSpec.CSIControllerRole),
+				MatchLabels: meta.Labels,
 			},
 			Replicas: csiResource.Spec.ControllerReplicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: makeMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole),
+				ObjectMeta: meta,
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
@@ -744,12 +745,13 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 }
 
 func getControllerAffinity(resource *piraeusv1.LinstorCSIDriver) *corev1.Affinity {
+	meta := getObjectMeta(resource, ControllerDeployment, kubeSpec.CSIControllerRole)
 	if resource.Spec.ControllerAffinity == nil {
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
-						LabelSelector: &metav1.LabelSelector{MatchLabels: defaultLabels(resource, kubeSpec.CSIControllerRole)},
+						LabelSelector: &metav1.LabelSelector{MatchLabels: meta.Labels},
 						TopologyKey:   kubeSpec.DefaultTopologyKey,
 					},
 				},
@@ -765,10 +767,12 @@ func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDr
 	attachRequired := true
 	podInfoOnMount := true
 
+	meta := getObjectMeta(csiResource, "%s", "cluster-config")
 	return &storagev1beta1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
 			// Name must match exactly the one reported by the CSI plugin
-			Name: "linstor.csi.linbit.com",
+			Name:   "linstor.csi.linbit.com",
+			Labels: meta.Labels,
 		},
 		Spec: storagev1beta1.CSIDriverSpec{
 			AttachRequired: &attachRequired,
@@ -777,24 +781,22 @@ func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDr
 	}
 }
 
-func makeMeta(csiResource *piraeusv1.LinstorCSIDriver, namePostfix, role string) metav1.ObjectMeta {
-	return metav1.ObjectMeta{
-		Name:      csiResource.Name + namePostfix,
-		Namespace: csiResource.Namespace,
-		Labels:    defaultLabels(csiResource, role),
-	}
-}
-
-func defaultLabels(csiResource *piraeusv1.LinstorCSIDriver, role string) map[string]string {
-	return map[string]string{
-		"app":  csiResource.Name,
-		"role": role,
-	}
-}
-
 const (
 	NodeServiceAccount       = "-csi-node"
 	ControllerServiceAccount = "-csi-controller"
-	NodeDaemonSet            = "-csi-node"
-	ControllerDeployment     = "-csi-controller"
+	NodeDaemonSet            = "%s-csi-node"
+	ControllerDeployment     = "%s-csi-controller"
 )
+
+func getObjectMeta(controllerResource *piraeusv1.LinstorCSIDriver, nameFmt, component string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      fmt.Sprintf(nameFmt, controllerResource.Name),
+		Namespace: controllerResource.Namespace,
+		Labels: map[string]string{
+			"app.kubernetes.io/name":       kubeSpec.ControllerRole,
+			"app.kubernetes.io/instance":   controllerResource.Name,
+			"app.kubernetes.io/managed-by": kubeSpec.Name,
+			"app.kubernetes.io/component":  component,
+		},
+	}
+}
