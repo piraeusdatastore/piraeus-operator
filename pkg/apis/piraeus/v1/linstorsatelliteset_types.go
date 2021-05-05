@@ -101,6 +101,11 @@ type LinstorSatelliteSetSpec struct {
 	// +nullable
 	AdditionalEnv []corev1.EnvVar `json:"additionalEnv"`
 
+	// MonitoringImage is the image used to export monitoring information from DRBD and Linstor.
+	// +optional
+	// +nullable
+	MonitoringImage string `json:"monitoringImage"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

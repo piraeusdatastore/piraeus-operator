@@ -25,16 +25,6 @@ import (
 	"os"
 	"runtime"
 
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
-
-	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
-	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
-	"github.com/piraeusdatastore/piraeus-operator/version"
-
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
@@ -44,11 +34,19 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	"github.com/piraeusdatastore/piraeus-operator/version"
 )
 
 // Change below variables to serve metrics on different host or port.

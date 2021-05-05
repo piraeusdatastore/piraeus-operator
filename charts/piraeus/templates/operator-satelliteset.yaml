@@ -16,6 +16,7 @@ spec:
   affinity: {{ .Values.operator.satelliteSet.affinity | toJson }}
   tolerations: {{ .Values.operator.satelliteSet.tolerations | toJson}}
   resources: {{ .Values.operator.satelliteSet.resources | toJson }}
+  monitoringImage: {{ .Values.operator.satelliteSet.monitoringImage | quote }}
   kernelModuleInjectionMode: {{ .Values.operator.satelliteSet.kernelModuleInjectionMode | quote }}
   kernelModuleInjectionImage: {{ .Values.operator.satelliteSet.kernelModuleInjectionImage | quote }}
   kernelModuleInjectionResources: {{ .Values.operator.satelliteSet.kernelModuleInjectionResources | toJson }}

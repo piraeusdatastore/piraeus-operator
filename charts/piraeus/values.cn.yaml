@@ -81,6 +81,7 @@ operator:
     affinity: {}
     tolerations: []
     resources: {}
+    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.3.0
     kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.28
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}

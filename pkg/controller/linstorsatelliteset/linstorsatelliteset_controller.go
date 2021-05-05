@@ -46,6 +46,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/monitoring"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
@@ -157,6 +158,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 	specs := []reconcileutil.EnvSpec{
 		{Env: kubeSpec.ImageLinstorSatelliteEnv, Target: &satelliteSet.Spec.SatelliteImage},
 		{Env: kubeSpec.ImageKernelModuleInjectionEnv, Target: &satelliteSet.Spec.KernelModuleInjectionImage},
+		{Env: kubeSpec.ImageMonitoringEnv, Target: &satelliteSet.Spec.MonitoringImage},
 	}
 
 	err := reconcileutil.UpdateFromEnv(ctx, r.client, satelliteSet, specs...)
@@ -199,9 +201,14 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 
 	log.WithField("changed", satelliteCMChanged).Debug("reconcile satellite configmap: done")
 
+	drbdReactorCM, err := r.reconcileMonitoring(ctx, satelliteSet)
+	if err != nil {
+		return []error{fmt.Errorf("failed to reconcile monitoring resources: %w", err)}
+	}
+
 	log.Debug("reconcile satellite daemonset")
 
-	ds := newSatelliteDaemonSet(satelliteSet, satelliteCM)
+	ds := newSatelliteDaemonSet(satelliteSet, satelliteCM, drbdReactorCM)
 
 	daemonsetChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet, reconcileutil.OnPatchErrorRecreate)
 	if err != nil {
@@ -220,6 +227,51 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 	}
 
 	return r.reconcileAllNodesOnController(ctx, satelliteSet)
+}
+
+func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1.ConfigMap, error) {
+	if satelliteSet.Spec.MonitoringImage == "" {
+		return nil, nil
+	}
+
+	log.Debug("reconcile drbd-reactor configmap")
+
+	drbdReactorCM := newMonitoringConfigMap(satelliteSet)
+
+	drbdReactorCMChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, drbdReactorCM, satelliteSet, reconcileutil.OnPatchErrorReturn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconcile drbd-reactor configmap")
+	}
+
+	log.WithField("changed", drbdReactorCMChanged).Debug("reconcile drbd-reactor configmap: done")
+
+	log.Debug("reconciling monitoring service definition")
+
+	monitoringService := newMonitoringService(satelliteSet)
+
+	monitoringServiceChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, monitoringService, satelliteSet, reconcileutil.OnPatchErrorReturn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconcile monitoring service definition")
+	}
+
+	log.WithField("changed", monitoringServiceChanged).Debug("reconciling monitoring service definition: done")
+
+	if monitoring.Enabled(ctx, r.client, r.scheme) {
+		log.Debug("monitoring is available in cluster, reconciling monitoring")
+
+		log.Debug("reconciling ServiceMonitor definition")
+
+		serviceMonitor := monitoring.MonitorForService(monitoringService)
+
+		serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, satelliteSet, reconcileutil.OnPatchErrorReturn)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
+		}
+
+		log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+	}
+
+	return drbdReactorCM, nil
 }
 
 func (r *ReconcileLinstorSatelliteSet) getLinstorClient(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) (*lc.HighLevelClient, error) {
@@ -782,7 +834,7 @@ func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, satel
 	return pods.Items, nil
 }
 
-func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satelliteCM *corev1.ConfigMap) *apps.DaemonSet {
+func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satelliteCM, drbdReactorConfig *corev1.ConfigMap) *apps.DaemonSet {
 	var pullSecrets []corev1.LocalObjectReference
 	if satelliteSet.Spec.DrbdRepoCred != "" {
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: satelliteSet.Spec.DrbdRepoCred})
@@ -897,8 +949,56 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 	}
 
 	ds = daemonSetWithDRBDKernelModuleInjection(ds, satelliteSet)
+	ds = daemonsetWithMonitoringContainer(ds, satelliteSet, drbdReactorConfig)
 	ds = daemonSetWithSslConfiguration(ds, satelliteSet)
 	ds = daemonSetWithHttpsConfiguration(ds, satelliteSet)
+	return ds
+}
+
+func daemonsetWithMonitoringContainer(ds *apps.DaemonSet, set *piraeusv1.LinstorSatelliteSet, drbdReactorConfig *corev1.ConfigMap) *apps.DaemonSet {
+	if drbdReactorConfig == nil {
+		return ds
+	}
+
+	ds.Spec.Template.Spec.Containers = append(ds.Spec.Template.Spec.Containers, corev1.Container{
+		Name:            "drbd-prometheus-exporter",
+		Image:           set.Spec.MonitoringImage,
+		ImagePullPolicy: set.Spec.ImagePullPolicy,
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "prometheus",
+				ContainerPort: monitoringPort,
+				HostPort:      monitoringPort,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		LivenessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Scheme: corev1.URISchemeHTTP,
+					Port:   intstr.FromInt(monitoringPort),
+				},
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      kubeSpec.DrbdPrometheuscConfName,
+				MountPath: "/etc/drbd-reactor.d/",
+			},
+		},
+	})
+
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: kubeSpec.DrbdPrometheuscConfName,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: drbdReactorConfig.Name,
+				},
+			},
+		},
+	})
+
 	return ds
 }
 
@@ -959,6 +1059,19 @@ func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1
 	}
 
 	return cm, nil
+}
+
+func newMonitoringConfigMap(set *piraeusv1.LinstorSatelliteSet) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: getObjectMeta(set, "%s-monitoring"),
+		Data: map[string]string{
+			"prometheus.toml": fmt.Sprintf(`
+[[prometheus]]
+address = "0.0.0.0:%d"
+enums = true
+`, monitoringPort),
+		},
+	}
 }
 
 func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *piraeusv1.LinstorSatelliteSet) *apps.DaemonSet {
@@ -1081,6 +1194,26 @@ func daemonSetWithHttpsConfiguration(ds *apps.DaemonSet, satelliteSet *piraeusv1
 	return ds
 }
 
+func newMonitoringService(set *piraeusv1.LinstorSatelliteSet) *corev1.Service {
+	meta := getObjectMeta(set, "%s-monitoring")
+
+	return &corev1.Service{
+		ObjectMeta: meta,
+		Spec: corev1.ServiceSpec{
+			Selector:  meta.Labels,
+			ClusterIP: corev1.ClusterIPNone,
+			Type:      corev1.ServiceTypeClusterIP,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     kubeSpec.MonitoringPortName,
+					Port:     kubeSpec.MonitorungPortNumber,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+		},
+	}
+}
+
 func getServiceAccountName(satelliteSet *piraeusv1.LinstorSatelliteSet) string {
 	if satelliteSet.Spec.ServiceAccountName == "" {
 		return kubeSpec.LinstorSatelliteServiceAccount
@@ -1200,3 +1333,5 @@ func getObjectMeta(satelliteSet *piraeusv1.LinstorSatelliteSet, nameFmt string) 
 		},
 	}
 }
+
+const monitoringPort = 9942

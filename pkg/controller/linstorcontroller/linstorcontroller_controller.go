@@ -46,6 +46,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/monitoring"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
@@ -206,6 +207,27 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		if err != nil {
 			return fmt.Errorf("failed to restart LINSTOR Controller after ConfigMap change: %w", err)
 		}
+	}
+
+	if monitoring.Enabled(ctx, r.client, r.scheme) {
+		log.Debug("monitoring is available in cluster, reconciling monitoring")
+
+		log.Debug("reconciling ServiceMonitor definition")
+
+		serviceMonitor := monitoring.MonitorForService(ctrlService)
+
+		serviceMonitor.Spec.Endpoints[0].Path = "/metrics"
+
+		if !controllerResource.Spec.SslConfig.IsPlain() {
+			serviceMonitor.Spec.Endpoints[0].Scheme = "https"
+		}
+
+		serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, controllerResource, nil)
+		if err != nil {
+			return fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
+		}
+
+		log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
 	}
 
 	log.Debug("reconcile LINSTOR")

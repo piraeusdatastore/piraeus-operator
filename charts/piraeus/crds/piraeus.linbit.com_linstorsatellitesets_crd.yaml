@@ -802,6 +802,11 @@ spec:
                   matching the client key (PEM format, without password) If set, HTTPS
                   is used for connecting and authenticating with linstor'
                 type: string
+              monitoringImage:
+                description: MonitoringImage is the image used to export monitoring
+                  information from DRBD and Linstor.
+                nullable: true
+                type: string
               priorityClassName:
                 description: priorityClassName is the name of the PriorityClass for
                   the node pods

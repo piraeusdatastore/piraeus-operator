@@ -17,6 +17,7 @@ spec:
   affinity: {}
   tolerations: []
   resources: {}
+  monitoringImage: "quay.io/piraeusdatastore/drbd-reactor:v0.3.0"
   kernelModuleInjectionMode: "Compile"
   kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.0.28"
   kernelModuleInjectionResources: {}
