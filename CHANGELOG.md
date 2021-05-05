@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- All operator-managed workloads apply recommended labels. This requires the recreation of Deployments and DaemonSets
+  on upgrade. This is automatically handled by the operator, however any customizations applied to the deployments
+  not managed by the operator will be reverted in the process.
+
 ### Changed
 
 - CSI Nodes no longer use `hostNetwork: true`. The pods already got the correct hostname via the downwardAPI and do not
