@@ -114,6 +114,28 @@ spec:
       storage: 500Mi
 ```
 
+## Monitoring with Prometheus
+
+Starting with operator version 1.5.0, you can use [Prometheus](https://prometheus.io/) to monitor Piraeus components.
+The operator will set up monitoring containers along the existing components and make them available as a `Service`.
+
+If you use the [Prometheus Operator](https://prometheus-operator.dev/), the Piraeus Operator will also set up the `ServiceMonitor`
+instances. The metrics will automatically be collected by the Prometheus instance associated to the operator, assuming
+[watching the Piraeus namespace is enabled](https://prometheus-operator.dev/docs/kube/monitoring-other-namespaces/).
+
+### Linstor Controller Monitoring
+
+The Linstor Controller exports cluster-wide metrics. Metrics are exported on the existing controller service, using the
+path [`/metrics`](https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-linstor-monitoring).
+
+### DRBD Resource Monitoring
+
+All satellites are bundled with a secondary container that uses [`drbd-reactor`](https://github.com/LINBIT/drbd-reactor/)
+to export metrics directly from DRBD. The metrics are available on port 9942, for convenience a headless service named
+`<linstorsatelliteset-name>-monitoring` is provided.
+
+If you want to disable the monitoring container, set `monitoringImage` to `""` in your LinstorSatelliteSet resource.
+
 ## High Availability Controller
 
 The [Piraeus High Availability (HA) Controller] will speed up the fail over process for stateful workloads using Piraeus for
