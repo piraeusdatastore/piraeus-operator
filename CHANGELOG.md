@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   talk to DRBD's netlink interface directly.
 - External: CSI snapshotter subchart now packages `v1` CRDs. Fixes deprecation warnings when installing
   the snapshot controller.
+- Default images:
+  * Piraeus Server v1.12.3
+  * Piraeus CSI v0.13.0
+  * DRBD v9.0.29
 
 ## [v1.4.0] - 2021-04-07
 

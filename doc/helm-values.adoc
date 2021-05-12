@@ -216,7 +216,7 @@ Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and
 Description:: Tolerations to pass to the csi node pods.
 
 === `csi.pluginImage`
-Default:: `quay.io/piraeusdatastore/piraeus-csi:v0.11.0`
+Default:: `quay.io/piraeusdatastore/piraeus-csi:v0.13.0`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI plugin containers (both node and controller). https://github.com/piraeusdatastore/linstor-csi[Project page]
 
@@ -312,7 +312,7 @@ affinity:
 To not use any affinity settings, set the value to `nodeAffinity: {}`
 
 === `operator.controller.controllerImage`
-Default:: `quay.io/piraeusdatastore/piraeus-server:v1.11.0`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.12.3`
 Valid values:: image ref
 Description:: Name of the image to use for the controller.
 
@@ -397,7 +397,7 @@ Description::  Automatically create storage pools of the specified type. Check t
 * `ZFS`: create a ZFS based storage pool
 
 === `operator.satelliteSet.kernelModuleInjectionImage`
-Default:: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.26`
+Default:: `quay.io/piraeusdatastore/drbd9-bionic:v9.0.29`
 Valid values:: image ref
 Description:: Name of the image to use for loading kernel modules. This is specific to the nodes host system. Check https://quay.io/organization/piraeusdatastore[the available `drbd9` images]
 
@@ -436,7 +436,7 @@ Description:: Resource requests and limits to apply to the satellite containers.
 Note: at least 750MiB memory is recommended.
 
 === `operator.satelliteSet.satelliteImage`
-Default:: `quay.io/piraeusdatastore/piraeus-server:v1.11.0`
+Default:: `quay.io/piraeusdatastore/piraeus-server:v1.12.3`
 Valid values:: image ref
 Description:: Name of the image to use for the satellites.
 
