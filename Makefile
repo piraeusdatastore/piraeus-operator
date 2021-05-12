@@ -87,8 +87,8 @@ release:
 	$(MAKE) deploy/piraeus
 	git add --update
 	# commit as current release + tag
-	git commit -aevm "Release v$(VERSION)"
-	git tag v$(VERSION)
+	git commit -aevm "Release v$(VERSION)" --signoff
+	# We don't do git tag v$(VERSION) here, as the commit will change once its merged in github
 	# add "Unreleased" section at top + create comparison link against current master
 	sed 's/^## \[v$(VERSION)\]/## [Unreleased]\n\n## [v$(VERSION)]/' -i CHANGELOG.md
 	echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$(VERSION)...HEAD" >> CHANGELOG.md
@@ -98,7 +98,7 @@ release:
 	# reset full yaml deployment
 	$(MAKE) deploy/piraeus
 	# commit begin of new dev cycle
-	git commit -aevm "Prepare next dev cycle"
+	git commit -aevm "Prepare next dev cycle" --signoff
 
 .PHONY: deploy/piraeus
 deploy/piraeus:
