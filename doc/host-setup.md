@@ -6,6 +6,27 @@ following options to load DRBD:
 
 [DRBD]: https://github.com/LINBIT/drbd/
 
+## Software compatibility
+
+Certain pieces of software conflict with Piraeus and either need to be configured to not interfere with Piraeus or they need
+to be disabled to ensure Piraeus can function properly.
+
+### Multipathd
+
+If you are using `multipathd`, you will most likely need to change some configuration settings to ensure that Piraeus can function
+properly as `multipathd` by default will interfere with Piraeus. `multipathd` by default opens up DRBD devices which prevents Piraeus
+from working properly. To configure `multipathd`, put the following in the file `/etc/multipath/conf.d/drbd.conf`:
+
+```
+blacklist {
+        devnode "^drbd[0-9]+"
+}
+```
+
+You will most likely need to create the directory `/etc/multipath/conf.d/` if you have not made any other configuration changes to
+`multipathd` before. Note that `multipathd` is enabled on Ubuntu 20.04 by default and this configuration change will need to be made
+on fresh installations of Ubuntu 20.04 before Piraeus will be able to function properly.
+
 ## Build and load DRBD using the Kernel Module Injection Image (Preferred)
 
 Every satellite container created by the operator will use an [InitContainer] to ensure DRBD is available. This init

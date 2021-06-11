@@ -104,6 +104,8 @@ Currently, this method supports creation of LVM and LVMTHIN storage pools.
 
 [VDO]: https://www.redhat.com/en/blog/look-vdo-new-linux-compression-layer
 
+Note that a LVM configuration for Piraeus will result in volume snapshot creation being disabled. If you need volume snapshots, use LVM thin or ZFS.
+
 #### `lvmThinPools` configuration
 * `name` name of the LINSTOR storage pool. Required
 * `volumeGroup` VG to use for the thin pool. If you want to use `devicePaths`, you must set this to `""`.
