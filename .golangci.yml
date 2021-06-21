@@ -18,7 +18,7 @@ linters-settings:
   gocyclo:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
     min-complexity: 15
-  maligned:
+  fieldalignment:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
   dupl:
@@ -96,6 +96,9 @@ issues:
         - errcheck
         - dupl
         - gosec
+    - path: version.go
+      linters:
+        - revive
 
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0
