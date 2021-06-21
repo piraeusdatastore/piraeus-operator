@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Default images:
+  * Piraeus Server v1.13.0
+  * Piraeus CSI v0.13.1
+  * CSI Provisioner v2.1.2
+
 ## [v1.5.0] - 2021-05-12
 
 ### Added

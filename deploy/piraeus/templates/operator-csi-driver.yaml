@@ -7,14 +7,14 @@ metadata:
   namespace: default
 spec:
   imagePullSecret: ""
-  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.13.0"
+  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.13.1"
   imagePullPolicy: "IfNotPresent"
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node
   csiAttacherImage: "k8s.gcr.io/sig-storage/csi-attacher:v3.1.0"
   csiLivenessProbeImage: "k8s.gcr.io/sig-storage/livenessprobe:v2.2.0"
   csiNodeDriverRegistrarImage: "k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0"
-  csiProvisionerImage: "k8s.gcr.io/sig-storage/csi-provisioner:v2.1.1"
+  csiProvisionerImage: "k8s.gcr.io/sig-storage/csi-provisioner:v2.1.2"
   csiResizerImage: "k8s.gcr.io/sig-storage/csi-resizer:v1.1.0"
   csiSnapshotterImage: "k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.3"
   linstorHttpsClientSecret: ""

@@ -27,11 +27,11 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.13.0
+  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.13.1
   csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.1.0
   csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.2.0
   csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.1.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.1.1
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.1.2
   csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v3.0.3
   csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.1.0
   controllerReplicas: 1
@@ -58,7 +58,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.12.3
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.13.0
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
@@ -74,7 +74,7 @@ operator:
     additionalProperties: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.12.3
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.13.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
