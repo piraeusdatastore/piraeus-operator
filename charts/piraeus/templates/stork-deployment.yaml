@@ -111,6 +111,7 @@ spec:
             - --leader-elect=true
             - --snapshotter=false
             - --cluster-domain-controllers=false
+            - --health-monitor=false
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           image: {{ .Values.stork.storkImage }}
           ports:
