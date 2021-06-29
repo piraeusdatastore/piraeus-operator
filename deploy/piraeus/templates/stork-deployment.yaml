@@ -195,6 +195,7 @@ spec:
             - --leader-elect=true
             - --snapshotter=false
             - --cluster-domain-controllers=false
+            - --health-monitor=false
           imagePullPolicy: "IfNotPresent"
           image: docker.io/openstorage/stork:2.6.2
           ports:

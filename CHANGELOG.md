@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Disable Stork Health Monitoring by default. Stork cannot distinguish between control plane and data plane issues,
+  which can lead to instances where Stork will migrate a volume that is still mounted on another node, making the
+  volume effectively unusable.
+
 ## [v1.5.1] - 2021-06-21
 
 ### Changed
+
 - Default images:
   * Piraeus Server v1.13.0
   * Piraeus CSI v0.13.1
