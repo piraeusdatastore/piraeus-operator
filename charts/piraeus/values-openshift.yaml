@@ -1,8 +1,5 @@
 global:
   setSecurityContext: false
-csi-snapshotter:
-  # already configured by OCP
-  enabled: false
 etcd:
   podsecuritycontext:
     supplementalGroups: [1000]

@@ -1,4 +1,0 @@
-This product includes software developed by
-
-Kubernetes Storage Special Interest Group (https://github.com/kubernetes/community/tree/master/sig-storage)
-  * https://github.com/kubernetes-csi/external-snapshotter/

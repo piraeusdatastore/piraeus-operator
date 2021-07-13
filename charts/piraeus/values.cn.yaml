@@ -11,11 +11,6 @@ etcd:
   image:
     repository: daocloud.io/piraeus/etcd
     tag: v3.4.15
-csi-snapshotter:
-  enabled: true # <- enable to add k8s snapshotting CRDs and controller. Needed for CSI snapshotting
-  image: daocloud.io/piraeus/snapshot-controller:v3.0.3
-  replicas: 1
-  resources: {} # resource requirements for the cluster snapshot controller.
 stork:
   enabled: true
   storkImage: daocloud.io/piraeus/stork:2.6.2

@@ -14,8 +14,6 @@ etcd:
     requests:
       cpu: "0.1"
       memory: "100Mi"
-csi-snapshotter:
-  resources: *minimal-resources
 stork:
   storkResources: *minimal-resources
   schedulerResources: *minimal-resources
