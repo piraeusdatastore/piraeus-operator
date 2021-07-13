@@ -1,8 +1,14 @@
 # Optional components
 
-The operator installs some additional components by default:
+The Piraeus Operator integrates with a number of optional external components. Not every cluster is configured to
+provide these external components by default. Piraeus provides integration with:
 
-* [CSI Snapshot controller](#snapshot-support-components)
+* [Volume Snapshots](#snapshot-support-components)
+* [Monitoring with Prometheus](#monitoring-with-prometheus)
+
+The operator also installs some optional, piraeus-specific components by default:
+
+* [High Availabiltiy Controller](#high-availability-controller)
 * [Stork scheduler](#scheduler-components)
 
 These components are installed to show the full feature set of Piraeus. They can be disabled without affecting the other
@@ -10,19 +16,51 @@ components.
 
 ## Snapshot support components
 
-LINSTOR supports Kubernetes volume snapshots, which is currently in beta. To use it, you need to install a cluster wide
-snapshot controller. This is done either by the cluster provider, or you can use the piraeus chart.
+Snapshots in Kubernetes require 3 different components to work together. Not all Kubernetes distributions package these
+components by default. Follow the steps below to find out how you can enable snapshots on your cluster.
 
-By default, the piraeus chart will install its own snapshot controller. This can lead to conflict in some cases:
+1. The cluster needs to have the snapshot CRDs installed. To check whether your cluster has them installed or not, run:
+   ```
+   $ kubectl get crds volumesnapshots.snapshot.storage.k8s.io volumesnapshotclasses.snapshot.storage.k8s.io volumesnapshotcontents.snapshot.storage.k8s.io
+   NAME                                             CREATED AT
+   volumesnapshots.snapshot.storage.k8s.io          2021-07-13T07:53:02Z
+   volumesnapshotclasses.snapshot.storage.k8s.io    2021-07-13T07:53:01Z
+   volumesnapshotcontents.snapshot.storage.k8s.io   2021-07-13T07:53:04Z
+   ```
+   If your cluster doesn't have them installed, you can install them from [here](https://github.com/kubernetes-csi/external-snapshotter/tree/master/client/config/crd):
+   ```
+   kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v4.1.1/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+   kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v4.1.1/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+   kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v4.1.1/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+   ```
 
-* the cluster already has a snapshot controller
-* the cluster does not meet the minimal version requirements (>= 1.17)
+   ***NOTE***: you should replace `v4.1.1` in the above commands with the latest [release](https://github.com/kubernetes-csi/external-snapshotter/releases)
+   recommended for your Kubernetes version.
 
-In such a case, installation of the snapshot controller can be disabled:
+2. Snapshot requests in Kubernetes are first processed by a cluster-wide snapshot controller. If you had to manually add the CRDs to the cluster in the step above,
+   chances are you also need to deploy the snapshot controller.
 
-```
---set csi-snapshotter.enabled=false
-```
+   ***NOTE***: If in step 1 the CRDs where already pre-installed in your cluster, you almost certainly can skip this step. Your Kubernetes distribution
+   should already include the snapshot controller.
+
+   The Piraeus team provides 2 Helm charts to quickly deploy some [additional validation](https://artifacthub.io/packages/helm/piraeus-charts/snapshot-validation-webhook)
+   for snapshot resource and the [snapshot controller](https://artifacthub.io/packages/helm/piraeus-charts/snapshot-controller) it self.
+
+   Deployment should work out of the box on most clusters. Additional configuration options are available, please
+   take a look at the chart documentation linked above.
+   ```
+   $ kubectl create namespace snapshot-controller
+   $ helm repo add piraeus-charts https://piraeus.io/helm-charts/
+   $ helm install validation-webhook piraeus-charts/snapshot-validation-webhook --namespace snapshot-controller
+   $ helm install snapshot-controller piraeus-charts/snapshot-controller --namespace snapshot-controller
+   ```
+
+3. The last component is a driver-specific snapshot implementation. This is included in any Piraeus installation and
+   requires no further steps. Every CSI Controller deployment of Piraeus also deploys the snapshotter sidecar, that
+   ultimately triggers snapshot creation in LINSTOR.
+
+   ***NOTE***: If the CRDs are not deployed, the snapshotter sidecar will continuously warn about the missing CRDs.
+   This can be ignored.
 
 ### Using snapshots
 

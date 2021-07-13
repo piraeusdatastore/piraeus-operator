@@ -28,7 +28,6 @@ This affinity setting ensures that only one pod with label `app: etcd` will be s
 Piraeus will use such `affinity` settings by default for:
 * `etcd` change by setting `operator.etcd`
 * `operator` change by setting `operator.affinity`
-* `csi-snapshotter` change by setting `csi-snapshotter.affinity`
 * `Piraeus controller` change by setting `operator.controller.affinity`
 * `CSI controller` change by setting `csi.controllerAffinity`
 
@@ -50,7 +49,6 @@ end up on a worker node. To force scheduling on master nodes, use affinity setti
 
 By default, piraeus will set this toleration for the `etcd` pods. Tolerations can be set on:
 * `etcd` by setting `etcd.tolerations`
-* `csi-snapshotter` by setting `csi-snapshotter.tolerations`
 * `operator` by setting `operator.tolerations`
 * `Piraeus controller` by setting `operator.controller.tolerations`
 * `Piraeus satellites` by setting `operator.satelliteSet.tolerations`

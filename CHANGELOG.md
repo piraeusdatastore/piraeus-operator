@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which can lead to instances where Stork will migrate a volume that is still mounted on another node, making the
   volume effectively unusable.
 
+### Removed
+
+- The cluster-wide snapshot controller is no longer deployed as a dependency of the piraeus-operator chart.
+  Instead, separate charts are available on [artifacthub.io](https://artifacthub.io/packages/search?repo=piraeus-charts)
+  that deploy the snapshot controller and extra validation for snapshot resources.
+
+  The subchart was removed, as it unnecessarily tied updates of the snapshot controller to piraeus and vice versa. With
+  the tightened validation starting with snapshot CRDs `v1`, moving the snapshot controller to a proper chart seems
+  like a good solution.
+
 ## [v1.5.1] - 2021-06-21
 
 ### Changed

@@ -6,6 +6,12 @@ etcd was deployed using `etcd.persistentVolume.enabled=true`
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
+# Upgrade from v1.5 to v1.6
+
+The `csi-snapshotter` subchart was removed from this repository. Users who relied on it for their snapshot support
+should switch to the seperate charts provided by the Piraeus team on [artifacthub.io](https://artifacthub.io/packages/search?repo=piraeus-charts)
+The new charts also include notes on how to upgrade to newer CRD versions.
+
 # Upgrade from v1.4 to v1.5
 
 To make use of the new `monitoringImage` value in the LinstorSatelliteSet CRD, you need to replace the existing CRDs

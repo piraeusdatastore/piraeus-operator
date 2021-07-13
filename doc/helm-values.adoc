@@ -80,54 +80,6 @@ Description:: Tolerations to pass to the operator pod.
 
 
 
-== Cluster Snapshot Controller
-
-=== `csi-snapshotter.enabled`
-Default:: `True`
-Valid values::
-* `True`
-* `False`
-Description:: Enable deployment of the cluster-wide CSI snapshot controller. Your cluster may already provide this.
-
-=== `csi-snapshotter.image`
-Default:: `k8s.gcr.io/sig-storage/snapshot-controller:v3.0.2`
-Valid values:: image ref
-Description:: Image to use for the CSI snapshot controller. https://kubernetes-csi.github.io/docs/snapshot-controller.html[csi docs]
-
-=== `csi-snapshotter.replicas`
-Default:: `1`
-Valid values:: number
-Description:: Number of replicas of the CSI snapshot controller.
-
-=== `csi-snapshotter.resources`
-Default:: `{}`
-Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource requests]
-Description:: Resource requests and limits to apply to the CSI snapshot controller containers.
-
-=== `csi-snapshotter.podsecuritycontext`
-Default:: `{}`
-Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
-Description:: Override for the default security context passed to the csi-snapshotter pods. See <<_global_setsecuritycontext>>
-
-=== `csi-snapshotter.affinity`
-Default::
-[source,yaml]
-----
-podAntiAffinity:
-  requiredDuringSchedulingIgnoredDuringExecution:
-  - labelSelector:
-      matchLabels:
-        app: snapshot-controller
-    topologyKey: "kubernetes.io/hostname"
-----
-Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity[affinity]
-Description:: Set the pod affinity. The default forces pod to be assigned to different nodes.
-
-=== `csi-snapshotter.tolerations`
-Default:: `[]`
-Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
-Description:: Tolerations to pass to the CSI snapshot controller.
-
 
 == CSI Driver
 
