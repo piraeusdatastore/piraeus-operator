@@ -4,8 +4,6 @@ import (
 	"context"
 	"os"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -14,7 +12,7 @@ type EnvSpec struct {
 	Target *string
 }
 
-func UpdateFromEnv(ctx context.Context, client client.Client, obj runtime.Object, specs ...EnvSpec) error {
+func UpdateFromEnv(ctx context.Context, client client.Client, obj client.Object, specs ...EnvSpec) error {
 	changed := false
 
 	for i := range specs {

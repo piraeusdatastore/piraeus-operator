@@ -222,8 +222,8 @@ func (in *StoragePoolLVM) ToPhysicalStorageCreate() lapi.PhysicalStorageCreate {
 		ProviderKind:      lapi.LVM,
 		VdoEnable:         in.VDO,
 		RaidLevel:         in.RaidLevel,
-		VdoLogicalSizeKib: in.VdoLogicalSizeKib,
-		VdoSlabSizeKib:    in.VdoSlabSizeKib,
+		VdoLogicalSizeKib: int64(in.VdoLogicalSizeKib),
+		VdoSlabSizeKib:    int64(in.VdoSlabSizeKib),
 		WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
 			Name:  in.Name,
 			Props: in.props(),

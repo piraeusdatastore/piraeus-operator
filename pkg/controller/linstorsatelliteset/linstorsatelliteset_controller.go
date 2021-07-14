@@ -99,7 +99,7 @@ type ReconcileLinstorSatelliteSet struct {
 // This function is a mini-main function and has a lot of boilerplate code
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
-func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileLinstorSatelliteSet) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := log.WithFields(logrus.Fields{
 		"requestName":      request.Name,
 		"requestNamespace": request.Namespace,
@@ -107,7 +107,7 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(request reconcile.Request) (rec
 	})
 	log.Info("reconciling LinstorSatelliteSet")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
 	log.Debug("fetch resource")

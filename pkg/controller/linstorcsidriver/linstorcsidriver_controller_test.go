@@ -5,23 +5,22 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
-	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	appsv1 "k8s.io/api/apps/v1"
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 )
 
 var (
-	CSIDriverAttachRequired = true
-	CSIDriverPodInfoOnMount = true
-	DefaultNodeDaemonSet    = appsv1.DaemonSet{
+	yes                  = true
+	DefaultNodeDaemonSet = appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo-csi-node",
 			Namespace: "bar",
@@ -33,39 +32,42 @@ var (
 			Namespace: "bar",
 		},
 	}
-	DefaultCSIDriver = storagev1beta1.CSIDriver{
+	DefaultCSIDriver = storagev1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "linstor.csi.linbit.com",
 		},
-		Spec: storagev1beta1.CSIDriverSpec{
-			AttachRequired: &CSIDriverAttachRequired,
-			PodInfoOnMount: &CSIDriverPodInfoOnMount,
+		Spec: storagev1.CSIDriverSpec{
+			AttachRequired:  &yes,
+			PodInfoOnMount:  &yes,
+			StorageCapacity: &yes,
 		},
 	}
 )
 
 func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
+	t.Parallel()
+
 	type expectedResources struct {
 		daemonsSets []appsv1.DaemonSet
 		deployments []appsv1.Deployment
-		csiDrivers  []storagev1beta1.CSIDriver
+		csiDrivers  []storagev1.CSIDriver
 	}
 
 	testcases := []struct {
 		name              string
-		initialResources  []runtime.Object
+		initialResources  []client.Object
 		expectedResources expectedResources
 		withError         bool
 	}{
 		{
 			name:              "no-resource-no-reconcile",
-			initialResources:  []runtime.Object{},
+			initialResources:  []client.Object{},
 			expectedResources: expectedResources{},
 			withError:         false,
 		},
 		{
 			name: "default-config-creates-everything",
-			initialResources: []runtime.Object{
+			initialResources: []client.Object{
 				&piraeusv1.LinstorCSIDriver{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "foo",
@@ -77,7 +79,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 			expectedResources: expectedResources{
 				daemonsSets: []appsv1.DaemonSet{DefaultNodeDaemonSet},
 				deployments: []appsv1.Deployment{DefaultControllerDeployment},
-				csiDrivers:  []storagev1beta1.CSIDriver{DefaultCSIDriver},
+				csiDrivers:  []storagev1.CSIDriver{DefaultCSIDriver},
 			},
 		},
 	}
@@ -87,14 +89,18 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 		t.Fatalf("Could not prepare test: %v", err)
 	}
 
-	for _, testcase := range testcases {
+	for i := range testcases {
+		testcase := &testcases[i]
+
 		t.Run(testcase.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Create controller fake client.
-			controllerClient := fake.NewFakeClientWithScheme(scheme.Scheme, testcase.initialResources...)
+			controllerClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(testcase.initialResources...).Build()
 
 			reconciler := ReconcileLinstorCSIDriver{controllerClient, scheme.Scheme}
 
-			_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "bar"}})
+			_, err := reconciler.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "bar"}})
 			if testcase.withError {
 				if err == nil {
 					t.Errorf("expected error, got no error")
@@ -119,12 +125,12 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 				}
 				compareDeployments(testcase.expectedResources.deployments, deployments.Items, t)
 
-				drivers := storagev1beta1.CSIDriverList{}
+				drivers := storagev1.CSIDriverList{}
 				err = controllerClient.List(context.Background(), &drivers)
 				if err != nil {
 					t.Fatalf("Failed to fetch items: %v", err)
 				}
-				compareCSIDrivers(testcase.expectedResources.csiDrivers, drivers.Items, t)
+				compareCSIDrivers(t, testcase.expectedResources.csiDrivers, drivers.Items)
 			}
 		})
 	}
@@ -159,7 +165,8 @@ func compareDeployments(expectedItems, actualItems []appsv1.Deployment, t *testi
 	}
 
 	for _, actual := range actualItems {
-		var expected *appsv1.Deployment = nil
+		var expected *appsv1.Deployment
+
 		for _, candidate := range expectedItems {
 			if actual.Name == candidate.Name && actual.Namespace == candidate.Namespace {
 				expected = &candidate
@@ -176,13 +183,16 @@ func compareDeployments(expectedItems, actualItems []appsv1.Deployment, t *testi
 	}
 }
 
-func compareCSIDrivers(expectedItems, actualItems []storagev1beta1.CSIDriver, t *testing.T) {
+func compareCSIDrivers(t *testing.T, expectedItems, actualItems []storagev1.CSIDriver) {
+	t.Helper()
+
 	if len(expectedItems) != len(actualItems) {
 		t.Errorf("expected daemonsets to contain %d items, got %d instead", len(expectedItems), len(actualItems))
 	}
 
 	for _, actual := range actualItems {
-		var expected *storagev1beta1.CSIDriver = nil
+		var expected *storagev1.CSIDriver
+
 		for _, candidate := range expectedItems {
 			if actual.Name == candidate.Name && actual.Namespace == candidate.Namespace {
 				expected = &candidate

@@ -150,7 +150,7 @@ func CreateOrUpdateWithOwner(ctx context.Context, kubeClient client.Client, sche
 //
 // Works for Deployments, StatefulSets, DaemonSets and maybe others. Restart is trigger by setting/updating an
 // annotation on the pod template.
-func RestartRollout(ctx context.Context, kubeClient client.Client, obj runtime.Object) error {
+func RestartRollout(ctx context.Context, kubeClient client.Client, obj client.Object) error {
 	nowString := time.Now().Format(time.RFC3339)
 
 	patchData := fmt.Sprintf("{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"%s\":\"%s\"}}}}}", restartAnnotation, nowString)
@@ -165,28 +165,14 @@ func RestartRollout(ctx context.Context, kubeClient client.Client, obj runtime.O
 
 // Returns the current state of the given object, as stored in Kubernetes.
 func getCurrentResource(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject) (GCRuntimeObject, error) {
-	gvks, unversioned, err := scheme.ObjectKinds(obj)
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine object kinds: %w", err)
-	}
-
-	if unversioned {
-		return nil, fmt.Errorf("cannot update unversioned type")
-	}
-
-	emptyObj, err := scheme.New(gvks[0])
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new instance based on GVK: %w", err)
-	}
-
-	err = kubeClient.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, emptyObj)
-	if err != nil {
-		return nil, fmt.Errorf("failed to feetch current resource state: %w", err)
-	}
-
-	current, ok := emptyObj.(GCRuntimeObject)
+	current, ok := obj.DeepCopyObject().(GCRuntimeObject)
 	if !ok {
 		return nil, fmt.Errorf("failed to cast cloned object to original type")
+	}
+
+	err := kubeClient.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, current)
+	if err != nil {
+		return nil, fmt.Errorf("failed to feetch current resource state: %w", err)
 	}
 
 	return current, nil

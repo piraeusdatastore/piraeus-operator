@@ -95,7 +95,7 @@ type ReconcileLinstorController struct {
 
 // Reconcile reads that state of the cluster for a LinstorController object and makes changes based
 // on the state read and what is in the LinstorController.Spec
-func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileLinstorController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := log.WithFields(logrus.Fields{
 		"resquestName":      request.Name,
 		"resquestNamespace": request.Namespace,
@@ -103,7 +103,7 @@ func (r *ReconcileLinstorController) Reconcile(request reconcile.Request) (recon
 
 	log.Info("controller Reconcile: Entering")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
 	// Fetch the LinstorController instance

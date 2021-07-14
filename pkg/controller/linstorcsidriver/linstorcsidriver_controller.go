@@ -24,28 +24,26 @@ import (
 	"path/filepath"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
-
-	linstorClient "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
-	"k8s.io/apimachinery/pkg/types"
-
-	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	linstorClient "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 )
 
 func init() {
@@ -79,10 +77,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	createdResources := []runtime.Object{
+	createdResources := []client.Object{
 		&appsv1.Deployment{},
 		&appsv1.DaemonSet{},
-		&storagev1beta1.CSIDriver{},
+		&storagev1.CSIDriver{},
 	}
 
 	for _, createdResource := range createdResources {
@@ -111,14 +109,14 @@ type ReconcileLinstorCSIDriver struct {
 
 // Reconcile reads that state of the cluster for a LinstorCSIDriver object and makes changes based on the state read
 // and what is in the LinstorCSIDriver.Spec
-func (r *ReconcileLinstorCSIDriver) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileLinstorCSIDriver) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := logrus.WithFields(logrus.Fields{
 		"requestName":      request.Name,
 		"requestNamespace": request.Namespace,
 	})
 	reqLogger.Info("Reconciling LinstorCSIDriver")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
 	// Fetch the LinstorCSIDriver instance
@@ -780,19 +778,20 @@ func getControllerAffinity(resource *piraeusv1.LinstorCSIDriver) *corev1.Affinit
 	return resource.Spec.ControllerAffinity
 }
 
-func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1beta1.CSIDriver {
+func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1.CSIDriver {
 	// should be const, but required to be var so that we can take the address to get a *bool
 	attachRequired := true
 	podInfoOnMount := true
 
 	meta := getObjectMeta(csiResource, "%s", "cluster-config")
-	return &storagev1beta1.CSIDriver{
+
+	return &storagev1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
 			// Name must match exactly the one reported by the CSI plugin
 			Name:   "linstor.csi.linbit.com",
 			Labels: meta.Labels,
 		},
-		Spec: storagev1beta1.CSIDriverSpec{
+		Spec: storagev1.CSIDriverSpec{
 			AttachRequired: &attachRequired,
 			PodInfoOnMount: &podInfoOnMount,
 		},
