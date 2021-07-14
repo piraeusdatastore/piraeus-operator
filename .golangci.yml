@@ -80,6 +80,7 @@ linters:
     - dupl
     - goerr113
     - exhaustivestruct
+    - gomoddirectives
   fast: false
 
 issues:

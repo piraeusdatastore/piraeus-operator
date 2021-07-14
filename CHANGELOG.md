@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which can lead to instances where Stork will migrate a volume that is still mounted on another node, making the
   volume effectively unusable.
 
+- Updated operator to kubernetes v1.21 components.
+
 ### Removed
 
 - The cluster-wide snapshot controller is no longer deployed as a dependency of the piraeus-operator chart.
