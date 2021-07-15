@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow CSI to work with distributions that use a kubelet working directory other than `/var/lib/kubelet`. See
   the [`csi.kubeletPath`](./doc/helm-values.adoc#csikubeletpath) option.
+- Enable [Storage Capacity Tacking]. This enables Kubernetes to base Pod scheduling decisions on remaining storage
+  capacity. The feature is in beta and enabled by default starting with Kubernetes 1.21.
+
+[Storage Capacity Tacking]: https://github.com/kubernetes/enhancements/tree/master/keps/sig-storage/1472-storage-capacity-tracking
 
 ### Changed
 

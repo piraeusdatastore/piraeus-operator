@@ -596,6 +596,11 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
 	}
 
+	podName := corev1.EnvVar{
+		Name:      "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+	}
+
 	socketVolume := corev1.Volume{
 		Name: "socket-dir",
 		VolumeSource: corev1.VolumeSource{
@@ -627,15 +632,16 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
 			"--csi-address=$(ADDRESS)",
-			"--v=5",
 			"--timeout=1m",
 			// restore old default fstype
 			"--default-fstype=ext4",
 			fmt.Sprintf("--feature-gates=Topology=%t", csiResource.Spec.EnableTopology),
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
+			"--enable-capacity",
+			"--capacity-ownerref-level=2",
 		},
-		Env: []corev1.EnvVar{socketAddress, podNamespace},
+		Env: []corev1.EnvVar{socketAddress, podNamespace, podName},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      socketVolume.Name,
 			MountPath: socketDirPath,
@@ -780,8 +786,7 @@ func getControllerAffinity(resource *piraeusv1.LinstorCSIDriver) *corev1.Affinit
 
 func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1.CSIDriver {
 	// should be const, but required to be var so that we can take the address to get a *bool
-	attachRequired := true
-	podInfoOnMount := true
+	yes := true
 
 	meta := getObjectMeta(csiResource, "%s", "cluster-config")
 
@@ -792,8 +797,9 @@ func newCSIDriver(csiResource *piraeusv1.LinstorCSIDriver) *storagev1.CSIDriver 
 			Labels: meta.Labels,
 		},
 		Spec: storagev1.CSIDriverSpec{
-			AttachRequired: &attachRequired,
-			PodInfoOnMount: &podInfoOnMount,
+			AttachRequired:  &yes,
+			PodInfoOnMount:  &yes,
+			StorageCapacity: &yes,
 		},
 	}
 }
