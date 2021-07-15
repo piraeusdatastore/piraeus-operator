@@ -160,12 +160,59 @@ roleRef:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  name: csi-capacity-syncer
+  namespace: default
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+    verbs:
+      - get
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csistoragecapacities
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+# Source: piraeus/templates/csi-controller-rbac.yml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
   name: csi-leader-elector
   namespace: default
 rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
+---
+# Source: piraeus/templates/csi-controller-rbac.yml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-provisioner-capacity-syncer
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: csi-controller
+    namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: csi-capacity-syncer
 ---
 # Source: piraeus/templates/csi-controller-rbac.yml
 kind: RoleBinding

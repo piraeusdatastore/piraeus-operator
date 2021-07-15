@@ -26,7 +26,7 @@ csi:
   csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.1.0
   csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.2.0
   csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0
-  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v2.1.2
+  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
   csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.3
   csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.1.0
   controllerReplicas: 1

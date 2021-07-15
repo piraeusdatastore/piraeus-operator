@@ -26,7 +26,7 @@ csi:
   csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.1.0
   csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.2.0
   csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.1.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.1.2
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.2.2
   csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v3.0.3
   csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.1.0
   controllerReplicas: 1
