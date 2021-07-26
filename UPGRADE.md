@@ -12,6 +12,12 @@ The `csi-snapshotter` subchart was removed from this repository. Users who relie
 should switch to the seperate charts provided by the Piraeus team on [artifacthub.io](https://artifacthub.io/packages/search?repo=piraeus-charts)
 The new charts also include notes on how to upgrade to newer CRD versions.
 
+To support the new `csi.kubeletPath` option an update to the LinstorCSIDriver CRD is required:
+
+```
+$ kubectl replace -f ./charts/piraeus/crds
+```
+
 # Upgrade from v1.4 to v1.5
 
 To make use of the new `monitoringImage` value in the LinstorSatelliteSet CRD, you need to replace the existing CRDs

@@ -716,6 +716,12 @@ spec:
                 description: Name of a secret with authentication details for the
                   `LinstorPluginImage` registry
                 type: string
+              kubeletPath:
+                description: KubeletPath is the common parent path of mount targets
+                  and plugin registration directories of Kubelet. Typically this should
+                  be set to /var/lib/kubelet, but some distributions require a different
+                  path.
+                type: string
               linstorHttpsClientSecret:
                 description: 'Name of the secret containing: (a) `ca.pem`: root certificate
                   used to validate HTTPS connections with Linstor (PEM format, without

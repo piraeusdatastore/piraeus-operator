@@ -26,3 +26,4 @@ spec:
   controllerTolerations: []
   enableTopology: false
   resources: {}
+  kubeletPath: "/var/lib/kubelet"

@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -256,6 +257,17 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 
 	logger.Debugf("finished upgrade/fill: #3 -> Set service account names to previous implicit values: changed=%t", changed)
 
+	logger.Debugf("performing upgrade/fill: #4 -> Set kubelet path to default")
+
+	if csiResource.Spec.KubeletPath == "" {
+		csiResource.Spec.KubeletPath = DefaultKubeletPath
+		changed = true
+
+		logger.Infof("set kubelet path to '%s'", csiResource.Spec.KubeletPath)
+	}
+
+	logger.Debugf("finished upgrade/fill: #4 -> Set kubelet path to: changed=%t", changed)
+
 	logger.Debug("finished all upgrades/fills")
 	if changed {
 		logger.Info("save updated spec")
@@ -385,7 +397,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Name: "registration-dir",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/var/lib/kubelet/plugins_registry/",
+				Path: kubeletPath(csiResource, "plugins_registry"),
 				Type: &HostPathDirectoryOrCreate,
 			},
 		},
@@ -394,16 +406,22 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Name: "plugin-dir",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/var/lib/kubelet/plugins/linstor.csi.linbit.com/",
+				Path: kubeletPath(csiResource, "plugins", "linstor.csi.linbit.com"),
 				Type: &HostPathDirectoryOrCreate,
 			},
 		},
 	}
-	podsMountDir := corev1.Volume{
-		Name: "pods-mount-dir",
+	// Kubelet has different paths for the mount target, depending on the volume mode
+	// FileSystem volumes have the target set to something like:
+	//   /var/lib/kubelet/pods/<pod-uuid>/volumes/kubernetes.io~csi/<pv-name>/mount
+	// Block volumes have the target set to something like:
+	//   /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices/publish/<pv-name>/<pod-uuid>
+	// So we end up bind-mounting /var/lib/kubelet (or k8s distributions equivalent)
+	publishDir := corev1.Volume{
+		Name: "publish-dir",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/var/lib/kubelet",
+				Path: kubeletPath(csiResource),
 				Type: &HostPathDirectory,
 			},
 		},
@@ -423,7 +441,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 	}
 	driverSocket := corev1.EnvVar{
 		Name:  "DRIVER_REG_SOCK_PATH",
-		Value: "/var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock",
+		Value: kubeletPath(csiResource, "plugins", "linstor.csi.linbit.com", "csi.sock"),
 	}
 	kubeNodeName := corev1.EnvVar{
 		Name: "KUBE_NODE_NAME",
@@ -508,8 +526,8 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 				MountPath: "/csi/",
 			},
 			{
-				Name:             podsMountDir.Name,
-				MountPath:        "/var/lib/kubelet/",
+				Name:             publishDir.Name,
+				MountPath:        publishDir.HostPath.Path,
 				MountPropagation: &MountPropagationBidirectional,
 			},
 			{
@@ -549,7 +567,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 					Volumes: []corev1.Volume{
 						deviceDir,
 						pluginDir,
-						podsMountDir,
+						publishDir,
 						registrationDir,
 					},
 					DNSPolicy:        corev1.DNSClusterFirstWithHostNet,
@@ -786,6 +804,7 @@ const (
 	ControllerServiceAccount = "-csi-controller"
 	NodeDaemonSet            = "%s-csi-node"
 	ControllerDeployment     = "%s-csi-controller"
+	DefaultKubeletPath       = "/var/lib/kubelet"
 )
 
 func getObjectMeta(controllerResource *piraeusv1.LinstorCSIDriver, nameFmt, component string) metav1.ObjectMeta {
@@ -799,4 +818,8 @@ func getObjectMeta(controllerResource *piraeusv1.LinstorCSIDriver, nameFmt, comp
 			"app.kubernetes.io/component":  component,
 		},
 	}
+}
+
+func kubeletPath(csiResource *piraeusv1.LinstorCSIDriver, subdirs ...string) string {
+	return filepath.Join(append([]string{csiResource.Spec.KubeletPath}, subdirs...)...)
 }

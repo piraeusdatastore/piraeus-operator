@@ -179,6 +179,12 @@ Description:: Resource requests and limits to apply to the CSI driver pods.
 
 Note: This will apply to every container individually, their resource usage is quite similar.
 
+=== `csi.kubeletPath`
+Default:: `/var/lib/kubelet`
+Valid values:: string
+Description:: Path to the working directory of kubelet. Some distributions require changing this path for CSI to work.
+See link:distributions.md[here] for more information
+
 == ETCD
 
 === `etcd.image.repository`

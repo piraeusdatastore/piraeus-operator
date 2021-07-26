@@ -36,6 +36,7 @@ csi:
   controllerTolerations: []
   enableTopology: false
   resources: {}
+  kubeletPath: /var/lib/kubelet
 priorityClassName: ""
 drbdRepoCred: "" # <- Specify the kubernetes secret name here
 linstorHttpsControllerSecret: "" # <- name of secret containing linstor server certificates+key. See docs/security.md
