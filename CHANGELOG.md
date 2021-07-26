@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow CSI to work with distributions that use a kubelet working directory other than `/var/lib/kubelet`. See
+  the [`csi.kubeletPath`](./doc/helm-values.adoc#csikubeletpath) option.
+
 ### Changed
 
 - Disable Stork Health Monitoring by default. Stork cannot distinguish between control plane and data plane issues,

@@ -112,6 +112,11 @@ type LinstorCSIDriverSpec struct {
 	// +optional
 	EnableTopology bool `json:"enableTopology"`
 
+	// KubeletPath is the common parent path of mount targets and plugin registration directories of Kubelet. Typically
+	// this should be set to /var/lib/kubelet, but some distributions require a different path.
+	// +optional
+	KubeletPath string `json:"kubeletPath"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 
