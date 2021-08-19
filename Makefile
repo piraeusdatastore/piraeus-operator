@@ -19,8 +19,9 @@ all: update upload
 
 .PHONY: update
 update:
-	$(OPERATORSDKCMD) build --image-build-args "--no-cache=$(NOCACHE)" $(PROJECT):$(TAG)
+	docker build -t $(PROJECT):$(TAG) --no-cache=$(NOCACHE) -f build/Dockerfile .
 	docker tag $(PROJECT):$(TAG) $(PROJECT):latest
+
 
 .PHONY: upload
 upload:
