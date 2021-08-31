@@ -4,6 +4,7 @@ description: A Helm chart for Piraeus Operator
 type: application
 version: 1.5.1
 appVersion: 1.5.1
+home: https://piraeus.io/
 dependencies:
   - name: "etcd"
     version: "0.7.4"
