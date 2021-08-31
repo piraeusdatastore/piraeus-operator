@@ -1,1 +1,20 @@
-Piraeus Installed!!!
+Piraeus installed!
+
+Please wait for all resources to be ready:
+
+  kubectl wait --namespace {{ .Release.Namespace }} --for=condition=Ready --timeout=10m pod --all
+
+=== NEXT STEPS ===
+
+For your next steps, check our documentation at:
+
+  https://github.com/piraeusdatastore/piraeus-operator/tree/master/doc
+
+{{ if not .Values.operator.satelliteSet.storagePools }}
+Since you didn't configure any storage pools, now would be a great time to add some.
+{{ end }}
+
+{{ if not (.Capabilities.APIVersions.Has "snapshot.storage.k8s.io/v1") }}
+It looks like your cluster does not currently support snapshots. The documentation contains instructions on how
+to enable snapshots in your cluster.
+{{ end }}
