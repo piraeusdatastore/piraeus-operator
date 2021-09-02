@@ -197,7 +197,7 @@ spec:
             - --cluster-domain-controllers=false
             - --health-monitor=false
           imagePullPolicy: "IfNotPresent"
-          image: docker.io/openstorage/stork:2.6.2
+          image: docker.io/openstorage/stork:2.6.5
           ports:
             - containerPort: 8099
               name: extender
