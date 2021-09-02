@@ -24,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated operator to kubernetes v1.21 components.
 
+- Default images:
+  * `quay.io/piraeusdatastore/piraeus-server:v1.14.0`
+  * `quay.io/piraeusdatastore/drbd9-bionic:v9.0.30`
+  * `quay.io/piraeusdatastore/drbd-reactor:v0.4.3`
+  * `quay.io/piraeusdatastore/piraeus-ha-controller:v0.2.0`
+  * external CSI images
+
 ### Removed
 
 - The cluster-wide snapshot controller is no longer deployed as a dependency of the piraeus-operator chart.
