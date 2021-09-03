@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `pv-hostpath`: automatically determine on which nodes PVs should be created if no override is given.
+
 ## [v1.6.0] - 2021-09-02
 
 ### Added

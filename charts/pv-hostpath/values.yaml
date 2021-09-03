@@ -10,3 +10,4 @@ tolerations:
     effect: "NoSchedule"
 pspRole: ""
 selinux: false
+nodes: []

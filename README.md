@@ -67,24 +67,19 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 
 ### LINSTOR etcd `hostPath` persistence
 
-You can use the included Helm templates to create `hostPath` persistent volumes.
-Create as many PVs as needed to satisfy your configured etcd `replicas`
-(default 1).
-
-Create the `hostPath` persistent volumes, substituting cluster node names
-accordingly in the `nodes=` option. For 1 replica:
+In general, we recommend using pre-provisioned persistent volumes (PB) when using Etcd as the LINSTOR database.
+You can use the included `pv-hostpath` Helm chart to quickly create such PVs.
 
 ```
-helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE>}"
+helm install piraeus-etcd-pv ./charts/pv-hostpath
 ```
 
-For 3 replicas:
+These PVs are of type `hostPath`, i.e. a directory on the host is shared with the container. By default, a volume is
+created on every control-plane node (those labeled with `node-role.kubernetes.io/control-plane`). You can manually
+specify on which nodes PVs should be created by using `--set nodes={<nodename1>,<nodename2>}`.
 
-```
-helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE0>,<NODE1>,<NODE2>}"
-```
-
-Persistence for etcd is enabled by default.
+The chart defaults to using the `/var/lib/linstor-etcd` directory on the host. You can override this by using
+`--set path=/new/path`.
 
 #### `hostPath` volumes and SELinux
 
