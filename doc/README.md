@@ -6,8 +6,8 @@ The [project README](../README.md) contains documentation on the initial deploym
 process. A quick summary can be found here:
 
 ```
-# Create an initial set of persistent volumes for etcd. Replace NODE0, NODE1 etc with your (master) nodes.
-helm install linstor-etcd ./charts/pv-hostpath --set "nodes={<NODE0>,<NODE1>,<NODE2>}"
+# Create an initial set of persistent volumes for etcd. Creates a hostpath volume on every control-plane node.
+helm install piraeus-etcd-pv ./charts/pv-hostpath
 # Deploy the piraeus operator chart. Replace <image> with the piraeus DRBD loader image matching your host OS.
 helm install piraeus-op ./charts/piraeus --set operator.satelliteSet.kernelModuleInjectionImage=<image>
 ```

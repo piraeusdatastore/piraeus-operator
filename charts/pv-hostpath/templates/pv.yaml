@@ -67,7 +67,20 @@ subjects:
     name: {{ .Release.Name }}-chowner
 {{- end }}
 ---
-{{ range (required "A valid .Values.nodes entry required!" .Values.nodes) }}
+{{ $nodes := list }}
+{{ if .Values.nodes }}
+  {{ $nodes = .Values.nodes }}
+{{ else }}
+  {{ range (lookup "v1" "Node" "" "").items }}
+    {{ if hasKey .metadata.labels "node-role.kubernetes.io/control-plane" }}
+      {{ $nodes = append $nodes .metadata.name }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ if not $nodes }}
+  {{ fail "Missing either control-plane nodes or a manual .nodes entry"}}
+{{ end }}
+{{ range $nodes }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
