@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
@@ -477,9 +478,17 @@ func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, linstor
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod) error {
+	k8sNode := &corev1.Node{}
+
+	err := r.client.Get(ctx, types.NamespacedName{Name: pod.Spec.NodeName}, k8sNode)
+	if err != nil {
+		return fmt.Errorf("failed to get kubernetes node: %w", err)
+	}
+
 	lNode, err := linstorClient.GetNodeOrCreate(ctx, lapi.Node{
-		Name: pod.Spec.NodeName,
-		Type: lc.Satellite,
+		Name:  pod.Spec.NodeName,
+		Type:  lc.Satellite,
+		Props: nodeLabelsToProps(k8sNode.Labels),
 		NetInterfaces: []lapi.NetInterface{
 			{
 				Name:                    "default",
@@ -491,7 +500,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx conte
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to reconcile satellite: %w", err)
 	}
 
 	if lNode.ConnectionStatus != lc.Online {
@@ -1332,6 +1341,16 @@ func getObjectMeta(satelliteSet *piraeusv1.LinstorSatelliteSet, nameFmt string) 
 			"app.kubernetes.io/managed-by": kubeSpec.Name,
 		},
 	}
+}
+
+func nodeLabelsToProps(labels map[string]string) map[string]string {
+	result := make(map[string]string, len(labels))
+
+	for k, v := range labels {
+		result[fmt.Sprintf("%s/%s", linstor.NamespcAuxiliary, k)] = v
+	}
+
+	return result
 }
 
 const monitoringPort = 9942
