@@ -59,6 +59,9 @@ spec:
 {{- end }}
       containers:
       - name: {{ template "etcd.fullname" . }}
+        securityContext:
+          capabilities:
+            add: ["NET_RAW"]
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
         ports:
