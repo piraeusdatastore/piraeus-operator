@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `pv-hostpath`: automatically determine on which nodes PVs should be created if no override is given.
+- Automatically add labels on Kubernetes Nodes to LINSTOR satellites as Auxiliary Properties. This enables using
+  Kubernetes labels for volume scheduling, for example using `replicasOnSame: topology.kubernetes.io/zone`.
 
 ## [v1.6.0] - 2021-09-02
 

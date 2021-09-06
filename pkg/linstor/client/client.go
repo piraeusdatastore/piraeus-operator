@@ -172,6 +172,24 @@ func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (
 		existingNode = newNode
 	}
 
+	upToDate := true
+
+	for k, v := range node.Props {
+		existing, ok := existingNode.Props[k]
+		if !ok || existing != v {
+			upToDate = false
+
+			break
+		}
+	}
+
+	if !upToDate {
+		err := c.Nodes.Modify(ctx, node.Name, lapi.NodeModify{GenericPropsModify: lapi.GenericPropsModify{OverrideProps: node.Props}})
+		if err != nil {
+			return nil, fmt.Errorf("unable to update node properties: %w", err)
+		}
+	}
+
 	for _, nic := range node.NetInterfaces {
 		err = c.ensureWantedInterface(ctx, existingNode, nic)
 		if err != nil {
