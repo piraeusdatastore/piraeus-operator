@@ -47,6 +47,9 @@ spec:
         fsGroup: 1000
       containers:
       - name: piraeus-op-etcd
+        securityContext:
+          capabilities:
+            add: ["NET_RAW"]
         image: "gcr.io/etcd-development/etcd:v3.4.15"
         imagePullPolicy: "IfNotPresent"
         ports:
