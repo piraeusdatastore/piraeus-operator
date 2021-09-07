@@ -1,5 +1,6 @@
 [![Release](https://img.shields.io/github/v/release/piraeusdatastore/piraeus-operator)](https://github.com/piraeusdatastore/piraeus-operator/releases)
-![](https://github.com/piraeusdatastore/piraeus-operator/workflows/check%20and%20build%20piraeus-operator/badge.svg)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.19%2B-success?logo=kubernetes&logoColor=lightgrey)
+[![Build Status](https://github.com/piraeusdatastore/piraeus-operator/actions/workflows/build.yml/badge.svg)](https://quay.io/repository/piraeusdatastore/piraeus-operator?tag=latest&tab=tags)
 
 # Piraeus Operator
 
@@ -59,7 +60,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 
   You can pick from a number of example settings:
 
-  * default values (Kubernetes v1.17+) [`values.yaml`](./charts/piraeus/values.yaml)
+  * default values [`values.yaml`](./charts/piraeus/values.yaml)
   * images optimized for CN [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
   * override for Openshift [`values-openshift.yaml`](./charts/piraeus/values-openshift.yaml)
 
