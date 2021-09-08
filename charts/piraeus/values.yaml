@@ -12,7 +12,7 @@ etcd:
     repository: gcr.io/etcd-development/etcd
     tag: v3.4.15
 stork:
-  enabled: true
+  enabled: false
   storkImage: docker.io/openstorage/stork:2.6.5
   schedulerImage: k8s.gcr.io/kube-scheduler-amd64
   schedulerTag: ""
@@ -34,7 +34,7 @@ csi:
   nodeTolerations: []
   controllerAffinity: {}
   controllerTolerations: []
-  enableTopology: false
+  enableTopology: true
   resources: {}
   kubeletPath: /var/lib/kubelet
 priorityClassName: ""
