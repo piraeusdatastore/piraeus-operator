@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatically add labels on Kubernetes Nodes to LINSTOR satellites as Auxiliary Properties. This enables using
   Kubernetes labels for volume scheduling, for example using `replicasOnSame: topology.kubernetes.io/zone`.
 
+### Changed
+
+- Enable CSI topology by default, allowing better volume scheduling with `volumeBindingMode: WaitForFirstConsumer`.
+- Disable STORK by default. Instead, we recommend using `volumeBindingMode: WaitForFirstConsumer` in storage classes.
+
 ## [v1.6.0] - 2021-09-02
 
 ### Added

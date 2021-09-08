@@ -53,6 +53,7 @@ The following example storage class configures piraeus to:
 * use the `xfs` filesystem
 * use storage pools named `ssd`
 * allow volume expansion by resizing the Persistent Volume Claim (PVC).
+* wait for the first Pod to create the volume, placing a replica on the same node if possible.
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -60,6 +61,7 @@ metadata:
   name: piraeus-ssd
 provisioner: linstor.csi.linbit.com
 allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
 parameters:
   autoPlace: "2"
   storagePool: ssd

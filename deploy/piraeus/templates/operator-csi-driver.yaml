@@ -24,6 +24,6 @@ spec:
   nodeAffinity: {}
   nodeTolerations: []
   controllerTolerations: []
-  enableTopology: false
+  enableTopology: true
   resources: {}
   kubeletPath: "/var/lib/kubelet"
