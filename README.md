@@ -10,11 +10,11 @@ The Piraeus Operator manages
 All components of the LINSTOR software stack can be managed by the operator and
 associated Helm chart:
 * DRBD
-* etcd cluster for LINSTOR
 * LINSTOR
 * LINSTOR CSI driver
 * LINSTOR High Availability Controller
-* Stork scheduler with LINSTOR integration
+* **Optional**: etcd cluster for LINSTOR
+* **Optional**: Stork scheduler with LINSTOR integration
 
 ## Deployment with Helm v3 Chart
 
@@ -34,7 +34,8 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
     The name of this secret must match the one specified in the Helm values, by
     passing `--set drbdRepoCred=drbdiocred` to helm.
 
-- Configure storage for the LINSTOR etcd instance.
+- Configure storage for the LINSTOR etcd instance OR use the [new LINSTOR k8s backend (experimental) without ETCD](./doc/k8s-backend.md).
+
   There are various options for configuring the etcd instance for LINSTOR:
   * Use an existing storage provisioner with a default `StorageClass`.
   * [Use `hostPath` volumes](#linstor-etcd-hostpath-persistence).
@@ -51,7 +52,7 @@ The operator can be deployed with Helm v3 chart in /charts as follows:
 
 - Read up on [optional components](doc/optional-components.md) and configure as needed.
 
-- Finally create a Helm deployment named `piraeus-op` that will set up
+- Finally, create a Helm deployment named `piraeus-op` that will set up
   everything.
 
     ```

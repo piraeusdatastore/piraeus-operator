@@ -16,3 +16,7 @@ Update check to make sure no legacy settings are used
 {{- if .Values.operator.satelliteSet.kernelModImage -}}
   {{ fail "Detected use of legacy key 'operator.satelliteSet.kernelModImage'. Use 'operator.satelliteSet.kernelModuleInjectionImage' instead" }}
 {{- end -}}
+
+{{- if and .Release.IsUpgrade (eq .Values.operator.controller.dbConnectionURL "k8s") (not .Values.IHaveBackedUpAllMyLinstorResources) }}
+  {{ fail "Detected upgrade involving the 'k8s' backend. This is currently in the very early stages, so expect issues. Check out ./doc/k8s-backend.md to learn how to create a backup before upgrading." }}
+{{- end -}}

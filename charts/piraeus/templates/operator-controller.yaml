@@ -6,6 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
+  # TODO: switch to k8s db by default
   dbConnectionURL:  {{ .Values.operator.controller.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}
   luksSecret: {{ .Values.operator.controller.luksSecret }}
   sslSecret: {{ .Values.operator.controller.sslSecret }}
