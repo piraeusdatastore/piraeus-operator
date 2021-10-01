@@ -10,9 +10,10 @@ metadata:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: linstor-leader-elector
+  name: linstor-controller
   namespace: {{ .Release.Namespace }}
 rules:
+  # For k8s await election
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -37,12 +38,60 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: linstor-leader-elector
+  name: linstor-controller
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: linstor-leader-elector
+  name: linstor-controller
 subjects:
   - kind: ServiceAccount
     name: linstor-controller
+---
+{{ if eq .Values.operator.controller.dbConnectionURL "k8s" }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linstor-controller
+  namespace: {{ .Release.Namespace }}
+rules:
+  # LINSTOR manages its own CRDs, so we have to allow it to modify those
+  - verbs:
+      - get
+      - list
+      - create
+      - delete
+      - update
+      - patch
+      - watch
+    apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+  # For LINSTOR itself, if managed via k8s resources
+  - apiGroups:
+      - internal.linstor.linbit.com
+    resources:
+      # All these resources are dedicated just to the controller, so allow any
+      - "*"
+    verbs:
+      - get
+      - list
+      - create
+      - delete
+      - update
+      - patch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linstor-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linstor-controller
+subjects:
+  - kind: ServiceAccount
+    name: linstor-controller
+    namespace: {{ .Release.Namespace }}
+{{ end }}

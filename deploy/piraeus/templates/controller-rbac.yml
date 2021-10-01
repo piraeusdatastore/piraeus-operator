@@ -10,9 +10,10 @@ metadata:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: linstor-leader-elector
+  name: linstor-controller
   namespace: default
 rules:
+  # For k8s await election
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -38,12 +39,12 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: linstor-leader-elector
+  name: linstor-controller
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: linstor-leader-elector
+  name: linstor-controller
 subjects:
   - kind: ServiceAccount
     name: linstor-controller

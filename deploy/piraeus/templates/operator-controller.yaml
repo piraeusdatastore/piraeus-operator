@@ -7,6 +7,7 @@ metadata:
   namespace: default
 spec:
   priorityClassName: ""
+  # TODO: switch to k8s db by default
   dbConnectionURL:  etcd://piraeus-op-etcd:2379
   luksSecret: 
   sslSecret: 

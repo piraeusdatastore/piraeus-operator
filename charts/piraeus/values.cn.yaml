@@ -1,8 +1,11 @@
+IHaveBackedUpAllMyLinstorResources: false
+
 global:
   imagePullPolicy: IfNotPresent # empty pull policy means k8s default is used ("always" if tag == ":latest", "ifnotpresent" else)
   setSecurityContext: true # Force non-privileged containers to run as non-root users
 # Dependency charts
 etcd:
+  enabled: true
   persistentVolume:
     enabled: true
     storage: 1Gi
@@ -55,6 +58,7 @@ operator:
   controller:
     enabled: true
     controllerImage: daocloud.io/piraeus/piraeus-server:v1.14.0
+    dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
     dbUseClientCert: false
