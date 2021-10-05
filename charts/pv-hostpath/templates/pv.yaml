@@ -72,7 +72,7 @@ subjects:
   {{ $nodes = .Values.nodes }}
 {{ else }}
   {{ range (lookup "v1" "Node" "" "").items }}
-    {{ if hasKey .metadata.labels "node-role.kubernetes.io/control-plane" }}
+    {{ if or (hasKey .metadata.labels "node-role.kubernetes.io/control-plane") (hasKey .metadata.labels "node-role.kubernetes.io/master") }}
       {{ $nodes = append $nodes .metadata.name }}
     {{ end }}
   {{ end }}
