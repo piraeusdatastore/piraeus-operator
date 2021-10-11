@@ -6,6 +6,14 @@ etcd was deployed using `etcd.persistentVolume.enabled=true`
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
+# Upgrade from v1.6 to v1.7
+
+Node labels are now automatically applied to LINSTOR satellites as "Auxiliary Properties". That means you can reuse your
+existing Kubernetes Topology information (for example `topology.kubernetes.io/zone` labels) when scheduling volumes
+using the `replicasOnSame` and `replicasOnDifferent` settings. However, this also means that the Operator will delete
+any existing auxiliary properties that were already applied. To apply auxiliary properties to satellites, you _have to_
+apply a label to the Kubernetes node object.
+
 # Upgrade from v1.5 to v1.6
 
 The `csi-snapshotter` subchart was removed from this repository. Users who relied on it for their snapshot support
