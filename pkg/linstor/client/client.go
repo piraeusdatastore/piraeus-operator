@@ -12,6 +12,7 @@ import (
 
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 
+	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	"github.com/sirupsen/logrus"
@@ -183,8 +184,22 @@ func (c *HighLevelClient) GetNodeOrCreate(ctx context.Context, node lapi.Node) (
 		}
 	}
 
-	if !upToDate {
-		err := c.Nodes.Modify(ctx, node.Name, lapi.NodeModify{GenericPropsModify: lapi.GenericPropsModify{OverrideProps: node.Props}})
+	var propsToDelete []string
+
+	for k := range existingNode.Props {
+		if !strings.HasPrefix(k, linstor.NamespcAuxiliary+"/") {
+			// We only want to manage auxiliary properties
+			continue
+		}
+
+		_, ok := node.Props[k]
+		if !ok {
+			propsToDelete = append(propsToDelete, k)
+		}
+	}
+
+	if !upToDate || len(propsToDelete) != 0 {
+		err := c.Nodes.Modify(ctx, node.Name, lapi.NodeModify{GenericPropsModify: lapi.GenericPropsModify{OverrideProps: node.Props, DeleteProps: propsToDelete}})
 		if err != nil {
 			return nil, fmt.Errorf("unable to update node properties: %w", err)
 		}
