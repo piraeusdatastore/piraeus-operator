@@ -1,5 +1,14 @@
 ---
 # Source: piraeus/templates/operator-controller.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: piraeus-op-passphrase
+  namespace: default
+data:
+  MASTER_PASSPHRASE: "Y2hhbmdlbWVwbGVhc2U="
+---
+# Source: piraeus/templates/operator-controller.yaml
 apiVersion: piraeus.linbit.com/v1
 kind: LinstorController
 metadata:
@@ -9,7 +18,7 @@ spec:
   priorityClassName: ""
   # TODO: switch to k8s db by default
   dbConnectionURL:  etcd://piraeus-op-etcd:2379
-  luksSecret: 
+  luksSecret: piraeus-op-passphrase
   sslSecret: 
   dbCertSecret: 
   dbUseClientCert: false

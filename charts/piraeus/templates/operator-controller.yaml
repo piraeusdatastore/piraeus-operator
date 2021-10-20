@@ -8,7 +8,11 @@ spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   # TODO: switch to k8s db by default
   dbConnectionURL:  {{ .Values.operator.controller.dbConnectionURL | default (print "etcd://" .Release.Name "-etcd:2379") }}
+{{- if .Values.operator.controller.luksSecret }}
   luksSecret: {{ .Values.operator.controller.luksSecret }}
+{{- else }}
+  luksSecret: {{ template "operator.fullname" . }}-passphrase
+{{- end}}
   sslSecret: {{ .Values.operator.controller.sslSecret }}
   dbCertSecret: {{ .Values.operator.controller.dbCertSecret | default "" }}
   dbUseClientCert: {{ .Values.operator.controller.dbUseClientCert }}
@@ -29,4 +33,20 @@ spec:
   {{- if .Values.operator.controller.additionalProperties }}
   additionalProperties: {{ .Values.operator.controller.additionalProperties | toJson }}
   {{- end }}
+---
+{{- if not .Values.operator.controller.luksSecret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "operator.fullname" . }}-passphrase
+  namespace: {{ .Release.Namespace }}
+data:
+{{- /* We have to be careful not to override the original secret value, otherwise encrypted data could be lost forever */}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace (printf "%s-passphrase" ( include "operator.fullname" . )) }}
+{{- if $secret }}
+  MASTER_PASSPHRASE: {{ $secret.data.MASTER_PASSPHRASE | quote }}
+{{- else }}
+  MASTER_PASSPHRASE: {{ .Values.operator.controller.masterPassphrase | default (randAlphaNum 40) | b64enc | quote }}
+{{- end }}
+{{- end }}
 {{- end }}

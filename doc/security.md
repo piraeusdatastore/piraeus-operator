@@ -120,10 +120,14 @@ The names of the secrets can be passed to `helm install` to configure all client
 --set linstorHttpsControllerSecret=http-controller  --set linstorHttpsClientSecret=http-client
 ```
 
-## Automatically set the passphrase for encrypted volumes
+## Automatically set the passphrase for LINSTOR
 
-Linstor can be used to create encrypted volumes using LUKS. The passphrase used when creating these volumes can
-be set via a secret:
+LINSTOR may need to store sensitive information in its database, for example for encrypted volumes using the LUKS layer,
+or when storing credentials for backup locations. To protect this information, LINSTOR will encrypt it using a master
+passphrase before storing. When using Piraeus, this master passphrase is automatically created by helm and stored in a
+Kubernetes secret.
+
+If you want to manually set the passphrase, use:
 
 ```
 kubectl create secret generic linstor-pass --from-literal=MASTER_PASSPHRASE=<password>
