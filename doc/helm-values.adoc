@@ -289,7 +289,9 @@ Description:: Enable to use client certificates when authenticating on the datab
 === `operator.controller.luksSecret`
 Default:: `""`
 Valid values:: secret name
-Description:: Name of the secret that contains the master passphrase to use for encrypted volumes. Check link:./security.md#automatically-set-the-passphrase-for-encrypted-volumes[the security guide].
+Description:: Name of the secret that contains the master passphrase LINSTOR uses for encrypted volumes and securing secrets. Check link:./security.md#automatically-set-the-passphrase-for-linstor[the security guide].
++
+If not specified, a random passphrase will be created by helm.
 
 === `operator.controller.replicas`
 Default:: `1`
