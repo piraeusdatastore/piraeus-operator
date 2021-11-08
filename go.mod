@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/LINBIT/golinstor v0.34.4
+	github.com/LINBIT/golinstor v0.37.1
 	github.com/coreos/prometheus-operator v0.41.1
 	github.com/linbit/k8s-await-election v0.2.3
 	github.com/operator-framework/operator-sdk v0.19.4

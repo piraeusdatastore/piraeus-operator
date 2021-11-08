@@ -38,7 +38,7 @@ func TestContains(t *testing.T) {
 	}
 
 	for _, tt := range tableTest {
-		actual := contains(tt.in, tt.has)
+		actual := SliceContains(tt.in, tt.has)
 
 		if tt.expected != actual {
 			t.Errorf("\nexpected contains(%+v, %s)\nto be\n\t%t\ngot\n\t%t",

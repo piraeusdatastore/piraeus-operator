@@ -5,7 +5,7 @@ import (
 )
 
 func AddFinalizer(obj metav1.Object, finalizer string) {
-	if !contains(obj.GetFinalizers(), finalizer) {
+	if !SliceContains(obj.GetFinalizers(), finalizer) {
 		obj.SetFinalizers(append(obj.GetFinalizers(), finalizer))
 	}
 }
@@ -15,7 +15,7 @@ func DeleteFinalizer(obj metav1.Object, finalizer string) {
 }
 
 func HasFinalizer(obj metav1.Object, finalizer string) bool {
-	return contains(obj.GetFinalizers(), finalizer)
+	return SliceContains(obj.GetFinalizers(), finalizer)
 }
 
 func remove(list []string, s string) []string {
@@ -27,7 +27,7 @@ func remove(list []string, s string) []string {
 	return list
 }
 
-func contains(list []string, s string) bool {
+func SliceContains(list []string, s string) bool {
 	for _, v := range list {
 		if v == s {
 			return true

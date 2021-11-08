@@ -84,8 +84,8 @@ github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q
 github.com/DATA-DOG/go-sqlmock v1.4.1/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
-github.com/LINBIT/golinstor v0.34.4 h1:O+C2/r5pwyoERQkARgxWRdnaV7tFtL95AzFREVQuV6c=
-github.com/LINBIT/golinstor v0.34.4/go.mod h1:506Wb/BCd449g/u2IGXlsIKNdiEmAEsgyOPrIYjbKyg=
+github.com/LINBIT/golinstor v0.37.1 h1:Xv+jh6EQNYtCYF+xDkuvmpsvOYU9PEmy0yl3p2NbHew=
+github.com/LINBIT/golinstor v0.37.1/go.mod h1:HOOiFf97Y3Mi0LeLsTKtqhVddkrx5sY2LOEQ7I1E6jQ=
 github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver/v3 v3.1.0/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
