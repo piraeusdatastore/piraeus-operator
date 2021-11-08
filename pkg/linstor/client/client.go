@@ -27,6 +27,7 @@ const (
 	Controller       = "CONTROLLER"
 	Satellite        = "SATELLITE"
 	Online           = "ONLINE"
+	Offline          = "OFFLINE"
 	DefaultHttpPort  = 3370
 	DefaultHttpsPort = 3371
 )

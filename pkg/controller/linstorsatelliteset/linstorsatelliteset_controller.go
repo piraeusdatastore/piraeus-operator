@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -414,37 +415,67 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 		return []error{err}
 	}
 
-	// Every registration routine gets its own channel to send a list of errors
-	outputs := make([]chan error, len(pods))
+	k8sNodes := &corev1.NodeList{}
+
+	err = r.client.List(ctx, k8sNodes)
+	if err != nil {
+		return []error{fmt.Errorf("failed to get kubernetes nodes: %w", err)}
+	}
+
+	wg := sync.WaitGroup{}
+	errs := make(chan error)
 
 	for i := range pods {
 		pod := &pods[i]
-		output := make(chan error)
-		outputs[i] = output
+
+		k8sNode := findK8sNode(k8sNodes.Items, pod.Spec.NodeName)
+
+		if k8sNode == nil {
+			logger.WithField("pod", pod.Name).Debug("Node for pod not found, assuming node deleted.")
+
+			continue
+		}
 
 		// Registration can be done in parallel, so we handle per-node work in a separate go-routine
+		wg.Add(1)
+
 		go func() {
-			defer close(output)
-			output <- r.reconcilePod(ctx, linstorClient, satelliteSet, pod)
+			defer wg.Done()
+			errs <- r.reconcilePod(ctx, linstorClient, satelliteSet, pod, k8sNode)
 		}()
 	}
 
-	logger.Debug("start collecting per-node reconciliation results")
+	wg.Wait()
+	close(errs)
 
-	registerErrors := make([]error, 0)
+	registrationErrs := make([]error, 0, len(pods))
 
-	// Every pod has its own error channel. This preserves order of errors on multiple runs
-	for i := range pods {
-		err := <-outputs[i]
-		if err != nil {
-			registerErrors = append(registerErrors, err)
+	for e := range errs {
+		if e != nil {
+			registrationErrs = append(registrationErrs, e)
 		}
 	}
 
-	return registerErrors
+	// Errors reported in the CR should be "stable"-ish, so we sort them here.
+	sort.Slice(registrationErrs, func(i, j int) bool {
+		return registrationErrs[i].Error() < registrationErrs[j].Error()
+	})
+
+	if len(registrationErrs) > 0 {
+		return registrationErrs
+	}
+
+	logger.Debug("remove registered satellites without Kubernetes node")
+
+	err = r.removeDanglingSatellites(ctx, linstorClient, k8sNodes.Items)
+	if err != nil {
+		return []error{err}
+	}
+
+	return nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod) error {
+func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod, k8sNode *corev1.Node) error {
 	podLog := log.WithFields(logrus.Fields{
 		"podName":      pod.Name,
 		"podNameSpace": pod.Namespace,
@@ -453,7 +484,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, linstor
 
 	podLog.Debug("reconcile node registration")
 
-	err := r.reconcileSingleNodeRegistration(ctx, linstorClient, satelliteSet, pod)
+	err := r.reconcileSingleNodeRegistration(ctx, linstorClient, satelliteSet, pod, k8sNode)
 	if err != nil {
 		return err
 	}
@@ -477,14 +508,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, linstor
 	return nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod) error {
-	k8sNode := &corev1.Node{}
-
-	err := r.client.Get(ctx, types.NamespacedName{Name: pod.Spec.NodeName}, k8sNode)
-	if err != nil {
-		return fmt.Errorf("failed to get kubernetes node: %w", err)
-	}
-
+func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod, k8sNode *corev1.Node) error {
 	lNode, err := linstorClient.GetNodeOrCreate(ctx, lapi.Node{
 		Name:  pod.Spec.NodeName,
 		Type:  lc.Satellite,
@@ -1331,6 +1355,66 @@ func (r *ReconcileLinstorSatelliteSet) controllerReachable(ctx context.Context, 
 	return err
 }
 
+// removeDanglingSatellites removes satellites that were registered by the operator and are no longer present.
+func (r *ReconcileLinstorSatelliteSet) removeDanglingSatellites(ctx context.Context, linstorClient *lc.HighLevelClient, k8sNodes []corev1.Node) error {
+	lnodes, err := linstorClient.Nodes.GetAll(ctx, &lapi.ListOpts{
+		Prop: []string{fmt.Sprintf("%s=%s", kubeSpec.LinstorRegistrationProperty, kubeSpec.Name)},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes")
+	}
+
+	for i := range lnodes {
+		node := &lnodes[i]
+
+		log := log.WithField("node", node.Name)
+
+		if node.Type != lc.Satellite {
+			continue
+		}
+
+		k8sNode := findK8sNode(k8sNodes, node.Name)
+
+		if k8sNode != nil {
+			log.Debug("node exists in kubernetes, no eviction")
+
+			continue
+		}
+
+		log.Debug("node does not exist in kubernetes, evicting")
+
+		if node.ConnectionStatus != lc.Offline {
+			return fmt.Errorf("online satellite registered by operator without associated k8s node")
+		}
+
+		err := linstorClient.Nodes.Evict(ctx, node.Name)
+		if err != nil {
+			return fmt.Errorf("failed to evict node '%s': %w", node.Name, err)
+		}
+
+		if mdutil.SliceContains(node.Flags, linstor.FlagEvicted) {
+			log.Debug("node evicted, deleting")
+
+			err := linstorClient.Nodes.Lost(ctx, node.Name)
+			if err != nil {
+				return fmt.Errorf("failed to delete node '%s': %w", node.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func findK8sNode(nodes []corev1.Node, name string) *corev1.Node {
+	for i := range nodes {
+		if nodes[i].Name == name {
+			return &nodes[i]
+		}
+	}
+
+	return nil
+}
+
 func getObjectMeta(satelliteSet *piraeusv1.LinstorSatelliteSet, nameFmt string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      fmt.Sprintf(nameFmt, satelliteSet.Name),
@@ -1344,7 +1428,9 @@ func getObjectMeta(satelliteSet *piraeusv1.LinstorSatelliteSet, nameFmt string) 
 }
 
 func nodeLabelsToProps(labels map[string]string) map[string]string {
-	result := make(map[string]string, len(labels))
+	result := map[string]string{
+		kubeSpec.LinstorRegistrationProperty: kubeSpec.Name,
+	}
 
 	for k, v := range labels {
 		result[fmt.Sprintf("%s/%s", linstor.NamespcAuxiliary, k)] = v
