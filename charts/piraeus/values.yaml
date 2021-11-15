@@ -1,5 +1,4 @@
 IHaveBackedUpAllMyLinstorResources: false
-
 global:
   imagePullPolicy: IfNotPresent # empty pull policy means k8s default is used ("always" if tag == ":latest", "ifnotpresent" else)
   setSecurityContext: true # Force non-privileged containers to run as non-root users
@@ -50,7 +49,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.io/piraeusdatastore/piraeus-operator:latest
+  image: quay.io/piraeusdatastore/piraeus-operator:v1.7.0-rc.1
   affinity: {}
   tolerations: []
   resources: {}
