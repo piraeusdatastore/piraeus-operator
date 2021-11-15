@@ -25,11 +25,11 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.14.1
+  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.16.1
   csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.3.0
-  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.4.0
-  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.3.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v2.2.2
+  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.5.0
+  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.4.0
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.0.0
   csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v4.2.1
   csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.3.0
   controllerReplicas: 1
@@ -57,7 +57,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.14.0
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.16.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -74,15 +74,15 @@ operator:
     additionalProperties: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.14.0
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.16.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.4.3
-    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.0.30
+    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.4.4
+    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.4
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionResources: {}
     additionalEnv: []
