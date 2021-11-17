@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a deadlock when reconciling satellites
+
 ## [v1.7.0-rc.1] - 2021-11-15
 
 ### Added

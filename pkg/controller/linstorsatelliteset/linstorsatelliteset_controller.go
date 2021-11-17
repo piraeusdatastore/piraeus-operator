@@ -423,9 +423,10 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 	}
 
 	wg := sync.WaitGroup{}
-	errs := make(chan error)
+	errs := make([]error, len(pods))
 
 	for i := range pods {
+		i := i
 		pod := &pods[i]
 
 		k8sNode := findK8sNode(k8sNodes.Items, pod.Spec.NodeName)
@@ -441,28 +442,23 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 
 		go func() {
 			defer wg.Done()
-			errs <- r.reconcilePod(ctx, linstorClient, satelliteSet, pod, k8sNode)
+
+			errs[i] = r.reconcilePod(ctx, linstorClient, satelliteSet, pod, k8sNode)
 		}()
 	}
 
 	wg.Wait()
-	close(errs)
 
-	registrationErrs := make([]error, 0, len(pods))
+	nonNilErrs := make([]error, 0, len(errs))
 
-	for e := range errs {
-		if e != nil {
-			registrationErrs = append(registrationErrs, e)
+	for i := range errs {
+		if errs[i] != nil {
+			nonNilErrs = append(nonNilErrs, errs[i])
 		}
 	}
 
-	// Errors reported in the CR should be "stable"-ish, so we sort them here.
-	sort.Slice(registrationErrs, func(i, j int) bool {
-		return registrationErrs[i].Error() < registrationErrs[j].Error()
-	})
-
-	if len(registrationErrs) > 0 {
-		return registrationErrs
+	if len(nonNilErrs) > 0 {
+		return nonNilErrs
 	}
 
 	logger.Debug("remove registered satellites without Kubernetes node")
