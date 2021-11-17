@@ -874,6 +874,12 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 		ObjectMeta: meta,
 		Spec: apps.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: meta.Labels},
+			UpdateStrategy: apps.DaemonSetUpdateStrategy{
+				Type: apps.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &apps.RollingUpdateDaemonSet{
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.String, StrVal: "100%"},
+				},
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: meta,
 				Spec: corev1.PodSpec{

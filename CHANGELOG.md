@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- recreates or updates to the satellite pods are now applied at once, instead of waiting for a node to complete before
+  moving to the next.
+
 ### Fixed
 
 - Fixed a deadlock when reconciling satellites
