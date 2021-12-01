@@ -22,8 +22,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	lapiconst "github.com/LINBIT/golinstor"
+	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -41,9 +44,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
+	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
-	linstorClient "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 )
 
 func init() {
@@ -164,7 +168,8 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(ctx context.Context, request recon
 	if specErr != nil {
 		return reconcile.Result{}, specErr
 	}
-	return reconcile.Result{}, statusErr
+
+	return reconcile.Result{RequeueAfter: 1 * time.Minute}, statusErr
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
@@ -228,7 +233,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 	if csiResource.Spec.ControllerEndpoint == "" {
 		serviceName := types.NamespacedName{Name: csiResource.Name + "-cs", Namespace: csiResource.Namespace}
 		useHTTPS := csiResource.Spec.LinstorClientConfig.LinstorHttpsClientSecret != ""
-		defaultEndpoint := linstorClient.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
+		defaultEndpoint := lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
 		csiResource.Spec.ControllerEndpoint = defaultEndpoint
 		changed = true
 
@@ -275,7 +280,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
-	err := r.reconcileNodeDaemonSet(ctx, csiResource)
+	err := r.reconcileNodes(ctx, csiResource)
 	if err != nil {
 		return err
 	}
@@ -340,18 +345,181 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 	return err
 }
 
-func (r *ReconcileLinstorCSIDriver) reconcileNodeDaemonSet(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
+func (r *ReconcileLinstorCSIDriver) reconcileNodes(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"Name":      csiResource.Name,
 		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileNodeDaemonSet",
+		"Op":        "reconcileNodes",
 	})
-	logger.Debugf("creating csi node daemon set")
+	logger.Debug("creating csi node daemon set")
+
 	nodeDaemonSet := newCSINodeDaemonSet(csiResource)
 
 	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, nodeDaemonSet, csiResource, reconcileutil.OnPatchErrorRecreate)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile daemonset: %w", err)
+	}
 
-	return err
+	logger.Debug("reconciling csi node objects")
+
+	err = r.reconcileCSINodeObjects(ctx, csiResource)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile CSI nodes: %w", err)
+	}
+
+	return nil
+}
+
+// reconcileCSINodeObjects ensures that existing CSINode object report the right topology keys.
+//
+// Topology keys are only queried once at start-up. LINSTOR's keys are updated periodically by the operator, and so
+// the set of supported keys can change. The only reliable way to update them is restart the whole pod.
+func (r *ReconcileLinstorCSIDriver) reconcileCSINodeObjects(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
+	logger := logrus.WithFields(logrus.Fields{
+		"Name":      csiResource.Name,
+		"Namespace": csiResource.Namespace,
+		"Op":        "reconcileCSINodeObjects",
+	})
+	logger.Debug("creating linstor client")
+
+	lclient, err := lc.NewHighLevelLinstorClientFromConfig(
+		csiResource.Spec.ControllerEndpoint,
+		&csiResource.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, csiResource.Namespace),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create linstor client: %w", err)
+	}
+
+	if !lclient.ControllerReachable(ctx) {
+		logger.Debug("controller not online, nothing to reconcile")
+
+		return nil
+	}
+
+	logger.Debug("fetching linstor nodes")
+
+	lnodes, err := lclient.Nodes.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch lisntor nodes: %w", err)
+	}
+
+	nodePods := corev1.PodList{}
+	meta := getObjectMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
+
+	err = r.client.List(ctx, &nodePods, client.MatchingLabels(meta.Labels))
+	if err != nil {
+		return fmt.Errorf("failed to list csi node pods: %w", err)
+	}
+
+	csiNodes := storagev1.CSINodeList{}
+
+	err = r.client.List(ctx, &csiNodes)
+	if err != nil {
+		return fmt.Errorf("failed to list csi node objects: %w", err)
+	}
+
+	for i := range nodePods.Items {
+		pod := &nodePods.Items[i]
+
+		err := r.reconcileCSINodeForPod(ctx, pod, lnodes, csiNodes.Items)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *ReconcileLinstorCSIDriver) reconcileCSINodeForPod(ctx context.Context, pod *corev1.Pod, lnodes []lapi.Node, csiNodes []storagev1.CSINode) error {
+	logger := logrus.WithField("pod", pod.Name)
+
+	logger.Debug("searching matching linstor node")
+
+	lnode := nodeByName(lnodes, pod.Spec.NodeName)
+	if lnode == nil {
+		logger.Debug("no linstor node found, skipping")
+
+		return nil
+	}
+
+	logger.Debug("searching matching csi driver spec")
+
+	csiDriver := csiDriverForNode(csiNodes, pod.Spec.NodeName)
+	if csiDriver == nil {
+		logger.Debug("no csi driver found, skipping")
+
+		return nil
+	}
+
+	hasAllKeys := true
+
+	for k := range lnode.Props {
+		if !strings.HasPrefix(k, lapiconst.NamespcAuxiliary+"/") {
+			// Only Aux/ properties are used for scheduling
+			continue
+		}
+
+		expectedKey := k[len(lapiconst.NamespcAuxiliary+"/"):]
+
+		if !mdutil.SliceContains(csiDriver.TopologyKeys, expectedKey) {
+			logger.WithField("topologyKey", expectedKey).Debug("key missing in exported topology keys")
+
+			hasAllKeys = false
+
+			break
+		}
+	}
+
+	if hasAllKeys {
+		return nil
+	}
+
+	logger.Debug("not all labels are marked as exported, removing csi node")
+
+	err := r.client.Patch(
+		ctx,
+		&storagev1.CSINode{ObjectMeta: metav1.ObjectMeta{Name: pod.Spec.NodeName}},
+		client.RawPatch(types.StrategicMergePatchType, []byte(`{"spec":{"drivers":[{"name": "linstor.csi.linbit.com", "$patch": "delete"}]}}`)),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to remove outdated csi node object: %w", err)
+	}
+
+	logger.Debug("not all labels are marked as exported, removing pod to trigger recreation")
+
+	err = r.client.Delete(ctx, pod)
+	if err != nil {
+		return fmt.Errorf("failed to remove oudated csi node pod: %w", err)
+	}
+
+	return nil
+}
+
+func nodeByName(nodes []lapi.Node, name string) *lapi.Node {
+	for i := range nodes {
+		if nodes[i].Name == name {
+			return &nodes[i]
+		}
+	}
+
+	return nil
+}
+
+func csiDriverForNode(csiNodes []storagev1.CSINode, name string) *storagev1.CSINodeDriver {
+	for i := range csiNodes {
+		if csiNodes[i].Name != name {
+			continue
+		}
+
+		for j := range csiNodes[i].Spec.Drivers {
+			if csiNodes[i].Spec.Drivers[j].Name == "linstor.csi.linbit.com" {
+				return &csiNodes[i].Spec.Drivers[j]
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
@@ -459,7 +627,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: csiResource.Spec.ImagePullSecret})
 	}
 
-	env = append(env, linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)...)
+	env = append(env, lc.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)...)
 
 	csiLivenessProbe := corev1.Container{
 		Name:            "csi-livenessprobe",
@@ -613,7 +781,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: csiResource.Spec.ImagePullSecret})
 	}
 
-	linstorEnvVars := linstorClient.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)
+	linstorEnvVars := lc.APIResourceAsEnvVars(csiResource.Spec.ControllerEndpoint, &csiResource.Spec.LinstorClientConfig)
 
 	csiLivenessProbe := corev1.Container{
 		Name:            "csi-livenessprobe",
