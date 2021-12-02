@@ -9,27 +9,29 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
-	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+	"time"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
-	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	"github.com/sirupsen/logrus"
+	ini "gopkg.in/ini.v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	ini "gopkg.in/ini.v1"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 )
 
 // Various lapi consts yet to be defined in golinstor.
 const (
-	Controller       = "CONTROLLER"
-	Satellite        = "SATELLITE"
-	Online           = "ONLINE"
-	Offline          = "OFFLINE"
-	DefaultHttpPort  = 3370
-	DefaultHttpsPort = 3371
+	Controller                 = "CONTROLLER"
+	Satellite                  = "SATELLITE"
+	Online                     = "ONLINE"
+	Offline                    = "OFFLINE"
+	DefaultHTTPPort            = 3370
+	DefaultHTTPSPort           = 3371
+	ControllerReachableTimeout = 10 * time.Second
 )
 
 // Global linstor client configuration, like controllers and connection settings
@@ -61,6 +63,20 @@ type HighLevelClient struct {
 }
 
 type SecretFetcher func(string) (map[string][]byte, error)
+
+// NamedSecret returns a SecretFetcher for the named secret.
+func NamedSecret(ctx context.Context, client client.Client, namespace string) SecretFetcher {
+	return func(secretName string) (map[string][]byte, error) {
+		secret := corev1.Secret{}
+
+		err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch secret: %w", err)
+		}
+
+		return secret.Data, nil
+	}
+}
 
 // NewHighLevelLinstorClientFromConfig configures a HighLevelClient with an
 // in-cluster url based on service naming convention.
@@ -243,6 +259,16 @@ func (c *HighLevelClient) GetAllResourcesOnNode(ctx context.Context, nodeName st
 	return filterNodes(resList, nodeName), nil
 }
 
+// ControllerReachable returns true if the LINSTOR controller is up.
+func (c *HighLevelClient) ControllerReachable(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, ControllerReachableTimeout)
+	defer cancel()
+
+	_, err := c.Controller.GetVersion(ctx)
+
+	return err == nil
+}
+
 func filterNodes(resources []lapi.ResourceWithVolumes, nodeName string) []lapi.ResourceWithVolumes {
 	nodeRes := make([]lapi.ResourceWithVolumes, 0)
 	for i := range resources {
@@ -310,9 +336,9 @@ func NewClientConfigForAPIResource(endpoint string, resource *shared.LinstorClie
 
 func DefaultControllerServiceEndpoint(serviceName types.NamespacedName, useHTTPS bool) string {
 	if useHTTPS {
-		return fmt.Sprintf("https://%s.%s.svc:%d", serviceName.Name, serviceName.Namespace, DefaultHttpsPort)
+		return fmt.Sprintf("https://%s.%s.svc:%d", serviceName.Name, serviceName.Namespace, DefaultHTTPSPort)
 	} else {
-		return fmt.Sprintf("http://%s.%s.svc:%d", serviceName.Name, serviceName.Namespace, DefaultHttpPort)
+		return fmt.Sprintf("http://%s.%s.svc:%d", serviceName.Name, serviceName.Namespace, DefaultHTTPPort)
 	}
 }
 

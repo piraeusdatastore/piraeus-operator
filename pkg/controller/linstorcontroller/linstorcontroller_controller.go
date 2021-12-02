@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -243,7 +242,11 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 	})
 	log.Info("controller Reconcile: reconciling controller Nodes")
 
-	linstorClient, err := r.getLinstorClient(ctx, controllerResource)
+	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
+		expectedEndpoint(controllerResource),
+		&controllerResource.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, controllerResource.Namespace),
+	)
 	if err != nil {
 		return err
 	}
@@ -295,8 +298,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 
 	meta := getObjectMeta(controllerResource, "%s-controller")
 	ourPods := &corev1.PodList{}
-	labelSelector := labels.SelectorFromSet(meta.Labels)
-	err = r.client.List(ctx, ourPods, client.InNamespace(controllerResource.Namespace), client.MatchingLabelsSelector{Selector: labelSelector})
+	err = r.client.List(ctx, ourPods, client.InNamespace(controllerResource.Namespace), client.MatchingLabels(meta.Labels))
 	if err != nil {
 		return err
 	}
@@ -376,7 +378,11 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 		"Op":        "reconcileLinstorStatus",
 	})
 
-	linstorClient, err := r.getLinstorClient(ctx, controllerResource)
+	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
+		expectedEndpoint(controllerResource),
+		&controllerResource.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, controllerResource.Namespace),
+	)
 	if err != nil {
 		return err
 	}
@@ -461,24 +467,6 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 	return nil
 }
 
-func (r *ReconcileLinstorController) getLinstorClient(ctx context.Context, controllerResource *piraeusv1.LinstorController) (*lc.HighLevelClient, error) {
-	log.Debug("get linstor client")
-
-	getSecret := func(secretName string) (map[string][]byte, error) {
-		secret := corev1.Secret{}
-
-		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: controllerResource.Namespace}, &secret)
-		if err != nil {
-			return nil, err
-		}
-
-		return secret.Data, nil
-	}
-
-	endpoint := expectedEndpoint(controllerResource)
-	return lc.NewHighLevelLinstorClientFromConfig(endpoint, &controllerResource.Spec.LinstorClientConfig, getSecret)
-}
-
 func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Context, linstorClient *lc.HighLevelClient) (string, error) {
 	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
@@ -516,7 +504,11 @@ func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, 
 		return nil
 	}
 
-	linstorClient, err := r.getLinstorClient(ctx, controllerResource)
+	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
+		expectedEndpoint(controllerResource),
+		&controllerResource.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, controllerResource.Namespace),
+	)
 	if err != nil {
 		return err
 	}
@@ -610,10 +602,11 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: controllerResource.Spec.DrbdRepoCred})
 	}
 
-	const healthzPort = 9999
-	port := lc.DefaultHttpPort
+	healthzPort := 9999
+	port := lc.DefaultHTTPPort
+
 	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
-		port = lc.DefaultHttpsPort
+		port = lc.DefaultHTTPSPort
 	}
 
 	servicePorts := []corev1.EndpointPort{
@@ -831,11 +824,11 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 									Protocol:      "TCP",
 								},
 								{
-									ContainerPort: lc.DefaultHttpPort,
+									ContainerPort: lc.DefaultHTTPPort,
 									Protocol:      "TCP",
 								},
 								{
-									ContainerPort: lc.DefaultHttpsPort,
+									ContainerPort: lc.DefaultHTTPSPort,
 									Protocol:      "TCP",
 								},
 							},
@@ -879,9 +872,9 @@ func getDeploymentAffinity(controllerResource *piraeusv1.LinstorController) *cor
 }
 
 func newServiceForResource(controllerResource *piraeusv1.LinstorController) *corev1.Service {
-	port := lc.DefaultHttpPort
+	port := lc.DefaultHTTPPort
 	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
-		port = lc.DefaultHttpsPort
+		port = lc.DefaultHTTPSPort
 	}
 
 	return &corev1.Service{
