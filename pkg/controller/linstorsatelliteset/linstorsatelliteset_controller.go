@@ -276,23 +276,6 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 	return drbdReactorCM, nil
 }
 
-func (r *ReconcileLinstorSatelliteSet) getLinstorClient(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) (*lc.HighLevelClient, error) {
-	log.Debug("get linstor client")
-
-	getSecret := func(secretName string) (map[string][]byte, error) {
-		secret := corev1.Secret{}
-
-		err := r.client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: satelliteSet.Namespace}, &secret)
-		if err != nil {
-			return nil, err
-		}
-
-		return secret.Data, nil
-	}
-
-	return lc.NewHighLevelLinstorClientFromConfig(satelliteSet.Spec.ControllerEndpoint, &satelliteSet.Spec.LinstorClientConfig, getSecret)
-}
-
 func (r *ReconcileLinstorSatelliteSet) reconcileResource(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) error {
 	logger := log.WithFields(logrus.Fields{
 		"Name":      satelliteSet.Name,
@@ -397,13 +380,17 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 
 	logger.Debug("ensure LINSTOR controller is reachable")
 
-	linstorClient, err := r.getLinstorClient(ctx, satelliteSet)
+	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
+		satelliteSet.Spec.ControllerEndpoint,
+		&satelliteSet.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, satelliteSet.Spec.LinstorHttpsClientSecret),
+	)
 	if err != nil {
 		return []error{err}
 	}
 
-	err = r.controllerReachable(ctx, linstorClient)
-	if err != nil {
+	ok := linstorClient.ControllerReachable(ctx)
+	if !ok {
 		return []error{&reconcileutil.TemporaryError{
 			Source:       fmt.Errorf("failed to contact controller: %w", err),
 			RequeueAfter: connectionRetrySeconds * time.Second,
@@ -750,7 +737,11 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 		"Op":        "reconcileLinstorStatus",
 	})
 
-	linstorClient, err := r.getLinstorClient(ctx, satelliteSet)
+	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
+		satelliteSet.Spec.ControllerEndpoint,
+		&satelliteSet.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, satelliteSet.Spec.LinstorHttpsClientSecret),
+	)
 	if err != nil {
 		return err
 	}
@@ -758,8 +749,8 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = r.controllerReachable(ctx, linstorClient)
-	if err != nil {
+	ok := linstorClient.ControllerReachable(ctx)
+	if !ok {
 		return fmt.Errorf("controller not reachable: %w", err)
 	}
 
@@ -1324,7 +1315,11 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context,
 	errs := make([]error, 0)
 	keepNodes := make([]*shared.SatelliteStatus, 0)
 
-	linstorClient, err := r.getLinstorClient(ctx, satelliteSet)
+	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
+		satelliteSet.Spec.ControllerEndpoint,
+		&satelliteSet.Spec.LinstorClientConfig,
+		lc.NamedSecret(ctx, r.client, satelliteSet.Spec.LinstorHttpsClientSecret),
+	)
 	if err != nil {
 		return []error{err}
 	}
