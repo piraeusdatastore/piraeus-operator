@@ -24,7 +24,7 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.16.1
+  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.17.0
   csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.3.0
   csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.5.0
   csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
@@ -56,7 +56,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.16.0
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.17.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -73,7 +73,7 @@ operator:
     additionalProperties: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.16.0
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.17.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None

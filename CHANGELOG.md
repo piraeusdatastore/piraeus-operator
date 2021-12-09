@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- default images:
+  * `quay.io/piraeusdatastore/piraeus-server:v1.17.0`
+  * `quay.io/piraeusdatastore/piraeus-csi:v0.17.0`
+  * `quay.io/piraeusdatastore/drbd9-bionic:v9.1.4`
+  * `quay.io/piraeusdatastore/drbd-reactor:v0.4.4`
+
 ## [v1.7.0-rc.2] - 2021-11-18
 
 ### Changed
