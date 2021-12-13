@@ -40,6 +40,8 @@ kind: Secret
 metadata:
   name: {{ template "operator.fullname" . }}-passphrase
   namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/resource-policy: keep
 data:
 {{- /* We have to be careful not to override the original secret value, otherwise encrypted data could be lost forever */}}
 {{- $secret := lookup "v1" "Secret" .Release.Namespace (printf "%s-passphrase" ( include "operator.fullname" . )) }}

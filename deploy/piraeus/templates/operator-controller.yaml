@@ -5,6 +5,8 @@ kind: Secret
 metadata:
   name: piraeus-op-passphrase
   namespace: default
+  annotations:
+    helm.sh/resource-policy: keep
 data:
   MASTER_PASSPHRASE: "Y2hhbmdlbWVwbGVhc2U="
 ---
