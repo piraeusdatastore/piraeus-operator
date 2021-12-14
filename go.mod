@@ -12,9 +12,11 @@ require (
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/ini.v1 v1.51.0
 	k8s.io/api v0.21.2
+	k8s.io/apiextensions-apiserver v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v12.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.9.2
+	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (

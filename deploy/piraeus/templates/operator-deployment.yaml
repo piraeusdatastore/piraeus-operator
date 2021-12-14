@@ -26,6 +26,9 @@ spec:
         - name: piraeus-operator
           image: quay.io/piraeusdatastore/piraeus-operator:latest
           imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: backup-dir
+              mountPath: /run/linstor-backups
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -39,6 +42,9 @@ spec:
               value: "piraeus-operator"
           resources:
             {}
+      volumes:
+        - name: backup-dir
+          emptyDir: {}
       tolerations: []
       affinity:
         podAntiAffinity:
