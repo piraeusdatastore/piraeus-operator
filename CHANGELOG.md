@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Create backups of LINSTOR resource if the "k8s" database backend is used _and_ an image change is detected. Backups
+  are stored in Secret resources as a `tar.gz`. If the secret would get too big, the backup can be downloaded from
+  the operator pod.
 - Default images:
   * CSI Attacher v3.4.0
   * CSI Node Driver Registrar v2.4.0

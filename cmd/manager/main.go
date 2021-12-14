@@ -34,6 +34,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
@@ -45,6 +46,7 @@ import (
 
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorcontroller"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	"github.com/piraeusdatastore/piraeus-operator/version"
 )
@@ -65,6 +67,8 @@ func printVersion() {
 }
 
 func main() {
+	pflag.BoolVarP(&linstorcontroller.CreateBackups, "create-backups", "", linstorcontroller.CreateBackups, "create backups of linstor resources if k8s database is used")
+
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())

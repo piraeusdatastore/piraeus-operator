@@ -53,6 +53,9 @@ import (
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 )
 
+// CreateBackups controls if the operator will create a backup of the LINSTOR resources before upgrading.
+var CreateBackups = true
+
 // newControllerReconciler returns a new reconcile.Reconciler
 func newControllerReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileLinstorController{client: mgr.GetClient(), scheme: mgr.GetScheme()}
@@ -191,6 +194,13 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 	configmapChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, configMap, controllerResource, reconcileutil.OnPatchErrorReturn)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile LINSTOR Controller ConfigMap: %w", err)
+	}
+
+	if controllerResource.Spec.DBConnectionURL == "k8s" && CreateBackups {
+		err := r.reconcileLinstorControllerDatabaseBackup(ctx, controllerResource)
+		if err != nil {
+			return fmt.Errorf("failed to reconcile LINSTOR database backup: %w", err)
+		}
 	}
 
 	log.Debug("reconcile LINSTOR Controller Deployment")
