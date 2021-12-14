@@ -7,29 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v1.7.0-rc.3] - 2021-12-09
-
-### Changed
-
-- default images:
-  * `quay.io/piraeusdatastore/piraeus-server:v1.17.0`
-  * `quay.io/piraeusdatastore/piraeus-csi:v0.17.0`
-  * `quay.io/piraeusdatastore/drbd9-bionic:v9.1.4`
-  * `quay.io/piraeusdatastore/drbd-reactor:v0.4.4`
-
-## [v1.7.0-rc.2] - 2021-11-18
-
-### Changed
-
-- recreates or updates to the satellite pods are now applied at once, instead of waiting for a node to complete before
-  moving to the next.
-
-### Fixed
-
-- Fixed a deadlock when reconciling satellites
-
-## [v1.7.0-rc.1] - 2021-11-15
-
 ### Added
 
 - `pv-hostpath`: automatically determine on which nodes PVs should be created if no override is given.
@@ -41,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Default images:
+  * `quay.io/piraeusdatastore/piraeus-server:v1.17.0`
+  * `quay.io/piraeusdatastore/piraeus-csi:v0.17.0`
+  * `quay.io/piraeusdatastore/drbd9-bionic:v9.1.4`
+  * `quay.io/piraeusdatastore/drbd-reactor:v0.4.4`
+- Recreates or updates to the satellite pods are now applied at once, instead of waiting for a node to complete before
+  moving to the next.
 - Enable CSI topology by default, allowing better volume scheduling with `volumeBindingMode: WaitForFirstConsumer`.
 - Disable STORK by default. Instead, we recommend using `volumeBindingMode: WaitForFirstConsumer` in storage classes.
 
@@ -504,7 +488,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.5.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.4.0...v1.5.0
 [v1.5.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.5.0...v1.5.1
 [v1.6.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.5.1...v1.6.0
-[v1.7.0-rc.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.6.0...v1.7.0-rc.1
-[v1.7.0-rc.2]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.7.0-rc.1...v1.7.0-rc.2
-[v1.7.0-rc.3]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.7.0-rc.2...v1.7.0-rc.3
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.7.0-rc.3...HEAD
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.6.0...HEAD
