@@ -383,7 +383,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		satelliteSet.Spec.ControllerEndpoint,
 		&satelliteSet.Spec.LinstorClientConfig,
-		lc.NamedSecret(ctx, r.client, satelliteSet.Spec.LinstorHttpsClientSecret),
+		lc.NamedSecret(ctx, r.client, satelliteSet.Namespace),
 	)
 	if err != nil {
 		return []error{err}
@@ -740,7 +740,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		satelliteSet.Spec.ControllerEndpoint,
 		&satelliteSet.Spec.LinstorClientConfig,
-		lc.NamedSecret(ctx, r.client, satelliteSet.Spec.LinstorHttpsClientSecret),
+		lc.NamedSecret(ctx, r.client, satelliteSet.Namespace),
 	)
 	if err != nil {
 		return err
@@ -1318,7 +1318,7 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context,
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		satelliteSet.Spec.ControllerEndpoint,
 		&satelliteSet.Spec.LinstorClientConfig,
-		lc.NamedSecret(ctx, r.client, satelliteSet.Spec.LinstorHttpsClientSecret),
+		lc.NamedSecret(ctx, r.client, satelliteSet.Namespace),
 	)
 	if err != nil {
 		return []error{err}

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Use correct secret name when setting up TLS for satellites
+
 ## [v1.7.0] - 2021-12-14
 
 ### Added
