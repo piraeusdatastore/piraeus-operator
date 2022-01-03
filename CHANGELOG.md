@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Use correct secret name when setting up TLS for satellites
+- Correctly configure ServiceMonitor resource if TLS is enabled for LINSTOR Controller.
 
 ## [v1.7.0] - 2021-12-14
 

@@ -26,6 +26,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	lapi "github.com/LINBIT/golinstor/client"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	awaitelection "github.com/linbit/k8s-await-election/pkg/consts"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -219,9 +220,28 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 
 		if !controllerResource.Spec.SslConfig.IsPlain() {
 			serviceMonitor.Spec.Endpoints[0].Scheme = "https"
+			serviceMonitor.Spec.Endpoints[0].TLSConfig = &monitoringv1.TLSConfig{
+				ServerName: fmt.Sprintf("%s.%s.svc", controllerResource.Name, controllerResource.Namespace),
+				KeySecret: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
+					Key:                  lc.SecretKeyName,
+				},
+				CA: monitoringv1.SecretOrConfigMap{
+					Secret: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
+						Key:                  lc.SecretCARootName,
+					},
+				},
+				Cert: monitoringv1.SecretOrConfigMap{
+					Secret: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
+						Key:                  lc.SecretCertName,
+					},
+				},
+			}
 		}
 
-		serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, controllerResource, nil)
+		serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, controllerResource, reconcileutil.OnPatchErrorRecreate)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
 		}

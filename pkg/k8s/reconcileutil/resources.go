@@ -117,7 +117,7 @@ func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runti
 
 	err = kubeClient.Patch(ctx, obj, client.RawPatch(types.StrategicMergePatchType, patch), client.FieldOwner(fieldOwner))
 	if err != nil {
-		if apierrors.IsInvalid(err) && onPatchErr != nil {
+		if (apierrors.IsInvalid(err) || apierrors.IsUnsupportedMediaType(err)) && onPatchErr != nil {
 			err := onPatchErr(ctx, kubeClient, current, obj)
 
 			return err == nil, err
