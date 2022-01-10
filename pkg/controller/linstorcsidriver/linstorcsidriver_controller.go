@@ -807,6 +807,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
 			"--enable-capacity",
+			"--extra-create-metadata",
 			"--capacity-ownerref-level=2",
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace, podName},

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow the external-provisioner and external-snapshotter access to secrets. This is required to support StorageClass
+  and SnapshotClass [secrets](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html).
+- Instruct external-provisioner to pass PVC name+namespace to the CSI driver, enabling optional support for PVC based
+  names for LINSTOR volumes.
+
 ### Fixed
 
 - Use correct secret name when setting up TLS for satellites
