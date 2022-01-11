@@ -680,8 +680,12 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Name:            "csi-node-driver-linstor-plugin",
 		Image:           csiResource.Spec.LinstorPluginImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
-		Args:            []string{"--csi-endpoint=unix://$(CSI_ENDPOINT)", "--node=$(KUBE_NODE_NAME)", "--linstor-endpoint=$(LS_CONTROLLERS)", "--log-level=debug"},
-		Env:             env,
+		Args: []string{
+			"--csi-endpoint=unix://$(CSI_ENDPOINT)",
+			"--node=$(KUBE_NODE_NAME)",
+			"--linstor-endpoint=$(LS_CONTROLLERS)",
+		},
+		Env: env,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:   &IsPrivileged,
 			Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"SYS_ADMIN"}},
@@ -711,6 +715,10 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 				},
 			},
 		},
+	}
+
+	if csiResource.Spec.LogLevel != "" {
+		linstorPluginContainer.Args = append(linstorPluginContainer.Args, fmt.Sprintf("--log-level=%s", csiResource.Spec.LogLevel))
 	}
 
 	meta := getObjectMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
@@ -880,7 +888,6 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--csi-endpoint=unix://$(ADDRESS)",
 			"--node=$(KUBE_NODE_NAME)",
 			"--linstor-endpoint=$(LS_CONTROLLERS)",
-			"--log-level=debug",
 		},
 		Env: append(
 			[]corev1.EnvVar{
@@ -904,6 +911,11 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			},
 		},
 	}
+
+	if csiResource.Spec.LogLevel != "" {
+		linstorPlugin.Args = append(linstorPlugin.Args, fmt.Sprintf("--log-level=%s", csiResource.Spec.LogLevel))
+	}
+
 	meta := getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
 	return &appsv1.Deployment{
 		ObjectMeta: meta,

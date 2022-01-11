@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and SnapshotClass [secrets](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html).
 - Instruct external-provisioner to pass PVC name+namespace to the CSI driver, enabling optional support for PVC based
   names for LINSTOR volumes.
+- Allow setting the log level of LINSTOR components via CRs. Other components are left using their default log level.
+  The new default log level is INFO (was DEBUG previously, which was often too verbose).
 
 ### Fixed
 

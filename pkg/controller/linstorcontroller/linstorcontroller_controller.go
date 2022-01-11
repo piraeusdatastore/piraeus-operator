@@ -26,6 +26,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	lapi "github.com/LINBIT/golinstor/client"
+	"github.com/LINBIT/golinstor/linstortoml"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	awaitelection "github.com/linbit/k8s-await-election/pkg/consts"
 	"github.com/sirupsen/logrus"
@@ -926,23 +927,30 @@ func NewConfigMapForResource(controllerResource *piraeusv1.LinstorController) (*
 		}
 	}
 
-	https := lapi.ControllerConfigHttps{}
+	var https *linstortoml.ControllerHttps
 	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
-		https.Enabled = true
-		https.Keystore = kubeSpec.LinstorHttpsCertDir + "/keystore.jks"
-		https.KeystorePassword = kubeSpec.LinstorHttpsCertPassword
-		https.Truststore = kubeSpec.LinstorHttpsCertDir + "/truststore.jks"
-		https.TruststorePassword = kubeSpec.LinstorHttpsCertPassword
+		yes := true
+
+		https = &linstortoml.ControllerHttps{
+			Enabled:            &yes,
+			Keystore:           kubeSpec.LinstorHttpsCertDir + "/keystore.jks",
+			KeystorePassword:   kubeSpec.LinstorHttpsCertPassword,
+			Truststore:         kubeSpec.LinstorHttpsCertDir + "/truststore.jks",
+			TruststorePassword: kubeSpec.LinstorHttpsCertPassword,
+		}
 	}
 
-	linstorControllerConfig := lapi.ControllerConfig{
-		Db: lapi.ControllerConfigDb{
+	linstorControllerConfig := linstortoml.Controller{
+		Db: &linstortoml.ControllerDb{
 			ConnectionUrl:     controllerResource.Spec.DBConnectionURL,
 			CaCertificate:     dbCertificatePath,
 			ClientCertificate: dbClientCertPath,
 			ClientKeyPkcs8Pem: dbClientKeyPath,
 		},
 		Https: https,
+		Logging: &linstortoml.ControllerLogging{
+			LinstorLevel: controllerResource.Spec.LogLevel.ToLinstor(),
+		},
 	}
 
 	controllerConfigBuilder := strings.Builder{}

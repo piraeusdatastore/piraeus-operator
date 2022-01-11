@@ -354,3 +354,31 @@ const (
 	// ModuleInjectionDepsOnly means we only inject already present modules on the host for LINSTOR layers
 	ModuleInjectionDepsOnly = "DepsOnly"
 )
+
+type LogLevel string
+
+const (
+	LogLevelTrace = "trace"
+	LogLevelDebug = "debug"
+	LogLevelInfo  = "info"
+	LogLevelWarn  = "warn"
+	LogLevelError = "error"
+)
+
+func (l LogLevel) ToLinstor() lapi.LogLevel {
+	switch l {
+	case LogLevelTrace:
+		return lapi.TRACE
+	case LogLevelDebug:
+		return lapi.DEBUG
+	case LogLevelInfo:
+		return lapi.INFO
+	case LogLevelWarn:
+		return lapi.WARN
+	case LogLevelError:
+		return lapi.ERROR
+	default:
+		// Keep LINSTOR default
+		return ""
+	}
+}

@@ -106,6 +106,12 @@ type LinstorSatelliteSetSpec struct {
 	// +nullable
 	MonitoringImage string `json:"monitoringImage"`
 
+	// LogLevel sets the log level for deployed components.
+	// +nullable
+	// +optional
+	// +kubebuilder:validation:Enum=error;warn;info;debug;trace
+	LogLevel shared.LogLevel `json:"logLevel,omitempty"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

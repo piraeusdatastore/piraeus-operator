@@ -1036,6 +1036,16 @@ spec:
                   matching the client key (PEM format, without password) If set, HTTPS
                   is used for connecting and authenticating with linstor'
                 type: string
+              logLevel:
+                description: LogLevel sets the log level for deployed components.
+                enum:
+                - error
+                - warn
+                - info
+                - debug
+                - trace
+                nullable: true
+                type: string
               monitoringImage:
                 description: MonitoringImage is the image used to export monitoring
                   information from DRBD and Linstor.

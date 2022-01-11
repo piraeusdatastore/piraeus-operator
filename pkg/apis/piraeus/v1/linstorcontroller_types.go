@@ -107,6 +107,12 @@ type LinstorControllerSpec struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName"`
 
+	// LogLevel sets the log level for deployed components.
+	// +nullable
+	// +optional
+	// +kubebuilder:validation:Enum=error;warn;info;debug;trace
+	LogLevel shared.LogLevel `json:"logLevel,omitempty"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

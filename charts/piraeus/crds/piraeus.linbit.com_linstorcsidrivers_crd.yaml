@@ -967,6 +967,16 @@ spec:
               linstorPluginImage:
                 description: Image that contains the linstor-csi driver plugin
                 type: string
+              logLevel:
+                description: LogLevel sets the log level for deployed components.
+                enum:
+                - error
+                - warn
+                - info
+                - debug
+                - trace
+                nullable: true
+                type: string
               nodeAffinity:
                 description: Affinity for scheduling the CSI node pods
                 nullable: true
