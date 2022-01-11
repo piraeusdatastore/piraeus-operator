@@ -28,6 +28,7 @@ import (
 	"github.com/BurntSushi/toml"
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
+	"github.com/LINBIT/golinstor/linstortoml"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1029,28 +1030,16 @@ func daemonsetWithMonitoringContainer(ds *apps.DaemonSet, set *piraeusv1.Linstor
 }
 
 func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1.ConfigMap, error) {
-	// Create linstor satellite configuration
-	type SatelliteNetcomConfig struct {
-		Type                string `toml:"type,omitempty,omitzero"`
-		Port                int32  `toml:"port,omitempty,omitzero"`
-		ServerCertificate   string `toml:"server_certificate,omitempty,omitzero"`
-		TrustedCertificates string `toml:"trusted_certificates,omitempty,omitzero"`
-		KeyPassword         string `toml:"key_password,omitempty,omitzero"`
-		KeystorePassword    string `toml:"keystore_password,omitempty,omitzero"`
-		TruststorePassword  string `toml:"truststore_password,omitempty,omitzero"`
-		SslProtocol         string `toml:"ssl_protocol,omitempty,omitzero"`
+	config := linstortoml.Satellite{
+		Logging: &linstortoml.SatelliteLogging{
+			LinstorLevel: satelliteSet.Spec.LogLevel.ToLinstor(),
+		},
 	}
-
-	type SatelliteConfig struct {
-		Netcom SatelliteNetcomConfig `toml:"netcom,omitempty,omitzero"`
-	}
-
-	config := SatelliteConfig{}
 
 	if !satelliteSet.Spec.SslConfig.IsPlain() {
-		config.Netcom = SatelliteNetcomConfig{
+		config.NetCom = &linstortoml.SatelliteNetCom{
 			Type:                satelliteSet.Spec.SslConfig.Type(),
-			Port:                satelliteSet.Spec.SslConfig.Port(),
+			Port:                int(satelliteSet.Spec.SslConfig.Port()),
 			ServerCertificate:   kubeSpec.LinstorSslDir + "/keystore.jks",
 			TrustedCertificates: kubeSpec.LinstorSslDir + "/certificates.jks",
 			// LINSTOR is currently limited on the controller side to these passwords. Because there is not much value

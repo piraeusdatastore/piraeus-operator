@@ -27,4 +27,7 @@ spec:
   {{- if .Values.operator.satelliteSet.additionalEnv }}
   additionalEnv: {{ .Values.operator.satelliteSet.additionalEnv | toJson }}
   {{- end }}
+  {{- if .Values.operator.satelliteSet.logLevel }}
+  logLevel: {{ .Values.operator.satelliteSet.logLevel | quote }}
+  {{- end }}
 {{- end }}

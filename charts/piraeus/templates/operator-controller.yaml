@@ -33,6 +33,9 @@ spec:
   {{- if .Values.operator.controller.additionalProperties }}
   additionalProperties: {{ .Values.operator.controller.additionalProperties | toJson }}
   {{- end }}
+  {{- if .Values.operator.controller.logLevel }}
+  logLevel: {{ .Values.operator.controller.logLevel | quote }}
+  {{- end }}
 ---
 {{- if not .Values.operator.controller.luksSecret }}
 apiVersion: v1

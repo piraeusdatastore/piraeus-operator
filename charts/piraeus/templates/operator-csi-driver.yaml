@@ -29,4 +29,7 @@ spec:
   enableTopology: {{ .Values.csi.enableTopology }}
   resources: {{ .Values.csi.resources | toJson }}
   kubeletPath: {{ .Values.csi.kubeletPath | quote }}
+  {{- if .Values.csi.logLevel }}
+  logLevel: {{ .Values.csi.logLevel | quote }}
+  {{- end }}
 {{- end }}
