@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names for LINSTOR volumes.
 - Allow setting the log level of LINSTOR components via CRs. Other components are left using their default log level.
   The new default log level is INFO (was DEBUG previously, which was often too verbose).
+- Override the kernel source directory used when compiling DRBD (defaults to /usr/src). See
+  [`operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory`](./doc/helm-values.adoc#operatorsatellitesetkernelmoduleinjectionadditionalsourcedirectory)
 - etcd-chart: add option to set priorityClassName.
 
 ### Fixed

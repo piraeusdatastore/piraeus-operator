@@ -83,6 +83,7 @@ operator:
     monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.4.4
     kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.4
     kernelModuleInjectionMode: Compile
+    kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
     additionalEnv: []
 haController:
