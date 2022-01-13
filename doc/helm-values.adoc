@@ -382,6 +382,13 @@ Description:: Resource requests and limits to apply to the kernel module injecti
 
 Note: When using `kernelModuleInjectionMode: Compile`, at least 500MiB of memory is required.
 
+=== `operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory`
+Default:: `""`, implying /usr/src.
+Valid values:: Existing (absolute) filesystem path or "none".
+Description:: Path to the directory holding the kernel source, required when compiling DRBD. If not set, it defaults
+to `/usr/src`, which is the kernel source path on most distributions. In some cases, you might need to disable this by
+using `"none"` as the directory (more generally: any non-absolute path will result in _no_ mount).
+
 === `operator.satelliteSet.monitoringImage`
 Default:: `quay.io/piraeusdatastore/drbd-reactor:v0.3.0`
 Valid values:: iamge ref

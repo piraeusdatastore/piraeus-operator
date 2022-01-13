@@ -83,6 +83,7 @@ operator:
     monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.4.4
     kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.4
     kernelModuleInjectionMode: Compile
+    kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
     additionalEnv: []
 haController:

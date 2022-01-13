@@ -20,6 +20,7 @@ package linstorsatelliteset
 import (
 	"context"
 	"fmt"
+	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -1130,11 +1131,6 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			Env:             env,
 			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      kubeSpec.SrcDirName,
-					MountPath: kubeSpec.SrcDir,
-					ReadOnly:  true,
-				},
 				// VolumumeSource for this directory is already present on the base
 				// daemonset.
 				{
@@ -1146,17 +1142,28 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 		},
 	}
 
-	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, []corev1.Volume{
-		{
+	hostSrcDir := satelliteSet.Spec.KernelModuleInjectionAdditionalSourceDirectory
+	if hostSrcDir == "" {
+		hostSrcDir = kubeSpec.SrcDir
+	}
+
+	if kernelModHow == kubeSpec.LinstorKernelModCompile && path.IsAbs(hostSrcDir) {
+		ds.Spec.Template.Spec.InitContainers[0].VolumeMounts = append(ds.Spec.Template.Spec.InitContainers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.SrcDirName,
+			MountPath: kubeSpec.SrcDir,
+			ReadOnly:  true,
+		})
+
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
 			Name: kubeSpec.SrcDirName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: kubeSpec.SrcDir,
+					Path: hostSrcDir,
 					Type: &kubeSpec.HostPathDirectoryType,
 				},
 			},
-		},
-	}...)
+		})
+	}
 
 	return ds
 }

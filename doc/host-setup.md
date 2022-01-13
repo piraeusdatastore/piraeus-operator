@@ -49,6 +49,15 @@ You can set the image by passing `--set operator.satelliteSet.kernelModuleInject
 [InitContainer]: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 [#137]: https://github.com/piraeusdatastore/piraeus-operator/issues/137
 
+### Flatcar Container Linux
+
+Flatcar Container Linux requires building DRBD from source. Piraeus by default bind mounts `/usr/src` into the injection
+container, as that is required on most distributions. This will fail on Flatcar Container Linux, as that directory
+does not exist there, and can't easily be created (`/usr` is always read-only).
+
+For this case, you can disable mounting of `/usr/src` by passing
+`--set operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory=none` to Helm.
+
 ### Injector image for compiling without headers on host
 
 Installing the kernel headers is not always feasible on the host. A prime example is Fedora CoreOS (FCOS), which uses

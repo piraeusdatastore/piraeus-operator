@@ -20,6 +20,9 @@ spec:
   kernelModuleInjectionMode: {{ .Values.operator.satelliteSet.kernelModuleInjectionMode | quote }}
   kernelModuleInjectionImage: {{ .Values.operator.satelliteSet.kernelModuleInjectionImage | quote }}
   kernelModuleInjectionResources: {{ .Values.operator.satelliteSet.kernelModuleInjectionResources | toJson }}
+  {{- if .Values.operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory }}
+  kernelModuleInjectionAdditionalSourceDirectory: {{ .Values.operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory | quote }}
+  {{- end }}
   {{- if .Values.operator.satelliteSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.satelliteSet.storagePools | indent 4 }}

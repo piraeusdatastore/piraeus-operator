@@ -987,6 +987,13 @@ spec:
               imagePullPolicy:
                 description: Pull policy applied to all pods started from this controller
                 type: string
+              kernelModuleInjectionAdditionalSourceDirectory:
+                description: kernelModuleInjectionAdditionalSourceDirectory is the
+                  directory containing the kernel sources and config on the host.
+                  It will be mounted read-only when the injection mode is Compile.
+                  If unset, defaults to /usr/src. To disable the mount, specify "none".
+                nullable: true
+                type: string
               kernelModuleInjectionImage:
                 description: kernelModuleInjectionImage is the image (location + tag)
                   for the LINSTOR/DRBD kernel module injector

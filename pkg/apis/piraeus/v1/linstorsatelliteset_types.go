@@ -18,9 +18,10 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 )
 
 // LinstorSatelliteSetSpec defines the desired state of a LinstorSatelliteSet.
@@ -76,6 +77,13 @@ type LinstorSatelliteSetSpec struct {
 	// +kubebuilder:validation:Enum=None;Compile;ShippedModules;DepsOnly
 	// +optional
 	KernelModuleInjectionMode shared.KernelModuleInjectionMode `json:"kernelModuleInjectionMode"`
+
+	// kernelModuleInjectionAdditionalSourceDirectory is the directory containing the kernel sources and config on the
+	// host. It will be mounted read-only when the injection mode is Compile. If unset, defaults to /usr/src. To
+	// disable the mount, specify "none".
+	// +optional
+	// +nullable
+	KernelModuleInjectionAdditionalSourceDirectory string `json:"kernelModuleInjectionAdditionalSourceDirectory,omitempty"`
 
 	// Resource requirements for the kernel module builder/injector container
 	// +optional
