@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names for LINSTOR volumes.
 - Allow setting the log level of LINSTOR components via CRs. Other components are left using their default log level.
   The new default log level is INFO (was DEBUG previously, which was often too verbose).
+- etcd-chart: add option to set priorityClassName.
 
 ### Fixed
 
