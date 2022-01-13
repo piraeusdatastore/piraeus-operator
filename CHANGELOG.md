@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stork updated to support Kubernetes v1.22+.
 - Satellites no longer have a readiness probe defined. This caused issues in the satellites by repeatedly opening
   unexpected connections, especially when using SSL.
+- Only query node devices if a storage pool needs to be created.
+- Use cached storage pool response to avoid causing excessive load on LINSTOR satellites.
 
 ### Breaking
 

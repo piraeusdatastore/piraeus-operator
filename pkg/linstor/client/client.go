@@ -286,12 +286,13 @@ func filterNodes(resources []lapi.ResourceWithVolumes, nodeName string) []lapi.R
 func (c *HighLevelClient) GetAllStorageNodes(ctx context.Context) ([]StorageNode, error) {
 	storageNodes := make([]StorageNode, 0)
 
-	// TODO: Expand LINSTOR API for an all nodes plus storage pools view?
 	nodes, err := c.Nodes.GetAll(ctx)
 	if err != nil {
 		return storageNodes, fmt.Errorf("unable to get cluster nodes: %v", err)
 	}
-	pools, err := c.Nodes.GetStoragePoolView(ctx)
+
+	cached := true
+	pools, err := c.Nodes.GetStoragePoolView(ctx, &lapi.ListOpts{Cached: &cached})
 	if err != nil {
 		return storageNodes, fmt.Errorf("unable to get cluster storage pools: %v", err)
 	}
