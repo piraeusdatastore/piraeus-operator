@@ -69,3 +69,4 @@ tolerations:
 affinity: {}
 podsecuritycontext: {}
 extraEnv: []
+priorityClassName: ""

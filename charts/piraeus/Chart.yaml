@@ -7,5 +7,5 @@ appVersion: 1.7.0
 home: https://piraeus.io/
 dependencies:
   - name: "etcd"
-    version: "0.7.4"
+    version: "0.7.5"
     condition: etcd.enabled

@@ -10,7 +10,7 @@ metadata:
   labels:
     heritage: "Helm"
     release: "piraeus-op"
-    chart: "etcd-0.7.4"
+    chart: "etcd-0.7.5"
     app: etcd
 spec:
   ports:
