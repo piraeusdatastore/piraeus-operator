@@ -185,6 +185,11 @@ Valid values:: string
 Description:: Path to the working directory of kubelet. Some distributions require changing this path for CSI to work.
 See link:distributions.md[here] for more information
 
+=== `csi.logLevel`
+Default:: `""`
+Valid values:: `error`, `warn`, `info`, `debug`, `trace`
+Description:: Set the log level of the LINSTOR CSI driver. If not set defaults to `info`.
+
 == ETCD
 
 === `etcd.image.repository`
@@ -240,6 +245,10 @@ Default:: `{}`
 Valid values:: A valid pod-level https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[security-context]
 Description:: Override for the default security context passed to the etcd pods. See <<_global_setsecuritycontext>>
 
+=== `etcd.priorityClassName`
+Default: `""`
+Valid values:: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass[priority class] name
+Description:: Name of the priority class with which the Etcd pods should be scheduled.
 
 == Piraeus Controller
 
@@ -327,6 +336,11 @@ Default:: `{}`
 Valid values:: A map with string keys and values
 Description:: A map of properties to set on the Linstor Controller, equivalent to
 calling `linstor controller set-property <key> <value>`
+
+=== `operator.controller.logLevel`
+Default:: `""`
+Valid values:: `error`, `warn`, `info`, `debug`, `trace`
+Description:: Set the log level of the LINSTOR Controller. If not set defaults to `info`.
 
 == Piraeus Satellites
 
@@ -427,6 +441,10 @@ Default:: `[]`
 Valid values:: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/[EnvVar list]
 Description:: A list of additional environment variables to pass to the Linstor satellite containers.
 
+=== `operator.satelliteSet.logLevel`
+Default:: `""`
+Valid values:: `error`, `warn`, `info`, `debug`, `trace`
+Description:: Set the log level of the LINSTOR Satellite. If not set defaults to `info`.
 
 == PSP
 
