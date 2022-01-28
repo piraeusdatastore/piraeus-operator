@@ -25,12 +25,12 @@ stork:
 csi:
   enabled: true
   pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.17.0
-  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.3.0
+  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.4.0
   csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.5.0
   csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
-  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v3.0.0
-  csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v4.2.1
-  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.3.0
+  csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v3.1.0
+  csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v5.0.1
+  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.4.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
