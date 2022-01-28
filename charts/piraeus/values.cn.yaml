@@ -25,12 +25,12 @@ stork:
 csi:
   enabled: true
   pluginImage: daocloud.io/piraeus/piraeus-csi:v0.17.0
-  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.3.0
+  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.4.0
   csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.5.0
   csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.4.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.0.0
-  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v4.2.1
-  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.3.0
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.1.0
+  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v5.0.1
+  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.4.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
