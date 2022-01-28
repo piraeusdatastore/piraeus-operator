@@ -917,6 +917,11 @@ spec:
               csiAttacherImage:
                 description: Name of the CSI external attacher image. See https://kubernetes-csi.github.io/docs/external-attacher.html
                 type: string
+              csiAttacherWorkerThreads:
+                description: Number of simultaneously running operations for attaching
+                  and detaching volumes
+                format: int32
+                type: integer
               csiControllerServiceAccountName:
                 description: Name of the service account used by the CSI controller
                   pods
@@ -933,12 +938,27 @@ spec:
               csiProvisionerImage:
                 description: Name of the CSI external provisioner image. See https://kubernetes-csi.github.io/docs/external-provisioner.html
                 type: string
+              csiProvisionerWorkerThreads:
+                description: Number of simultaneously running operations for creating
+                  and deleting volumes
+                format: int32
+                type: integer
               csiResizerImage:
                 description: Name of the CSI external resizer image. See https://kubernetes-csi.github.io/docs/external-resizer.html
                 type: string
+              csiResizerWorkerThreads:
+                description: Number of simultaneously running operations for resizing
+                  volumes
+                format: int32
+                type: integer
               csiSnapshotterImage:
                 description: Name of the CSI external snapshotter image. See https://kubernetes-csi.github.io/docs/external-snapshotter.html
                 type: string
+              csiSnapshotterWorkerThreads:
+                description: Number of simultaneously running operations for creating
+                  and deleting snapshots
+                format: int32
+                type: integer
               enableTopology:
                 description: Enable CSI topology feature to control volume accessibility
                   on cluster nodes

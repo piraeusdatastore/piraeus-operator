@@ -31,6 +31,10 @@ csi:
   csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.0.0
   csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v4.2.1
   csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.3.0
+  csiAttacherWorkerThreads: 10
+  csiProvisionerWorkerThreads: 10
+  csiSnapshotterWorkerThreads: 10
+  csiResizerWorkerThreads: 10
   controllerReplicas: 1
   nodeAffinity: {}
   nodeTolerations: []

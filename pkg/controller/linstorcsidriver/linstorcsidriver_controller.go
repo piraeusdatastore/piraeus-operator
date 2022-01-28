@@ -271,6 +271,38 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 
 	logger.Debugf("finished upgrade/fill: #4 -> Set kubelet path to: changed=%t", changed)
 
+	logger.Debug("performing upgrade/fill: #5 -> Set default worker threads for CSI controller")
+
+	if csiResource.Spec.CSIAttacherWorkerThreads == 0 {
+		csiResource.Spec.CSIAttacherWorkerThreads = 10
+		changed = true
+
+		logger.Infof("set csi attacher worker threads to '%d'", csiResource.Spec.CSIAttacherWorkerThreads)
+	}
+
+	if csiResource.Spec.CSIProvisionerWorkerThreads == 0 {
+		csiResource.Spec.CSIProvisionerWorkerThreads = 10
+		changed = true
+
+		logger.Infof("set csi attacher worker threads to '%d'", csiResource.Spec.CSIProvisionerWorkerThreads)
+	}
+
+	if csiResource.Spec.CSISnapshotterWorkerThreads == 0 {
+		csiResource.Spec.CSISnapshotterWorkerThreads = 10
+		changed = true
+
+		logger.Infof("set csi attacher worker threads to '%d'", csiResource.Spec.CSISnapshotterWorkerThreads)
+	}
+
+	if csiResource.Spec.CSIResizerWorkerThreads == 0 {
+		csiResource.Spec.CSIResizerWorkerThreads = 10
+		changed = true
+
+		logger.Infof("set csi attacher worker threads to '%d'", csiResource.Spec.CSIResizerWorkerThreads)
+	}
+
+	logger.Debugf("finished upgrade/fill: #5 -> Set default worker threads for CSI controller: changed=%t", changed)
+
 	logger.Debug("finished all upgrades/fills")
 	if changed {
 		logger.Info("save updated spec")
@@ -817,6 +849,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--enable-capacity",
 			"--extra-create-metadata",
 			"--capacity-ownerref-level=2",
+			fmt.Sprintf("--worker-threads=%d", csiResource.Spec.CSIProvisionerWorkerThreads),
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace, podName},
 		VolumeMounts: []corev1.VolumeMount{{
@@ -835,6 +868,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--timeout=1m",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
+			fmt.Sprintf("--workers=%d", csiResource.Spec.CSIAttacherWorkerThreads),
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
@@ -852,6 +886,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--csi-address=$(ADDRESS)",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
+			fmt.Sprintf("--worker-threads=%d", csiResource.Spec.CSISnapshotterWorkerThreads),
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
@@ -872,6 +907,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--handle-volume-inuse-error=false",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
+			fmt.Sprintf("--worker-threads=%d", csiResource.Spec.CSIResizerWorkerThreads),
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{

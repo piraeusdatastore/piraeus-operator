@@ -29,6 +29,9 @@ type LinstorCSIDriverSpec struct {
 	// See https://kubernetes-csi.github.io/docs/external-attacher.html
 	// +optional
 	CSIAttacherImage string `json:"csiAttacherImage"`
+	// Number of simultaneously running operations for attaching and detaching volumes
+	// +optional
+	CSIAttacherWorkerThreads int32 `json:"csiAttacherWorkerThreads"`
 	// Name of the CSI liveness probe image.
 	// See https://kubernetes-csi.github.io/docs/livenessprobe.html
 	// +optional
@@ -41,14 +44,23 @@ type LinstorCSIDriverSpec struct {
 	// See https://kubernetes-csi.github.io/docs/external-provisioner.html
 	// +optional
 	CSIProvisionerImage string `json:"csiProvisionerImage"`
+	// Number of simultaneously running operations for creating and deleting volumes
+	// +optional
+	CSIProvisionerWorkerThreads int32 `json:"csiProvisionerWorkerThreads"`
 	// Name of the CSI external snapshotter image.
 	// See https://kubernetes-csi.github.io/docs/external-snapshotter.html
 	// +optional
 	CSISnapshotterImage string `json:"csiSnapshotterImage"`
+	// Number of simultaneously running operations for creating and deleting snapshots
+	// +optional
+	CSISnapshotterWorkerThreads int32 `json:"csiSnapshotterWorkerThreads"`
 	// Name of the CSI external resizer image.
 	// See https://kubernetes-csi.github.io/docs/external-resizer.html
 	// +optional
 	CSIResizerImage string `json:"csiResizerImage"`
+	// Number of simultaneously running operations for resizing volumes
+	// +optional
+	CSIResizerWorkerThreads int32 `json:"csiResizerWorkerThreads"`
 
 	// Name of a secret with authentication details for the `LinstorPluginImage` registry
 	ImagePullSecret string `json:"imagePullSecret"`

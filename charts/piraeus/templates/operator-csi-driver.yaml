@@ -16,6 +16,10 @@ spec:
   csiProvisionerImage: {{ .Values.csi.csiProvisionerImage | quote }}
   csiResizerImage: {{ .Values.csi.csiResizerImage | quote }}
   csiSnapshotterImage: {{ .Values.csi.csiSnapshotterImage | quote }}
+  csiAttacherWorkerThreads: {{ .Values.csi.csiAttacherWorkerThreads }}
+  csiProvisionerWorkerThreads: {{ .Values.csi.csiProvisionerWorkerThreads }}
+  csiSnapshotterWorkerThreads: {{ .Values.csi.csiSnapshotterWorkerThreads }}
+  csiResizerWorkerThreads: {{ .Values.csi.csiResizerWorkerThreads }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   controllerReplicas: {{ .Values.csi.controllerReplicas }}
