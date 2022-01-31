@@ -759,6 +759,13 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorHttpsCertDirName,
 			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+
+		volumes = append(volumes, corev1.Volume{
+			Name: kubeSpec.LinstorHttpsCertPemDirName,
+			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: controllerResource.Spec.LinstorHttpsControllerSecret,
 				},
@@ -768,6 +775,11 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      kubeSpec.LinstorHttpsCertDirName,
 			MountPath: kubeSpec.LinstorHttpsCertDir,
+		})
+
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.LinstorHttpsCertPemDirName,
+			MountPath: kubeSpec.LinstorHttpsCertPemDir,
 			ReadOnly:  true,
 		})
 	}
@@ -792,6 +804,13 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		volumes = append(volumes, corev1.Volume{
 			Name: kubeSpec.LinstorSslDirName,
 			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+
+		volumes = append(volumes, corev1.Volume{
+			Name: kubeSpec.LinstorSslPemDirName,
+			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: string(*controllerResource.Spec.SslConfig),
 				},
@@ -801,6 +820,11 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      kubeSpec.LinstorSslDirName,
 			MountPath: kubeSpec.LinstorSslDir,
+		})
+
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      kubeSpec.LinstorSslPemDirName,
+			MountPath: kubeSpec.LinstorSslPemDir,
 			ReadOnly:  true,
 		})
 	}

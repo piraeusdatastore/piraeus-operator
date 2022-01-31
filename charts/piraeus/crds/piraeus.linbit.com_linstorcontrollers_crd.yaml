@@ -988,7 +988,7 @@ spec:
                 description: Use a TLS client certificate for authentication with
                   the database (etcd). If set to true, `dbCertSecret` must be set
                   and contain two additional entries "tls.crt" (PEM encoded) and "tls.key"
-                  (PKCS8 encoded, without passphrase).
+                  (PEM encoded, without passphrase).
                 type: boolean
               drbdRepoCred:
                 description: DrbdRepoCred is the name of the kubernetes secret that

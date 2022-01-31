@@ -1177,11 +1177,23 @@ func daemonSetWithSslConfiguration(ds *apps.DaemonSet, satelliteSet *piraeusv1.L
 	ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 		Name:      kubeSpec.LinstorSslDirName,
 		MountPath: kubeSpec.LinstorSslDir,
+	})
+
+	ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		Name:      kubeSpec.LinstorSslPemDirName,
+		MountPath: kubeSpec.LinstorSslPemDir,
 		ReadOnly:  true,
 	})
 
 	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
 		Name: kubeSpec.LinstorSslDirName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: kubeSpec.LinstorSslPemDirName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: string(*satelliteSet.Spec.SslConfig),

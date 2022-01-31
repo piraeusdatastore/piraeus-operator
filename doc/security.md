@@ -22,42 +22,41 @@ helm install:
 ```
 
 If this option is active, the secret specified in the above section must contain two additional keys:
-* `tls.crt` PEM formatted certificate presented to `etcd` for authentication
-* `tls.key` private key **in PKCS8 format**, matching the above client certificate.
-  Keys can be converted into PKCS8 format using `openssl`:
-  ```
-  openssl pkcs8 -topk8 -nocrypt -in client-key.pem -out client-key.pkcs8
-  ```
+* `tls.crt` certificate presented to `etcd` for authentication
+* `tls.key` private key, matching the above client certificate.
 
 ## Configuring secure communication between LINSTOR components
 
 The default communication between LINSTOR components is not secured by TLS. If this is needed for your setup,
 follow these steps:
 
-* Create private keys in the java keystore format, one for the controller, one for all nodes:
+* Create private key and self-signed certificate for your certificate authority:
+
   ```
-  keytool -keyalg rsa -keysize 2048 -genkey -keystore node-keys.jks -storepass linstor -alias node -dname "CN=XX, OU=node, O=Example, L=XX, ST=XX, C=X"
-  keytool -keyalg rsa -keysize 2048 -genkey -keystore control-keys.jks -storepass linstor -alias control -dname "CN=XX, OU=control, O=Example, L=XX, ST=XX, C=XX"
+  openssl req -new -newkey rsa:2048 -days 5000 -nodes -x509 -keyout ca.key -out ca.crt -subj "/CN=piraeus-system"
   ```
-* Create a trust store with the public keys that each component needs to trust:
-  * Controller needs to trust the nodes
-  * Nodes need to trust the controller
+
+* Create private keys, one for the controller, one for all nodes:
   ```
-  keytool -importkeystore -srcstorepass linstor -deststorepass linstor -srckeystore control-keys.jks -destkeystore node-trust.jks
-  keytool -importkeystore -srcstorepass linstor -deststorepass linstor -srckeystore node-keys.jks -destkeystore control-trust.jks
+  openssl genrsa -out control.key 2048
+  openssl genrsa -out node.key 2048
+  ```
+* Create trusted certificates for controller and nodes:
+  ```
+  openssl req -new -sha256 -key control.key -subj "/CN=system:control" -out control.csr
+  openssl req -new -sha256 -key node.key -subj "/CN=system:node" -out node.csr
+  openssl x509 -req -in control.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out control.crt -days 5000 -sha256
+  openssl x509 -req -in node.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out node.crt -days 5000 -sha256
   ```
 * Create kubernetes secrets that can be passed to the controller and node pods
   ```
-  kubectl create secret generic control-secret --from-file=keystore.jks=control-keys.jks --from-file=certificates.jks=control-trust.jks
-  kubectl create secret generic node-secret --from-file=keystore.jks=node-keys.jks --from-file=certificates.jks=node-trust.jks
+  kubectl create secret generic control-secret --type=kubernetes.io/tls --from-file=ca.crt=ca.crt --from-file=tls.crt=control.crt --from-file=tls.key=control.key
+  kubectl create secret generic node-secret --type=kubernetes.io/tls --from-file=ca.crt=ca.crt --from-file=tls.crt=node.crt --from-file=tls.key=node.key
   ```
 * Pass the names of the created secrets to `helm install`
   ```
   --set operator.satelliteSet.sslSecret=node-secret --set operator.controller.sslSecret=control-secret
   ```
-
-:warning: It is currently **NOT** possible to change the keystore password. LINSTOR expects the passwords to be
-`linstor`. This is a current limitation of LINSTOR.
 
 ## Configuring secure communications for the LINSTOR API
 
@@ -71,54 +70,37 @@ needs access to:
 
 The next sections will guide you through creating all required components.
 
-#### Creating the private keys
+* Create private key and self-signed certificate for your client certificate authority:
 
-Private keys can be created using java's keytool
+  ```
+  openssl req -new -newkey rsa:2048 -days 5000 -nodes -x509 -keyout client-ca.key -out client-ca.crt -subj "/CN=piraeus-client-ca"
+  ```
 
-```
-keytool -keyalg rsa -keysize 2048 -genkey -keystore controller.pkcs12 -storetype pkcs12 -storepass linstor -ext san=dns:piraeus-op-cs.default.svc -dname "CN=XX, OU=controller, O=Example, L=XX, ST=XX, C=X" -validity 5000
-keytool -keyalg rsa -keysize 2048 -genkey -keystore client.pkcs12 -storetype pkcs12 -storepass linstor -dname "CN=XX, OU=client, O=Example, L=XX, ST=XX, C=XX" -validity 5000
-```
+* Create private keys, one for the controller, one for clients:
+  ```
+  openssl genrsa -out controller.key 2048
+  openssl genrsa -out client.key 2048
+  ```
+* Create trusted certificates for controller and clients:
+  ```
+  openssl req -new -sha256 -key controller.key -subj "/CN=piraeus-controller" -out controller.csr
+  openssl req -new -sha256 -key client.key -subj "/CN=piraeus-client" -out client.csr
+  openssl x509 -req -in controller.csr -CA client-ca.crt -CAkey client-ca.key -CAcreateserial -out controller.crt -days 5000 -sha256 -extensions 'v3_req' -extfile <(printf '%s\n' '[v3_req]' extendedKeyUsage=serverAuth subjectAltName=DNS:piraeus-op-cs.default.svc)
+  openssl x509 -req -in client.csr -CA client-ca.crt -CAkey client-ca.key -CAcreateserial -out client.crt -days 5000 -sha256
+  ```
+  **NOTE**: The alias specified for the controller key (i.e. `DNS:piraeus-op-cs.default.svc`) has to exactly match the
+  service name created by the operator. When using `helm`, this is always of the form `<release-name>-cs.<release-namespace>.svc`.
 
-The clients need private keys and certificate in a different format, so we need to convert it
-```
-openssl pkcs12 -in client.pkcs12 -passin pass:linstor -out client.cert -clcerts -nokeys
-openssl pkcs12 -in client.pkcs12 -passin pass:linstor -out client.key -nocerts -nodes
-```
+* Now you can create secrets for the controller and for clients:
+  ```
+  kubectl create secret generic http-controller --type=kubernetes.io/tls --from-file=ca.crt=client-ca.crt --from-file=tls.crt=controller.crt --from-file=tls.key=controller.key
+  kubectl create secret generic http-client --type=kubernetes.io/tls --from-file=ca.crt=client-ca.crt --from-file=tls.crt=client.crt --from-file=tls.key=client.key
+  ```
+* The names of the secrets can be passed to `helm install` to configure all clients to use https.
 
-**NOTE**: The alias specified for the controller key (i.e. `-ext san=dns:piraeus-op-cs.default.svc`) has to exactly match the
-service name created by the operator. When using `helm`, this is always of the form `<release-name>-cs.<release-namespace>.svc`.
-
-:warning: It is currently NOT possible to change the keystore password. LINSTOR expects the passwords to be linstor. This is a current limitation of LINSTOR
-
-#### Create the trusted certificates
-
-For the controller to trust the clients, we can use the following command to create a truststore, importing the client certificate
-
-```
-keytool -importkeystore -srcstorepass linstor -srckeystore client.pkcs12 -deststorepass linstor -deststoretype pkcs12 -destkeystore controller-trust.pkcs12
-```
-
-For the client, we have to convert the controller certificate into a different format
-
-```
-openssl pkcs12 -in controller.pkcs12 -passin pass:linstor -out ca.pem -clcerts -nokeys
-```
-
-#### Create Kubernetes secrets
-
-Now you can create secrets for the controller and for clients:
-
-```
-kubectl create secret generic http-controller --from-file=keystore.jks=controller.pkcs12 --from-file=truststore.jks=controller-trust.pkcs12
-kubectl create secret generic http-client --type=kubernetes.io/tls --from-file=ca.crt=ca.pem --from-file=tls.crt=client.cert --from-file=tls.key=client.key
-```
-
-The names of the secrets can be passed to `helm install` to configure all clients to use https.
-
-```
---set linstorHttpsControllerSecret=http-controller  --set linstorHttpsClientSecret=http-client
-```
+  ```
+  --set linstorHttpsControllerSecret=http-controller  --set linstorHttpsClientSecret=http-client
+  ```
 
 ## Automatically set the passphrase for LINSTOR
 
