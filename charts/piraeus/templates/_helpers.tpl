@@ -70,17 +70,17 @@ Environment to pass to any containers using golinstor
   valueFrom:
     secretKeyRef:
       name: {{ .Values.linstorHttpsClientSecret }}
-      key: client.cert
+      key: tls.crt
 - name: LS_USER_KEY
   valueFrom:
     secretKeyRef:
       name: {{ .Values.linstorHttpsClientSecret }}
-      key: client.key
+      key: tls.key
 - name: LS_ROOT_CA
   valueFrom:
     secretKeyRef:
       name: {{ .Values.linstorHttpsClientSecret }}
-      key: ca.pem
+      key: ca.crt
 {{- end -}}
 {{- end -}}
 {{/*

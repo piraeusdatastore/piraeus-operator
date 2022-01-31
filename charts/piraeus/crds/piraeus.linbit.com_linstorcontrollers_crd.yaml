@@ -976,7 +976,7 @@ spec:
               dbCertSecret:
                 description: DBCertSecret is the name of the kubernetes secret that
                   holds the CA certificate used to verify the datatbase connection.
-                  The secret must contain a key "ca.pem" which holds the certificate
+                  The secret must contain a key "ca.crt" which holds the certificate
                   in PEM format
                 nullable: true
                 type: string
@@ -987,8 +987,8 @@ spec:
               dbUseClientCert:
                 description: Use a TLS client certificate for authentication with
                   the database (etcd). If set to true, `dbCertSecret` must be set
-                  and contain two additional entries "client.cert" (PEM encoded) and
-                  "client.key" (PKCS8 encoded, without passphrase).
+                  and contain two additional entries "tls.crt" (PEM encoded) and "tls.key"
+                  (PKCS8 encoded, without passphrase).
                 type: boolean
               drbdRepoCred:
                 description: DrbdRepoCred is the name of the kubernetes secret that
@@ -998,12 +998,12 @@ spec:
                 description: Pull policy applied to all pods started from this controller
                 type: string
               linstorHttpsClientSecret:
-                description: 'Name of the secret containing: (a) `ca.pem`: root certificate
+                description: 'Name of the secret containing: (a) `ca.crt`: root certificate
                   used to validate HTTPS connections with Linstor (PEM format, without
-                  password) (b) `client.key`: client key used by the linstor client
-                  (PEM format, without password) (c) `client.cert`: client certificate
-                  matching the client key (PEM format, without password) If set, HTTPS
-                  is used for connecting and authenticating with linstor'
+                  password) (b) `tls.key`: client key used by the linstor client (PEM
+                  format, without password) (c) `tls.crt`: client certificate matching
+                  the client key (PEM format, without password) If set, HTTPS is used
+                  for connecting and authenticating with linstor'
                 type: string
               linstorHttpsControllerSecret:
                 description: Name of the secret containing the java keystore (`keystore.jks`)

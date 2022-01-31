@@ -920,10 +920,10 @@ func NewConfigMapForResource(controllerResource *piraeusv1.LinstorController) (*
 	dbClientCertPath := ""
 	dbClientKeyPath := ""
 	if controllerResource.Spec.DBCertSecret != "" {
-		dbCertificatePath = kubeSpec.LinstorCertDir + "/ca.pem"
+		dbCertificatePath = kubeSpec.LinstorCertDir + "/ca.crt"
 		if controllerResource.Spec.DBUseClientCert {
-			dbClientCertPath = kubeSpec.LinstorCertDir + "/client.cert"
-			dbClientKeyPath = kubeSpec.LinstorCertDir + "/client.key"
+			dbClientCertPath = kubeSpec.LinstorCertDir + "/tls.crt"
+			dbClientKeyPath = kubeSpec.LinstorCertDir + "/tls.key"
 		}
 	}
 

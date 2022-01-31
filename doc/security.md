@@ -6,7 +6,7 @@ using this operator. The following guides assume the operator is installed [usin
 ## Secure communication with an existing etcd instance
 
 Secure communication to an `etcd` instance can be enabled by providing a CA certificate to the operator in form of a
-kubernetes secret. The secret has to contain the key `ca.pem` with the PEM encoded CA certificate as value.
+kubernetes secret. The secret has to contain the key `ca.crt` with the PEM encoded CA certificate as value.
 
 The secret can then be passed to the controller by passing the following argument to `helm install`
 ```
@@ -22,8 +22,8 @@ helm install:
 ```
 
 If this option is active, the secret specified in the above section must contain two additional keys:
-* `client.cert` PEM formatted certificate presented to `etcd` for authentication
-* `client.key` private key **in PKCS8 format**, matching the above client certificate.
+* `tls.crt` PEM formatted certificate presented to `etcd` for authentication
+* `tls.key` private key **in PKCS8 format**, matching the above client certificate.
   Keys can be converted into PKCS8 format using `openssl`:
   ```
   openssl pkcs8 -topk8 -nocrypt -in client-key.pem -out client-key.pkcs8
@@ -111,7 +111,7 @@ Now you can create secrets for the controller and for clients:
 
 ```
 kubectl create secret generic http-controller --from-file=keystore.jks=controller.pkcs12 --from-file=truststore.jks=controller-trust.pkcs12
-kubectl create secret generic http-client --from-file=ca.pem=ca.pem --from-file=client.cert=client.cert --from-file=client.key=client.key
+kubectl create secret generic http-client --type=kubernetes.io/tls --from-file=ca.crt=ca.pem --from-file=tls.crt=client.cert --from-file=tls.key=client.key
 ```
 
 The names of the secrets can be passed to `helm install` to configure all clients to use https.

@@ -69,7 +69,7 @@ controllers = http://test.default-ns.svc:3370
 				Data: map[string]string{
 					"linstor.toml": `[db]
   connection_url = "etcd://secure.etcd.svc:443/"
-  ca_certificate = "/etc/linstor/certs/ca.pem"
+  ca_certificate = "/etc/linstor/certs/ca.crt"
 
 [logging]
 `,
@@ -102,9 +102,9 @@ controllers = http://test.default-ns.svc:3370
 				Data: map[string]string{
 					"linstor.toml": `[db]
   connection_url = "etcd://secure.etcd.svc:443/"
-  ca_certificate = "/etc/linstor/certs/ca.pem"
-  client_certificate = "/etc/linstor/certs/client.cert"
-  client_key_pkcs8_pem = "/etc/linstor/certs/client.key"
+  ca_certificate = "/etc/linstor/certs/ca.crt"
+  client_certificate = "/etc/linstor/certs/tls.crt"
+  client_key_pkcs8_pem = "/etc/linstor/certs/tls.key"
 
 [logging]
 `,
@@ -153,9 +153,9 @@ controllers = http://test.default-ns.svc:3370
 `,
 					"linstor-client.conf": `[global]
 controllers = https://test.default-ns.svc:3371
-cafile      = /etc/linstor/client/ca.pem
-certfile    = /etc/linstor/client/client.cert
-keyfile     = /etc/linstor/client/client.key
+cafile      = /etc/linstor/client/ca.crt
+certfile    = /etc/linstor/client/tls.crt
+keyfile     = /etc/linstor/client/tls.key
 
 `,
 				},

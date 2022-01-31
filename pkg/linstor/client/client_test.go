@@ -152,9 +152,9 @@ func TestNewClientConfigForApiResource(t *testing.T) {
 			expectedConfig: LinstorClientConfig{
 				Global: GlobalLinstorClientConfig{
 					Controllers: []string{"https://with-https-client-auth.test.svc:3371"},
-					CAFile:      "/etc/linstor/client/ca.pem",
-					Keyfile:     "/etc/linstor/client/client.key",
-					Certfile:    "/etc/linstor/client/client.cert",
+					CAFile:      "/etc/linstor/client/ca.crt",
+					Keyfile:     "/etc/linstor/client/tls.key",
+					Certfile:    "/etc/linstor/client/tls.crt",
 				},
 			},
 		},
@@ -190,7 +190,7 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: "secret",
 				},
-				Key: "ca.pem",
+				Key: "ca.crt",
 			},
 		},
 	}
@@ -202,7 +202,7 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: "secret",
 				},
-				Key: "client.cert",
+				Key: "tls.crt",
 			},
 		},
 	}
@@ -214,7 +214,7 @@ func TestClientConfigAsEnvVars(t *testing.T) {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: "secret",
 				},
-				Key: "client.key",
+				Key: "tls.key",
 			},
 		},
 	}

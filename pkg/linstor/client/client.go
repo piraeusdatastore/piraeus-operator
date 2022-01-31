@@ -319,9 +319,9 @@ func NewClientConfigForAPIResource(endpoint string, resource *shared.LinstorClie
 	clientKeyPath := ""
 
 	if resource.LinstorHttpsClientSecret != "" {
-		clientCAPath = kubeSpec.LinstorClientDir + "/ca.pem"
-		clientCertPath = kubeSpec.LinstorClientDir + "/client.cert"
-		clientKeyPath = kubeSpec.LinstorClientDir + "/client.key"
+		clientCAPath = kubeSpec.LinstorClientDir + "/ca.crt"
+		clientCertPath = kubeSpec.LinstorClientDir + "/tls.crt"
+		clientKeyPath = kubeSpec.LinstorClientDir + "/tls.key"
 	}
 
 	return &LinstorClientConfig{
@@ -359,9 +359,9 @@ func (clientConfig *LinstorClientConfig) ToConfigFile() (string, error) {
 
 // Consts for extracting TLS certificates from api resources
 const (
-	SecretCARootName = "ca.pem"
-	SecretKeyName    = "client.key"
-	SecretCertName   = "client.cert"
+	SecretCARootName = "ca.crt"
+	SecretKeyName    = "tls.key"
+	SecretCertName   = "tls.crt"
 )
 
 // Convert a LinstorClientConfig into env variables understood by the CSI plugins and golinstor client
