@@ -6,6 +6,15 @@ etcd was deployed using `etcd.persistentVolume.enabled=true`
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
+# Upgrade from v1.7 to v1.8
+
+If you need to set the number of worker threads, or you need to set the log level of LINSTOR components, please update
+the CRDs before upgrading using helm:
+
+```
+$ kubectl replace -f ./charts/piraeus/crds
+```
+
 # Upgrade from v1.6 to v1.7
 
 Node labels are now automatically applied to LINSTOR satellites as "Auxiliary Properties". That means you can reuse your

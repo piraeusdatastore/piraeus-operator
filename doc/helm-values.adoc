@@ -190,6 +190,26 @@ Default:: `""`
 Valid values:: `error`, `warn`, `info`, `debug`, `trace`
 Description:: Set the log level of the LINSTOR CSI driver. If not set defaults to `info`.
 
+=== `csi.csiAttacherWorkerThreads`
+Default:: `10`
+Valid values:: Positive integer
+Description:: Number of simultaneously running operations for attaching and detaching volumes.
+
+=== `csi.csiProvisionerWorkerThreads`
+Default:: `10`
+Valid values:: Positive integer
+Description:: Number of simultaneously running operations for creating and deleting volumes.
+
+=== `csi.csiSnapshotterWorkerThreads`
+Default:: `10`
+Valid values:: Positive integer
+Description:: Number of simultaneously running operations for creating and deleting snapshots.
+
+=== `csi.csiResizerWorkerThreads`
+Default:: `10`
+Valid values:: Positive integer
+Description:: Number of simultaneously running operations for resizing volumes.
+
 == ETCD
 
 === `etcd.image.repository`

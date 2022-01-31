@@ -16,10 +16,18 @@ spec:
   csiProvisionerImage: {{ .Values.csi.csiProvisionerImage | quote }}
   csiResizerImage: {{ .Values.csi.csiResizerImage | quote }}
   csiSnapshotterImage: {{ .Values.csi.csiSnapshotterImage | quote }}
+{{- if ne (int .Values.csi.csiAttacherWorkerThreads) 10 }}
   csiAttacherWorkerThreads: {{ .Values.csi.csiAttacherWorkerThreads }}
+{{- end }}
+{{- if ne (int .Values.csi.csiProvisionerWorkerThreads) 10 }}
   csiProvisionerWorkerThreads: {{ .Values.csi.csiProvisionerWorkerThreads }}
+{{- end }}
+{{- if ne (int .Values.csi.csiSnapshotterWorkerThreads) 10 }}
   csiSnapshotterWorkerThreads: {{ .Values.csi.csiSnapshotterWorkerThreads }}
+{{- end }}
+{{- if ne (int .Values.csi.csiResizerWorkerThreads) 10 }}
   csiResizerWorkerThreads: {{ .Values.csi.csiResizerWorkerThreads }}
+{{- end }}
   linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   controllerReplicas: {{ .Values.csi.controllerReplicas }}
