@@ -40,7 +40,7 @@ type LinstorControllerSpec struct {
 
 	// Use a TLS client certificate for authentication with the database (etcd). If set to true,
 	// `dbCertSecret` must be set and contain two additional entries "tls.crt" (PEM encoded)
-	// and "tls.key" (PKCS8 encoded, without passphrase).
+	// and "tls.key" (PEM encoded, without passphrase).
 	// +optional
 	DBUseClientCert bool `json:"dbUseClientCert"`
 
