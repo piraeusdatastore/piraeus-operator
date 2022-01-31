@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow setting the number of parallel requests created by the CSI sidecars. This limits the load on the LINSTOR
+  backend, which could easily overload when creating many volumes at once.
+
 ## [v1.7.1] - 2022-01-18
 
 ### Added
