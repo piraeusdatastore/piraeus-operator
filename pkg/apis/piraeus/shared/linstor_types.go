@@ -317,9 +317,9 @@ func (lsc *LinstorSSLConfig) Type() string {
 
 type LinstorClientConfig struct {
 	// Name of the secret containing:
-	// (a) `ca.pem`: root certificate used to validate HTTPS connections with Linstor (PEM format, without password)
-	// (b) `client.key`: client key used by the linstor client (PEM format, without password)
-	// (c) `client.cert`: client certificate matching the client key (PEM format, without password)
+	// (a) `ca.crt`: root certificate used to validate HTTPS connections with Linstor (PEM format, without password)
+	// (b) `tls.key`: client key used by the linstor client (PEM format, without password)
+	// (c) `tls.crt`: client certificate matching the client key (PEM format, without password)
 	// If set, HTTPS is used for connecting and authenticating with linstor
 	// +optional
 	LinstorHttpsClientSecret string `json:"linstorHttpsClientSecret"`

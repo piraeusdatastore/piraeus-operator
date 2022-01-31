@@ -32,15 +32,15 @@ type LinstorControllerSpec struct {
 	DBConnectionURL string `json:"dbConnectionURL"`
 
 	// DBCertSecret is the name of the kubernetes secret that holds the CA certificate used to verify
-	// the datatbase connection. The secret must contain a key "ca.pem" which holds the certificate in
+	// the datatbase connection. The secret must contain a key "ca.crt" which holds the certificate in
 	// PEM format
 	// +nullable
 	// +optional
 	DBCertSecret string `json:"dbCertSecret"`
 
 	// Use a TLS client certificate for authentication with the database (etcd). If set to true,
-	// `dbCertSecret` must be set and contain two additional entries "client.cert" (PEM encoded)
-	// and "client.key" (PKCS8 encoded, without passphrase).
+	// `dbCertSecret` must be set and contain two additional entries "tls.crt" (PEM encoded)
+	// and "tls.key" (PKCS8 encoded, without passphrase).
 	// +optional
 	DBUseClientCert bool `json:"dbUseClientCert"`
 

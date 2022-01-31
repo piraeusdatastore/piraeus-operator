@@ -48,10 +48,10 @@ The following table lists the configurable parameters of the etcd chart and thei
 | `tolerations`                       | Toleration labels for pod assignment | `[]`                                               |
 | `extraEnv`                          | Optional environment variables       | `[]`                                               |
 | `memoryMode`                        | Using memory as backend storage      | `false`                                            |
-| `auth.client.existingSecret`        | Secret for securing the client API. Required keys: `cert.pem`, `key.pem`, `ca.crt` | `<none>` |
+| `auth.client.existingSecret`        | Secret for securing the client API. Required keys: `tls.crt`, `tls.key`, `ca.crt` | `<none>` |
 | `auth.client.enableAuthentication`  | Enables host authentication using TLS certificates. Existing secret is required.    | `false` |
 | `auth.client.secureTransport`       | Enables encryption of client communication using TLS certificates | `false` |
-| `auth.peer.existingSecret`          | Secret for securing the peer communication. Required keys: `cert.pem`, `key.pem`, `ca.crt` | `<none>` |
+| `auth.peer.existingSecret`          | Secret for securing the peer communication. Required keys: `tls.crt`, `tls.key`, `ca.crt` | `<none>` |
 | `auth.peer.secureTransport`         | Enables encryption peer communication using TLS certificates **(At the moment works only with Auto TLS)** | `false` |
 | `auth.peer.enableAuthentication`    | Enables host authentication using TLS certificates. Existing secret required | `false` |
 
@@ -67,8 +67,8 @@ $ helm install --name my-release -f values.yaml incubator/etcd
 First you must create a secret which would contain the client certificates: cert, key and the CA which was to used to sign them.
 Create the secret using this command:
 ```bash
-$ kubectl create secret generic etcd-client-certs --from-file=ca.crt=path/to/ca.crt --from-file=cert.pem=path/to/cert.pem --from-file=key.pem=path/to/key.pem
-$ kubectl create secret generic etcd-peer-certs --from-file=ca.crt=path/to/peer-ca.crt --from-file=cert.pem=path/to/peer-cert.pem --from-file=key.pem=path/to/peer-key.pem
+$ kubectl create secret generic etcd-client-certs --from-file=ca.crt=path/to/ca.crt --from-file=tls.crt=path/to/cert.pem --from-file=tls.key=path/to/key.pem
+$ kubectl create secret generic etcd-peer-certs --from-file=ca.crt=path/to/peer-ca.crt --from-file=tls.crt=path/to/peer-cert.pem --from-file=tls.key=path/to/peer-key.pem
 ```
 Deploy the chart with the following flags enabled:
 ```bash

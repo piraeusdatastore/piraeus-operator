@@ -83,9 +83,9 @@ spec:
           value: {{ template "etcd.fullname" . }}
         {{- if and .Values.auth.peer.secureTransport }}
         - name: ETCD_PEER_CERT_FILE
-          value: "/opt/etcd/certs/peer/cert.pem"
+          value: "/opt/etcd/certs/peer/tls.crt"
         - name: ETCD_PEER_KEY_FILE
-          value: "/opt/etcd/certs/peer/key.pem"
+          value: "/opt/etcd/certs/peer/tls.key"
         {{- if .Values.auth.peer.enableAuthentication }}
         - name: ETCD_PEER_CLIENT_CERT_AUTH
           value: "true"
@@ -95,9 +95,9 @@ spec:
         {{- end }}
         {{- if .Values.auth.client.secureTransport }}
         - name: ETCD_CERT_FILE
-          value: "/opt/etcd/certs/client/cert.pem"
+          value: "/opt/etcd/certs/client/tls.crt"
         - name: ETCD_KEY_FILE
-          value: "/opt/etcd/certs/client/key.pem"
+          value: "/opt/etcd/certs/client/tls.key"
         {{- if .Values.auth.client.enableAuthentication }}
         - name: ETCD_CLIENT_CERT_AUTH
           value: "true"
