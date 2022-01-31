@@ -868,7 +868,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--timeout=1m",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
-			fmt.Sprintf("--workers=%d", csiResource.Spec.CSIAttacherWorkerThreads),
+			fmt.Sprintf("--worker-threads=%d", csiResource.Spec.CSIAttacherWorkerThreads),
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
@@ -907,7 +907,8 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 			"--handle-volume-inuse-error=false",
 			"--leader-election=true",
 			"--leader-election-namespace=$(NAMESPACE)",
-			fmt.Sprintf("--worker-threads=%d", csiResource.Spec.CSIResizerWorkerThreads),
+			// For some reason this one is named differently...
+			fmt.Sprintf("--workers=%d", csiResource.Spec.CSIResizerWorkerThreads),
 		},
 		Env: []corev1.EnvVar{socketAddress, podNamespace},
 		VolumeMounts: []corev1.VolumeMount{{
