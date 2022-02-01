@@ -7,28 +7,7 @@ metadata:
   namespace: default
   annotations:
     helm.sh/resource-policy: keep
+    helm.sh/hook: pre-install
+    helm.sh/hook-delete-policy: before-hook-creation
 data:
   MASTER_PASSPHRASE: "Y2hhbmdlbWVwbGVhc2U="
----
-# Source: piraeus/templates/operator-controller.yaml
-apiVersion: piraeus.linbit.com/v1
-kind: LinstorController
-metadata:
-  name: piraeus-op-cs
-  namespace: default
-spec:
-  priorityClassName: ""
-  # TODO: switch to k8s db by default
-  dbConnectionURL:  etcd://piraeus-op-etcd:2379
-  luksSecret: piraeus-op-passphrase
-  sslSecret: 
-  dbCertSecret: 
-  dbUseClientCert: false
-  drbdRepoCred: ""
-  controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.17.0
-  imagePullPolicy: "IfNotPresent"
-  linstorHttpsControllerSecret: ""
-  linstorHttpsClientSecret: ""
-  tolerations: [{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"}]
-  resources: {}
-  replicas: 1

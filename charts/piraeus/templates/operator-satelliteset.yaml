@@ -6,11 +6,11 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
-  sslSecret: {{ .Values.operator.satelliteSet.sslSecret }}
+  sslSecret: {{ include "satelliteSet.sslSecretName" . | quote }}
   drbdRepoCred: {{ .Values.drbdRepoCred | quote }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
   satelliteImage: {{ .Values.operator.satelliteSet.satelliteImage }}
-  linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  linstorHttpsClientSecret: {{ include "client.httpsSecretName" . | quote }}
   controllerEndpoint: {{ template "controller.endpoint" . }}
   automaticStorageType: {{ .Values.operator.satelliteSet.automaticStorageType | default "None" | quote }}
   affinity: {{ .Values.operator.satelliteSet.affinity | toJson }}
