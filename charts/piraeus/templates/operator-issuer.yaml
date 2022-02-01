@@ -1,0 +1,39 @@
+{{- $fullName := include "operator.fullname" . -}}
+{{- if or (eq .Values.linstorHttpsMethod "cert-manager") (eq .Values.linstorSslMethod "cert-manager") }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $fullName }}-selfsigning-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $fullName }}-ca-secret
+  namespace: {{ .Release.Namespace }}
+spec:
+  commonName: {{ $fullName }}-ca
+  secretName: {{ $fullName }}-ca-secret
+  duration: 87600h # 3650d
+  renewBefore: 8760h # 365d
+  usages:
+  - "signing"
+  - "key encipherment"
+  - "cert sign"
+  isCA: true
+  issuerRef:
+    name: "{{ $fullName }}-selfsigning-issuer"
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ $fullName }}-ca-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  ca:
+    secretName: {{ $fullName }}-ca-secret
+{{- end }}

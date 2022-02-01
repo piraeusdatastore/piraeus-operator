@@ -45,6 +45,8 @@ csi:
   kubeletPath: /var/lib/kubelet
 priorityClassName: ""
 drbdRepoCred: "" # <- Specify the kubernetes secret name here
+linstorSslMethod: "manual" # <- If set to 'helm' or 'cert-manager' the certificates will be generated automatically
+linstorHttpsMethod: "manual"  # <- If set to 'helm' or 'cert-manager' the certificates will be generated automatically
 linstorHttpsControllerSecret: "" # <- name of secret containing linstor server certificates+key. See docs/security.md
 linstorHttpsClientSecret: "" # <- name of secret containing linstor client certificates+key. See docs/security.md
 controllerEndpoint: "" # <- override to the generated controller endpoint. use if controller is not deployed via operator

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow setting the number of parallel requests created by the CSI sidecars. This limits the load on the LINSTOR
   backend, which could easily overload when creating many volumes at once.
 - Unify certificates format for SSL enabled installation, no more java tooling required.
+- Automatic certificates generation using Helm or Cert-manager
 
 ### Changed
 

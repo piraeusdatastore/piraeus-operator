@@ -13,14 +13,14 @@ spec:
 {{- else }}
   luksSecret: {{ template "operator.fullname" . }}-passphrase
 {{- end}}
-  sslSecret: {{ .Values.operator.controller.sslSecret }}
+  sslSecret: {{ include "controller.sslSecretName" . | quote }}
   dbCertSecret: {{ .Values.operator.controller.dbCertSecret | default "" }}
   dbUseClientCert: {{ .Values.operator.controller.dbUseClientCert }}
   drbdRepoCred: {{ .Values.drbdRepoCred | quote }}
   controllerImage: {{ .Values.operator.controller.controllerImage }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
-  linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}
-  linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  linstorHttpsControllerSecret: {{ include "controller.httpsSecretName" . | quote }}
+  linstorHttpsClientSecret: {{ include "client.httpsSecretName" . | quote }}
 {{- if .Values.operator.controller.affinity }}
   affinity: {{ .Values.operator.controller.affinity | toJson }}
 {{- end }}
@@ -45,6 +45,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     helm.sh/resource-policy: keep
+    helm.sh/hook: pre-install
+    helm.sh/hook-delete-policy: before-hook-creation
 data:
 {{- /* We have to be careful not to override the original secret value, otherwise encrypted data could be lost forever */}}
 {{- $secret := lookup "v1" "Secret" .Release.Namespace (printf "%s-passphrase" ( include "operator.fullname" . )) }}

@@ -45,13 +45,57 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{/*
+Controller SSL secret name
+*/}}
+{{- define "controller.sslSecretName" -}}
+  {{- if (eq (.Values.linstorSslMethod | default "manual") "manual") -}}
+    {{- .Values.operator.controller.sslSecret }}
+  {{- else }}
+    {{- .Values.operator.controller.sslSecret | default (printf "%s-control-secret" ( include "operator.fullname" . )) }}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+SatelliteSet SSL secret name
+*/}}
+{{- define "satelliteSet.sslSecretName" -}}
+  {{- if (eq (.Values.linstorSslMethod | default "manual") "manual") -}}
+    {{- .Values.operator.satelliteSet.sslSecret }}
+  {{- else }}
+    {{- .Values.operator.satelliteSet.sslSecret | default (printf "%s-node-secret" ( include "operator.fullname" . )) }}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Controller HTTPS secret name
+*/}}
+{{- define "controller.httpsSecretName" -}}
+  {{- if (eq (.Values.linstorHttpsMethod | default "manual") "manual") -}}
+    {{- .Values.linstorHttpsControllerSecret }}
+  {{- else }}
+    {{- .Values.linstorHttpsControllerSecret | default (printf "%s-controller-secret" ( include "operator.fullname" . )) }}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Client HTTPS secret name
+*/}}
+{{- define "client.httpsSecretName" -}}
+  {{- if (eq (.Values.linstorHttpsMethod | default "manual") "manual") -}}
+    {{- .Values.linstorHttpsClientSecret }}
+  {{- else }}
+    {{- .Values.linstorHttpsClientSecret | default (printf "%s-client-secret" ( include "operator.fullname" . )) }}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Endpoint URL of LINSTOR controller
 */}}
 {{- define "controller.endpoint" -}}
   {{- if .Values.controllerEndpoint -}}
     {{ .Values.controllerEndpoint }}
   {{- else -}}
-    {{- if empty .Values.linstorHttpsClientSecret -}}
+    {{- if empty ( include "client.httpsSecretName" . ) -}}
       http://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3370
     {{- else -}}
       https://{{ template "operator.fullname" . }}-cs.{{ .Release.Namespace }}.svc:3371
@@ -65,21 +109,21 @@ Environment to pass to any containers using golinstor
 {{- define "linstor-env" -}}
 - name: LS_CONTROLLERS
   value: {{ template "controller.endpoint" . }}
-{{- if not (empty .Values.linstorHttpsClientSecret) }}
+{{- if not (empty ( include "client.httpsSecretName" . )) }}
 - name: LS_USER_CERTIFICATE
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.linstorHttpsClientSecret }}
+      name: {{ template "client.httpsSecretName" . }}
       key: tls.crt
 - name: LS_USER_KEY
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.linstorHttpsClientSecret }}
+      name: {{ template "client.httpsSecretName" . }}
       key: tls.key
 - name: LS_ROOT_CA
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.linstorHttpsClientSecret }}
+      name: {{ template "client.httpsSecretName" . }}
       key: ca.crt
 {{- end -}}
 {{- end -}}
