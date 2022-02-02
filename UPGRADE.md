@@ -15,6 +15,9 @@ the CRDs before upgrading using helm:
 $ kubectl replace -f ./charts/piraeus/crds
 ```
 
+In case if you have SSL enabled installation, you need to regenerate your certificates in PEM format.
+Read the [guide on securing the deployment](doc/security.md) and repeat the described steps.
+
 # Upgrade from v1.6 to v1.7
 
 Node labels are now automatically applied to LINSTOR satellites as "Auxiliary Properties". That means you can reuse your
