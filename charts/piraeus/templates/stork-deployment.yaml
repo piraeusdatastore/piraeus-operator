@@ -1,5 +1,5 @@
 {{- if .Values.stork.enabled }}
-# Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-deployment.yaml
+# Source: https://github.com/libopenstorage/stork/blob/v2.8.2/specs/stork-deployment.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -143,7 +143,7 @@ spec:
 {{- else }}
 {{ include "operator.defaultpodsecuritycontext" $ | indent 8 }}
 {{- end }}
-# Source: https://raw.githubusercontent.com/libopenstorage/stork/v2.4.1/specs/stork-scheduler.yaml
+# Source: https://github.com/libopenstorage/stork/blob/v2.8.2/specs/stork-scheduler.yaml
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -162,9 +162,6 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-  - apiGroups: ["events.k8s.io"]
-    resources: ["events"]
-    verbs: ["create", "patch", "update"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["create", "patch", "update"]
@@ -203,11 +200,14 @@ rules:
     resources: ["persistentvolumeclaims", "persistentvolumes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses", "csinodes"]
+    resources: ["storageclasses", "csinodes","csidrivers", "csistoragecapacities"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
-    verbs: ["get", "watch", "list", "delete", "update", "create"]
+    verbs: ["get", "update", "create"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   backend, which could easily overload when creating many volumes at once.
 - Unify certificates format for SSL enabled installation, no more java tooling required.
 
+### Changed
+
+- Default images:
+  * CSI Attacher v3.4.0
+  * CSI Node Driver Registrar v2.4.0
+  * CSI Provisioner v3.1.0
+  * CSI Snapshotter v5.0.1
+  * CSI Resizer v1.4.0
+  * Stork v2.8.2
+- Stork updated to support Kubernetes v1.22+.
+
 ### Breaking
 
 * If you have SSL configured, then the certificates must be regenerated in PEM format.

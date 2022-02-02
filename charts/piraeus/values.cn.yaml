@@ -15,7 +15,7 @@ etcd:
     tag: v3.4.15
 stork:
   enabled: false
-  storkImage: daocloud.io/piraeus/stork:2.6.5
+  storkImage: daocloud.io/piraeus/stork:2.8.2
   schedulerImage: daocloud.io/piraeus/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1

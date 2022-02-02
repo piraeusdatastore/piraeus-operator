@@ -15,7 +15,7 @@ etcd:
     tag: v3.4.15
 stork:
   enabled: false
-  storkImage: docker.io/openstorage/stork:2.6.5
+  storkImage: docker.io/openstorage/stork:2.8.2
   schedulerImage: k8s.gcr.io/kube-scheduler-amd64
   schedulerTag: ""
   replicas: 1
