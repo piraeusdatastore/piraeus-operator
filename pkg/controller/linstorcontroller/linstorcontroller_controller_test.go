@@ -32,7 +32,7 @@ func TestNewConfigMapForPCS(t *testing.T) {
 			},
 			expected: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-config",
+					Name:      "test-controller-config",
 					Namespace: "default-ns",
 				},
 				Data: map[string]string{
@@ -63,7 +63,7 @@ controllers = http://test.default-ns.svc:3370
 			},
 			expected: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-config",
+					Name:      "test-controller-config",
 					Namespace: "default-ns",
 				},
 				Data: map[string]string{
@@ -96,7 +96,7 @@ controllers = http://test.default-ns.svc:3370
 			},
 			expected: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-config",
+					Name:      "test-controller-config",
 					Namespace: "default-ns",
 				},
 				Data: map[string]string{
@@ -134,7 +134,7 @@ controllers = http://test.default-ns.svc:3370
 			},
 			expected: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-config",
+					Name:      "test-controller-config",
 					Namespace: "default-ns",
 				},
 				Data: map[string]string{

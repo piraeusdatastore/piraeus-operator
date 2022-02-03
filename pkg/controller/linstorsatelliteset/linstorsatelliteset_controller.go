@@ -1079,7 +1079,7 @@ func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1
 	}
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: getObjectMeta(satelliteSet, "%s-config"),
+		ObjectMeta: getObjectMeta(satelliteSet, "%s-node-config"),
 		Data: map[string]string{
 			kubeSpec.LinstorSatelliteConfigFile: tomlConfigBuilder.String(),
 			kubeSpec.LinstorClientConfigFile:    clientConfigFile,
@@ -1091,7 +1091,7 @@ func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1
 
 func newMonitoringConfigMap(set *piraeusv1.LinstorSatelliteSet) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: getObjectMeta(set, "%s-monitoring"),
+		ObjectMeta: getObjectMeta(set, "%s-node-monitoring"),
 		Data: map[string]string{
 			"prometheus.toml": fmt.Sprintf(`
 [[prometheus]]
@@ -1241,7 +1241,7 @@ func daemonSetWithHttpsConfiguration(ds *apps.DaemonSet, satelliteSet *piraeusv1
 }
 
 func newMonitoringService(set *piraeusv1.LinstorSatelliteSet) *corev1.Service {
-	meta := getObjectMeta(set, "%s-monitoring")
+	meta := getObjectMeta(set, "%s-node-monitoring")
 
 	return &corev1.Service{
 		ObjectMeta: meta,

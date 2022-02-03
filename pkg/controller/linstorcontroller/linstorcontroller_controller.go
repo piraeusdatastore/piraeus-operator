@@ -720,7 +720,7 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: controllerResource.Name + "-config",
+						Name: controllerResource.Name + "-controller-config",
 					},
 				},
 			},
@@ -1000,7 +1000,7 @@ func NewConfigMapForResource(controllerResource *piraeusv1.LinstorController) (*
 	}
 
 	cm := &corev1.ConfigMap{
-		ObjectMeta: getObjectMeta(controllerResource, "%s-config"),
+		ObjectMeta: getObjectMeta(controllerResource, "%s-controller-config"),
 		Data: map[string]string{
 			kubeSpec.LinstorControllerConfigFile: controllerConfigBuilder.String(),
 			kubeSpec.LinstorClientConfigFile:     clientConfigFile,
