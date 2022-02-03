@@ -1039,7 +1039,7 @@ func getObjectMeta(controllerResource *piraeusv1.LinstorCSIDriver, nameFmt, comp
 		Name:      fmt.Sprintf(nameFmt, controllerResource.Name),
 		Namespace: controllerResource.Namespace,
 		Labels: map[string]string{
-			"app.kubernetes.io/name":       kubeSpec.ControllerRole,
+			"app.kubernetes.io/name":       kubeSpec.CSIDriverRole,
 			"app.kubernetes.io/instance":   controllerResource.Name,
 			"app.kubernetes.io/managed-by": kubeSpec.Name,
 			"app.kubernetes.io/component":  component,
