@@ -93,13 +93,16 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update", "patch"]
+    verbs: ["get", "list", "watch", "patch"]
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
     resources: ["persistentvolumeclaims/status"]
-    verbs: ["update", "patch"]
+    verbs: ["patch"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
@@ -237,7 +240,7 @@ subjects:
 # CSI controller pod
 #
 # This file was manually merged from the following sources:
-# external-attacher     v2.2.0: https://raw.githubusercontent.com/kubernetes-csi/external-attacher/v2.2.0/deploy/kubernetes/rbac.yaml
-# external-provisioner  v1.6.0: https://raw.githubusercontent.com/kubernetes-csi/external-provisioner/v1.6.0/deploy/kubernetes/rbac.yaml
-# external-snapshotter  v2.1.1: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v2.1.1/deploy/kubernetes/csi-snapshotter/rbac-csi-snapshotter.yaml
-# external-resizer      v0.5.0: https://raw.githubusercontent.com/kubernetes-csi/external-resizer/v0.5.0/deploy/kubernetes/rbac.yaml
+# external-attacher     v3.4.0: https://raw.githubusercontent.com/kubernetes-csi/external-attacher/v3.4.0/deploy/kubernetes/rbac.yaml
+# external-provisioner  v3.1.0: https://raw.githubusercontent.com/kubernetes-csi/external-provisioner/v3.1.0/deploy/kubernetes/rbac.yaml
+# external-snapshotter  v5.0.1: https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/v5.0.1/deploy/kubernetes/csi-snapshotter/rbac-csi-snapshotter.yaml
+# external-resizer      v1.4.0: https://raw.githubusercontent.com/kubernetes-csi/external-resizer/v1.4.0/deploy/kubernetes/rbac.yaml
