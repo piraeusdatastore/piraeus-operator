@@ -36,8 +36,8 @@ spec:
   {{- if .Values.operator.controller.logLevel }}
   logLevel: {{ .Values.operator.controller.logLevel | quote }}
   {{- end }}
----
 {{- if not .Values.operator.controller.luksSecret }}
+---
 apiVersion: v1
 kind: Secret
 metadata:
