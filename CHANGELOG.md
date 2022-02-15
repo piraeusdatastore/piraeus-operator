@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * CSI Resizer v1.4.0
   * Stork v2.8.2
 - Stork updated to support Kubernetes v1.22+.
+- Satellites no longer have a readiness probe defined. This caused issues in the satellites by repeatedly opening
+  unexpected connections, especially when using SSL.
 
 ### Breaking
 

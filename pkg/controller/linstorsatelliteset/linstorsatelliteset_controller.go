@@ -918,17 +918,6 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
 								},
 							},
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									TCPSocket: &corev1.TCPSocketAction{
-										Port: intstr.FromInt(int(satelliteSet.Spec.SslConfig.Port())),
-									},
-								},
-								TimeoutSeconds:      5,
-								PeriodSeconds:       10,
-								FailureThreshold:    10,
-								InitialDelaySeconds: 10,
-							},
 							Resources: satelliteSet.Spec.Resources,
 						},
 					},
