@@ -676,8 +676,21 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Resources: csiResource.Spec.Resources,
 	}
 
+	linstorWaitNodeInitContainer := corev1.Container{
+		Name:            "linstor-wait-node-online",
+		Image:           csiResource.Spec.LinstorPluginImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Command: []string{
+			"/linstor-wait-until",
+			"satellite-online",
+			"$(KUBE_NODE_NAME)",
+		},
+		Env:       env,
+		Resources: csiResource.Spec.Resources,
+	}
+
 	linstorPluginContainer := corev1.Container{
-		Name:            "csi-node-driver-linstor-plugin",
+		Name:            "linstor-csi-plugin",
 		Image:           csiResource.Spec.LinstorPluginImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
 		Args: []string{
@@ -733,6 +746,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
+					InitContainers:     []corev1.Container{linstorWaitNodeInitContainer},
 					Containers: []corev1.Container{
 						driverRegistrar,
 						csiLivenessProbe,
@@ -885,6 +899,19 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		}},
 		Resources: csiResource.Spec.Resources,
 	}
+
+	linstorWaitAPIInitContainer := corev1.Container{
+		Name:            "linstor-wait-api-online",
+		Image:           csiResource.Spec.LinstorPluginImage,
+		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Command: []string{
+			"/linstor-wait-until",
+			"api-online",
+		},
+		Env:       linstorEnvVars,
+		Resources: csiResource.Spec.Resources,
+	}
+
 	linstorPlugin := corev1.Container{
 		Name:            "linstor-csi-plugin",
 		Image:           csiResource.Spec.LinstorPluginImage,
@@ -934,6 +961,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 				Spec: corev1.PodSpec{
 					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
 					ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
+					InitContainers:     []corev1.Container{linstorWaitAPIInitContainer},
 					Containers: []corev1.Container{
 						csiAttacher,
 						csiLivenessProbe,

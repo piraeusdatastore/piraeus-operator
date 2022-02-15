@@ -15,9 +15,22 @@ spec:
         app.kubernetes.io/name: {{ template "operator.fullname" . }}-ha-controller
     spec:
       serviceAccountName: ha-controller
+      initContainers:
+        - name: wait-for-api
+          image: {{ .Values.haController.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          command:
+            - /linstor-wait-until
+            - api-online
+          env:
+{{ include "linstor-env" . | indent 12 }}
+{{- if .Values.haController.resources }}
+          resources:
+{{ toYaml .Values.haController.resources | indent 12 }}
+{{- end}}
       containers:
         - name: controller
-          image: {{ .Values.haController.image}}
+          image: {{ .Values.haController.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           args:
             - --leader-election=true
