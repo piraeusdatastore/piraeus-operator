@@ -16,6 +16,16 @@ spec:
         app.kubernetes.io/name: piraeus-op-ha-controller
     spec:
       serviceAccountName: ha-controller
+      initContainers:
+        - name: wait-for-api
+          image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - /linstor-wait-until
+            - api-online
+          env:
+            - name: LS_CONTROLLERS
+              value: http://piraeus-op-cs.default.svc:3370
       containers:
         - name: controller
           image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0

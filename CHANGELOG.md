@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
+
 ## [v1.8.0-rc.1] - 2022-02-24
 
 ### Added
