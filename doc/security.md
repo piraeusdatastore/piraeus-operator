@@ -162,3 +162,7 @@ On install, add the following arguments to the helm command:
 ```
 --set operator.controller.luksSecret=linstor-pass
 ```
+
+| :warning: WARNING                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| If you ever delete or change the passphrase secret, the LINSTOR Controller can no longer start with a failure message like `Automatic injection of passphrase failed`. You can force the Controller to start by setting the `luksSecret` value in the `LinstorController` resource to `""`. This will _not_ give you access to encrypted items such as remotes, but it will allow the Controller to start. If you need to recover encrypted values, you need to restore the original secret. |
