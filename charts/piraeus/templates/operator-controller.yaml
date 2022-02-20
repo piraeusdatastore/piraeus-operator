@@ -13,14 +13,14 @@ spec:
 {{- else }}
   luksSecret: {{ template "operator.fullname" . }}-passphrase
 {{- end}}
-  sslSecret: {{ .Values.operator.controller.sslSecret }}
+  sslSecret: {{ include "controller.sslSecretName" . | quote }}
   dbCertSecret: {{ .Values.operator.controller.dbCertSecret | default "" }}
   dbUseClientCert: {{ .Values.operator.controller.dbUseClientCert }}
   drbdRepoCred: {{ .Values.drbdRepoCred | quote }}
   controllerImage: {{ .Values.operator.controller.controllerImage }}
   imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
-  linstorHttpsControllerSecret: {{ .Values.linstorHttpsControllerSecret | quote }}
-  linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  linstorHttpsControllerSecret: {{ include "controller.httpsSecretName" . | quote }}
+  linstorHttpsClientSecret: {{ include "client.httpsSecretName" . | quote }}
 {{- if .Values.operator.controller.affinity }}
   affinity: {{ .Values.operator.controller.affinity | toJson }}
 {{- end }}
@@ -36,22 +36,4 @@ spec:
   {{- if .Values.operator.controller.logLevel }}
   logLevel: {{ .Values.operator.controller.logLevel | quote }}
   {{- end }}
----
-{{- if not .Values.operator.controller.luksSecret }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ template "operator.fullname" . }}-passphrase
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    helm.sh/resource-policy: keep
-data:
-{{- /* We have to be careful not to override the original secret value, otherwise encrypted data could be lost forever */}}
-{{- $secret := lookup "v1" "Secret" .Release.Namespace (printf "%s-passphrase" ( include "operator.fullname" . )) }}
-{{- if $secret }}
-  MASTER_PASSPHRASE: {{ $secret.data.MASTER_PASSPHRASE | quote }}
-{{- else }}
-  MASTER_PASSPHRASE: {{ .Values.operator.controller.masterPassphrase | default (randAlphaNum 40) | b64enc | quote }}
-{{- end }}
-{{- end }}
 {{- end }}

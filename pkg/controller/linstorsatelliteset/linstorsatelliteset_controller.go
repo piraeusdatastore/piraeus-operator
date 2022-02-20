@@ -530,7 +530,16 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 		"Op":        "reconcileAutomaticDeviceSetup",
 	})
 
-	logger.Debug("check for re-used device paths")
+	logger.Debug("get existing storage pools on node")
+
+	cached := true
+
+	existingPools, err := linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName, &lapi.ListOpts{Cached: &cached})
+	if err != nil {
+		return fmt.Errorf("failed to list existing storage pools: %w", err)
+	}
+
+	logger.Debug("check for re-used device paths or existing storage pools")
 
 	devsToConfigure := sets.NewString()
 
@@ -539,10 +548,21 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 			return fmt.Errorf("a device referenced in the storage pools is referenced twice")
 		}
 
+		if findStoragePool(existingPools, poolConfig.GetName()) != nil {
+			// Pool already configured
+			continue
+		}
+
 		devsToConfigure.Insert(poolConfig.GetDevicePaths()...)
 	}
 
 	logger.Debug("no device re-used")
+
+	if devsToConfigure.Len() == 0 {
+		logger.Debug("no device to configure")
+
+		return nil
+	}
 
 	logger.Debug("fetch available devices for node")
 
@@ -624,7 +644,9 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(ctx context.C
 	})
 	log.Debug("reconcile storage pools: started")
 
-	currentPools, err := linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName)
+	cached := true
+
+	currentPools, err := linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName, &lapi.ListOpts{Cached: &cached})
 	if err != nil {
 		return fmt.Errorf("failed to fetch storage pools: %w", err)
 	}
@@ -790,7 +812,8 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 			}
 		}
 
-		pools, err := linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName)
+		cached := true
+		pools, err := linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName, &lapi.ListOpts{Cached: &cached})
 		if err != nil {
 			log.Warnf("failed to get storage pools for node %s: %v", pod.Spec.NodeName, err)
 		}
@@ -917,17 +940,6 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 									MountPath:        kubeSpec.ModulesDir,
 									MountPropagation: &kubeSpec.MountPropagationBidirectional,
 								},
-							},
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									TCPSocket: &corev1.TCPSocketAction{
-										Port: intstr.FromInt(int(satelliteSet.Spec.SslConfig.Port())),
-									},
-								},
-								TimeoutSeconds:      5,
-								PeriodSeconds:       10,
-								FailureThreshold:    10,
-								InitialDelaySeconds: 10,
 							},
 							Resources: satelliteSet.Spec.Resources,
 						},
@@ -1404,6 +1416,16 @@ func (r *ReconcileLinstorSatelliteSet) removeDanglingSatellites(ctx context.Cont
 			if err != nil {
 				return fmt.Errorf("failed to delete node '%s': %w", node.Name, err)
 			}
+		}
+	}
+
+	return nil
+}
+
+func findStoragePool(pools []lapi.StoragePool, name string) *lapi.StoragePool {
+	for i := range pools {
+		if pools[i].StoragePoolName == name {
+			return &pools[i]
 		}
 	}
 

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow setting the number of parallel requests created by the CSI sidecars. This limits the load on the LINSTOR
   backend, which could easily overload when creating many volumes at once.
 - Unify certificates format for SSL enabled installation, no more java tooling required.
+- Automatic certificates generation using Helm or Cert-manager
 
 ### Changed
 
@@ -23,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * CSI Resizer v1.4.0
   * Stork v2.8.2
 - Stork updated to support Kubernetes v1.22+.
+- Satellites no longer have a readiness probe defined. This caused issues in the satellites by repeatedly opening
+  unexpected connections, especially when using SSL.
+- Only query node devices if a storage pool needs to be created.
+- Use cached storage pool response to avoid causing excessive load on LINSTOR satellites.
 
 ### Breaking
 

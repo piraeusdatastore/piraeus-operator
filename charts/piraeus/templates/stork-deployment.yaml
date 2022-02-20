@@ -11,6 +11,33 @@ data:
   # of Kubernetes, so please update those as required. The requirement to manually specify this
   # list will go away with Kubernetes v1.10 where it will use the defaults if nothing is
   # specified.
+  {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+  stork-config.yaml: |-
+    {{- if semverCompare ">= 1.23" .Capabilities.KubeVersion.Version }}
+    apiVersion: kubescheduler.config.k8s.io/v1beta3
+    {{- else }}
+    apiVersion: kubescheduler.config.k8s.io/v1beta2
+    {{- end }}
+    kind: KubeSchedulerConfiguration
+    leaderElection:
+      leaderElect: true
+      leaseDuration: 15s
+      renewDeadline: 10s
+      retryPeriod: 2s
+      resourceLock: leases
+      resourceNamespace: {{ .Release.Namespace }}
+      resourceName: {{ .Release.Name }}-stork-scheduler
+    profiles:
+      - schedulerName: stork
+    extenders:
+      - urlPrefix: http://{{ .Release.Name }}-stork-service.{{ .Release.Namespace }}:8099
+        filterVerb: filter
+        prioritizeVerb: prioritize
+        weight: 5
+        enableHTTPS: false
+        httpTimeout: 300000s
+        nodeCacheCapable: false
+  {{- else }}
   policy.cfg: |-
     {
       "kind": "Policy",
@@ -27,6 +54,7 @@ data:
         }
       ]
     }
+  {{- end }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -176,7 +204,7 @@ rules:
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["pods"]
+    resources: ["pods", "namespaces"]
     verbs: ["delete", "get", "list", "watch"]
   - apiGroups: [""]
     resources: ["bindings", "pods/binding"]
@@ -247,12 +275,16 @@ spec:
         - command:
             - /usr/local/bin/kube-scheduler
             - --address=0.0.0.0
+            {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+            - --config=/etc/kubernetes/stork-config.yaml
+            {{- else }}
             - --leader-elect=true
             - --scheduler-name=stork
             - --policy-configmap={{ .Release.Name }}-stork-config
             - --policy-configmap-namespace={{ .Release.Namespace }}
             - --leader-elect-resource-name={{ .Release.Name }}-stork-scheduler
             - --leader-elect-resource-namespace={{ .Release.Namespace }}
+            {{- end }}
           image: "{{ .Values.stork.schedulerImage }}:{{ .Values.stork.schedulerTag | default .Capabilities.KubeVersion.Version }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           livenessProbe:
@@ -265,6 +297,11 @@ spec:
             httpGet:
               path: /healthz
               port: 10251
+          {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+          volumeMounts:
+          - mountPath: /etc/kubernetes
+            name: stork-config
+          {{- end }}
           resources:
 {{ .Values.stork.schedulerResources | toYaml | indent 12}}
       affinity:
@@ -285,4 +322,11 @@ spec:
 {{ include "operator.defaultpodsecuritycontext" $ | indent 8 }}
 {{- end }}
       serviceAccountName: stork-scheduler-account
+      {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: {{ .Release.Name }}-stork-config
+        name: scheduler-config
+      {{- end }}
 {{- end }}

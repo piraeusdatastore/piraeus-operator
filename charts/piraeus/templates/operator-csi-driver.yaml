@@ -28,7 +28,7 @@ spec:
 {{- if ne (int .Values.csi.csiResizerWorkerThreads) 10 }}
   csiResizerWorkerThreads: {{ .Values.csi.csiResizerWorkerThreads }}
 {{- end }}
-  linstorHttpsClientSecret: {{ .Values.linstorHttpsClientSecret | quote }}
+  linstorHttpsClientSecret: {{ include "client.httpsSecretName" . | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   controllerReplicas: {{ .Values.csi.controllerReplicas }}
   controllerEndpoint: {{ template "controller.endpoint" . }}

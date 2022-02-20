@@ -28,7 +28,27 @@ If this option is active, the secret specified in the above section must contain
 ## Configuring secure communication between LINSTOR components
 
 The default communication between LINSTOR components is not secured by TLS. If this is needed for your setup,
-follow these steps:
+choose one of three methods:
+
+**Generate certificates using cert-manager**
+
+Requires [cert-manager](https://cert-manager.io/docs/)) installed in your cluster
+
+* Pass the following option to `helm install`.
+```
+--set linstorSslMethod=cert-manager
+```
+All required certificates will be issued automatically using cert-manager custom resources.
+
+**Generate certificates using Helm**
+
+* Pass the following option to `helm install`.
+```
+--set linstorSslMethod=helm
+```
+All required certificates will be generated automatically using Helm during initial installation.
+
+**Generate and import certificates manually**
 
 * Create private key and self-signed certificate for your certificate authority:
 
@@ -48,12 +68,12 @@ follow these steps:
   openssl x509 -req -in control.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out control.crt -days 5000 -sha256
   openssl x509 -req -in node.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out node.crt -days 5000 -sha256
   ```
-* Create kubernetes secrets that can be passed to the controller and node pods
+* Create kubernetes secrets that can be passed to the controller and node pods:
   ```
   kubectl create secret generic control-secret --type=kubernetes.io/tls --from-file=ca.crt=ca.crt --from-file=tls.crt=control.crt --from-file=tls.key=control.key
   kubectl create secret generic node-secret --type=kubernetes.io/tls --from-file=ca.crt=ca.crt --from-file=tls.crt=node.crt --from-file=tls.key=node.key
   ```
-* Pass the names of the created secrets to `helm install`
+* Pass the names of the created secrets to `helm install`:
   ```
   --set operator.satelliteSet.sslSecret=node-secret --set operator.controller.sslSecret=control-secret
   ```
@@ -67,6 +87,28 @@ needs access to:
 * A private key
 * A certificate based on the key
 * A trusted certificate, used to verify that other components are trustworthy
+
+Choose one of three methods:
+
+**Generate certificates using cert-manager**
+
+Requires [cert-manager](https://cert-manager.io/docs/)) installed in your cluster
+
+* Pass the following option to `helm install`.
+```
+--set linstorHttpsMethod=cert-manager
+```
+All required certificates will be issued automatically using cert-manager custom resources.
+
+**Generate certificates using Helm**
+
+* Pass the following option to `helm install`.
+```
+--set linstorHttpsMethod=helm
+```
+All required certificates will be issued automatically using Helm during initial installation.
+
+**Generate and import certificates manually**
 
 The next sections will guide you through creating all required components.
 
@@ -120,3 +162,7 @@ On install, add the following arguments to the helm command:
 ```
 --set operator.controller.luksSecret=linstor-pass
 ```
+
+| :warning: WARNING                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| If you ever delete or change the passphrase secret, the LINSTOR Controller can no longer start with a failure message like `Automatic injection of passphrase failed`. You can force the Controller to start by setting the `luksSecret` value in the `LinstorController` resource to `""`. This will _not_ give you access to encrypted items such as remotes, but it will allow the Controller to start. If you need to recover encrypted values, you need to restore the original secret. |

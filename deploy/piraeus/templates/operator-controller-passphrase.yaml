@@ -1,0 +1,14 @@
+---
+# Source: piraeus/templates/operator-controller-passphrase.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: piraeus-op-passphrase
+  namespace: default
+  annotations:
+    helm.sh/resource-policy: keep
+    helm.sh/hook: pre-install
+    helm.sh/hook-delete-policy: before-hook-creation
+immutable: true
+data:
+  MASTER_PASSPHRASE: "Y2hhbmdlbWVwbGVhc2U="

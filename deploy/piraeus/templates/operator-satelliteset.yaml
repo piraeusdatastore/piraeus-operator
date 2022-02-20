@@ -7,7 +7,7 @@ metadata:
   namespace: default
 spec:
   priorityClassName: ""
-  sslSecret: 
+  sslSecret: ""
   drbdRepoCred: ""
   imagePullPolicy: "IfNotPresent"
   satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.17.0
