@@ -24,7 +24,7 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.17.0
+  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.18.0
   csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.4.0
   csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.5.0
   csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
@@ -62,7 +62,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.17.0
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.18.0-rc.3
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -79,22 +79,22 @@ operator:
     additionalProperties: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.17.0
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.18.0-rc.3
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.4.4
-    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.4
+    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.5.3
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.6
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
     additionalEnv: []
 haController:
   enabled: true
-  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.2.0
+  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0
   affinity: {}
   tolerations: []
   resources: {}
