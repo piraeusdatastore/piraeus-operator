@@ -1,9 +1,6 @@
 dependencies:
 - name: etcd
   repository: ""
-  version: 0.7.4
-- name: csi-snapshotter
-  repository: ""
-  version: 1.0.0
-digest: sha256:cf21a04c22738a1cf06166ce1515f9ffe0558483c043e4432d19fbcd15307682
-generated: "2020-06-17T11:17:16.759913497+02:00"
+  version: 0.7.5
+digest: sha256:bc7f1f320282a7cff3a18f7f988aedf3939eea28c4c6b4c260ce4c0b9ed4b788
+generated: "2022-02-24T16:57:17.935512621+01:00"
