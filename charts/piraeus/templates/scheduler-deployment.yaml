@@ -1,0 +1,164 @@
+{{- if .Values.scheduler.enabled }}
+# Source: https://github.com/piraeusdatastore/linstor-scheduler-extender/blob/master/deploy/all.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-scheduler
+  namespace: {{ .Release.Namespace }}
+data:
+  {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+  stork-config.yaml: |-
+    {{- if semverCompare ">= 1.23" .Capabilities.KubeVersion.Version }}
+    apiVersion: kubescheduler.config.k8s.io/v1beta3
+    {{- else }}
+    apiVersion: kubescheduler.config.k8s.io/v1beta2
+    {{- end }}
+    kind: KubeSchedulerConfiguration
+    profiles:
+      - schedulerName: linstor
+    extenders:
+      - urlPrefix: http://localhost:8099
+        filterVerb: filter
+        prioritizeVerb: prioritize
+        weight: 5
+        enableHTTPS: false
+        httpTimeout: 300000s
+        nodeCacheCapable: false
+  {{- else }}
+  policy.cfg: |-
+    {
+      "kind": "Policy",
+      "apiVersion": "v1",
+      "extenders": [
+        {
+          "urlPrefix": "http://localhost:8099",
+          "apiVersion": "v1beta1",
+          "filterVerb": "filter",
+          "prioritizeVerb": "prioritize",
+          "weight": 5,
+          "enableHttps": false,
+          "nodeCacheCapable": false
+        }
+      ]
+    }
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "operator.fullname" . }}-scheduler
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.scheduler.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "operator.fullname" . }}-scheduler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "operator.fullname" . }}-scheduler
+    spec:
+      serviceAccountName: scheduler
+      containers:
+        - name: kube-scheduler
+          command:
+          - kube-scheduler
+          {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+          - --config=/etc/kubernetes/scheduler-config.yaml
+          {{- else }}
+          - --scheduler-name=linstor
+          - --policy-configmap=linstor-scheduler
+          - --policy-configmap-namespace=d8-{{ .Chart.Name }}
+          {{- end }}
+          - --leader-elect=true 
+          - --leader-election-lease-name=$(NAME)
+          - --leader-election-namespace=$(NAMESPACE)
+          env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          image: "{{ .Values.scheduler.image }}:{{ .Values.scheduler.imageTag | default .Capabilities.KubeVersion.Version }}"
+          imagePullPolicy: IfNotPresent
+          startupProbe:
+            failureThreshold: 24
+            httpGet:
+              path: /healthz
+              port: 10259
+              scheme: HTTPS
+          livenessProbe:
+            failureThreshold: 8
+            httpGet:
+              path: /healthz
+              port: 10259
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10259
+              scheme: HTTPS
+          {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+          volumeMounts:
+          - mountPath: /etc/kubernetes
+            name: scheduler-config
+          {{- end }}
+          {{- if .Values.scheduler.resources }}
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}
+          {{- end }}
+        - name: linstor-scheduler-extender
+          image: {{ .Values.scheduler.extenderImage }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          args:
+          - --verbose=true
+          env:
+            {{- include "linstor-env" . | nindent 12 }}
+            - name: NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: linstor-scheduler
+        name: scheduler-config
+      {{- end }}
+          {{- with .Values.scheduler.extenderresources }}
+          resources:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.drbdRepoCred }}
+      imagePullSecrets:
+        - name: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.scheduler.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- if .Values.scheduler.affinity }}
+        {{- toYaml .Values.scheduler.affinity | nindent 8 }}
+        {{- else }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: {{ template "operator.fullname" . }}-scheduler
+        {{- end }}
+      securityContext:
+       {{- if .Values.scheduler.podsecuritycontext }}
+       {{- .Values.podsecuritycontext | toYaml | nindent 8 }}
+       {{- else }}
+       {{- include "operator.defaultpodsecuritycontext" $ | nindent 8 }}
+       {{- end }}
+{{- end }}

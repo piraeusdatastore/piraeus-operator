@@ -13,14 +13,13 @@ etcd:
   image:
     repository: gcr.io/etcd-development/etcd
     tag: v3.4.15
-stork:
-  enabled: false
-  storkImage: docker.io/openstorage/stork:2.8.2
-  schedulerImage: k8s.gcr.io/kube-scheduler-amd64
-  schedulerTag: ""
+scheduler:
+  enabled: true
+  extenderImage: quay.io/piraeusdatastore/linstor-scheduler-extender:v0.2.0
+  image: k8s.gcr.io/kube-scheduler-amd64
   replicas: 1
-  storkResources: {} # resources requirements for the stork plugin containers
-  schedulerResources: {} # resource requirements for the kube-scheduler containers
+  resources: {} # resources requirements for the linstor-scheduler-extender containers
+  extenderResources: {} # resource requirements for the kube-scheduler containers
   podsecuritycontext: {}
 csi:
   enabled: true
