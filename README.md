@@ -226,9 +226,9 @@ kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --dock
 First you need to create the resource definitions
 
 ```
-kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcsidrivers_crd.yaml
-kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorsatellitesets_crd.yaml
-kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcontrollers_crd.yaml
+kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorsatellitesets.yaml
+kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcsidrivers.yaml
+kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcontrollers.yaml
 ```
 
 Then, take a look at the files in [`deploy/piraeus`](./deploy/piraeus) and make changes as

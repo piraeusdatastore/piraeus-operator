@@ -3,15 +3,6 @@ REGISTRY ?= piraeusdatastore
 TAG ?= latest
 NOCACHE ?= false
 
-# Some operator-sdk versions struggle when these are not set, even if go
-# is perfectly content with using sane defaults. So we just query go on
-# what these defaults are
-GOROOT ?= $(shell go env GOROOT)
-GOPATH ?= $(shell go env GOPATH)
-OPERATORSDK ?= operator-sdk
-
-OPERATORSDKCMD := GOROOT=$(GOROOT) GOPATH=$(GOPATH) $(OPERATORSDK)
-
 help:
 	@echo "Useful targets: 'update', 'upload'"
 
@@ -35,12 +26,14 @@ upload:
 test:
 	go test ./...
 
+CONTROLLER_GEN = go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
+
 deep-copy:
-	$(OPERATORSDKCMD) generate k8s
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 crds:
-	$(OPERATORSDKCMD) generate crds
-	mv ./deploy/crds/* ./charts/piraeus/crds
+	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=config/crd/bases
+	mv ./config/crd/bases/* ./charts/piraeus/crds
 
 helm-values:
 	cp ./charts/piraeus/values.yaml ./charts/piraeus/values.cn.yaml

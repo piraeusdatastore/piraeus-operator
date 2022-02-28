@@ -6,22 +6,12 @@ on:
     branches:
       - master
   pull_request:
-env:
-  OPERATOR_SDK_VERSION: v0.19.4
 jobs:
   prepare:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
-      # Cache operator-sdk
-      - uses: actions/cache@v1
-        id: operator-sdk-cache
-        with:
-          path: ~/operator-sdk/bin
-          key: ${{ runner.os }}-operator-sdk-${{ env.OPERATOR_SDK_VERSION }}
-      - name: setup operator-sdk
-        run: ./.github/workflows/scripts/install-operator-sdk.sh ${OPERATOR_SDK_VERSION}
       # Cache go module sources
       - uses: actions/cache@v1
         id: go-cache
@@ -63,14 +53,6 @@ jobs:
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      # use operator-sdk
-      - uses: actions/cache@v1
-        id: operator-sdk-cache
-        with:
-          path: ~/operator-sdk/bin
-          key: ${{ runner.os }}-operator-sdk-${{ env.OPERATOR_SDK_VERSION }}
-      - name: setup operator-sdk
-        run: ./.github/workflows/scripts/install-operator-sdk.sh ${OPERATOR_SDK_VERSION}
       # use go module sources
       - uses: actions/cache@v1
         with:
