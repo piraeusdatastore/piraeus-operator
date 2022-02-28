@@ -123,6 +123,16 @@ type LinstorControllerSpec struct {
 	// +nullable
 	HttpsBindAddress string `json:"httpsBindAddress"`
 
+	// Sidecars are additional containers which can be added to the pods.
+	// +optional
+	// +nullable
+	Sidecars []corev1.Container `json:"sidecars"`
+
+	// ExtraVolumes are additional volumes which can be added to the pods.
+	// +optional
+	// +nullable
+	ExtraVolumes []corev1.Volume `json:"extraVolumes"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

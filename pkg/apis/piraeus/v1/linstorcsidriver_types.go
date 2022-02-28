@@ -135,6 +135,26 @@ type LinstorCSIDriverSpec struct {
 	// +kubebuilder:validation:Enum=error;warn;info;debug;trace
 	LogLevel shared.LogLevel `json:"logLevel,omitempty"`
 
+	// ControllerSidecars are additional containers which can be added to the controller pods.
+	// +optional
+	// +nullable
+	ControllerSidecars []corev1.Container `json:"sidecars"`
+
+	// ControllerExtraVolumes are additional volumes which can be added to the controller pods.
+	// +optional
+	// +nullable
+	ControllerExtraVolumes []corev1.Volume `json:"extraVolumes"`
+
+	// NodeSidecars are additional containers which can be added to the node pods.
+	// +optional
+	// +nullable
+	NodeSidecars []corev1.Container `json:"nodeSidecars"`
+
+	// NodeExtraVolumes are additional volumes which can be added to the node pods.
+	// +optional
+	// +nullable
+	NodeExtraVolumes []corev1.Volume `json:"nodeExtraVolumes"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

@@ -121,6 +121,16 @@ type LinstorSatelliteSetSpec struct {
 	LogLevel shared.LogLevel `json:"logLevel,omitempty"`
 
 	shared.LinstorClientConfig `json:",inline"`
+
+	// Sidecars are additional containers which can be added to the pods.
+	// +optional
+	// +nullable
+	Sidecars []corev1.Container `json:"sidecars"`
+
+	// ExtraVolumes are additional volumes which can be added to the pods.
+	// +optional
+	// +nullable
+	ExtraVolumes []corev1.Volume `json:"extraVolumes"`
 }
 
 // LinstorSatelliteSetStatus defines the observed state of LinstorSatelliteSet

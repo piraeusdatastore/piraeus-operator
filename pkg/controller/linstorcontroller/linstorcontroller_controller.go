@@ -882,7 +882,7 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 				Spec: corev1.PodSpec{
 					ServiceAccountName: getServiceAccountName(controllerResource),
 					PriorityClassName:  controllerResource.Spec.PriorityClassName.GetName(controllerResource.Namespace),
-					Containers: []corev1.Container{
+					Containers: append([]corev1.Container{
 						{
 							Name:            "linstor-controller",
 							Image:           controllerResource.Spec.ControllerImage,
@@ -911,8 +911,8 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 							LivenessProbe: &livenessProbe,
 							Resources:     controllerResource.Spec.Resources,
 						},
-					},
-					Volumes:          volumes,
+					}, controllerResource.Spec.Sidecars...),
+					Volumes:          append(volumes, controllerResource.Spec.ExtraVolumes...),
 					ImagePullSecrets: pullSecrets,
 					Affinity:         getDeploymentAffinity(controllerResource),
 					Tolerations:      controllerResource.Spec.Tolerations,

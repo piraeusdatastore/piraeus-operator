@@ -56,9 +56,15 @@ spec:
               path: /healthz
           resources:
 {{ .Values.operator.resources | toYaml | indent 12}}
+        {{- with .Values.operator.sidecars }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumes:
         - name: backup-dir
           emptyDir: {}
+        {{- with .Values.operator.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
 {{- if .Values.drbdRepoCred }}
       imagePullSecrets:
         - name: {{ .Values.drbdRepoCred | quote }}
