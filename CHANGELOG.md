@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * DRBD Reactor 0.6.1
 
 ### Removed
+- Get rid of operator-sdk binary, use native controller-gen instead
+
+### Added
 
 - Upgrades involving k8s databases no long require manually confirming a backup exists using
   `--set IHaveBackedUpAllMyLinstorResources=true`.

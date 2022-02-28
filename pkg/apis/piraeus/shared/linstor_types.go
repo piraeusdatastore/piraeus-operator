@@ -117,11 +117,13 @@ func (in *StoragePools) AllPhysicalStorageCreators() []PhysicalStorageCreator {
 }
 
 // StoragePool is the generalized type of storage pools.
+// +kubebuilder:object:generate=false
 type StoragePool interface {
 	GetName() string
 	ToLinstorStoragePool() lapi.StoragePool
 }
 
+// +kubebuilder:object:generate=false
 type PhysicalStorageCreator interface {
 	StoragePool
 	GetDevicePaths() []string
