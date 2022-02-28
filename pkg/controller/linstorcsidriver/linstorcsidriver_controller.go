@@ -742,35 +742,37 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 	}
 
 	meta := getObjectMeta(csiResource, NodeDaemonSet, kubeSpec.CSINodeRole)
+	template := corev1.PodTemplateSpec{
+		ObjectMeta: meta,
+		Spec: corev1.PodSpec{
+			PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
+			ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
+			InitContainers:     []corev1.Container{linstorWaitNodeInitContainer},
+			Containers: append([]corev1.Container{
+				driverRegistrar,
+				csiLivenessProbe,
+				linstorPluginContainer,
+			}, csiResource.Spec.NodeSidecars...),
+			Volumes: append([]corev1.Volume{
+				deviceDir,
+				pluginDir,
+				publishDir,
+				registrationDir,
+			}, csiResource.Spec.NodeExtraVolumes...),
+			DNSPolicy:        corev1.DNSClusterFirstWithHostNet,
+			ImagePullSecrets: pullSecrets,
+			Affinity:         csiResource.Spec.NodeAffinity,
+			Tolerations:      csiResource.Spec.NodeTolerations,
+		},
+	}
+
 	return &appsv1.DaemonSet{
 		ObjectMeta: meta,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: meta.Labels,
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: meta,
-				Spec: corev1.PodSpec{
-					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
-					ServiceAccountName: csiResource.Spec.CSINodeServiceAccountName,
-					InitContainers:     []corev1.Container{linstorWaitNodeInitContainer},
-					Containers: []corev1.Container{
-						driverRegistrar,
-						csiLivenessProbe,
-						linstorPluginContainer,
-					},
-					Volumes: []corev1.Volume{
-						deviceDir,
-						pluginDir,
-						publishDir,
-						registrationDir,
-					},
-					DNSPolicy:        corev1.DNSClusterFirstWithHostNet,
-					ImagePullSecrets: pullSecrets,
-					Affinity:         csiResource.Spec.NodeAffinity,
-					Tolerations:      csiResource.Spec.NodeTolerations,
-				},
-			},
+			Template: template,
 		},
 	}
 }
@@ -963,6 +965,27 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 	}
 
 	meta := getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
+	template := corev1.PodTemplateSpec{
+		ObjectMeta: meta,
+		Spec: corev1.PodSpec{
+			PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
+			ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
+			InitContainers:     []corev1.Container{linstorWaitAPIInitContainer},
+			Containers: append([]corev1.Container{
+				csiAttacher,
+				csiLivenessProbe,
+				csiProvisioner,
+				csiSnapshotter,
+				csiResizer,
+				linstorPlugin,
+			}, csiResource.Spec.ControllerSidecars...),
+			ImagePullSecrets: pullSecrets,
+			Volumes:          append([]corev1.Volume{socketVolume}, csiResource.Spec.ControllerExtraVolumes...),
+			Affinity:         getControllerAffinity(csiResource),
+			Tolerations:      csiResource.Spec.ControllerTolerations,
+		},
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: meta,
 		Spec: appsv1.DeploymentSpec{
@@ -970,26 +993,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 				MatchLabels: meta.Labels,
 			},
 			Replicas: csiResource.Spec.ControllerReplicas,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: meta,
-				Spec: corev1.PodSpec{
-					PriorityClassName:  csiResource.Spec.PriorityClassName.GetName(csiResource.Namespace),
-					ServiceAccountName: csiResource.Spec.CSIControllerServiceAccountName,
-					InitContainers:     []corev1.Container{linstorWaitAPIInitContainer},
-					Containers: []corev1.Container{
-						csiAttacher,
-						csiLivenessProbe,
-						csiProvisioner,
-						csiSnapshotter,
-						csiResizer,
-						linstorPlugin,
-					},
-					ImagePullSecrets: pullSecrets,
-					Volumes:          []corev1.Volume{socketVolume},
-					Affinity:         getControllerAffinity(csiResource),
-					Tolerations:      csiResource.Spec.ControllerTolerations,
-				},
-			},
+			Template: template,
 		},
 	}
 }

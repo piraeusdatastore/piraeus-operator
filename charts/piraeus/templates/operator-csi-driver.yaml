@@ -44,4 +44,16 @@ spec:
   {{- if .Values.csi.logLevel }}
   logLevel: {{ .Values.csi.logLevel | quote }}
   {{- end }}
+  {{- if .Values.csi.controllerSidecars }}
+  controllerSidecars: {{ .Values.csi.controllerSidecars | toJson }}
+  {{- end }}
+  {{- if .Values.csi.controllerExtraVolumes }}
+  controllerExtraVolumes: {{ .Values.csi.controllerExtraVolumes | toJson }}
+  {{- end }}
+  {{- if .Values.csi.nodeSidecars }}
+  nodeSidecars: {{ .Values.csi.nodeSidecars | toJson }}
+  {{- end }}
+  {{- if .Values.csi.nodeExtraVolumes }}
+  nodeExtraVolumes: {{ .Values.csi.nodeExtraVolumes | toJson }}
+  {{- end }}
 {{- end }}

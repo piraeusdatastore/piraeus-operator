@@ -42,6 +42,10 @@ csi:
   enableTopology: true
   resources: {}
   kubeletPath: /var/lib/kubelet
+  controllerSidecars: []
+  controllerExtraVolumes: []
+  nodeSidecars: []
+  nodeExtraVolumes: []
 priorityClassName: ""
 drbdRepoCred: "" # <- Specify the kubernetes secret name here
 linstorSslMethod: "manual" # <- If set to 'helm' or 'cert-manager' the certificates will be generated automatically
@@ -62,6 +66,8 @@ operator:
   args:
     createBackups: true
     createMonitoring: true
+  sidecars: []
+  extraVolumes: []
   controller:
     enabled: true
     controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.18.1
@@ -85,6 +91,8 @@ operator:
     replicas: 1
     additionalEnv: []
     additionalProperties: {}
+    sidecars: []
+    extraVolumes: []
   satelliteSet:
     enabled: true
     satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.18.1
@@ -100,6 +108,8 @@ operator:
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
     additionalEnv: []
+    sidecars: []
+    extraVolumes: []
 haController:
   enabled: true
   image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0

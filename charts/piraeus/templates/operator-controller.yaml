@@ -44,4 +44,10 @@ spec:
   {{- if .Values.operator.controller.httpsBindAddress }}
   httpsBindAddress: {{ .Values.operator.controller.httpsBindAddress | quote }}
   {{- end }}
+  {{- if .Values.operator.controller.sidecars }}
+  sidecars: {{ .Values.operator.controller.sidecars | toJson }}
+  {{- end }}
+  {{- if .Values.operator.controller.extraVolumes }}
+  extraVolumes: {{ .Values.operator.controller.extraVolumes | toJson }}
+  {{- end }}
 {{- end }}

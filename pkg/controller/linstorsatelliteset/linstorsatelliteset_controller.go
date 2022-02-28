@@ -958,7 +958,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 					DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
 					PriorityClassName:  satelliteSet.Spec.PriorityClassName.GetName(satelliteSet.Namespace),
 					ServiceAccountName: getServiceAccountName(satelliteSet),
-					Containers: []corev1.Container{
+					Containers: append([]corev1.Container{
 						{
 							Name:  "linstor-satellite",
 							Image: satelliteSet.Spec.SatelliteImage,
@@ -996,8 +996,8 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 							},
 							Resources: satelliteSet.Spec.Resources,
 						},
-					},
-					Volumes: []corev1.Volume{
+					}, satelliteSet.Spec.Sidecars...),
+					Volumes: append([]corev1.Volume{
 						{
 							Name: kubeSpec.LinstorConfDirName,
 							VolumeSource: corev1.VolumeSource{
@@ -1034,7 +1034,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 								},
 							},
 						},
-					},
+					}, satelliteSet.Spec.ExtraVolumes...),
 					ImagePullSecrets: pullSecrets,
 				},
 			},
