@@ -176,6 +176,13 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
+	log.Debug("reconcile legacy config map name")
+
+	err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.ConfigMap{ObjectMeta: getObjectMeta(controllerResource, "%s-config")}, controllerResource)
+	if err != nil {
+		return fmt.Errorf("failed to delete legacy config map: %w", err)
+	}
+
 	log.Debug("reconcile LINSTOR Service")
 
 	ctrlService := newServiceForResource(controllerResource)

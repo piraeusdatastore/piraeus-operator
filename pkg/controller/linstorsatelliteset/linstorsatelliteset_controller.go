@@ -190,6 +190,13 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 		return []error{fmt.Errorf("failed to add finalizer to resource: %w", err)}
 	}
 
+	log.Debug("reconcile legacy config map name")
+
+	err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.ConfigMap{ObjectMeta: getObjectMeta(satelliteSet, "%s-config")}, satelliteSet)
+	if err != nil {
+		return []error{fmt.Errorf("failed to delete legacy config map: %w", err)}
+	}
+
 	log.Debug("reconcile satellite configmap")
 
 	// Create the satellite configuration
@@ -238,6 +245,13 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 		return nil, nil
 	}
 
+	log.Debug("reconcile legacy monitoring config map name")
+
+	err := reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.ConfigMap{ObjectMeta: getObjectMeta(satelliteSet, "%s-monitoring")}, satelliteSet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete legacy monitoring config map: %w", err)
+	}
+
 	log.Debug("reconcile drbd-reactor configmap")
 
 	drbdReactorCM := newMonitoringConfigMap(satelliteSet)
@@ -248,6 +262,13 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 	}
 
 	log.WithField("changed", drbdReactorCMChanged).Debug("reconcile drbd-reactor configmap: done")
+
+	log.Debug("reconcile legacy monitoring service name")
+
+	err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.Service{ObjectMeta: getObjectMeta(satelliteSet, "%s-monitoring")}, satelliteSet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete legacy monitoring service: %w", err)
+	}
 
 	log.Debug("reconciling monitoring service definition")
 
