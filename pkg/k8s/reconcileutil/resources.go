@@ -85,9 +85,13 @@ func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runti
 		return false, err
 	}
 
-	current, err := getCurrentResource(ctx, kubeClient, scheme, obj)
+	current, err := findCurrentResource(ctx, kubeClient, obj)
 	if err != nil {
 		return false, err
+	}
+
+	if current == nil {
+		return false, fmt.Errorf("could not find object, but it should exist")
 	}
 
 	patchMeta, err := strategicpatch.NewPatchMetaFromStruct(current)
@@ -163,8 +167,30 @@ func RestartRollout(ctx context.Context, kubeClient client.Client, obj client.Ob
 	return nil
 }
 
+func DeleteIfOwned(ctx context.Context, kubeClient client.Client, obj GCRuntimeObject, owner metav1.Object) error {
+	current, err := findCurrentResource(ctx, kubeClient, obj)
+	if err != nil {
+		return err
+	}
+
+	if current == nil {
+		return nil
+	}
+
+	for i := range current.GetOwnerReferences() {
+		ref := &current.GetOwnerReferences()[i]
+		if ref.UID == owner.GetUID() {
+			return kubeClient.Delete(ctx, obj)
+		}
+	}
+
+	return nil
+}
+
 // Returns the current state of the given object, as stored in Kubernetes.
-func getCurrentResource(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject) (GCRuntimeObject, error) {
+//
+// Returns nil, nil if the resource doesn't exist.
+func findCurrentResource(ctx context.Context, kubeClient client.Client, obj GCRuntimeObject) (GCRuntimeObject, error) {
 	current, ok := obj.DeepCopyObject().(GCRuntimeObject)
 	if !ok {
 		return nil, fmt.Errorf("failed to cast cloned object to original type")
@@ -172,6 +198,10 @@ func getCurrentResource(ctx context.Context, kubeClient client.Client, scheme *r
 
 	err := kubeClient.Get(ctx, types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}, current)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+
 		return nil, fmt.Errorf("failed to feetch current resource state: %w", err)
 	}
 
