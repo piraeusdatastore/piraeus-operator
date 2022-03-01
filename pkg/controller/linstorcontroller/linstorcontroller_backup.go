@@ -399,6 +399,11 @@ func stopDeployment(ctx context.Context, clientset kubernetes.Interface, control
 		Spec: autoscalingv1.ScaleSpec{Replicas: 0},
 	}, metav1.UpdateOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			// No deployment, nothing to stop
+			return nil
+		}
+
 		return fmt.Errorf("failed to update controller scale: %w", err)
 	}
 
