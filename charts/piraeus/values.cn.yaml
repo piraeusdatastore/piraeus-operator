@@ -59,6 +59,9 @@ operator:
   tolerations: []
   resources: {}
   podsecuritycontext: {}
+  args:
+    createBackups: true
+    createMonitoring: true
   controller:
     enabled: true
     controllerImage: daocloud.io/piraeus/piraeus-server:v1.18.1

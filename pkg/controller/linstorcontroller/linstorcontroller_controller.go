@@ -56,6 +56,9 @@ import (
 // CreateBackups controls if the operator will create a backup of the LINSTOR resources before upgrading.
 var CreateBackups = true
 
+// CreateMonitoring controls if the operator will create a monitoring resources.
+var CreateMonitoring = true
+
 // newControllerReconciler returns a new reconcile.Reconciler
 func newControllerReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileLinstorController{client: mgr.GetClient(), scheme: mgr.GetScheme()}
@@ -261,12 +264,19 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 			}
 		}
 
-		serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, controllerResource, reconcileutil.OnPatchErrorRecreate)
-		if err != nil {
-			return fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
-		}
+		if CreateMonitoring {
+			serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, controllerResource, reconcileutil.OnPatchErrorRecreate)
+			if err != nil {
+				return fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
+			}
 
-		log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+			log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+		} else {
+			err = reconcileutil.DeleteIfOwned(ctx, r.client, &monitoringv1.ServiceMonitor{ObjectMeta: getObjectMeta(controllerResource, "%s")}, controllerResource)
+			if err != nil {
+				return fmt.Errorf("failed to delete monitoring servicemonitor: %w", err)
+			}
+		}
 	}
 
 	log.Debug("reconcile LINSTOR")

@@ -26,6 +26,9 @@ spec:
         - name: piraeus-operator
           image: quay.io/piraeusdatastore/piraeus-operator:latest
           imagePullPolicy: "IfNotPresent"
+          args:
+            - "--create-backups=true"
+            - "--create-monitoring=true"
           volumeMounts:
             - name: backup-dir
               mountPath: /run/linstor-backups

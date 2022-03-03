@@ -26,6 +26,12 @@ spec:
         - name: piraeus-operator
           image: {{ .Values.operator.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          {{- with .Values.operator.args }}
+          args:
+          {{- range $k, $v := . }}
+            - "--{{ kebabcase $k }}={{ $v }}"
+          {{- end }}
+          {{- end }}
           volumeMounts:
             - name: backup-dir
               mountPath: /run/linstor-backups
