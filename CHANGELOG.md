@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgrades involving k8s databases no long require manually confirming a backup exists using
   `--set IHaveBackedUpAllMyLinstorResources=true`.
+- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
+- Option to disable creating monitoring resources (Services and ServiceMonitors)
 
 ## [v1.8.0] - 2022-03-15
 

@@ -30,6 +30,7 @@ import (
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/LINBIT/golinstor/linstortoml"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,6 +56,9 @@ import (
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 )
+
+// CreateMonitoring controls if the operator will create a monitoring resources.
+var CreateMonitoring = true
 
 func newSatelliteReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileLinstorSatelliteSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
@@ -274,26 +278,40 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 
 	monitoringService := newMonitoringService(satelliteSet)
 
-	monitoringServiceChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, monitoringService, satelliteSet, reconcileutil.OnPatchErrorReturn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reconcile monitoring service definition")
-	}
-
-	log.WithField("changed", monitoringServiceChanged).Debug("reconciling monitoring service definition: done")
-
-	if monitoring.Enabled(ctx, r.client, r.scheme) {
-		log.Debug("monitoring is available in cluster, reconciling monitoring")
-
-		log.Debug("reconciling ServiceMonitor definition")
-
-		serviceMonitor := monitoring.MonitorForService(monitoringService)
-
-		serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, satelliteSet, reconcileutil.OnPatchErrorReturn)
+	if CreateMonitoring {
+		monitoringServiceChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, monitoringService, satelliteSet, reconcileutil.OnPatchErrorReturn)
 		if err != nil {
-			return nil, fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
+			return nil, fmt.Errorf("failed to reconcile monitoring service definition")
 		}
 
-		log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+		log.WithField("changed", monitoringServiceChanged).Debug("reconciling monitoring service definition: done")
+	} else {
+		err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.Service{ObjectMeta: getObjectMeta(satelliteSet, "%s-node-monitoring")}, satelliteSet)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete monitoring service: %w", err)
+		}
+	}
+
+	if monitoring.Enabled(ctx, r.client, r.scheme) {
+		if CreateMonitoring {
+			log.Debug("monitoring is available in cluster, reconciling monitoring")
+
+			log.Debug("reconciling ServiceMonitor definition")
+
+			serviceMonitor := monitoring.MonitorForService(monitoringService)
+
+			serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, satelliteSet, reconcileutil.OnPatchErrorReturn)
+			if err != nil {
+				return nil, fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
+			}
+
+			log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+		} else {
+			err = reconcileutil.DeleteIfOwned(ctx, r.client, &monitoringv1.ServiceMonitor{ObjectMeta: getObjectMeta(satelliteSet, "%s-node-monitoring")}, satelliteSet)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete monitoring servicemonitor: %w", err)
+			}
+		}
 	}
 
 	return drbdReactorCM, nil

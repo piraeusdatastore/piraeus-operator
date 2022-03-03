@@ -32,12 +32,14 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorcontroller"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorsatelliteset"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme           = runtime.NewScheme()
+	setupLog         = ctrl.Log.WithName("setup")
+	createMonitoring = true
 )
 
 func init() {
@@ -57,6 +59,8 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&linstorcontroller.CreateBackups, "create-backups", linstorcontroller.CreateBackups,
 		"create backups of linstor resources if k8s database is used")
+	flag.BoolVar(&createMonitoring, "create-monitoring", createMonitoring,
+		"automatically create monitoring resources in the cluster")
 
 	opts := zap.Options{
 		Development: true,
@@ -64,6 +68,9 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 
 	flag.Parse()
+
+	linstorcontroller.CreateMonitoring = createMonitoring
+	linstorsatelliteset.CreateMonitoring = createMonitoring
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -98,7 +105,6 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
