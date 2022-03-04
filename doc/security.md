@@ -151,6 +151,13 @@ The next sections will guide you through creating all required components.
   --set linstorHttpsControllerSecret=http-controller  --set linstorHttpsClientSecret=http-client
   ```
 
+## Configuring secure communications for collecting metrics
+
+The metrics collection can be secured using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) sidecar container.
+
+* Take a look at this [example chart configuration](../examples/rbac-proxy-values.yaml) and [additional resources](../examples/rbac-proxy-resources.yaml)
+which must be configured in the cluster to make rbac-proxy working in your configuration.
+
 ## Automatically set the passphrase for LINSTOR
 
 LINSTOR may need to store sensitive information in its database, for example for encrypted volumes using the LUKS layer,

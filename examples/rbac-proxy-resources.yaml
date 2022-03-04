@@ -1,0 +1,184 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: piraeus-rbac-proxy
+data:
+  piraeus-operator.yaml: |+
+    authorization:
+      resourceAttributes:
+        namespace: piraeus
+        apiGroup: apps
+        apiVersion: v1
+        resource: deployments
+        subresource: prometheus-metrics
+        name: piraeus-operator
+  linstor-controller.yaml: |+
+    authorization:
+      resourceAttributes:
+        namespace: piraeus
+        apiGroup: apps
+        apiVersion: v1
+        resource: deployments
+        subresource: prometheus-metrics
+        name: linstor-controller
+  linstor-node.yaml: |+
+    authorization:
+      resourceAttributes:
+        namespace: piraeus
+        apiGroup: apps
+        apiVersion: v1
+        resource: daemonsets
+        subresource: prometheus-metrics
+        name: linstor-node
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: piraeus-rbac-proxy
+rules:
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["subjectaccessreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: piraeus-op-rbac-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: piraeus-rbac-proxy
+subjects:
+- kind: ServiceAccount
+  name: piraeus-op
+  namespace: piraeus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: linstor-controller-rbac-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: piraeus-rbac-proxy
+subjects:
+- kind: ServiceAccount
+  name: linstor-controller
+  namespace: piraeus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: linstor-satellite-rbac-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: piraeus-rbac-proxy
+subjects:
+- kind: ServiceAccount
+  name: linstor-satellite
+  namespace: piraeus
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: piraeus-operator
+  namespace: monitoring
+  labels:
+    prometheus: main
+spec:
+  podMetricsEndpoints:
+  - targetPort: 8080
+    scheme: https
+    bearerTokenSecret:
+      name: "prometheus-token"
+      key: "token"
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      name: piraeus-op-operator
+  namespaceSelector:
+    matchNames:
+    - piraeus
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: linstor-controller
+  namespace: monitoring
+  labels:
+    prometheus: main
+spec:
+  podMetricsEndpoints:
+  - targetPort: 3370
+    scheme: https
+    bearerTokenSecret:
+      name: "prometheus-token"
+      key: "token"
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: piraeus-op-cs
+      app.kubernetes.io/managed-by: piraeus-operator
+      app.kubernetes.io/name: piraeus-controller
+  namespaceSelector:
+    matchNames:
+    - piraeus
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: linstor-node
+  namespace: monitoring
+  labels:
+    prometheus: main
+spec:
+  podMetricsEndpoints:
+  - targetPort: 9942
+    scheme: https
+    bearerTokenSecret:
+      name: "prometheus-token"
+      key: "token"
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: piraeus-op-ns
+      app.kubernetes.io/managed-by: piraeus-operator
+      app.kubernetes.io/name: piraeus-node
+  namespaceSelector:
+    matchNames:
+    - piraeus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: access-to-linstor
+  namespace: piraeus
+rules:
+- apiGroups: ["apps"]
+  resources: ["daemonsets/prometheus-metrics", "deployments/prometheus-metrics"]
+  resourceNames: ["linstor-controller", "linstor-node", "piraeus-operator"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: access-to-linstor
+  namespace: piraeus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: access-to-linstor
+subjects:
+- kind: User
+  name: monitoring:scraper
+- kind: ServiceAccount
+  name: prometheus
+  namespace: monitoring
