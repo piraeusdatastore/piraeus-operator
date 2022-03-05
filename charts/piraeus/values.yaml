@@ -71,6 +71,9 @@ operator:
     dbUseClientCert: false
     sslSecret: ""
     affinity: {}
+    httpBindAddress: ""
+    httspBindAddress: ""
+
     tolerations:
       - key: node-role.kubernetes.io/master
         operator: Exists

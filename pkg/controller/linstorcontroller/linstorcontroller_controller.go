@@ -982,18 +982,23 @@ func NewConfigMapForResource(controllerResource *piraeusv1.LinstorController) (*
 
 	var http *linstortoml.ControllerHttp
 	var https *linstortoml.ControllerHttps
+	if controllerResource.Spec.HttpBindAddress != "" {
+		http = &linstortoml.ControllerHttp{
+			ListenAddr: controllerResource.Spec.HttpBindAddress,
+		}
+	}
 	if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
 		yes := true
 
-		http = &linstortoml.ControllerHttp{
-			ListenAddr: "::1",
-		}
 		https = &linstortoml.ControllerHttps{
 			Enabled:            &yes,
 			Keystore:           kubeSpec.LinstorHttpsCertDir + "/keystore.jks",
 			KeystorePassword:   kubeSpec.LinstorHttpsCertPassword,
 			Truststore:         kubeSpec.LinstorHttpsCertDir + "/truststore.jks",
 			TruststorePassword: kubeSpec.LinstorHttpsCertPassword,
+		}
+		if controllerResource.Spec.HttpsBindAddress != "" {
+			https.ListenAddr = controllerResource.Spec.HttpsBindAddress
 		}
 	}
 

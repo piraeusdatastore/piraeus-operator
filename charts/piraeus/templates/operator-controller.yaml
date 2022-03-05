@@ -36,4 +36,12 @@ spec:
   {{- if .Values.operator.controller.logLevel }}
   logLevel: {{ .Values.operator.controller.logLevel | quote }}
   {{- end }}
+  {{- if .Values.operator.controller.httpBindAddress }}
+  httpBindAddress: {{ .Values.operator.controller.httpBindAddress | quote }}
+  {{- else if (include "controller.sslSecretName" .) }}
+  httpBindAddress: "127.0.0.1"
+  {{- end }}
+  {{- if .Values.operator.controller.httpsBindAddress }}
+  httpsBindAddress: {{ .Values.operator.controller.httpsBindAddress | quote }}
+  {{- end }}
 {{- end }}

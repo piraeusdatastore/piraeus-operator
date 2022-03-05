@@ -113,6 +113,16 @@ type LinstorControllerSpec struct {
 	// +kubebuilder:validation:Enum=error;warn;info;debug;trace
 	LogLevel shared.LogLevel `json:"logLevel,omitempty"`
 
+	// HttpBindAddress is address used to bind HTTP listener
+	// +optional
+	// +nullable
+	HttpBindAddress string `json:"httpBindAddress"`
+
+	// HttpsBindAddress is address used to bind HTTPS listener
+	// +optional
+	// +nullable
+	HttpsBindAddress string `json:"httpsBindAddress"`
+
 	shared.LinstorClientConfig `json:",inline"`
 }
 

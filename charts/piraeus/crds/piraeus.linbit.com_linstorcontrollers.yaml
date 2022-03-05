@@ -992,6 +992,14 @@ spec:
                 description: DrbdRepoCred is the name of the kubernetes secret that
                   holds the credential for the DRBD repositories
                 type: string
+              httpBindAddress:
+                description: HttpBindAddress is address used to bind HTTP listener
+                nullable: true
+                type: string
+              httpsBindAddress:
+                description: HttpsBindAddress is address used to bind HTTPS listener
+                nullable: true
+                type: string
               imagePullPolicy:
                 description: Pull policy applied to all pods started from this controller
                 type: string
