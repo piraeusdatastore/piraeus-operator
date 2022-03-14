@@ -97,3 +97,17 @@ We will remove the `IHaveBackedUpAllMyLinstorResources=true` switch in a release
    ```
    $ helm upgrade piraeus-op charts/piraeus --set operator.controller.controllerImage=... --set operator.satelliteSet.satelliteImage=...
    ```
+
+## Delete the database
+
+If you are using the `k8s` database backend, you may want to remove the associated resources after removing Piraeus.
+Otherwise, you may run LINSTOR with outdated information if you decide to install it again. To create a local backup
+and then delete the database resources, run:
+
+```
+kubectl get crds | grep -o ".*.internal.linstor.linbit.com" | xargs kubectl get crds -oyaml > crds.yaml
+kubectl get crds | grep -o ".*.internal.linstor.linbit.com" | xargs -i{} sh -c "kubectl get {} -oyaml > {}.yaml"
+# Check the the resources are properly backed up now!
+# Then delete the LINSTOR database:
+kubectl get crds | grep -o ".*.internal.linstor.linbit.com" | xargs --no-run-if-empty kubectl delete crds
+```

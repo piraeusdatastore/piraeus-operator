@@ -5,6 +5,8 @@ kind: Secret
 metadata:
   name: {{ template "operator.fullname" . }}-passphrase
   namespace: {{ .Release.Namespace }}
+  finalizers:
+    - piraeus.linbit.com/protect-master-passphrase
   annotations:
     helm.sh/resource-policy: keep
     helm.sh/hook: pre-install

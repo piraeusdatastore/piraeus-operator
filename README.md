@@ -180,12 +180,29 @@ to perform some manual steps before deleting a Helm deployment.
    helm uninstall piraeus-op
    ```
 
-   However due to the Helm's current policy, the Custom Resource Definitions named
+   However, due to the Helm's current policy, the Custom Resource Definitions named
    `linstorcontroller` and `linstorsatelliteset` will __not__ be deleted by the
    command.
 
    More information regarding Helm's current position on CRD's can be found
    [here](https://helm.sh/docs/topics/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you).
+
+4. Delete the LINSTOR passphrase.
+
+   If you removed all PVCs, and you are certain you won't need any of the current LINSTOR state (resources, snapshots,
+   backups) again, you can delete the LINSTOR passphrase secret. The secret is protected by a finalizer: accidental
+   removal would make the cluster inoperable. You should back up the passphrase to local storage.
+
+   ```
+   # Create a local backup of the passphrase
+   kubectl get secret piraeus-op-passphrase -o 'go-template={{ .data.MASTER_PASSPHRASE | base64decode}}' > secret-passphrase
+   # Remove the finalizer blocking deletion
+   kubectl patch -p '{"metadata": {"$deleteFromPrimitiveList/finalizers": ["piraeus.linbit.com/protect-master-passphrase"]}}' secret piraeus-op-passphrase
+   # Remove the secret
+   kubectl delete secret piraeus-op-passphrase
+   ```
+
+5. Delete LINSTOR database resources when using the K8s backend. [Guide](./doc/k8s-backend.md#delete-the-database)
 
 ## Deployment without using Helm v3 chart
 
