@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
 
+### Changed
+
+- Protect LINSTOR passphrase from accidental deletion by using a finalizer.
+
 ## [v1.8.0-rc.1] - 2022-02-24
 
 ### Added
