@@ -9,20 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
-
-### Changed
-
-- Protect LINSTOR passphrase from accidental deletion by using a finalizer.
-
-## [v1.8.0-rc.1] - 2022-02-24
-
-### Added
-
 - Allow setting the number of parallel requests created by the CSI sidecars. This limits the load on the LINSTOR
   backend, which could easily overload when creating many volumes at once.
 - Unify certificates format for SSL enabled installation, no more java tooling required.
 - Automatic certificates generation using Helm or Cert-manager
+- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
 
 ### Changed
 
@@ -46,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unexpected connections, especially when using SSL.
 - Only query node devices if a storage pool needs to be created.
 - Use cached storage pool response to avoid causing excessive load on LINSTOR satellites.
+- Protect LINSTOR passphrase from accidental deletion by using a finalizer.
 
 ### Breaking
 
@@ -556,5 +548,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.6.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.5.1...v1.6.0
 [v1.7.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.6.0...v1.7.0
 [v1.7.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.7.0...v1.7.1
-[v1.8.0-rc.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.7.1...v1.8.0-rc.1
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.8.0-rc.1...HEAD
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.7.1...HEAD
