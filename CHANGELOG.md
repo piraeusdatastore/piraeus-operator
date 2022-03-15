@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are stored in Secret resources as a `tar.gz`. If the secret would get too big, the backup can be downloaded from
   the operator pod.
 - Default images:
-  * LINSTOR 1.18.0-rc.3
+  * LINSTOR 1.18.0
   * LINSTOR CSI 0.18.0
   * DRBD 9.1.6
   * DRBD Reactor 0.5.3

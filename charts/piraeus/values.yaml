@@ -62,7 +62,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.18.0-rc.3
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.18.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -79,7 +79,7 @@ operator:
     additionalProperties: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.18.0-rc.3
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.18.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
