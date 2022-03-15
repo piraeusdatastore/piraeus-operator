@@ -62,7 +62,7 @@ operator:
   podsecuritycontext: {}
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.18.0-rc.3
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.18.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -79,7 +79,7 @@ operator:
     additionalProperties: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.18.0-rc.3
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.18.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
