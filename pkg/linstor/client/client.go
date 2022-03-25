@@ -238,7 +238,7 @@ func (c *HighLevelClient) ensureWantedInterface(ctx context.Context, node lapi.N
 			continue
 		}
 
-		if nodeIf.Address == wanted.Address {
+		if nodeIf.Address == wanted.Address && nodeIf.SatelliteEncryptionType == wanted.SatelliteEncryptionType && nodeIf.SatellitePort == wanted.SatellitePort {
 			return nil
 		}
 
