@@ -238,7 +238,10 @@ func (c *HighLevelClient) ensureWantedInterface(ctx context.Context, node lapi.N
 			continue
 		}
 
-		if nodeIf.Address == wanted.Address && nodeIf.SatelliteEncryptionType == wanted.SatelliteEncryptionType && nodeIf.SatellitePort == wanted.SatellitePort {
+		// LINSTOR is sadly inconsistent with using "Plain" vs "PLAIN" in encryption types. Fixing it in linstor-common
+		// (which is used to generate the constants in golinstor) was deemed too much effort, so we do the next best
+		// thing: just ignore casing while comparing.
+		if nodeIf.Address == wanted.Address && strings.ToUpper(nodeIf.SatelliteEncryptionType) == strings.ToUpper(wanted.SatelliteEncryptionType) && nodeIf.SatellitePort == wanted.SatellitePort {
 			return nil
 		}
 
