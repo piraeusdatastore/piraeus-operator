@@ -25,6 +25,13 @@ If this option is active, the secret specified in the above section must contain
 * `tls.crt` certificate presented to `etcd` for authentication
 * `tls.key` private key, matching the above client certificate.
 
+**NOTE**
+Currently for the `tls.key` private key, used to connect to etcd, only the pkcs8 format is supported.
+You can convert a PEM formatted key with openssl like this:
+```
+openssl pkcs8 -topk8 -inform PEM -in key.pem -out tls.key -nocrypt
+```
+
 ## Configuring secure communication between LINSTOR components
 
 The default communication between LINSTOR components is not secured by TLS. If this is needed for your setup,
