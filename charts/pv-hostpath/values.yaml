@@ -6,8 +6,11 @@ gid: 1000
 chownerImage: quay.io/centos/centos:8
 tolerations:
   - key: node-role.kubernetes.io/master
-    operator: "Exists"
-    effect: "NoSchedule"
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
 pspRole: ""
 selinux: false
 nodes: []

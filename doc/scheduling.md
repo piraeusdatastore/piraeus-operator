@@ -37,9 +37,12 @@ To allow pods to be placed on master nodes, you need add [tolerations]:
 
 ```yaml
 tolerations:
+- key: node-role.kubernetes.io/control-plane # New value since Kubernetes 1.24
+  operator: Exists
+  effect: NoSchedule
 - key: node-role.kubernetes.io/master
-  operator: "Exists"
-  effect: "NoSchedule"
+  operator: Exists
+  effect: NoSchedule
 ```
 
 This toleration allows pods to be scheduled on master nodes.

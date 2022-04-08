@@ -253,9 +253,12 @@ Description:: Resource requests and limits to apply to the etcd containers. See 
 Default::
 [source]
 ----
+- key: node-role.kubernetes.io/control-plane
+  operator: Exists
+  effect: NoSchedule
 - key: node-role.kubernetes.io/master
-  operator: "Exists"
-  effect: "NoSchedule"
+  operator: Exists
+  effect: NoSchedule
 ----
 Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[tolerations]
 Description:: Set the tolerations for etcd. Defaults to allow scheduling on master nodes.
