@@ -447,6 +447,12 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 			continue
 		}
 
+		if pod.Status.Phase != corev1.PodRunning {
+			logger.WithField("pod", pod.Name).Debug("Pod not running.")
+
+			continue
+		}
+
 		// Registration can be done in parallel, so we handle per-node work in a separate go-routine
 		wg.Add(1)
 
@@ -531,6 +537,14 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx conte
 	})
 	if err != nil {
 		return fmt.Errorf("failed to reconcile satellite: %w", err)
+	}
+
+	if mdutil.SliceContains(lNode.Flags, linstor.FlagEvicted) {
+		// The pod exists, so there is no reason not to restore it.
+		err := linstorClient.Nodes.Restore(ctx, lNode.Name, lapi.NodeRestore{})
+		if err != nil {
+			return fmt.Errorf("node '%s' failed to restore: %w", lNode.Name, err)
+		}
 	}
 
 	if lNode.ConnectionStatus != lc.Online {
