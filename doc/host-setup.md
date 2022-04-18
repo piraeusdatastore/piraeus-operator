@@ -147,7 +147,7 @@ Checking the current value again will reveal that the helper is now disabled
 disabled
 ```
 
-## Disable Lvmetad in CentOS 7 and Ubuntu 18.04
+## Disable Lvmetad on CentOS 7 and Ubuntu 18.04
 
 Reference: https://access.redhat.com/solutions/2053483
 
