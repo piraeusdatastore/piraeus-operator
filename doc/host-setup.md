@@ -168,7 +168,7 @@ $ sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
 $ cat /etc/lvm/lvm.conf | grep use_lvmetad
 use_lvmetad = 0
 ```
-If lvm is used for root, initial RAM has to be updated:
+If the root partition already uses LVM, you also need to update the initial ram-disk:
 ```bash
 # CentOS 7
 $ cp -vf /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).img.$(date +%m-%d-%H%M%S).bak
