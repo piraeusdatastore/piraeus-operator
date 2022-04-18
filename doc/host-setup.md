@@ -151,11 +151,9 @@ disabled
 
 Reference: https://access.redhat.com/solutions/2053483
 
-CentOS 7 and Ubuntu 18.04 by default use **lvmetad**,  a metadata caching daemon for LVM. The daemon receives notifications from udev rules. Through these notifications, lvmetad has an up-to-date and consistent image of the volume groups available in the system. lvmetad improves performance of LVM commands by saving them from scanning the disks in every execution. 
+CentOS 7 and Ubuntu 18.04 by default use `lvmetad`,  a metadata caching daemon for LVM. The daemon improves performance of LVM commands by avoiding rescanning the disks on every execution. `piraeus-ns-node` pods run LVM commands inside a container without access to lvmetad. Since that means  `lvmetad` would get out of sync, it is recommended to disable `lvmetad` in CentOS 7 and Ubuntu 18.04 Bionic.
 
-`piraeus-ns-node` pod runs lvm commands inside a container without using any lvmetad or udev. And it does not communicate to lvmetad daemon in the operation system. Therefore, users must run `pvscan --cache` in the OS each time to view LVM changes after a Piraeus volume operation. 
-
-In CentOS 8 and in Ubuntu 20.04 (focal), lvmetad is deprecated because lvm2 has removed it since version 2.03. **Therefore, it is also recommended to disable lvmetad in CentOS 7 and Ubuntu 18.04 binoic**. 
+Note: Newer distributions no longer include with `lvmetad`, no changes necessary.
 
 Follow below steps to disable lvmetad completely: 
 ```bash
