@@ -155,7 +155,7 @@ CentOS 7 and Ubuntu 18.04 by default use `lvmetad`,  a metadata caching daemon f
 
 Note: Newer distributions no longer include with `lvmetad`, no changes necessary.
 
-Follow below steps to disable lvmetad completely: 
+Follow below steps to disable lvmetad completely:
 ```bash
 $ systemctl stop lvm2-lvmetad.socket lvm2-lvmetad.service
 
