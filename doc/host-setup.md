@@ -149,13 +149,14 @@ disabled
 
 ## Disable Lvmetad on CentOS 7 and Ubuntu 18.04
 
-Reference: https://access.redhat.com/solutions/2053483
+Reference: <https://access.redhat.com/solutions/2053483>
 
 CentOS 7 and Ubuntu 18.04 by default use `lvmetad`,  a metadata caching daemon for LVM. The daemon improves performance of LVM commands by avoiding rescanning the disks on every execution. `piraeus-ns-node` pods run LVM commands inside a container without access to lvmetad. Since that means  `lvmetad` would get out of sync, it is recommended to disable `lvmetad` in CentOS 7 and Ubuntu 18.04 Bionic.
 
 Note: Newer distributions no longer include with `lvmetad`, no changes necessary.
 
 Follow below steps to disable lvmetad completely:
+
 ```bash
 $ systemctl stop lvm2-lvmetad.socket lvm2-lvmetad.service
 
@@ -168,7 +169,9 @@ $ sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
 $ cat /etc/lvm/lvm.conf | grep use_lvmetad
 use_lvmetad = 0
 ```
+
 If the root partition already uses LVM, you also need to update the initial ram-disk:
+
 ```bash
 # CentOS 7
 $ cp -vf /boot/initramfs-$(uname -r).img /boot/initramfs-$(uname -r).img.$(date +%m-%d-%H%M%S).bak
@@ -179,4 +182,3 @@ $ cp -vf /boot/initrd.img-$(uname -r) /boot/initd.img.$(uname -r).$(date +%m-%d-
 $ update-initramfs -c -k $(uname -r)
 $ update-grub
 ```
-
