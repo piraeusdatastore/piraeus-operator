@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Upgrades involving k8s databases no long require manually confirming a backup exists using
+  `--set IHaveBackedUpAllMyLinstorResources=true`.
+
 ## [v1.8.0] - 2022-03-15
 
 ### Added
