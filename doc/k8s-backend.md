@@ -23,14 +23,13 @@ Then apply it using:
 $ helm install piraeus-op ./charts/piraeus --values k8s-backend.yaml
 ```
 
-However, since this feature is quite new, there might be situations in which LINSTOR fails to upgrade resources,
-leaving the LINSTOR cluster in an unusable state. For this reason, we strongly recommend doing a manual backup
-of all LINSTOR resources before upgrading the cluster.
+Since operator version v1.8.0, the operator will create a snapshot of all LINSTOR internal resources
+before changing the controller image. The backup is available as a secret named `linstor-backup-<hash>`.
 
-Beginning with operator version v1.8.0, the operator will create a snapshot of all LINSTOR internal resources
-before changing the controller image. The backup is available as a secret named `linstor-backup-<hash>`. To copy
-the backup to your local machine, you can use the following command:
+**Upgrades from before 1.8.0** will skip the above backup step, so you should always do a manual backup (described
+below) in this case.
 
+To copy the backup to your local machine, you can use the following command:
 ```
 kubectl get secret linstor-backup-<hash> -o 'go-template={{index .data ".binaryData.backup.tar.gz" | base64decode}}' > linstor-backup.tar.gz
 ```
@@ -45,9 +44,6 @@ that the backup is safe and the operator can proceed:
 kubectl cp <piraeus-operator-pod>:/run/linstor-backups/linstor-backup-<some-hash>.tar.gz <destination-path>
 kubectl create secret linstor-backup-<same-hash>
 ```
-
-We will remove the `IHaveBackedUpAllMyLinstorResources=true` switch in a release after 1.8.0. Upgrades from before
-1.8.0 will skip the above backup step, so you should always do a manual backup (described below) in this case.
 
 ## Manually creating a backup of LINSTOR internal resources
 
@@ -65,8 +61,7 @@ We will remove the `IHaveBackedUpAllMyLinstorResources=true` switch in a release
    ```
    $ kubectl get crds | grep -o ".*.internal.linstor.linbit.com" | xargs -i{} sh -c "kubectl get {} -oyaml > {}.yaml"
    ```
-4. Run the chart upgrade using `--set IHaveBackedUpAllMyLinstorResources=true` to acknowledge you have executed the
-   above steps.
+4. Run the chart upgrade.
 
 ## Restore a backup after a failed upgrade
 
