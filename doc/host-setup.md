@@ -39,10 +39,13 @@ for the kernel source:
 
 Install these packages and use the injector image matching your distribution:
 
-* CentOS 7: `quay.io/piraeusdatastore/drbd9-centos7`
-* CentOS 8: `quay.io/piraeusdatastore/drbd9-centos8` (See [#137] for CentOS 8 Stream)
-* Ubuntu 20.04: `quay.io/piraeusdatastore/drbd9-focal`
-* Ubuntu 18.04: `quay.io/piraeusdatastore/drbd9-bionic`
+| Distribution | Docker image                                                              | Original Dockerfile                                                                                                             |
+|--------------|---------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| CentOS 7     | `quay.io/piraeusdatastore/drbd9-centos7`                                  | [Dockerfile.centos7](https://github.com/piraeusdatastore/piraeus/blob/master/dockerfiles/drbd-driver-loader/Dockerfile.centos7) |
+| CentOS 8     | `quay.io/piraeusdatastore/drbd9-centos8` (See [#137] for CentOS 8 Stream) | [Dockerfile.centos8](https://github.com/piraeusdatastore/piraeus/blob/master/dockerfiles/drbd-driver-loader/Dockerfile.centos8) |
+| Ubuntu 22.04 | `quay.io/piraeusdatastore/drbd9-jammy`                                    | [Dockerfile.jammy](https://github.com/piraeusdatastore/piraeus/blob/master/dockerfiles/drbd-driver-loader/Dockerfile.jammy)     |
+| Ubuntu 20.04 | `quay.io/piraeusdatastore/drbd9-focal`                                    | [Dockerfile.focal](https://github.com/piraeusdatastore/piraeus/blob/master/dockerfiles/drbd-driver-loader/Dockerfile.focal)     |
+| Ubuntu 18.04 | `quay.io/piraeusdatastore/drbd9-bionic`                                   | [Dockerfile.bionic](https://github.com/piraeusdatastore/piraeus/blob/master/dockerfiles/drbd-driver-loader/Dockerfile.bionic)   |
 
 You can set the image by passing `--set operator.satelliteSet.kernelModuleInjectionImage=<image>` to Helm.
 
@@ -95,7 +98,7 @@ FROM quay.io/piraeusdatastore/drbd9-centos8:latest as SOURCE
 FROM fedora:33
 
 # Packages needed for the DRBD build process.
-RUN yum install -y gcc make coccinelle koji cpio patch perl-interpreter diffutils kmod \
+RUN yum install -y gcc make coccinelle koji cpio patch perl-interpreter diffutils kmod elfutils-libelf-devel \
   && yum clean all
 
 # Our script from above
