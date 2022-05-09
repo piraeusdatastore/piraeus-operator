@@ -653,7 +653,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 			"--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)",
 		},
 		Lifecycle: &corev1.Lifecycle{
-			PreStop: &corev1.Handler{
+			PreStop: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{Command: []string{"/bin/sh", "-c", "rm -rf /registration/linstor.csi.linbit.com /registration/linstor.csi.linbit.com-reg.sock"}},
 			},
 		},
@@ -721,7 +721,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Resources: csiResource.Spec.Resources,
 		// Set the liveness probe on the plugin container, it's the component that probably needs the restart
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path: "/healthz",
 					Port: intstr.FromInt(DefaultHealthPort),
@@ -935,7 +935,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Resources: csiResource.Spec.Resources,
 		// Set the liveness probe on the plugin container, it's the component that probably needs the restart
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path: "/healthz",
 					Port: intstr.FromInt(DefaultHealthPort),
