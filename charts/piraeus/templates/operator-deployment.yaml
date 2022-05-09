@@ -40,6 +40,14 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "piraeus-operator"
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /readyz
+          livenessProbe:
+            httpGet:
+              port: 8081
+              path: /healthz
           resources:
 {{ .Values.operator.resources | toYaml | indent 12}}
       volumes:

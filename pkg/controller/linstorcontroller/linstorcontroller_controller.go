@@ -27,8 +27,8 @@ import (
 	"github.com/BurntSushi/toml"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/LINBIT/golinstor/linstortoml"
-	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	awaitelection "github.com/linbit/k8s-await-election/pkg/consts"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -239,21 +239,23 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		if !controllerResource.Spec.SslConfig.IsPlain() {
 			serviceMonitor.Spec.Endpoints[0].Scheme = "https"
 			serviceMonitor.Spec.Endpoints[0].TLSConfig = &monitoringv1.TLSConfig{
-				ServerName: fmt.Sprintf("%s.%s.svc", controllerResource.Name, controllerResource.Namespace),
-				KeySecret: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
-					Key:                  lc.SecretKeyName,
-				},
-				CA: monitoringv1.SecretOrConfigMap{
-					Secret: &corev1.SecretKeySelector{
+				SafeTLSConfig: monitoringv1.SafeTLSConfig{
+					ServerName: fmt.Sprintf("%s.%s.svc", controllerResource.Name, controllerResource.Namespace),
+					KeySecret: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
-						Key:                  lc.SecretCARootName,
+						Key:                  lc.SecretKeyName,
 					},
-				},
-				Cert: monitoringv1.SecretOrConfigMap{
-					Secret: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
-						Key:                  lc.SecretCertName,
+					CA: monitoringv1.SecretOrConfigMap{
+						Secret: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
+							Key:                  lc.SecretCARootName,
+						},
+					},
+					Cert: monitoringv1.SecretOrConfigMap{
+						Secret: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: controllerResource.Spec.LinstorHttpsClientSecret},
+							Key:                  lc.SecretCertName,
+						},
 					},
 				},
 			}
@@ -849,7 +851,7 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 	// This probe should be able to deal with "new" images which start a leader election process,
 	// as well as images without leader election helper
 	livenessProbe := corev1.Probe{
-		Handler: corev1.Handler{
+		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/",
 				Port: intstr.FromInt(healthzPort),
