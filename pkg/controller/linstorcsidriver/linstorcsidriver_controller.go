@@ -693,6 +693,13 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		Name:            "linstor-csi-plugin",
 		Image:           csiResource.Spec.LinstorPluginImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "healthz",
+				ContainerPort: int32(DefaultHealthPort),
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
 		Args: []string{
 			"--csi-endpoint=unix://$(CSI_ENDPOINT)",
 			"--node=$(KUBE_NODE_NAME)",
@@ -916,6 +923,13 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 		Name:            "linstor-csi-plugin",
 		Image:           csiResource.Spec.LinstorPluginImage,
 		ImagePullPolicy: csiResource.Spec.ImagePullPolicy,
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "healthz",
+				ContainerPort: int32(DefaultHealthPort),
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
 		Args: []string{
 			"--csi-endpoint=unix://$(ADDRESS)",
 			"--node=$(KUBE_NODE_NAME)",
