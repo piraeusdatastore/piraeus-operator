@@ -10,9 +10,12 @@ output:
 
 # all available settings of specific linters
 linters-settings:
-  errcheck:
+  errcheck: {}
   gci:
-    local-prefixes: github.com/piraeusdatastore/piraeus-operator
+    sections:
+      - standard
+      - default
+      - prefix(github.com/piraeusdatastore/piraeus-operator)
   funlen:
     lines: 120
   gocyclo:
@@ -81,6 +84,11 @@ linters:
     - goerr113
     - exhaustivestruct
     - gomoddirectives
+    - golint
+    - maligned
+    - interfacer
+    - scopelint
+    - execinquery
   fast: false
 
 issues:
