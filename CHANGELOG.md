@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Default images:
+  * LINSTOR 1.18.1
+  * LINSTOR CSI 0.19.0
+  * DRBD 9.1.7
+  * DRBD Reactor 0.6.1
+
 ### Removed
 
 - Upgrades involving k8s databases no long require manually confirming a backup exists using
