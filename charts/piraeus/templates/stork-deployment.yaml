@@ -327,6 +327,6 @@ spec:
       - configMap:
           defaultMode: 420
           name: {{ .Release.Name }}-stork-config
-        name: scheduler-config
+        name: stork-config
       {{- end }}
 {{- end }}
