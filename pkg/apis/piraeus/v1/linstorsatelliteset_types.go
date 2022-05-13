@@ -114,6 +114,11 @@ type LinstorSatelliteSetSpec struct {
 	// +nullable
 	MonitoringImage string `json:"monitoringImage"`
 
+	// MonitoringBindAddress is the address used to bind monitoring information exporter.
+	// +optional
+	// +nullable
+	MonitoringBindAddress string `json:"monitoringBindAddress"`
+
 	// LogLevel sets the log level for deployed components.
 	// +nullable
 	// +optional
