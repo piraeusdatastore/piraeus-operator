@@ -78,7 +78,7 @@ operator:
     sslSecret: ""
     affinity: {}
     httpBindAddress: ""
-    httspBindAddress: ""
+    httpsBindAddress: ""
 
     tolerations:
       - key: node-role.kubernetes.io/master
@@ -103,6 +103,7 @@ operator:
     tolerations: []
     resources: {}
     monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.6.1
+    monitoringBindAddress: ""
     kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.7
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""

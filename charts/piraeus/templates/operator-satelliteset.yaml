@@ -39,4 +39,7 @@ spec:
   {{- if .Values.operator.satelliteSet.extraVolumes }}
   extraVolumes: {{ .Values.operator.satelliteSet.extraVolumes | toJson }}
   {{- end }}
+  {{- if .Values.operator.satelliteSet.monitoringBindAddress }}
+  monitoringBindAddress: {{ .Values.operator.satelliteSet.monitoringBindAddress | quote }}
+  {{- end }}
 {{- end }}

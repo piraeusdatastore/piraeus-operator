@@ -1068,6 +1068,7 @@ func daemonsetWithMonitoringContainer(ds *apps.DaemonSet, set *piraeusv1.Linstor
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
+					Host:   set.Spec.MonitoringBindAddress,
 					Scheme: corev1.URISchemeHTTP,
 					Port:   intstr.FromInt(monitoringPort),
 				},
@@ -1143,14 +1144,18 @@ func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1
 }
 
 func newMonitoringConfigMap(set *piraeusv1.LinstorSatelliteSet) *corev1.ConfigMap {
+	bindAddress := set.Spec.MonitoringBindAddress
+	if bindAddress == "" {
+		bindAddress = "0.0.0.0"
+	}
 	return &corev1.ConfigMap{
 		ObjectMeta: getObjectMeta(set, "%s-node-monitoring"),
 		Data: map[string]string{
 			"prometheus.toml": fmt.Sprintf(`
 [[prometheus]]
-address = "0.0.0.0:%d"
+address = "%s:%d"
 enums = true
-`, monitoringPort),
+`, bindAddress, monitoringPort),
 		},
 	}
 }

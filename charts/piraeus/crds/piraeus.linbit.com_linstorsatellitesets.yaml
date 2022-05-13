@@ -2548,6 +2548,11 @@ spec:
                 - trace
                 nullable: true
                 type: string
+              monitoringBindAddress:
+                description: MonitoringBindAddress is the address used to bind monitoring
+                  information exporter.
+                nullable: true
+                type: string
               monitoringImage:
                 description: MonitoringImage is the image used to export monitoring
                   information from DRBD and Linstor.
