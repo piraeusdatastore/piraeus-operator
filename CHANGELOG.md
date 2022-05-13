@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
+- Option to disable creating monitoring resources (Services and ServiceMonitors)
+
+### Removed
+- Get rid of operator-sdk binary, use native controller-gen instead
+
 ## [v1.8.1] - 2022-05-12
 
 ### Changed
@@ -17,15 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * DRBD 9.1.7
   * DRBD Reactor 0.6.1
 
-### Removed
-- Get rid of operator-sdk binary, use native controller-gen instead
-
 ### Added
 
 - Upgrades involving k8s databases no long require manually confirming a backup exists using
   `--set IHaveBackedUpAllMyLinstorResources=true`.
-- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
-- Option to disable creating monitoring resources (Services and ServiceMonitors)
 
 ## [v1.8.0] - 2022-03-15
 
