@@ -12,6 +12,10 @@ If you are using the `k8s` database _and_ you also upgrade from **before Operato
 backup** of the database. The required steps are included in the
 [k8s-backend guide](./doc/k8s-backend.md#manually-creating-a-backup-of-linstor-internal-resources).
 
+# Upgrade from v1.8
+
+If you want to protect metrics endpoints, take a look on [guide on enabling rbac-proxy sidecars](doc/security.md).
+
 # Upgrade from v1.7 to v1.8
 
 If you need to set the number of worker threads, or you need to set the log level of LINSTOR components, please update
