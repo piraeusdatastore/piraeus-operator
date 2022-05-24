@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- HA Controller and CSI components now wait for the LINSTOR API to be initialized using InitContainers.
 - Option to disable creating monitoring resources (Services and ServiceMonitors)
 - Add options `csi.controllerSidecars`, `csi.controllerExtraVolumes`, `csi.nodeSidecars`, `csi.nodeExtraVolumes`,
   `operator.controller.sidecars`, `operator.controller.extraVolumes`, `operator.satelliteSet.sidecars`,
@@ -17,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add options `operator.controller.httpBindAddress`, `operator.controller.httpsBindAddress`,
   `operator.satelliteSet.monitoringBindAddress` to allow specifying bind address.
 - Add example values and doc reference to run piraeus-operator with rbac-proxy.
+
+### Changed
+
+- Default images:
+  * LINSTOR 1.18.2
+  * LINSTOR CSI 0.19.1
+  * DRBD Reactor 0.7.0
 
 ### Removed
 - Get rid of operator-sdk binary, use native controller-gen instead
