@@ -791,6 +791,9 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, sate
 
 	logger.Debug("reconcile status of all nodes")
 
+	// This always needs to be non-nil
+	satelliteSet.Status.SatelliteStatuses = []*shared.SatelliteStatus{}
+
 	err := r.reconcileLinstorStatus(ctx, satelliteSet)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to fetch updated status for satellites: %w", err))
@@ -823,14 +826,6 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	ok := linstorClient.ControllerReachable(ctx)
-	if !ok {
-		return fmt.Errorf("controller not reachable: %w", err)
-	}
-
 	log.Debug("get all node pods")
 
 	pods, err := r.getAllNodePods(ctx, satelliteSet)
@@ -845,7 +840,10 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 
 	log.Debug("find all satellite nodes from linstor")
 
-	linstorNodes, err := linstorClient.Nodes.GetAll(ctx, &lapi.ListOpts{Node: nodeNames})
+	timeoutCtx, cancel := context.WithTimeout(ctx, reachableTimeout)
+	defer cancel()
+
+	linstorNodes, err := linstorClient.Nodes.GetAll(timeoutCtx, &lapi.ListOpts{Node: nodeNames})
 	if err != nil {
 		log.Warnf("could not fetch nodes from LINSTOR: %v, continue with empty node list", err)
 	}
@@ -855,7 +853,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 	for i := range pods {
 		pod := &pods[i]
 
-		var matchingNode *lapi.Node = nil
+		var matchingNode *lapi.Node
 
 		for i := range linstorNodes {
 			node := &linstorNodes[i]
@@ -865,10 +863,19 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 			}
 		}
 
-		cached := true
-		pools, err := linstorClient.Nodes.GetStoragePools(ctx, pod.Spec.NodeName, &lapi.ListOpts{Cached: &cached})
-		if err != nil {
-			log.Warnf("failed to get storage pools for node %s: %v", pod.Spec.NodeName, err)
+		var pools []lapi.StoragePool
+
+		if matchingNode != nil {
+			timeoutCtx, cancel := context.WithTimeout(ctx, reachableTimeout)
+
+			cached := true
+
+			pools, err = linstorClient.Nodes.GetStoragePools(timeoutCtx, pod.Spec.NodeName, &lapi.ListOpts{Cached: &cached})
+			if err != nil {
+				log.Warnf("failed to get storage pools for node %s: %v", pod.Spec.NodeName, err)
+			}
+
+			cancel()
 		}
 
 		satelliteSet.Status.SatelliteStatuses[i] = satelliteStatusFromLinstor(pod, matchingNode, pools)
@@ -1422,7 +1429,7 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context,
 
 // Check if the controller is currently reachable.
 func (r *ReconcileLinstorSatelliteSet) controllerReachable(ctx context.Context, linstorClient *lc.HighLevelClient) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, reachableTimeout)
 	defer cancel()
 
 	_, err := linstorClient.Controller.GetVersion(ctx)
@@ -1524,4 +1531,7 @@ func nodeLabelsToProps(labels map[string]string) map[string]string {
 	return result
 }
 
-const monitoringPort = 9942
+const (
+	monitoringPort   = 9942
+	reachableTimeout = 10 * time.Second
+)
