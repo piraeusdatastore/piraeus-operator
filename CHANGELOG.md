@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Satellite operator now reports basic satellite status even if controller is not reachable
+
 ## [v1.8.2] - 2022-05-24
 
 ### Added

@@ -83,6 +83,7 @@ linters:
     - dupl
     - goerr113
     - exhaustivestruct
+    - exhaustruct
     - gomoddirectives
     - golint
     - maligned
