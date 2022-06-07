@@ -11,6 +11,10 @@ import (
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 )
 
+var customLabels = map[string]string{
+	"piraeus": "test",
+}
+
 func TestNewConfigMapForPCS(t *testing.T) {
 	testcases := []struct {
 		name     string
@@ -21,8 +25,10 @@ func TestNewConfigMapForPCS(t *testing.T) {
 			name: "default-settings",
 			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default-ns",
+					Name:        "test",
+					Namespace:   "default-ns",
+					Annotations: customLabels,
+					Labels:      customLabels,
 				},
 				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:     "etcd://etcd.svc:5000/",
@@ -52,8 +58,10 @@ controllers = http://test.default-ns.svc:3370
 			name: "with-ssl-without-client-cert",
 			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default-ns",
+					Name:        "test",
+					Namespace:   "default-ns",
+					Annotations: customLabels,
+					Labels:      customLabels,
 				},
 				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:     "etcd://secure.etcd.svc:443/",
@@ -84,8 +92,10 @@ controllers = http://test.default-ns.svc:3370
 			name: "with-ssl-with-client-cert",
 			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default-ns",
+					Name:        "test",
+					Namespace:   "default-ns",
+					Annotations: customLabels,
+					Labels:      customLabels,
 				},
 				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:     "etcd://secure.etcd.svc:443/",
@@ -119,8 +129,10 @@ controllers = http://test.default-ns.svc:3370
 			name: "with-https-auth-and-log-level",
 			spec: &piraeusv1.LinstorController{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "default-ns",
+					Name:        "test",
+					Namespace:   "default-ns",
+					Annotations: customLabels,
+					Labels:      customLabels,
 				},
 				Spec: piraeusv1.LinstorControllerSpec{
 					DBConnectionURL:              "etcd://etcd.svc:5000/",

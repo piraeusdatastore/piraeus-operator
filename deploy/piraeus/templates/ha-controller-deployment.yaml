@@ -5,6 +5,8 @@ kind: Deployment
 metadata:
   name: piraeus-op-ha-controller
   namespace: default
+  labels:
+    app.kubernetes.io/name: piraeus-op-ha-controller
 spec:
   replicas: 1
   selector:

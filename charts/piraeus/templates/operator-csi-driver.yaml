@@ -4,6 +4,19 @@ kind: LinstorCSIDriver
 metadata:
   name: {{ template "operator.fullname" . }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "operator.fullname" . }}
+{{- if .Values.csi.customLabels }}
+{{- with .Values.csi.customLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
+{{- if .Values.csi.customAnnotations }}
+  annotations:
+{{- with .Values.csi.customAnnotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
 spec:
   imagePullSecret: {{ .Values.drbdRepoCred | quote }}
   linstorPluginImage: {{ .Values.csi.pluginImage | quote }}

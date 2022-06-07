@@ -770,7 +770,7 @@ func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.Daemon
 		ObjectMeta: meta,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: meta.Labels,
+				MatchLabels: getDefaultLabels(csiResource, kubeSpec.CSINodeRole),
 			},
 			Template: template,
 		},
@@ -1052,19 +1052,25 @@ func defaultIfUnset(val, def int32) int32 {
 	return val
 }
 
-func getObjectMeta(controllerResource *piraeusv1.LinstorCSIDriver, nameFmt, component string) metav1.ObjectMeta {
+func getObjectMeta(controllerResource *piraeusv1.LinstorCSIDriver, nameFmt string, component string) metav1.ObjectMeta {
+	defaultLabels := getDefaultLabels(controllerResource, component)
 	return metav1.ObjectMeta{
-		Name:      fmt.Sprintf(nameFmt, controllerResource.Name),
-		Namespace: controllerResource.Namespace,
-		Labels: map[string]string{
-			"app.kubernetes.io/name":       kubeSpec.CSIDriverRole,
-			"app.kubernetes.io/instance":   controllerResource.Name,
-			"app.kubernetes.io/managed-by": kubeSpec.Name,
-			"app.kubernetes.io/component":  component,
-		},
+		Name:        fmt.Sprintf(nameFmt, controllerResource.Name),
+		Namespace:   controllerResource.Namespace,
+		Labels:      mdutil.MergeStringMap(controllerResource.ObjectMeta.Labels, defaultLabels),
+		Annotations: controllerResource.ObjectMeta.Annotations,
 	}
 }
 
 func kubeletPath(csiResource *piraeusv1.LinstorCSIDriver, subdirs ...string) string {
 	return filepath.Join(append([]string{csiResource.Spec.KubeletPath}, subdirs...)...)
+}
+
+func getDefaultLabels(controllerResource *piraeusv1.LinstorCSIDriver, component string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":       kubeSpec.CSIDriverRole,
+		"app.kubernetes.io/instance":   controllerResource.Name,
+		"app.kubernetes.io/managed-by": kubeSpec.Name,
+		"app.kubernetes.io/component":  component,
+	}
 }

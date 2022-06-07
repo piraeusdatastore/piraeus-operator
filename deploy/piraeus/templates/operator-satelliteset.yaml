@@ -5,6 +5,8 @@ kind: LinstorSatelliteSet
 metadata:
   name: piraeus-op-ns
   namespace: default
+  labels:
+    name: piraeus-op-ns
 spec:
   priorityClassName: ""
   sslSecret: ""

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for custom labels and annotations with added options to `values.yaml`.
+
 ### Changed
 
 - Satellite operator now reports basic satellite status even if controller is not reachable

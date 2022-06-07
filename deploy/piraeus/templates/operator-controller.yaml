@@ -5,6 +5,8 @@ kind: LinstorController
 metadata:
   name: piraeus-op-cs
   namespace: default
+  labels:
+    app.kubernetes.io/name: piraeus-op-cs
 spec:
   priorityClassName: ""
   # TODO: switch to k8s db by default

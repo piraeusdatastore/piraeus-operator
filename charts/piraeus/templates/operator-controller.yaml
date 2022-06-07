@@ -4,6 +4,19 @@ kind: LinstorController
 metadata:
   name: {{ template "operator.fullname" . }}-cs
   namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "operator.fullname" . }}-cs
+{{- if .Values.operator.controller.customLabels }}
+{{- with .Values.operator.controller.customLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
+{{- if .Values.operator.controller.customAnnotations }}
+  annotations:
+{{- with .Values.operator.controller.customAnnotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   # TODO: switch to k8s db by default

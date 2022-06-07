@@ -5,6 +5,8 @@ kind: LinstorCSIDriver
 metadata:
   name: piraeus-op
   namespace: default
+  labels:
+    app.kubernetes.io/name: piraeus-op
 spec:
   imagePullSecret: ""
   linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.19.1"
