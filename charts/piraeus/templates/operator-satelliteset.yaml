@@ -4,6 +4,19 @@ kind: LinstorSatelliteSet
 metadata:
   name: {{ template "operator.fullname" . }}-ns
   namespace: {{ .Release.Namespace }}
+  labels:
+    name: {{ template "operator.fullname" . }}-ns
+{{- if .Values.operator.satelliteSet.customLabels }}
+{{- with .Values.operator.satelliteSet.customLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
+{{- if .Values.operator.satelliteSet.customAnnotations }}
+  annotations:
+{{- with .Values.operator.satelliteSet.customAnnotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
 spec:
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   sslSecret: {{ include "satelliteSet.sslSecretName" . | quote }}

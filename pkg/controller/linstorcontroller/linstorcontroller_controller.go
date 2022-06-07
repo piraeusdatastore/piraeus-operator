@@ -346,9 +346,9 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		}
 	}
 
-	meta := getObjectMeta(controllerResource, "%s-controller")
+	defaultLabels := getDefaultLabels(controllerResource)
 	ourPods := &corev1.PodList{}
-	err = r.client.List(ctx, ourPods, client.InNamespace(controllerResource.Namespace), client.MatchingLabels(meta.Labels))
+	err = r.client.List(ctx, ourPods, client.InNamespace(controllerResource.Namespace), client.MatchingLabels(defaultLabels))
 	if err != nil {
 		return err
 	}
@@ -874,7 +874,7 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 	return &appsv1.Deployment{
 		ObjectMeta: meta,
 		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: meta.Labels},
+			Selector: &metav1.LabelSelector{MatchLabels: getDefaultLabels(controllerResource)},
 			Replicas: controllerResource.Spec.Replicas,
 			Strategy: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 			Template: corev1.PodTemplateSpec{
@@ -1054,14 +1054,20 @@ func expectedEndpoint(controllerResource *piraeusv1.LinstorController) string {
 	return lc.DefaultControllerServiceEndpoint(serviceName, useHTTPS)
 }
 
+func getDefaultLabels(controllerResource *piraeusv1.LinstorController) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":       kubeSpec.ControllerRole,
+		"app.kubernetes.io/instance":   controllerResource.Name,
+		"app.kubernetes.io/managed-by": kubeSpec.Name,
+	}
+}
+
 func getObjectMeta(controllerResource *piraeusv1.LinstorController, nameFmt string) metav1.ObjectMeta {
+	defaultLabels := getDefaultLabels(controllerResource)
 	return metav1.ObjectMeta{
-		Name:      fmt.Sprintf(nameFmt, controllerResource.Name),
-		Namespace: controllerResource.Namespace,
-		Labels: map[string]string{
-			"app.kubernetes.io/name":       kubeSpec.ControllerRole,
-			"app.kubernetes.io/instance":   controllerResource.Name,
-			"app.kubernetes.io/managed-by": kubeSpec.Name,
-		},
+		Name:        fmt.Sprintf(nameFmt, controllerResource.Name),
+		Namespace:   controllerResource.Namespace,
+		Labels:      mdutil.MergeStringMap(controllerResource.ObjectMeta.Labels, defaultLabels),
+		Annotations: controllerResource.ObjectMeta.Annotations,
 	}
 }

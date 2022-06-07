@@ -18,23 +18,33 @@ import (
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 )
 
+var customLabels = map[string]string{
+	"piraeus": "test",
+}
+
 var (
 	yes                  = true
 	DefaultNodeDaemonSet = appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-node",
-			Namespace: "bar",
+			Name:        "foo-csi-node",
+			Namespace:   "bar",
+			Annotations: customLabels,
+			Labels:      customLabels,
 		},
 	}
 	DefaultControllerDeployment = appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo-csi-controller",
-			Namespace: "bar",
+			Name:        "foo-csi-controller",
+			Namespace:   "bar",
+			Annotations: customLabels,
+			Labels:      customLabels,
 		},
 	}
 	DefaultCSIDriver = storagev1.CSIDriver{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "linstor.csi.linbit.com",
+			Name:        "linstor.csi.linbit.com",
+			Annotations: customLabels,
+			Labels:      customLabels,
 		},
 		Spec: storagev1.CSIDriverSpec{
 			AttachRequired:  &yes,
@@ -70,8 +80,10 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 			initialResources: []client.Object{
 				&piraeusv1.LinstorCSIDriver{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "bar",
+						Name:        "foo",
+						Namespace:   "bar",
+						Annotations: customLabels,
+						Labels:      customLabels,
 					},
 					Spec: piraeusv1.LinstorCSIDriverSpec{},
 				},

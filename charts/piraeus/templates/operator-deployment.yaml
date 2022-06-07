@@ -5,6 +5,17 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     name: {{ template "operator.fullname" . }}-operator
+{{- if .Values.operator.customLabels }}
+{{- with .Values.operator.customLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
+{{- if .Values.operator.customAnnotations }}
+  annotations:
+{{- with .Values.operator.customAnnotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
 spec:
   replicas: {{ .Values.operator.replicas }}
   selector:
@@ -14,6 +25,17 @@ spec:
     metadata:
       labels:
         name: {{ template "operator.fullname" . }}-operator
+{{- if .Values.operator.customLabels }}
+{{- with .Values.operator.customLabels }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- end }}
+{{- if .Values.operator.customAnnotations }}
+      annotations:
+{{- with .Values.operator.customAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- end }}
     spec:
       serviceAccountName: {{ template "operator.fullname" . }}
       securityContext:

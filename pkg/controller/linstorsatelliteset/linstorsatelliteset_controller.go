@@ -925,10 +925,10 @@ func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, satel
 		"Namespace": satelliteSet.Namespace,
 	}).Debug("list all node pods to register on controller")
 
-	meta := getObjectMeta(satelliteSet, "%s")
 	// Filters
 	namespaceSelector := client.InNamespace(satelliteSet.Namespace)
-	labelSelector := client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(meta.Labels)}
+	defaultLabels := getDefaultLabels(satelliteSet)
+	labelSelector := client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(defaultLabels)}
 	pods := &corev1.PodList{}
 
 	err := r.client.List(ctx, pods, namespaceSelector, labelSelector)
@@ -949,7 +949,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 	ds := &apps.DaemonSet{
 		ObjectMeta: meta,
 		Spec: apps.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: meta.Labels},
+			Selector: &metav1.LabelSelector{MatchLabels: getDefaultLabels(satelliteSet)},
 			UpdateStrategy: apps.DaemonSetUpdateStrategy{
 				Type: apps.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &apps.RollingUpdateDaemonSet{
@@ -1311,7 +1311,7 @@ func newMonitoringService(set *piraeusv1.LinstorSatelliteSet) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: meta,
 		Spec: corev1.ServiceSpec{
-			Selector:  meta.Labels,
+			Selector:  getDefaultLabels(set),
 			ClusterIP: corev1.ClusterIPNone,
 			Type:      corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
@@ -1508,14 +1508,20 @@ func findK8sNode(nodes []corev1.Node, name string) *corev1.Node {
 }
 
 func getObjectMeta(satelliteSet *piraeusv1.LinstorSatelliteSet, nameFmt string) metav1.ObjectMeta {
+	defaultLabels := getDefaultLabels(satelliteSet)
 	return metav1.ObjectMeta{
-		Name:      fmt.Sprintf(nameFmt, satelliteSet.Name),
-		Namespace: satelliteSet.Namespace,
-		Labels: map[string]string{
-			"app.kubernetes.io/name":       kubeSpec.NodeRole,
-			"app.kubernetes.io/instance":   satelliteSet.Name,
-			"app.kubernetes.io/managed-by": kubeSpec.Name,
-		},
+		Name:        fmt.Sprintf(nameFmt, satelliteSet.Name),
+		Namespace:   satelliteSet.Namespace,
+		Labels:      mdutil.MergeStringMap(satelliteSet.ObjectMeta.Labels, defaultLabels),
+		Annotations: satelliteSet.ObjectMeta.Annotations,
+	}
+}
+
+func getDefaultLabels(satelliteSet *piraeusv1.LinstorSatelliteSet) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":       kubeSpec.NodeRole,
+		"app.kubernetes.io/instance":   satelliteSet.Name,
+		"app.kubernetes.io/managed-by": kubeSpec.Name,
 	}
 }
 

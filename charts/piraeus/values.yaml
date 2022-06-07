@@ -41,6 +41,8 @@ csi:
   controllerTolerations: []
   enableTopology: true
   resources: {}
+  customLabels: {}
+  customAnnotations: {}
   kubeletPath: /var/lib/kubelet
   controllerSidecars: []
   controllerExtraVolumes: []
@@ -62,6 +64,8 @@ operator:
   affinity: {}
   tolerations: []
   resources: {}
+  customLabels: {}
+  customAnnotations: {}
   podsecuritycontext: {}
   args:
     createBackups: true
@@ -92,6 +96,8 @@ operator:
     additionalProperties: {}
     sidecars: []
     extraVolumes: []
+    customLabels: {}
+    customAnnotations: {}
   satelliteSet:
     enabled: true
     satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.18.2
@@ -110,6 +116,8 @@ operator:
     additionalEnv: []
     sidecars: []
     extraVolumes: []
+    customLabels: {}
+    customAnnotations: {}
 haController:
   enabled: true
   image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0
@@ -117,3 +125,5 @@ haController:
   tolerations: []
   resources: {}
   replicas: 1
+  customLabels: {}
+  customAnnotations: {}

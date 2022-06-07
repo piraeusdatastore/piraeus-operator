@@ -35,3 +35,17 @@ func SliceContains(list []string, s string) bool {
 	}
 	return false
 }
+
+func MergeStringMap(stringMapA, stringMapB map[string]string) map[string]string {
+	result := make(map[string]string)
+
+	for k, v := range stringMapA {
+		result[k] = v
+	}
+
+	for k, v := range stringMapB {
+		result[k] = v
+	}
+
+	return result
+}
