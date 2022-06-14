@@ -226,9 +226,7 @@ kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --dock
 First you need to create the resource definitions
 
 ```
-kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorsatellitesets.yaml
-kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcsidrivers.yaml
-kubectl create -f charts/piraeus/crds/piraeus.linbit.com_linstorcontrollers.yaml
+kubectl apply -Rf charts/piraeus/crds/
 ```
 
 Then, take a look at the files in [`deploy/piraeus`](./deploy/piraeus) and make changes as
@@ -238,7 +236,12 @@ like shown in [the storage guide](./doc/storage.md#configuring-storage-pool-crea
 
 Now you can finally deploy the LINSTOR cluster with:
 ```
-kubectl create -Rf deploy/piraeus/
+kubectl apply -Rf deploy/piraeus/
+```
+
+Or using Kustomize:
+```
+kubectl apply -k deploy
 ```
 
 ## Upgrading
