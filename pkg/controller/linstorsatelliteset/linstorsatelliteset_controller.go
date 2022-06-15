@@ -1200,6 +1200,15 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 		},
 	)
 
+	volumeMounts := satelliteSet.Spec.KernelModuleInjectionExtraVolumeMounts
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		// VolumumeSource for this directory is already present on the base
+		// daemonset.
+		Name:      kubeSpec.ModulesDirName,
+		MountPath: kubeSpec.ModulesDir,
+	},
+	)
+
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "kernel-module-injector",
@@ -1207,15 +1216,8 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 			ImagePullPolicy: satelliteSet.Spec.ImagePullPolicy,
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			Env:             env,
-			VolumeMounts: []corev1.VolumeMount{
-				// VolumumeSource for this directory is already present on the base
-				// daemonset.
-				{
-					Name:      kubeSpec.ModulesDirName,
-					MountPath: kubeSpec.ModulesDir,
-				},
-			},
-			Resources: satelliteSet.Spec.KernelModuleInjectionResources,
+			VolumeMounts:    volumeMounts,
+			Resources:       satelliteSet.Spec.KernelModuleInjectionResources,
 		},
 	}
 

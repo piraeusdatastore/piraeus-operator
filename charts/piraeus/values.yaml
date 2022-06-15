@@ -113,6 +113,7 @@ operator:
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
+    kernelModuleInjectionExtraVolumeMounts: []
     additionalEnv: []
     sidecars: []
     extraVolumes: []
