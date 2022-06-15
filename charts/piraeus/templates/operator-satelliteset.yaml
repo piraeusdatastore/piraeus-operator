@@ -36,6 +36,9 @@ spec:
   {{- if .Values.operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory }}
   kernelModuleInjectionAdditionalSourceDirectory: {{ .Values.operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory | quote }}
   {{- end }}
+  {{- if .Values.operator.satelliteSet.kernelModuleInjectionExtraVolumeMounts }}
+  kernelModuleInjectionExtraVolumeMounts: {{ .Values.operator.satelliteSet.kernelModuleInjectionExtraVolumeMounts | toJson }}
+  {{- end }}
   {{- if .Values.operator.satelliteSet.storagePools }}
   storagePools:
 {{ toYaml .Values.operator.satelliteSet.storagePools | indent 4 }}

@@ -85,6 +85,11 @@ type LinstorSatelliteSetSpec struct {
 	// +nullable
 	KernelModuleInjectionAdditionalSourceDirectory string `json:"kernelModuleInjectionAdditionalSourceDirectory,omitempty"`
 
+	// KernelModuleInjectionExtraVolumeMounts are additional volumes mounts for the kernel module builder/injector container.
+	// +optional
+	// +nullable
+	KernelModuleInjectionExtraVolumeMounts []corev1.VolumeMount `json:"kernelModuleInjectionExtraVolumeMounts"`
+
 	// Resource requirements for the kernel module builder/injector container
 	// +optional
 	// +nullable

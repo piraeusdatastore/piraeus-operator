@@ -423,6 +423,13 @@ func (in *LinstorSatelliteSetSpec) DeepCopyInto(out *LinstorSatelliteSetSpec) {
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.KernelModuleInjectionExtraVolumeMounts != nil {
+		in, out := &in.KernelModuleInjectionExtraVolumeMounts, &out.KernelModuleInjectionExtraVolumeMounts
+		*out = make([]corev1.VolumeMount, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	in.KernelModuleInjectionResources.DeepCopyInto(&out.KernelModuleInjectionResources)
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
