@@ -99,3 +99,4 @@ deploy/piraeus:
 	rm -rf "$@"
 	mkdir -p "$@"
 	helm template -n default piraeus-op charts/piraeus --set stork.schedulerTag=v1.18.0 --set operator.controller.masterPassphrase=changemeplease --output-dir deploy >/dev/null
+	deploy/create-kustomization.bash
