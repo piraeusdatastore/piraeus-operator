@@ -3,20 +3,20 @@ kind: Kustomization
 metadata:
   name: piraeus-operator
 resources:
+  - piraeus/templates/operator-controller-passphrase.yaml
+  - piraeus/templates/operator-satelliteset.yaml
+  - piraeus/templates/csi-controller-rbac.yml
+  - piraeus/templates/tests/test-CS-svc.yaml
+  - piraeus/templates/tests/test-NS-svc.yaml
+  - piraeus/templates/ha-controller-deployment.yaml
+  - piraeus/templates/operator-serviceaccount.yaml
+  - piraeus/templates/operator-csi-driver.yaml
+  - piraeus/templates/operator-controller.yaml
+  - piraeus/templates/satellite-rbac.yml
+  - piraeus/templates/operator-deployment.yaml
+  - piraeus/templates/controller-rbac.yml
+  - piraeus/templates/ha-controller-rbac.yaml
+  - piraeus/templates/csi-node-rbac.yml
   - piraeus/charts/etcd/templates/rbac.yaml
   - piraeus/charts/etcd/templates/service.yaml
   - piraeus/charts/etcd/templates/statefulset.yaml
-  - piraeus/templates/controller-rbac.yml
-  - piraeus/templates/csi-controller-rbac.yml
-  - piraeus/templates/csi-node-rbac.yml
-  - piraeus/templates/ha-controller-deployment.yaml
-  - piraeus/templates/ha-controller-rbac.yaml
-  - piraeus/templates/operator-controller-passphrase.yaml
-  - piraeus/templates/operator-controller.yaml
-  - piraeus/templates/operator-csi-driver.yaml
-  - piraeus/templates/operator-deployment.yaml
-  - piraeus/templates/operator-satelliteset.yaml
-  - piraeus/templates/operator-serviceaccount.yaml
-  - piraeus/templates/satellite-rbac.yml
-  - piraeus/templates/tests/test-CS-svc.yaml
-  - piraeus/templates/tests/test-NS-svc.yaml
