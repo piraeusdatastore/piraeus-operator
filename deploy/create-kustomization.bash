@@ -16,7 +16,7 @@ resources:
 EOL
 
 
-files="$(find -L "piraeus" -type f)"
+files="$(find -L "piraeus" -type f | sort)"
 echo "$files" | while read -r file; do
   echo "  - $file" >> "$kustomize"
 done
