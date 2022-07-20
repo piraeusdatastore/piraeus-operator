@@ -619,7 +619,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 
 	logger.Debug("fetch available devices for node")
 
-	storageList, err := linstorClient.Nodes.GetPhysicalStorage(ctx, &lapi.ListOpts{Node: []string{pod.Spec.NodeName}})
+	storageList, err := linstorClient.Nodes.GetPhysicalStorage(ctx, pod.Spec.NodeName)
 	if err != nil {
 		return err
 	}
@@ -627,14 +627,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 	emptyDevices := sets.String{}
 
 	for _, entry := range storageList {
-		ourNode, ok := entry.Nodes[pod.Spec.NodeName]
-		if !ok {
-			continue
-		}
-
-		for _, dev := range ourNode {
-			emptyDevices.Insert(dev.Device)
-		}
+		emptyDevices.Insert(entry.Device)
 	}
 
 	logger.WithField("emptyDevices", emptyDevices).Debug("got available devices")
