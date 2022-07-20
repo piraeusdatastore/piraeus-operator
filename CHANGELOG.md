@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Query single satellite devices to receive errors when the satellite is offline instead of assuming
   devices are already configured.
 - Disabled the legacy HA Controller deployment by default. It has been replaced a separate [chart](https://artifacthub.io/packages/helm/piraeus-charts/piraeus-ha-controller).
+- Default images:
+  * LINSTOR 1.19.1
+  * LINSTOR CSI 0.20.0
+  * DRBD 9.1.8
+  * DRBD Reactor 0.8.0
+  * external CSI images to latest versions
 
 ### Fixed
 

@@ -23,13 +23,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.19.1
-  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.4.0
-  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.5.0
-  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.4.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.1.0
-  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v5.0.1
-  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.4.0
+  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.20.0
+  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v3.5.0
+  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.7.0
+  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.5.1
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.2.1
+  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v6.0.1
+  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.5.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
@@ -74,7 +74,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.18.2
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.19.1
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -100,16 +100,16 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.18.2
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.19.1
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.7.0
+    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.8.0
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.7
+    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.8
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
