@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Query single satellite devices to receive errors when the satellite is offline instead of assuming
   devices are already configured.
 
+### Fixed
+
+- `last-applied-configuration `annotation was never updated, so updating of some fields was not performed correctly.
+
 ## [v1.8.2] - 2022-05-24
 
 ### Added

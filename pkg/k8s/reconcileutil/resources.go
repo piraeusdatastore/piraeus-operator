@@ -223,18 +223,27 @@ func ensureAppliedConfigAnnotation(scheme *runtime.Scheme, obj GCRuntimeObject) 
 
 	delete(objUnstructured.Object, "status")
 
+	// First serialize the object without the annotation to prevent recursion,
+	// then add that serialization to it as the annotation and serialize it again.
+	annotations := objUnstructured.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+
+	delete(annotations, lastAppliedAnnotation)
+
 	objEncoded, err := runtime.Encode(unstructured.UnstructuredJSONScheme, &objUnstructured)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare applied configuration metadata: %w", err)
 	}
 
-	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
 	annotations[lastAppliedAnnotation] = string(objEncoded)
-	obj.SetAnnotations(annotations)
+	objUnstructured.SetAnnotations(annotations)
+
+	objEncoded, err = runtime.Encode(unstructured.UnstructuredJSONScheme, &objUnstructured)
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare applied configuration metadata: %w", err)
+	}
 
 	return objEncoded, nil
 }
