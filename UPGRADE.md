@@ -12,9 +12,14 @@ If you are using the `k8s` database _and_ you also upgrade from **before Operato
 backup** of the database. The required steps are included in the
 [k8s-backend guide](./doc/k8s-backend.md#manually-creating-a-backup-of-linstor-internal-resources).
 
-# Upgrade from v1.8
+# Upgrade from v1.8 to v1.9
 
 If you want to protect metrics endpoints, take a look on [guide on enabling rbac-proxy sidecars](doc/security.md).
+
+We've also disabled the `haController` component in our chart. The replacement is available from
+[artifacthub.io](https://artifacthub.io/packages/helm/piraeus-charts/piraeus-ha-controller), containing much needed
+improvements in robustness and fail-over speed. If you want to still use the old version, set
+`haController.enabled=true`.
 
 # Upgrade from v1.7 to v1.8
 

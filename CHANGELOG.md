@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Satellite operator now reports basic satellite status even if controller is not reachable
 - Query single satellite devices to receive errors when the satellite is offline instead of assuming
   devices are already configured.
+- Disabled the legacy HA Controller deployment by default. It has been replaced a separate [chart](https://artifacthub.io/packages/helm/piraeus-charts/piraeus-ha-controller).
 
 ### Fixed
 
