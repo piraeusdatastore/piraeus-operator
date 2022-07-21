@@ -67,7 +67,7 @@ components by default. Follow the steps below to find out how you can enable sna
 To use snapshots, you first need to create a `VolumeSnapshotClass`:
 
 ```yaml
-apiVersion: snapshot.storage.k8s.io/v1beta1
+apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshotClass
 metadata:
   name: my-first-linstor-snapshot-class
@@ -78,7 +78,7 @@ deletionPolicy: Delete
 You can then use this snapshot class to create a snapshot from an existing LINSTOR PVC:
 
 ```yaml
-apiVersion: snapshot.storage.k8s.io/v1beta1
+apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
   name: my-first-linstor-snapshot
@@ -182,35 +182,40 @@ storage. Using the HA Controller reduces the time it takes for Kubernetes to res
 
 [Piraeus High Availability (HA) Controller]: https://github.com/piraeusdatastore/piraeus-ha-controller
 
-To mark your stateful applications as managed by Piraeus, use the `linstor.csi.linbit.com/on-storage-lost: remove` label.
-For example, Pod Templates in a StatefulSet should look like:
+The HA Controller is packaged as a separate Helm chart available from our Chart Repository:
+
+```
+helm repo add piraeus-charts https://piraeus.io/helm-charts/
+helm install piraeus-ha-controller piraeus-charts/piraeus-ha-controller
+```
+
+To take full advantage of the HA Controller, we recommend adding the following parameters to your Piraeus StorageClasses.
+On loss of quorum, DRBD will freeze any IO requests until either quorum is restored or the HA Controller could trigger
+a proper failover.
 
 ```yaml
-apiVersion: apps/v1
-kind: StatefulSet
+parameters:
+  property.linstor.csi.linbit.com/DrbdOptions/auto-quorum: suspend-io
+  property.linstor.csi.linbit.com/DrbdOptions/Resource/on-no-data-accessible: suspend-io
+  property.linstor.csi.linbit.com/DrbdOptions/Resource/on-suspended-primary-outdated: force-secondary
+  property.linstor.csi.linbit.com/DrbdOptions/Net/rr-conflict: retry-connect
+```
+
+If you have Pods using Piraeus volumes that you want to exclude from automated fail-over, include the following annotation
+on the Pod:
+
+```yaml
 metadata:
-  name: my-stateful-app
-spec:
-  serviceName: my-stateful-app
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: my-stateful-app
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: my-stateful-app
-        linstor.csi.linbit.com/on-storage-lost: remove
-    ...
+  annotations:
+     drbd.linbit.com/ignore-fail-over: ""
+  ...
 ```
 
-This way, the Piraeus High Availability Controller will not interfere with applications that do not benefit or even
-support it's primary use.
+### Legacy HA Controller
 
-To disable deployment of the HA Controller use:
-
-```
---set haController.enabled=false
-```
+In previous versions of the Operator, we bundled the HA Controller directly with the Operator. Starting with Operator
+1.9.0, this bundled deployment is disabled by default. We recommend using the stand-alone chart instead. If you want
+to keep using the legacy version, you can enable setting `haController.enabled=true` when installing the Operator.
 
 ### Usage with STORK
 

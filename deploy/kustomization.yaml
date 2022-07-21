@@ -9,8 +9,6 @@ resources:
   - piraeus/templates/controller-rbac.yml
   - piraeus/templates/csi-controller-rbac.yml
   - piraeus/templates/csi-node-rbac.yml
-  - piraeus/templates/ha-controller-deployment.yaml
-  - piraeus/templates/ha-controller-rbac.yaml
   - piraeus/templates/operator-controller-passphrase.yaml
   - piraeus/templates/operator-controller.yaml
   - piraeus/templates/operator-csi-driver.yaml

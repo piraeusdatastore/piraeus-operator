@@ -120,7 +120,7 @@ operator:
     customLabels: {}
     customAnnotations: {}
 haController:
-  enabled: true
+  enabled: false
   image: daocloud.io/piraeus/piraeus-ha-controller:v0.3.0
   affinity: {}
   tolerations: []

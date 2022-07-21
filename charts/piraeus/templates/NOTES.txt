@@ -18,3 +18,9 @@ Since you didn't configure any storage pools, now would be a great time to add s
 It looks like your cluster does not currently support snapshots. The documentation contains instructions on how
 to enable snapshots in your cluster.
 {{ end }}
+
+If you want to take full advantage of Piraeus and are looking for faster fail-over of your workloads in case of storage
+issues, consider installing the Piraeus HA Controller:
+
+  helm repo add piraeus-charts https://piraeus.io/helm-charts/
+  helm install piraeus-ha-controller piraeus-charts/piraeus-ha-controller

@@ -120,7 +120,7 @@ operator:
     customLabels: {}
     customAnnotations: {}
 haController:
-  enabled: true
+  enabled: false
   image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0
   affinity: {}
   tolerations: []
