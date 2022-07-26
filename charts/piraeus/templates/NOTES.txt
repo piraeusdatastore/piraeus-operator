@@ -24,3 +24,9 @@ issues, consider installing the Piraeus HA Controller:
 
   helm repo add piraeus-charts https://piraeus.io/helm-charts/
   helm install piraeus-ha-controller piraeus-charts/piraeus-ha-controller
+
+If you are running on ephemeral infrastructure and still want to take advantage of strict volume affinity, take a look
+at our LINSTOR Affinity Controller. It helps ensure a PVs affinity is always in sync with the state of the LINSTOR volume.
+
+  helm repo add piraeus-charts https://piraeus.io/helm-charts/
+  helm install linstor-affinity-controller piraeus-charts/linstor-affinity-controller
