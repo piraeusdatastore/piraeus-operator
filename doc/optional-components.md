@@ -230,6 +230,27 @@ raw event stream from Piraeus, while STORK just periodically checks the volume s
 
 While they overlap in functionality, there are no known compatibility issues when running both STORK and the HA Controller.
 
+## Affinity controller
+
+Affinity is used by Kubernetes to track on which node a specific resource can be accessed. For example, you can use
+affinity to restrict access to a volume to a specific zone. While this is all supported by Piraeus and LINSTOR, and you
+could tune your volumes to support almost any cluster topology, there was one important thing missing: updating affinity
+after volume migration.
+
+This is where the LINSTOR Affinity Controller comes in: it enables updating a PVs affinity, so that it always matches
+the LINSTOR internal state. It enables strict affinity settings should you use ephemeral infrastructure: even if you
+rotate out all nodes, your PV affinity will always match the actual volume placement in LINSTOR.
+
+After installing the Operator, you can install the LINSTOR Affinity Controller using our Helm chart:
+
+```
+helm repo add piraeus-charts https://piraeus.io/helm-charts/
+helm install linstor-affinity-controller piraeus-charts/linstor-affinity-controller
+```
+
+Detailed instructions are available on [artifacthub.io](https://artifacthub.io/packages/helm/piraeus-charts/linstor-affinity-controller)
+and on the [project page](https://github.com/piraeusdatastore/linstor-affinity-controller).
+
 ## Scheduler components
 
 Stork is a scheduler extender plugin for Kubernetes which allows a storage driver to give the Kubernetes scheduler

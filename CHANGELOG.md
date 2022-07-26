@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for custom labels and annotations with added options to `values.yaml`.
+- Instructions for deploying the affinity controller.
 
 ### Changed
 
