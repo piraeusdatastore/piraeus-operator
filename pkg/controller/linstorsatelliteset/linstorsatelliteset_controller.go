@@ -300,7 +300,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 
 			serviceMonitor := monitoring.MonitorForService(monitoringService)
 
-			serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, satelliteSet, reconcileutil.OnPatchErrorReturn)
+			serviceMonitorChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, serviceMonitor, satelliteSet, reconcileutil.OnPatchErrorRecreate)
 			if err != nil {
 				return nil, fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
 			}

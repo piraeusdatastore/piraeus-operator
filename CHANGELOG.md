@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- ServiceMonitor resources can't be patched, instead we recreate them.
+
 ## [v1.9.0] - 2022-07-20
 
 ### Added
