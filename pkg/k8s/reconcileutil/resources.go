@@ -71,12 +71,12 @@ func OnPatchErrorRecreate(ctx context.Context, kubeClient client.Client, current
 // `kubectl apply` for go. First, will try to create the resource. If it already exists, it will try to compute the
 // changes based on the one previously applied and patch the resource.
 func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runtime.Scheme, obj GCRuntimeObject, onPatchErr OnPatchError) (bool, error) {
-	modifiedEncoded, err := ensureAppliedConfigAnnotation(scheme, obj)
+	desiredEncoded, desired, err := ensureAppliedConfigAnnotation(scheme, obj)
 	if err != nil {
 		return false, err
 	}
 
-	err = kubeClient.Create(ctx, obj, client.FieldOwner(fieldOwner))
+	err = kubeClient.Create(ctx, desired, client.FieldOwner(fieldOwner))
 	if err == nil {
 		return true, nil
 	}
@@ -110,7 +110,7 @@ func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runti
 		return false, fmt.Errorf("failed to re-encoded current resource: %w", err)
 	}
 
-	patch, err := strategicpatch.CreateThreeWayMergePatch([]byte(originalEncoded), modifiedEncoded, currentEncoded, patchMeta, true, defaultPreconditions...)
+	patch, err := strategicpatch.CreateThreeWayMergePatch([]byte(originalEncoded), desiredEncoded, currentEncoded, patchMeta, true, defaultPreconditions...)
 	if err != nil {
 		return false, fmt.Errorf("failed to generate patch data: %w", err)
 	}
@@ -122,7 +122,7 @@ func CreateOrUpdate(ctx context.Context, kubeClient client.Client, scheme *runti
 	err = kubeClient.Patch(ctx, obj, client.RawPatch(types.StrategicMergePatchType, patch), client.FieldOwner(fieldOwner))
 	if err != nil {
 		if (apierrors.IsInvalid(err) || apierrors.IsUnsupportedMediaType(err)) && onPatchErr != nil {
-			err := onPatchErr(ctx, kubeClient, current, obj)
+			err := onPatchErr(ctx, kubeClient, current, desired)
 
 			return err == nil, err
 		}
@@ -209,7 +209,7 @@ func findCurrentResource(ctx context.Context, kubeClient client.Client, obj GCRu
 }
 
 // Ensure the resource has the current config stored in an annotation.
-func ensureAppliedConfigAnnotation(scheme *runtime.Scheme, obj GCRuntimeObject) ([]byte, error) {
+func ensureAppliedConfigAnnotation(scheme *runtime.Scheme, obj GCRuntimeObject) ([]byte, *unstructured.Unstructured, error) {
 	// Instead of encoding the json directly, we first convert it to "Unstructured", i.e. a map[string]interface{}
 	// We do this to remove a "status" item if there is any. Not all status fields are marked as `json:",omitempty`,
 	// so their default value will be serialized too. The status field itself is marked as `json:",omitempty`, which
@@ -218,7 +218,7 @@ func ensureAppliedConfigAnnotation(scheme *runtime.Scheme, obj GCRuntimeObject) 
 
 	err := scheme.Convert(obj, &objUnstructured, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert to unstructured item: %w", err)
+		return nil, nil, fmt.Errorf("failed to convert to unstructured item: %w", err)
 	}
 
 	delete(objUnstructured.Object, "status")
@@ -234,7 +234,7 @@ func ensureAppliedConfigAnnotation(scheme *runtime.Scheme, obj GCRuntimeObject) 
 
 	objEncoded, err := runtime.Encode(unstructured.UnstructuredJSONScheme, &objUnstructured)
 	if err != nil {
-		return nil, fmt.Errorf("failed to prepare applied configuration metadata: %w", err)
+		return nil, nil, fmt.Errorf("failed to prepare applied configuration metadata: %w", err)
 	}
 
 	annotations[lastAppliedAnnotation] = string(objEncoded)
@@ -242,8 +242,8 @@ func ensureAppliedConfigAnnotation(scheme *runtime.Scheme, obj GCRuntimeObject) 
 
 	objEncoded, err = runtime.Encode(unstructured.UnstructuredJSONScheme, &objUnstructured)
 	if err != nil {
-		return nil, fmt.Errorf("failed to prepare applied configuration metadata: %w", err)
+		return nil, nil, fmt.Errorf("failed to prepare applied configuration metadata: %w", err)
 	}
 
-	return objEncoded, nil
+	return objEncoded, &objUnstructured, nil
 }
