@@ -239,7 +239,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 
 		serviceMonitor.Spec.Endpoints[0].Path = "/metrics"
 
-		if !controllerResource.Spec.SslConfig.IsPlain() {
+		if controllerResource.Spec.LinstorHttpsControllerSecret != "" {
 			serviceMonitor.Spec.Endpoints[0].Scheme = "https"
 			serviceMonitor.Spec.Endpoints[0].TLSConfig = &monitoringv1.TLSConfig{
 				SafeTLSConfig: monitoringv1.SafeTLSConfig{
