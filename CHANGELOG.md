@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Restoring satellites after eviction only happens if the node is ready.
+
 ## [v1.9.1] - 2022-07-27
 
 ### Fixed

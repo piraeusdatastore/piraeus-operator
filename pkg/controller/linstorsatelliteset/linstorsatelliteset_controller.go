@@ -557,7 +557,15 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx conte
 		return fmt.Errorf("failed to reconcile satellite: %w", err)
 	}
 
-	if mdutil.SliceContains(lNode.Flags, linstor.FlagEvicted) {
+	nodeReady := false
+
+	for _, cond := range k8sNode.Status.Conditions {
+		if cond.Type == corev1.NodeReady {
+			nodeReady = cond.Status == corev1.ConditionTrue
+		}
+	}
+
+	if nodeReady && mdutil.SliceContains(lNode.Flags, linstor.FlagEvicted) {
 		// The pod exists, so there is no reason not to restore it.
 		err := linstorClient.Nodes.Restore(ctx, lNode.Name, lapi.NodeRestore{})
 		if err != nil {
