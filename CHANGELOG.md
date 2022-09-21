@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Restoring satellites after eviction only happens if the node is ready.
 
+### Changed
+
+- Default images:
+  * LINSTOR 1.20.0-rc.1
+  * DRBD 9.1.11
+  * external CSI images upgraded to latest versions
+
 ## [v1.9.1] - 2022-07-27
 
 ### Fixed

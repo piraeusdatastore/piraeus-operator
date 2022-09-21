@@ -24,12 +24,12 @@ stork:
 csi:
   enabled: true
   pluginImage: quay.io/piraeusdatastore/piraeus-csi:v0.20.0
-  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v3.5.0
+  csiAttacherImage: k8s.gcr.io/sig-storage/csi-attacher:v4.0.0
   csiLivenessProbeImage: k8s.gcr.io/sig-storage/livenessprobe:v2.7.0
   csiNodeDriverRegistrarImage: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1
   csiProvisionerImage: k8s.gcr.io/sig-storage/csi-provisioner:v3.2.1
   csiSnapshotterImage: k8s.gcr.io/sig-storage/csi-snapshotter:v6.0.1
-  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.5.0
+  csiResizerImage: k8s.gcr.io/sig-storage/csi-resizer:v1.6.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
@@ -74,7 +74,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.19.1
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0-rc.1
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -100,7 +100,7 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.19.1
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0-rc.1
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
@@ -109,7 +109,7 @@ operator:
     resources: {}
     monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.8.0
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.8
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.11
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}

@@ -12,7 +12,7 @@ spec:
   sslSecret: ""
   drbdRepoCred: ""
   imagePullPolicy: "IfNotPresent"
-  satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.19.1
+  satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0-rc.1
   linstorHttpsClientSecret: ""
   controllerEndpoint: http://piraeus-op-cs.default.svc:3370
   automaticStorageType: "None"
@@ -21,5 +21,5 @@ spec:
   resources: {}
   monitoringImage: "quay.io/piraeusdatastore/drbd-reactor:v0.8.0"
   kernelModuleInjectionMode: "Compile"
-  kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.1.8"
+  kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.1.11"
   kernelModuleInjectionResources: {}
