@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Can set the variable `mountDrbdResourceDirectoriesFromHost` in the Helm chart to create hostPath Volumes for DRBD and LINSTOR configuration directories for the satellite set.
+
 ## [v1.10.0-rc.1] - 2022-09-21
 
 ### Fixed

@@ -100,6 +100,7 @@ var (
 	HostPathDirectoryType         = corev1.HostPathDirectory
 	HostPathDirectoryOrCreateType = corev1.HostPathDirectoryOrCreate
 	MountPropagationBidirectional = corev1.MountPropagationBidirectional
+	FileType = corev1.HostPathFile
 )
 
 // Shared consts common to container security. These need to be vars, so they

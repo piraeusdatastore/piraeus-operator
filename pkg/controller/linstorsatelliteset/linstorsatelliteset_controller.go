@@ -1053,6 +1053,74 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 	ds = daemonsetWithMonitoringContainer(ds, satelliteSet, drbdReactorConfig)
 	ds = daemonSetWithSslConfiguration(ds, satelliteSet)
 	ds = daemonSetWithHttpsConfiguration(ds, satelliteSet)
+	ds = daemonSetWithDrbdHostPaths(ds, satelliteSet)
+	return ds
+}
+
+func daemonSetWithDrbdHostPaths(ds *apps.DaemonSet, set *piraeusv1.LinstorSatelliteSet) *apps.DaemonSet {
+	if set.Spec.MountDrbdResourceDirectoriesFromHost {
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, []corev1.Volume{
+			{
+				Name: "etc-drbd-conf",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/etc/drbd.conf",
+						Type: &kubeSpec.FileType,
+					},
+				},
+			},
+			{
+				Name: "etc-drbd-d",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/etc/drbd.d",
+						Type: &kubeSpec.HostPathDirectoryType,
+					},
+				},
+			},
+			{
+				Name: "var-lib-drbd",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/drbd",
+						Type: &kubeSpec.HostPathDirectoryType,
+					},
+				},
+			},
+			{
+				Name: "var-lib-linstor-d",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/linstor.d",
+						Type: &kubeSpec.HostPathDirectoryType,
+					},
+				},
+			},
+		}...)
+
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, []corev1.VolumeMount{
+			{
+				Name:      "etc-drbd-conf",
+				MountPath: "/etc/drbd.conf",
+			},
+			{
+				Name:      "etc-drbd-d",
+				MountPath: "/etc/drbd.d",
+			},
+			{
+				Name:      "var-lib-drbd",
+				MountPath: "/var/lib/drbd",
+			},
+			{
+				Name:      "var-lib-linstor",
+				MountPath: "/var/lib/linstor",
+			},
+			{
+				Name:      "var-lib-linstor-d",
+				MountPath: "/var/lib/linstor.d",
+			},
+		}...)
+	}
 	return ds
 }
 

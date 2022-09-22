@@ -141,6 +141,11 @@ type LinstorSatelliteSetSpec struct {
 	// +optional
 	// +nullable
 	ExtraVolumes []corev1.Volume `json:"extraVolumes"`
+
+	// MountDrbdResourceDirectoriesFromHost sets up the hostpath volume mounts in the satellite set for DRBD resource directories.
+	// +optional
+	// +nullable
+	MountDrbdResourceDirectoriesFromHost bool `json:"mountDrbdResourceDirectoriesFromHost"`
 }
 
 // LinstorSatelliteSetStatus defines the observed state of LinstorSatelliteSet

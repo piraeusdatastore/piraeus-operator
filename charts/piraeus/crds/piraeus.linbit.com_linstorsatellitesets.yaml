@@ -2599,6 +2599,11 @@ spec:
                   information from DRBD and Linstor.
                 nullable: true
                 type: string
+              mountDrbdResourceDirectoriesFromHost:
+                description: MountDrbdResourceDirectoriesFromHost sets up the hostpath
+                  volume mounts in the satellite set for DRBD resource directories.
+                nullable: true
+                type: boolean
               priorityClassName:
                 description: priorityClassName is the name of the PriorityClass for
                   the node pods
