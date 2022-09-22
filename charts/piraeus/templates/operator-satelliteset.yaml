@@ -58,4 +58,7 @@ spec:
   {{- if .Values.operator.satelliteSet.monitoringBindAddress }}
   monitoringBindAddress: {{ .Values.operator.satelliteSet.monitoringBindAddress | quote }}
   {{- end }}
+  {{- if .Values.operator.satelliteSet.mountDrbdResourceDirectoriesFromHost }}
+  mountDrbdResourceDirectoriesFromHost: {{ .Values.operator.satelliteSet.mountDrbdResourceDirectoriesFromHost }}
+  {{- end }}
 {{- end }}

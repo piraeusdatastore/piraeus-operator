@@ -469,6 +469,11 @@ Default:: `""`
 Valid values:: `error`, `warn`, `info`, `debug`, `trace`
 Description:: Set the log level of the LINSTOR Satellite. If not set defaults to `info`.
 
+=== `operator.satelliteSet.mountDrbdResourceDirectoriesFromHost`
+Default:: `false`
+Valid values:: `true`, `false`
+Description:: Sets up additional hostPath volumes in the Satellite set required for DRBD and LINSTOR configuration. If not set defaults to `false`.
+
 == PSP
 
 === `psp.privilegedRole`
