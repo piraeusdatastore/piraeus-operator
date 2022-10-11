@@ -1222,7 +1222,7 @@ func newSatelliteConfigMap(satelliteSet *piraeusv1.LinstorSatelliteSet) (*corev1
 func newMonitoringConfigMap(set *piraeusv1.LinstorSatelliteSet) *corev1.ConfigMap {
 	bindAddress := set.Spec.MonitoringBindAddress
 	if bindAddress == "" {
-		bindAddress = "0.0.0.0"
+		bindAddress = "[::]"
 	}
 	return &corev1.ConfigMap{
 		ObjectMeta: getObjectMeta(set, "%s-node-monitoring"),
