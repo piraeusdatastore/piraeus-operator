@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Can set the variable `mountDrbdResourceDirectoriesFromHost` in the Helm chart to create hostPath Volumes for DRBD and LINSTOR configuration directories for the satellite set.
 
+### Changed
+
+- Change default bind address for satellite monitoring to use IPv6 anylocal `[::]`. This will still to work on IPv4
+  only systems with IPv6 disabled via sysctl.
+
 ## [v1.10.0-rc.1] - 2022-09-21
 
 ### Fixed
