@@ -3,8 +3,8 @@ module github.com/piraeusdatastore/piraeus-operator
 go 1.17
 
 require (
-	github.com/BurntSushi/toml v1.1.0
-	github.com/LINBIT/golinstor v0.44.0
+	github.com/BurntSushi/toml v1.2.0
+	github.com/LINBIT/golinstor v0.45.0
 	github.com/linbit/k8s-await-election v0.3.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.56.1
 	github.com/sirupsen/logrus v1.9.0
@@ -65,9 +65,9 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
