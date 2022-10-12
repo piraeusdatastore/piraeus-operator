@@ -44,8 +44,6 @@ func TestNewConfigMapForPCS(t *testing.T) {
 				Data: map[string]string{
 					"linstor.toml": `[db]
   connection_url = "etcd://etcd.svc:5000/"
-
-[logging]
 `,
 					"linstor-client.conf": `[global]
 controllers = http://test.default-ns.svc:3370
@@ -78,8 +76,6 @@ controllers = http://test.default-ns.svc:3370
 					"linstor.toml": `[db]
   connection_url = "etcd://secure.etcd.svc:443/"
   ca_certificate = "/etc/linstor/certs/ca.crt"
-
-[logging]
 `,
 					"linstor-client.conf": `[global]
 controllers = http://test.default-ns.svc:3370
@@ -115,8 +111,6 @@ controllers = http://test.default-ns.svc:3370
   ca_certificate = "/etc/linstor/certs/ca.crt"
   client_certificate = "/etc/linstor/certs/tls.crt"
   client_key_pkcs8_pem = "/etc/linstor/certs/tls.key"
-
-[logging]
 `,
 					"linstor-client.conf": `[global]
 controllers = http://test.default-ns.svc:3370

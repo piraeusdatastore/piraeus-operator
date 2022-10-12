@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -363,7 +364,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 			NetInterfaces: []lapi.NetInterface{
 				{
 					Name:                    "default",
-					Address:                 pod.Status.PodIP,
+					Address:                 net.ParseIP(pod.Status.PodIP),
 					IsActive:                true,
 					SatellitePort:           controllerResource.Spec.SslConfig.Port(),
 					SatelliteEncryptionType: controllerResource.Spec.SslConfig.Type(),

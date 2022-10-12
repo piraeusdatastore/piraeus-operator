@@ -20,6 +20,7 @@ package linstorsatelliteset
 import (
 	"context"
 	"fmt"
+	"net"
 	"path"
 	"sort"
 	"strings"
@@ -546,7 +547,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx conte
 		NetInterfaces: []lapi.NetInterface{
 			{
 				Name:                    "default",
-				Address:                 pod.Status.HostIP,
+				Address:                 net.ParseIP(pod.Status.PodIP),
 				IsActive:                true,
 				SatellitePort:           satelliteSet.Spec.SslConfig.Port(),
 				SatelliteEncryptionType: satelliteSet.Spec.SslConfig.Type(),

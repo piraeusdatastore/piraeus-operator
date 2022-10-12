@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change default bind address for satellite monitoring to use IPv6 anylocal `[::]`. This will still to work on IPv4
   only systems with IPv6 disabled via sysctl.
 
+### Fixed
+
+- Comparing IP addresses for registered components uses golang's built-in net.IP type.
+
 ## [v1.10.0-rc.1] - 2022-09-21
 
 ### Fixed
