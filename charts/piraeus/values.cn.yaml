@@ -74,7 +74,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.20.0-rc.1
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.20.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -100,14 +100,14 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.20.0-rc.1
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.20.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.8.0
+    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.9.0
     monitoringBindAddress: ""
     kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.11
     kernelModuleInjectionMode: Compile
