@@ -74,7 +74,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0-rc.1
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -100,14 +100,14 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0-rc.1
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.20.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.8.0
+    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v0.9.0
     monitoringBindAddress: ""
     kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.11
     kernelModuleInjectionMode: Compile

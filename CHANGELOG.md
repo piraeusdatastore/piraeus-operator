@@ -15,23 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Change default bind address for satellite monitoring to use IPv6 anylocal `[::]`. This will still to work on IPv4
   only systems with IPv6 disabled via sysctl.
+- Default images:
+  * LINSTOR 1.20.0
+  * DRBD 9.1.11
+  * DRBD Reactor 0.9.0
+  * external CSI images upgraded to latest versions
 
 ### Fixed
 
 - Comparing IP addresses for registered components uses golang's built-in net.IP type.
-
-## [v1.10.0-rc.1] - 2022-09-21
-
-### Fixed
-
 - Restoring satellites after eviction only happens if the node is ready.
-
-### Changed
-
-- Default images:
-  * LINSTOR 1.20.0-rc.1
-  * DRBD 9.1.11
-  * external CSI images upgraded to latest versions
 
 ## [v1.9.1] - 2022-07-27
 
@@ -648,5 +641,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.8.2]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.8.1...v1.8.2
 [v1.9.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.8.2...v1.9.0
 [v1.9.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.9.0...v1.9.1
-[v1.10.0-rc.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.9.1...v1.10.0-rc.1
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.10.0-rc.1...HEAD
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.9.1...HEAD
