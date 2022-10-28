@@ -122,7 +122,7 @@ func TestToPhysicalStorageCreate(t *testing.T) {
 				ThinVolume:  "test0ThinPool",
 			},
 			lapi.PhysicalStorageCreate{
-				PoolName:     "test0ThinPool",
+				PoolName:     "test0VolumeGroup/test0ThinPool",
 				ProviderKind: lapi.LVM_THIN,
 				RaidLevel:    "raid(-1)",
 				WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{

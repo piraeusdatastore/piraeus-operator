@@ -108,8 +108,7 @@ Note that a LVM configuration for Piraeus will result in volume snapshot creatio
 
 #### `lvmThinPools` configuration
 * `name` name of the LINSTOR storage pool. Required
-* `volumeGroup` VG to use for the thin pool. If you want to use `devicePaths`, you must set this to `""`.
-  This is required because LINSTOR does not allow configuration of the VG name when preparing devices.
+* `volumeGroup` VG to use for the thin pool.
 * `thinVolume` name of the thinpool. Required
 * `devicePaths` devices to configure for this pool. Must be empty and >= 1GiB to be recognized. Optional
 * `raidLevel` LVM raid level. Optional
