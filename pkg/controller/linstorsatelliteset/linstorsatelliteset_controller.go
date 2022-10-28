@@ -385,23 +385,6 @@ func (r *ReconcileLinstorSatelliteSet) reconcileResource(ctx context.Context, sa
 
 	logger.Debugf("finished upgrade/fill: #2 -> Set default automatic storage setup type: changed=%t", changed)
 
-	logger.Debug("performing upgrade/full: #3 -> Set default VG name for LVMTHIN pools with device spec")
-
-	// linstor will automatically create a VG named "linstor_$THINNAME" when creating LVMTHIN pools.
-	for _, pool := range satelliteSet.Spec.StoragePools.LVMThinPools {
-		if len(pool.DevicePaths) == 0 {
-			continue
-		}
-
-		if pool.VolumeGroup == "" || pool.VolumeGroup == pool.CreatedVolumeGroup() {
-			continue
-		}
-
-		return fmt.Errorf("lvmThinPools: `devicePaths` is set, but `volumeGroup` is not empty and does not match expected `linstor_$THINVOLUME` value: '%s'", pool.VolumeGroup)
-	}
-
-	logger.Debugf("performing upgrade/full: #3 -> Set default VG name for LVMTHIN pools with device spec: changed=%t", changed)
-
 	logger.Debug("finished all upgrades/fills")
 
 	if changed {

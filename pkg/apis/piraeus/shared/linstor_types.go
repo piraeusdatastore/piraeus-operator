@@ -234,7 +234,7 @@ func (in *StoragePoolLVM) ToPhysicalStorageCreate() lapi.PhysicalStorageCreate {
 }
 
 func (in *StoragePoolLVMThin) CreatedVolumeGroup() string {
-	if len(in.DevicePaths) != 0 {
+	if in.VolumeGroup == "" {
 		return fmt.Sprintf("linstor_%s", in.ThinVolume)
 	}
 
@@ -263,7 +263,7 @@ func (in *StoragePoolLVMThin) ToLinstorStoragePool() lapi.StoragePool {
 func (in *StoragePoolLVMThin) ToPhysicalStorageCreate() lapi.PhysicalStorageCreate {
 	return lapi.PhysicalStorageCreate{
 		DevicePaths:  in.DevicePaths,
-		PoolName:     in.ThinVolume,
+		PoolName:     fmt.Sprintf("%s/%s", in.CreatedVolumeGroup(), in.ThinVolume),
 		ProviderKind: lapi.LVM_THIN,
 		RaidLevel:    in.RaidLevel,
 		WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
