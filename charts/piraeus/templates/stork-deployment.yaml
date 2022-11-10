@@ -287,20 +287,32 @@ spec:
             {{- end }}
           image: "{{ .Values.stork.schedulerImage }}:{{ .Values.stork.schedulerTag | default .Capabilities.KubeVersion.Version }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          name: {{ .Release.Name }}-stork-scheduler
+          {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10259
+              scheme: HTTPS
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10259
+              scheme: HTTPS
+          volumeMounts:
+          - mountPath: /etc/kubernetes
+            name: stork-config
+          {{- else }}
           livenessProbe:
             httpGet:
               path: /healthz
               port: 10251
             initialDelaySeconds: 15
-          name: {{ .Release.Name }}-stork-scheduler
           readinessProbe:
             httpGet:
               path: /healthz
               port: 10251
-          {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
-          volumeMounts:
-          - mountPath: /etc/kubernetes
-            name: stork-config
           {{- end }}
           resources:
 {{ .Values.stork.schedulerResources | toYaml | indent 12}}
