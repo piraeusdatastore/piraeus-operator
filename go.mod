@@ -4,12 +4,15 @@ go 1.18
 
 require (
 	github.com/LINBIT/golinstor v0.45.0
+	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/piraeusdatastore/piraeus-operator v1.10.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
+	golang.org/x/exp v0.0.0-20221006183845-316c7553db56
 	gopkg.in/ini.v1 v1.67.0
 	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0
+	k8s.io/client-go v0.25.0
 	sigs.k8s.io/controller-runtime v0.12.3
 	sigs.k8s.io/kustomize/api v0.12.1
 	sigs.k8s.io/kustomize/kyaml v0.13.9
@@ -20,7 +23,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/donovanhide/eventsource v0.0.0-20210830082556-c59027999da0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
-	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -62,7 +64,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.25.0 // indirect
-	k8s.io/client-go v0.25.0 // indirect
 	k8s.io/klog/v2 v2.80.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 // indirect
