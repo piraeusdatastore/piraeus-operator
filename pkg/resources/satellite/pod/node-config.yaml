@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: satellite-config
+  labels:
+    app.kubernetes.io/component: linstor-satellite
+data:
+  linstor_satellite.toml: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reactor-config
+  labels:
+    app.kubernetes.io/component: linstor-satellite
+data:
+  prometheus.toml: |
+    [[prometheus]]
+    enums = true
+    address = "[::]:9942"

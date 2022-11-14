@@ -1,0 +1,139 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: satellite
+  annotations:
+    kubectl.kubernetes.io/default-container: linstor-satellite
+  labels:
+    app.kubernetes.io/component: linstor-satellite
+spec:
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  serviceAccountName: satellite
+  initContainers:
+    - name: drbd-module-loader
+      image: drbd-module-loader
+      securityContext:
+        # NB: We don't use RO root here, as SELinux likes to complain
+        # if we try to insert a module from a emptyDir volume.
+        capabilities:
+          drop:
+            - ALL
+          add:
+            - SYS_MODULE
+      volumeMounts:
+        - mountPath: /usr/lib/modules
+          name: usr-lib-modules
+          readOnly: true
+        - mountPath: /usr/src
+          name: usr-src
+          readOnly: true
+  containers:
+    - name: linstor-satellite
+      image: linstor-satellite
+      args:
+        - startSatellite
+      securityContext:
+        readOnlyRootFilesystem: true
+        privileged: true
+        capabilities:
+          drop:
+            - ALL
+          add:
+            - NET_ADMIN
+            - SYS_ADMIN
+      volumeMounts:
+        - mountPath: /etc/linstor
+          name: satellite-config
+          readOnly: true
+        - mountPath: /dev
+          name: dev
+        - mountPath: /var/log/linstor-satellite
+          name: var-log-linstor-satellite
+        - mountPath: /var/lib/drbd
+          name: var-lib-drbd
+        - mountPath: /var/lib/linstor.d
+          name: var-lib-linstor-d
+        - mountPath: /etc/lvm/archive
+          name: etc-lvm-archive
+        - mountPath: /etc/lvm/backup
+          name: etc-lvm-backup
+        - mountPath: /run
+          name: run
+        - mountPath: tmp
+          name: tmp
+        - mountPath: /run/lock
+          name: run-lock
+    - name: drbd-reactor
+      image: drbd-reactor
+      ports:
+        - name: prometheus
+          containerPort: 9942
+          protocol: TCP
+      securityContext:
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      volumeMounts:
+        - mountPath: /etc/drbd-reactor.d
+          name: reactor-config
+          readOnly: true
+  volumes:
+    - name: usr-lib-modules
+      hostPath:
+        path: /usr/lib/modules
+        type: Directory
+    - name: usr-src
+      hostPath:
+        path: /usr/src
+        type: Directory
+    - name: dev
+      hostPath:
+        path: /dev
+        type: Directory
+    - name: etc-lvm-archive
+      hostPath:
+        path: /etc/lvm/archive
+        type: DirectoryOrCreate
+    - name: etc-lvm-backup
+      hostPath:
+        path: /etc/lvm/backup
+        type: DirectoryOrCreate
+    - name: var-lib-linstor-d
+      hostPath:
+        path: /var/lib/linstor.d
+        type: DirectoryOrCreate
+    - name: var-lib-drbd
+      hostPath:
+        path: /var/lib/drbd
+        type: DirectoryOrCreate
+    - name: satellite-config
+      configMap:
+        name: satellite-config
+        defaultMode: 0440
+    - name: reactor-config
+      configMap:
+        name: reactor-config
+        defaultMode: 0440
+    - name: var-log-linstor-satellite
+      emptyDir: { }
+    - name: tmp
+      emptyDir: { }
+    - name: run-lock
+      emptyDir: { }
+    - name: run
+      emptyDir: { }
+  restartPolicy: Always
+  tolerations:
+    - key: node.kubernetes.io/not-ready
+      effect: NoExecute
+    - key: node.kubernetes.io/unreachable
+      effect: NoExecute
+    - key: node.kubernetes.io/disk-pressure
+      effect: NoSchedule
+    - key: node.kubernetes.io/memory-pressure
+      effect: NoSchedule
+    - key: node.kubernetes.io/unschedulable
+      effect: NoSchedule

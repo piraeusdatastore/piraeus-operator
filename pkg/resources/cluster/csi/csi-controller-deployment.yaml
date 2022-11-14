@@ -1,0 +1,191 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-controller
+  labels:
+    app.kubernetes.io/component: csi-controller
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: csi-controller
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: linstor-csi
+      labels:
+        app.kubernetes.io/component: csi-controller
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: csi-controller
+      initContainers:
+        - name: linstor-wait-api-online
+          image: linstor-csi
+          command:
+            - /linstor-wait-until
+            - api-online
+          env:
+            - name: LS_CONTROLLERS
+              value: 'http://linstor-controller:3370'
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      containers:
+        - name: linstor-csi
+          image: linstor-csi
+          args:
+            - --csi-endpoint=unix://$(ADDRESS)
+            - --linstor-endpoint=$(LS_CONTROLLERS)
+            - --property-namespace=Aux/topology
+            - --label-by-storage-pool=false
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: LS_CONTROLLERS
+              value: 'http://linstor-controller:3370'
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          ports:
+            - name: healthz
+              containerPort: 9808
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        - name: csi-attacher
+          image: registry.k8s.io/sig-storage/csi-attacher:v3.5.0
+          args:
+            - '--v=5'
+            - '--csi-address=$(ADDRESS)'
+            - '--timeout=1m'
+            - '--leader-election=true'
+            - '--leader-election-namespace=$(NAMESPACE)'
+            - '--worker-threads=10'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        - name: csi-livenessprobe
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.7.0
+          args:
+            - '--csi-address=$(ADDRESS)'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        - name: csi-provisioner
+          image: registry.k8s.io/sig-storage/csi-provisioner:v3.2.1
+          args:
+            - '--csi-address=$(ADDRESS)'
+            - '--timeout=1m'
+            - '--default-fstype=ext4'
+            - '--feature-gates=Topology=true'
+            - '--leader-election=true'
+            - '--leader-election-namespace=$(NAMESPACE)'
+            - '--enable-capacity'
+            - '--extra-create-metadata'
+            - '--capacity-ownerref-level=2'
+            - '--worker-threads=10'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        - name: csi-snapshotter
+          image: registry.k8s.io/sig-storage/csi-snapshotter:v6.0.1
+          args:
+            - '--timeout=1m'
+            - '--csi-address=$(ADDRESS)'
+            - '--leader-election=true'
+            - '--leader-election-namespace=$(NAMESPACE)'
+            - '--worker-threads=10'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        - name: csi-resizer
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.5.0
+          args:
+            - '--v=5'
+            - '--csi-address=$(ADDRESS)'
+            - '--timeout=1m'
+            - '--handle-volume-inuse-error=false'
+            - '--leader-election=true'
+            - '--leader-election-namespace=$(NAMESPACE)'
+            - '--workers=10'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: socket-dir
+          emptyDir: {}

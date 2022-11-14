@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: linstor-controller-config
+  labels:
+    app.kubernetes.io/component: linstor-controller
+data:
+  linstor.toml: |
+    [db]
+      connection_url = "k8s"

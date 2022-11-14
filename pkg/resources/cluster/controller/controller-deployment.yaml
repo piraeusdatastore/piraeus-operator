@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linstor-controller
+  labels:
+    app.kubernetes.io/component: linstor-controller
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: linstor-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: linstor-controller
+      labels:
+        app.kubernetes.io/component: linstor-controller
+    spec:
+      containers:
+        - name: linstor-controller
+          image: linstor-controller
+          args:
+            - startController
+          env:
+            - name: JAVA_OPTS
+              value: '-Djdk.tls.acknowledgeCloseNotify=true'
+            - name: MASTER_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: linstor-controller-passphrase
+                  key: MASTER_PASSPHRASE
+                  optional: true
+          ports:
+            - name: api
+              containerPort: 3370
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: api
+          startupProbe:
+            httpGet:
+              port: api
+            failureThreshold: 30
+            periodSeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /var/log/linstor-controller
+              name: var-log-linstor-controller
+            - mountPath: /etc/linstor
+              name: etc-linstor
+              readOnly: true
+            - mountPath: /tmp
+              name: tmp
+      enableServiceLinks: false
+      serviceAccountName: linstor-controller
+      volumes:
+        - name: etc-linstor
+          configMap:
+            name: linstor-controller-config
+        - name: var-log-linstor-controller
+          emptyDir: { }
+        - name: tmp
+          emptyDir: { }
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
