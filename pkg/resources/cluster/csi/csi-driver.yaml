@@ -1,0 +1,13 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: linstor.csi.linbit.com
+spec:
+  attachRequired: true
+  fsGroupPolicy: ReadWriteOnceWithFSType
+  podInfoOnMount: true
+  volumeLifecycleModes:
+    - Persistent
+  storageCapacity: true
+  requiresRepublish: false

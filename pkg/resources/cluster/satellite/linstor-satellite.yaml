@@ -1,0 +1,25 @@
+---
+apiVersion: piraeus.io/v1
+kind: LinstorSatellite
+metadata:
+  name: satellite
+spec:
+  clusterRef:
+    name: CLUSTER
+  patches: []
+  storagePools: []
+  properties:
+    - name: Aux/topology/linbit.com/hostname
+      valueFrom:
+        nodeFieldRef: metadata.name
+    - name: Aux/topology/kubernetes.io/hostname
+      valueFrom:
+        nodeFieldRef: metadata.labels['kubernetes.io/hostname']
+    - name: Aux/topology/topology.kubernetes.io/region
+      optional: true
+      valueFrom:
+        nodeFieldRef: metadata.labels['topology.kubernetes.io/region']
+    - name: Aux/topology/topology.kubernetes.io/zone
+      optional: true
+      valueFrom:
+        nodeFieldRef: metadata.labels['topology.kubernetes.io/zone']

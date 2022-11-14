@@ -1,0 +1,136 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: csi-node
+  labels:
+    app.kubernetes.io/component: csi-node
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: csi-node
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: linstor-csi
+      labels:
+        app.kubernetes.io/component: csi-node
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      serviceAccountName: csi-node
+      initContainers:
+        - name: linstor-wait-node-online
+          image: linstor-csi
+          command:
+            - /linstor-wait-until
+            - satellite-online
+            - $(KUBE_NODE_NAME)
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: LS_CONTROLLERS
+              value: 'http://linstor-controller:3370'
+      containers:
+        - name: linstor-csi
+          image: linstor-csi
+          args:
+            - --csi-endpoint=unix://$(CSI_ENDPOINT)
+            - --node=$(KUBE_NODE_NAME)
+            - --linstor-endpoint=$(LS_CONTROLLERS)
+            - --property-namespace=Aux/topology
+            - --label-by-storage-pool=false
+          securityContext:
+            readOnlyRootFilesystem: true
+            privileged: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - SYS_ADMIN
+          env:
+            - name: CSI_ENDPOINT
+              value: /var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: LS_CONTROLLERS
+              value: 'http://linstor-controller:3370'
+          ports:
+            - containerPort: 9808
+              name: healthz
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: publish-dir
+              mountPath: /var/lib/kubelet
+              mountPropagation: Bidirectional
+            - name: device-dir
+              mountPath: /dev
+        - name: csi-node-driver-registrar
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1
+          args:
+            - '--v=5'
+            - '--csi-address=/csi/csi.sock'
+            - '--kubelet-registration-path=/var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock'
+            - '--health-port=9809'
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 9809
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+        - name: csi-livenessprobe
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.7.0
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+          args:
+            - '--csi-address=/csi/csi.sock'
+      volumes:
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: publish-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/linstor.csi.linbit.com
+            type: DirectoryOrCreate
