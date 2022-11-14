@@ -1,0 +1,33 @@
+---
+base: quay.io/piraeusdatastore
+components:
+  linstor-controller:
+    tag: v1.20.0
+    image: piraeus-server
+  linstor-satellite:
+    tag: v1.20.0
+    image: piraeus-server
+  linstor-csi:
+    tag: v0.21.0
+    image: piraeus-csi
+  drbd-reactor:
+    tag: v0.9.0
+    image: drbd-reactor
+  drbd-module-loader:
+    tag: v9.2.1
+    image: drbd9-jammy # Fallback image: chose a fairly recent kernel, which can hopefully compile whatever config is actually in use
+    match:
+      - osImage: CentOS Linux 7
+        name: drbd9-centos7
+      - osImage: CentOS Linux 8
+        name: drbd9-centos8
+      - osImage: AlmaLinux 8
+        image: drbd9-almalinux8
+      - osImage: AlmaLinux 9
+        image: drbd9-almalinux9
+      - osImage: Ubuntu 18\.04
+        image: drbd9-bionic
+      - osImage: Ubuntu 20\.04
+        image: drbd9-focal
+      - osImage: Ubuntu 22\.04
+        image: drbd9-jammy
