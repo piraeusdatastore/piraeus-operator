@@ -10,8 +10,8 @@ import (
 
 // Config represents a default image mapping used by the operator.
 type Config struct {
-	Base         string                        `yaml:"base"`
-	Componenents map[Component]ComponentConfig `yaml:"componenents"`
+	Base       string                        `yaml:"base"`
+	Components map[Component]ComponentConfig `yaml:"components"`
 }
 
 type ComponentConfig struct {
@@ -46,8 +46,8 @@ func (n *notConfigured) Error() string {
 var _ error = &notConfigured{}
 
 func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, error) {
-	result := make([]kusttypes.Image, 0, len(f.Componenents))
-	for c := range f.Componenents {
+	result := make([]kusttypes.Image, 0, len(f.Components))
+	for c := range f.Components {
 		name, tag, err := f.get(c, base, osImage)
 		if err != nil {
 			return nil, err
@@ -70,7 +70,7 @@ func (f *Config) get(c Component, base string, osImage string) (string, string, 
 		base = f.Base
 	}
 
-	img, ok := f.Componenents[c]
+	img, ok := f.Components[c]
 	if !ok {
 		return "", "", &notConfigured{c: c}
 	}

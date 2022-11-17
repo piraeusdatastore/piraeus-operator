@@ -14,7 +14,7 @@ func TestConfigs_GetVersions(t *testing.T) {
 
 	base := imageversions.Config{
 		Base: "repo.example.com/base",
-		Componenents: map[imageversions.Component]imageversions.ComponentConfig{
+		Components: map[imageversions.Component]imageversions.ComponentConfig{
 			imageversions.LinstorSatellite: {
 				Image: "satellite",
 				Tag:   "v1",
