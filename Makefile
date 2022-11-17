@@ -1,102 +1,241 @@
-PROJECT ?= piraeus-operator
-REGISTRY ?= piraeusdatastore
-TAG ?= latest
-NOCACHE ?= false
+PROJECT_NAME ?= piraeus-operator
+# VERSION defines the project version for the bundle.
+# Update this value when you upgrade the version of your project.
+# To re-generate a bundle for another specific version without changing the standard setup, you can:
+# - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
+# - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
+VERSION ?= 2.0.0
 
-help:
-	@echo "Useful targets: 'update', 'upload'"
+# CHANNELS define the bundle channels used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
+# To re-generate a bundle for other specific channels without changing the standard setup, you can:
+# - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
+# - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
 
-all: update upload
+# DEFAULT_CHANNEL defines the default channel used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g DEFAULT_CHANNEL = "stable")
+# To re-generate a bundle for any other default channel without changing the default setup, you can:
+# - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
+# - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-.PHONY: update
-update:
-	docker build -t $(PROJECT):$(TAG) --no-cache=$(NOCACHE) -f build/Dockerfile .
-	docker tag $(PROJECT):$(TAG) $(PROJECT):latest
+# IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
+# This variable is used to construct full image tags for bundle and catalog images.
+#
+# For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
+# piraeus.io/piraeus-operator-bundle:$VERSION and piraeus.io/piraeus-operator-catalog:$VERSION.
+IMAGE_TAG_BASE ?= quay.io/piraeusdatastore/piraeus-operator
 
+# BUNDLE_IMG defines the image:tag used for the bundle.
+# You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
-.PHONY: upload
-upload:
-	for r in $(REGISTRY); do \
-		docker tag $(PROJECT):$(TAG) $$r/$(PROJECT):$(TAG) ; \
-		docker tag $(PROJECT):$(TAG) $$r/$(PROJECT):latest ; \
-		docker push $$r/$(PROJECT):$(TAG) ; \
-		docker push $$r/$(PROJECT):latest ; \
-	done
+# BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
+BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 
-test:
-	go test ./...
+# USE_IMAGE_DIGESTS defines if images are resolved via tags or digests
+# You can enable this value if you would like to use SHA Based Digests
+# To enable set flag to true
+USE_IMAGE_DIGESTS ?= false
+ifeq ($(USE_IMAGE_DIGESTS), true)
+	BUNDLE_GEN_FLAGS += --use-image-digests
+endif
 
-CONTROLLER_GEN = go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
+# Image URL to use all building/pushing image targets
+IMG ?= quay.io/piraeusdatastore/piraeus-operator:v2
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.25
 
-deep-copy:
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
+# Platforms to build for. Uses the go OS/ARCH notation.
+PLATFORM ?= linux/amd64
+
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# This is a requirement for 'setup-envtest.sh' in the test target.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
+
+.PHONY: all
+all: build
+
+##@ General
+
+# The help target prints out all targets with their descriptions organized
+# beneath their categories. The categories are represented by '##@' and the
+# target descriptions by '##'. The awk commands is responsible for reading the
+# entire set of makefiles included in this invocation, looking for lines of the
+# file as xyz: ## something, and then pretty-format the target and help. Then,
+# if there's a line with ##@ something, that gets pretty-printed as a category.
+# More info on the usage of ANSI control characters for terminal formatting:
+# https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
+# More info on the awk command:
+# http://linuxcommand.org/lc3_adv_awk.php
+
+.PHONY: help
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Development
+
+.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=controller-manager crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+.PHONY: generate
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-crds:
-	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=config/crd/bases
-	mv ./config/crd/bases/* ./charts/piraeus/crds
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt ./...
 
-helm-values:
-	cp ./charts/piraeus/values.yaml ./charts/piraeus/values.cn.yaml
-	sed 's|gcr.io/etcd-development/etcd|daocloud.io/piraeus/etcd|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|docker.io/openstorage/stork|daocloud.io/piraeus/stork|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|k8s.gcr.io/kube-scheduler-amd64|daocloud.io/piraeus/kube-scheduler-amd64|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|quay.io/piraeusdatastore|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|k8s.gcr.io/sig-storage|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|quay.io/k8scsi|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet ./...
 
-release:
-	# check that VERSION is set
-	@if [ -z "$(VERSION)" ]; then \
-		echo "Usage: make prepare-release VERSION=<version>" >&2 ; \
-		exit 1 ; \
-	fi
-	# check that version has expected format
-	# regex taken from https://semver.org/
-	@if ! echo -e "$(VERSION)" | grep -qP '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$$' ; then \
-		echo "version format: <maj>.<min>.<patch>" >&2 ; \
-		exit 1 ; \
-	fi
-	# check that version does not exist
-	@if git rev-parse "v$(VERSION)" >/dev/null 2>&1 ; then \
-		echo "version v$(VERSION) already exists" >&2 ; \
-		exit 1 ; \
-	fi
-	# check that working tree is clean
-	@if ! git diff-index --quiet HEAD -- ; then \
-		echo "Refusing to create release from dirty repository" >&2 ; \
-		exit 1; \
-	fi
-	# replace changelog header "Unreleased" with version and replace link target
-	sed 's/^## \[Unreleased\]/## [v$(VERSION)] - $(shell date +%Y-%m-%d)/' -i CHANGELOG.md
-	sed 's#^\[Unreleased\]: \(.*\)HEAD$$#[v$(VERSION)]: \1v$(VERSION)#' -i CHANGELOG.md
-	# replace go operator version
-	sed 's/var Version = ".*"/var Version = "$(VERSION)"/' -i version/version.go
-	# replace chart version+appVersion
-	yq ".version = \"$(VERSION)\"" -i charts/piraeus/Chart.yaml
-	yq ".appVersion = \"$(VERSION)\"" -i charts/piraeus/Chart.yaml
-	# set operator image to tagged version
-	yq ".operator.image = \"quay.io/piraeusdatastore/piraeus-operator:v$(VERSION)\"" -i charts/piraeus/values.yaml
-	yq ".operator.image = \"daocloud.io/piraeus/piraeus-operator:v$(VERSION)\"" -i charts/piraeus/values.cn.yaml
-	# update full yaml deployment
-	$(MAKE) deploy/piraeus
-	git add --update
-	# commit as current release + tag
-	git commit -aevm "Release v$(VERSION)" --signoff
-	# We don't do git tag v$(VERSION) here, as the commit will change once its merged in github
-	# add "Unreleased" section at top + create comparison link against current master
-	sed 's/^## \[v$(VERSION)\]/## [Unreleased]\n\n## [v$(VERSION)]/' -i CHANGELOG.md
-	echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$(VERSION)...HEAD" >> CHANGELOG.md
-	# set operator image back to :latest during development
-	yq ".operator.image = \"quay.io/piraeusdatastore/piraeus-operator:latest\"" -i charts/piraeus/values.yaml
-	yq ".operator.image = \"daocloud.io/piraeus/piraeus-operator:latest\"" -i charts/piraeus/values.cn.yaml
-	# reset full yaml deployment
-	$(MAKE) deploy/piraeus
-	# commit begin of new dev cycle
-	git commit -aevm "Prepare next dev cycle" --signoff
+.PHONY: test
+test: manifests generate fmt vet envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
-.PHONY: deploy/piraeus
-deploy/piraeus:
-	rm -rf "$@"
-	mkdir -p "$@"
-	helm template -n default piraeus-op charts/piraeus --set stork.schedulerTag=v1.18.0 --set operator.controller.masterPassphrase=changemeplease --output-dir deploy >/dev/null
-	deploy/create-kustomization.bash
+##@ Build
+
+.PHONY: build
+build: generate fmt vet ## Build manager binary.
+	go build -o bin/manager main.go
+
+.PHONY: run
+run: manifests generate fmt vet ## Run a controller from your host.
+	go run ./main.go
+
+.PHONY: docker-build
+docker-build: test ## Build docker image with the manager.
+	docker buildx build --platform ${PLATFORM} -t ${IMG} .
+
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	docker buildx build --platform ${PLATFORM} --push -t ${IMG} .
+
+##@ Deployment
+
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
+.PHONY: install
+install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+
+.PHONY: uninstall
+uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: deploy
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd config/default && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+.PHONY: undeploy
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+##@ Build Dependencies
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+
+## Tool Versions
+KUSTOMIZE_VERSION ?= v4.5.7
+CONTROLLER_TOOLS_VERSION ?= v0.8.0
+
+KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE):
+	mkdir -p $(LOCALBIN)
+	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN):
+	mkdir -p $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST):
+	mkdir -p $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: bundle
+bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+	operator-sdk generate kustomize manifests -q
+	cd config/default && $(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
+	operator-sdk bundle validate ./bundle
+
+.PHONY: bundle-build
+bundle-build: ## Build the bundle image.
+	docker buildx build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: bundle-push
+bundle-push: ## Push the bundle image.
+	docker buildx build -f bundle.Dockerfile --push -t $(BUNDLE_IMG) .
+
+.PHONY: opm
+OPM = ./bin/opm
+opm: ## Download opm locally if necessary.
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.19.1/$${OS}-$${ARCH}-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
+
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
+# These images MUST exist in a registry and be pull-able.
+BUNDLE_IMGS ?= $(BUNDLE_IMG)
+
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=example.com/operator-catalog:v0.2.0).
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
+ifneq ($(origin CATALOG_BASE_IMG), undefined)
+FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+endif
+
+# Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
+# This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
+# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
+.PHONY: catalog-build
+catalog-build: opm ## Build a catalog image.
+	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+
+# Push the catalog image.
+.PHONY: catalog-push
+catalog-push: ## Push a catalog image.
+	$(MAKE) docker-push IMG=$(CATALOG_IMG)
