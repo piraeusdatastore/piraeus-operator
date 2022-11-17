@@ -111,6 +111,11 @@ func main() {
 	}
 
 	_ = imageDefaults // TODO: will be used once we have some reconcilers
+
+	if err = (&piraeusiov1.LinstorSatellite{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatellite")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
