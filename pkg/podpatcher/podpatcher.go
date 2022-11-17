@@ -13,10 +13,10 @@ import (
 // Patch patches a Pod.
 //
 // The differences to the normal client.Patch method are:
-// * We recreate the Pod if the patch failed to apply, as Pods generally can't be altered dynamically.
-// * We also recreate for image changes. Normally, these would be applied by kubelet eventually, but will cause a
-//   "restarted container" event, which many users will have alerts for. It also can't be nicely controlled by the
-//   operator. So we just have to make sure to detect any changes.
+//   - We recreate the Pod if the patch failed to apply, as Pods generally can't be altered dynamically.
+//   - We also recreate for image changes. Normally, these would be applied by kubelet eventually, but will cause a
+//     "restarted container" event, which many users will have alerts for. It also can't be nicely controlled by the
+//     operator. So we just have to make sure to detect any changes.
 func Patch(ctx context.Context, cl client.Client, pod client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	var oldPod corev1.Pod
 	err := cl.Get(ctx, types.NamespacedName{Name: pod.GetName(), Namespace: pod.GetNamespace()}, &oldPod)

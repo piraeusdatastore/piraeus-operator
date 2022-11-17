@@ -1,0 +1,33 @@
+name: checks
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+      - v2
+  pull_request:
+jobs:
+  golangci:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+      - uses: golangci/golangci-lint-action@v3
+        with:
+          args: --timeout=3m
+
+  pre-commit:
+    runs-on: ubuntu-22.04
+    env:
+      # These hooks will run separately in github actions
+      SKIP: golangci-lint
+    steps:
+      - name: Setup Go environment
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - name: Run pre-commit checks on changes files
+        uses: pre-commit/action@v3.0.0
