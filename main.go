@@ -89,7 +89,7 @@ func main() {
 	}
 
 	var imageDefaults imageversions.Config
-	err = yaml.Unmarshal(rawDefaults, &imageConfig)
+	err = yaml.Unmarshal(rawDefaults, &imageDefaults)
 	if err != nil {
 		setupLog.Error(err, "unable to load default images")
 		os.Exit(1)
