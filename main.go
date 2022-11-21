@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
+	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
@@ -110,8 +111,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = imageDefaults // TODO: will be used once we have some reconcilers
-
+	if err = (&controllers.LinstorSatelliteReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Namespace:     namespace,
+		ImageVersions: &imageDefaults,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
+		os.Exit(1)
+	}
 	if err = (&piraeusiov1.LinstorSatellite{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatellite")
 		os.Exit(1)
