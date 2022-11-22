@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	//+kubebuilder:scaffold:imports
@@ -34,7 +34,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -45,25 +44,20 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg       *rest.Config
-	k8sClient client.Client
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
+	cfg           *rest.Config
+	k8sClient     client.Client
+	testEnv       *envtest.Environment
+	cancelManager context.CancelFunc
 )
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Webhook Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Webhook Suite")
 }
 
-var _ = BeforeSuite(func() {
+var _ = BeforeSuite(func(_ context.Context) {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-
-	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -110,6 +104,10 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:webhook
 
+	// We create our own context here, as the API server needs to run in the background
+	ctx, cancel := context.WithCancel(context.Background())
+	cancelManager = cancel
+
 	go func() {
 		defer GinkgoRecover()
 		err = mgr.Start(ctx)
@@ -127,10 +125,13 @@ var _ = BeforeSuite(func() {
 		conn.Close()
 		return nil
 	}).Should(Succeed())
-}, 60)
+}, NodeTimeout(60*time.Second))
 
 var _ = AfterSuite(func() {
-	cancel()
+	if cancelManager != nil {
+		cancelManager()
+	}
+
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
