@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1_test
 
 import (
 	"context"
@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -81,7 +83,7 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	scheme := runtime.NewScheme()
-	err = AddToScheme(scheme)
+	err = piraeusv1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = admissionv1beta1.AddToScheme(scheme)
@@ -105,7 +107,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&LinstorSatellite{}).SetupWebhookWithManager(mgr)
+	err = (&piraeusv1.LinstorSatellite{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
@@ -132,51 +134,51 @@ var _ = BeforeSuite(func() {
 var _ = Describe("LinstorSatellite webhook", func() {
 	typeMeta := metav1.TypeMeta{
 		Kind:       "LinstorSatellite",
-		APIVersion: GroupVersion.String(),
+		APIVersion: piraeusv1.GroupVersion.String(),
 	}
-	complexSatellite := &LinstorSatellite{
+	complexSatellite := &piraeusv1.LinstorSatellite{
 		TypeMeta:   typeMeta,
 		ObjectMeta: metav1.ObjectMeta{Name: "node-1.example.com"},
-		Spec: LinstorSatelliteSpec{
-			ClusterRef: ClusterReference{Name: "cluster"},
+		Spec: piraeusv1.LinstorSatelliteSpec{
+			ClusterRef: piraeusv1.ClusterReference{Name: "cluster"},
 			Repository: "",
-			Patches: []Patch{
+			Patches: []piraeusv1.Patch{
 				{
-					Target: &Selector{
+					Target: &piraeusv1.Selector{
 						Name: "satellite",
 						Kind: "Pod",
 					},
 					Patch: "apiVersion: v1\nkind: Pod\nmetadata:\n  name: satellite\n  annotations:\n    k8s.v1.cni.cncf.io/networks: eth1",
 				},
 			},
-			StoragePools: []LinstorStoragePool{
+			StoragePools: []piraeusv1.LinstorStoragePool{
 				{
 					Name: "thinpool",
-					LvmThin: &LinstorStoragePoolLvmThin{
+					LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{
 						VolumeGroup: "linstor_thinpool",
 						ThinPool:    "thinpool",
 					},
-					Source: &LinstorStoragePoolSource{
+					Source: &piraeusv1.LinstorStoragePoolSource{
 						HostDevices: []string{"/dev/vdb"},
 					},
 				},
 			},
-			Properties: []LinstorNodeProperty{
+			Properties: []piraeusv1.LinstorNodeProperty{
 				{
 					Name:      "Aux/topology/linbit.com/hostname",
-					ValueFrom: &LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.name"},
+					ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.name"},
 				},
 				{
 					Name:      "Aux/topology/kubernetes.io/hostname",
-					ValueFrom: &LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.labels['kubernetes.io/hostname']"},
+					ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.labels['kubernetes.io/hostname']"},
 				},
 				{
 					Name:      "Aux/topology/topology.kubernetes.io/region",
-					ValueFrom: &LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.labels['topology.kubernetes.io/region']"},
+					ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.labels['topology.kubernetes.io/region']"},
 				},
 				{
 					Name:      "Aux/topology/topology.kubernetes.io/zone",
-					ValueFrom: &LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.labels['topology.kubernetes.io/zone']"},
+					ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.labels['topology.kubernetes.io/zone']"},
 				},
 				{
 					Name:  "PrefNic",
@@ -187,12 +189,12 @@ var _ = Describe("LinstorSatellite webhook", func() {
 	}
 
 	AfterEach(func() {
-		err := k8sClient.DeleteAllOf(ctx, &LinstorSatellite{})
+		err := k8sClient.DeleteAllOf(ctx, &piraeusv1.LinstorSatellite{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("should allow empty satellite", func() {
-		satellite := &LinstorSatellite{TypeMeta: typeMeta, ObjectMeta: metav1.ObjectMeta{Name: "node-1.example.com"}}
+		satellite := &piraeusv1.LinstorSatellite{TypeMeta: typeMeta, ObjectMeta: metav1.ObjectMeta{Name: "node-1.example.com"}}
 		err := k8sClient.Patch(ctx, satellite, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -213,14 +215,14 @@ var _ = Describe("LinstorSatellite webhook", func() {
 	})
 
 	It("should require exactly one pool type for storage pools", func() {
-		satellite := &LinstorSatellite{
+		satellite := &piraeusv1.LinstorSatellite{
 			TypeMeta:   typeMeta,
 			ObjectMeta: metav1.ObjectMeta{Name: "node-1.example.com"},
-			Spec: LinstorSatelliteSpec{
-				StoragePools: []LinstorStoragePool{
+			Spec: piraeusv1.LinstorSatelliteSpec{
+				StoragePools: []piraeusv1.LinstorStoragePool{
 					{Name: "missing-type"},
-					{Name: "multiple-types", Lvm: &LinstorStoragePoolLvm{}, LvmThin: &LinstorStoragePoolLvmThin{}},
-					{Name: "valid-pool", Lvm: &LinstorStoragePoolLvm{}},
+					{Name: "multiple-types", Lvm: &piraeusv1.LinstorStoragePoolLvm{}, LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{}},
+					{Name: "valid-pool", Lvm: &piraeusv1.LinstorStoragePoolLvm{}},
 				},
 			},
 		}
