@@ -18,8 +18,7 @@ import (
 
 var _ = Describe("LinstorSatelliteReconciler", func() {
 	Context("When creating LinstorSatellite resources", func() {
-		ctx := context.Background()
-		BeforeEach(func() {
+		BeforeEach(func(ctx context.Context) {
 			err := k8sClient.Create(ctx, &piraeusiov1.LinstorSatellite{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 				Spec: piraeusiov1.LinstorSatelliteSpec{
@@ -29,7 +28,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		AfterEach(func() {
+		AfterEach(func(ctx context.Context) {
 			err := k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 			})
@@ -42,7 +41,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
 		})
 
-		It("should select loader image, apply resources, setting finalizer and condition", func() {
+		It("should select loader image, apply resources, setting finalizer and condition", func(ctx context.Context) {
 			var satellite piraeusiov1.LinstorSatellite
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)

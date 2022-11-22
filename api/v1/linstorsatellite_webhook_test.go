@@ -1,7 +1,9 @@
 package v1_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	"context"
+
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,23 +69,23 @@ var _ = Describe("LinstorSatellite webhook", func() {
 		},
 	}
 
-	AfterEach(func() {
+	AfterEach(func(ctx context.Context) {
 		err := k8sClient.DeleteAllOf(ctx, &piraeusv1.LinstorSatellite{})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("should allow empty satellite", func() {
+	It("should allow empty satellite", func(ctx context.Context) {
 		satellite := &piraeusv1.LinstorSatellite{TypeMeta: typeMeta, ObjectMeta: metav1.ObjectMeta{Name: "node-1.example.com"}}
 		err := k8sClient.Patch(ctx, satellite, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("should allow complex satellite", func() {
+	It("should allow complex satellite", func(ctx context.Context) {
 		err := k8sClient.Patch(ctx, complexSatellite.DeepCopy(), client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("should allow updating a complex satellite", func() {
+	It("should allow updating a complex satellite", func(ctx context.Context) {
 		err := k8sClient.Patch(ctx, complexSatellite.DeepCopy(), client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -93,7 +95,7 @@ var _ = Describe("LinstorSatellite webhook", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("should require exactly one pool type for storage pools", func() {
+	It("should require exactly one pool type for storage pools", func(ctx context.Context) {
 		satellite := &piraeusv1.LinstorSatellite{
 			TypeMeta:   typeMeta,
 			ObjectMeta: metav1.ObjectMeta{Name: "node-1.example.com"},
