@@ -102,6 +102,9 @@ var _ = BeforeSuite(func(_ context.Context) {
 	err = (&piraeusv1.LinstorSatellite{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = (&piraeusv1.LinstorSatelliteConfiguration{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
 	//+kubebuilder:scaffold:webhook
 
 	// We create our own context here, as the API server needs to run in the background
