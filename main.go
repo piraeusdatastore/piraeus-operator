@@ -120,6 +120,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)
 	}
+	if err = (&piraeusiov1.LinstorCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorCluster")
+		os.Exit(1)
+	}
 	if err = (&piraeusiov1.LinstorSatellite{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatellite")
 		os.Exit(1)

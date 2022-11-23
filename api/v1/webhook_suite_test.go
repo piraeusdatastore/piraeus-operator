@@ -99,6 +99,9 @@ var _ = BeforeSuite(func(_ context.Context) {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
+	err = (&piraeusv1.LinstorCluster{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
 	err = (&piraeusv1.LinstorSatellite{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
