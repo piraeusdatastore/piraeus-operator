@@ -19,7 +19,19 @@ import (
 var _ = Describe("LinstorSatelliteReconciler", func() {
 	Context("When creating LinstorSatellite resources", func() {
 		BeforeEach(func(ctx context.Context) {
-			err := k8sClient.Create(ctx, &piraeusiov1.LinstorSatellite{
+			err := k8sClient.Create(ctx, &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						Architecture:  "amd64",
+						KernelVersion: "5.14.0-70.26.1.el9_0.x86_64",
+						OSImage:       "AlmaLinux 9.0 (Emerald Puma)",
+					},
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = k8sClient.Create(ctx, &piraeusiov1.LinstorSatellite{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 				Spec: piraeusiov1.LinstorSatelliteSpec{
 					ClusterRef: piraeusiov1.ClusterReference{Name: "example"},
@@ -39,6 +51,11 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
 				return apierrors.IsNotFound(err)
 			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+
+			err = k8sClient.Delete(ctx, &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should select loader image, apply resources, setting finalizer and condition", func(ctx context.Context) {

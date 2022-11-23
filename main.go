@@ -111,6 +111,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.LinstorClusterReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Namespace:     namespace,
+		ImageVersions: &imageDefaults,
+		PullSecret:    pullSecret,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LinstorCluster")
+		os.Exit(1)
+	}
 	if err = (&controllers.LinstorSatelliteReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
