@@ -98,21 +98,17 @@ var _ = BeforeSuite(func() {
 	err = k8sClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: Namespace}})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = k8sClient.Create(ctx, &corev1.Node{
-		ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-		Status: corev1.NodeStatus{
-			NodeInfo: corev1.NodeSystemInfo{
-				Architecture:  "amd64",
-				KernelVersion: "5.14.0-70.26.1.el9_0.x86_64",
-				OSImage:       "AlmaLinux 9.0 (Emerald Puma)",
-			},
-		},
-	})
-	Expect(err).NotTo(HaveOccurred())
-
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 	})
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&controllers.LinstorClusterReconciler{
+		Client:        k8sManager.GetClient(),
+		Scheme:        k8sManager.GetScheme(),
+		Namespace:     Namespace,
+		ImageVersions: &imageDefaults,
+	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&controllers.LinstorSatelliteReconciler{
