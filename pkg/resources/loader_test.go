@@ -7,7 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/types"
+	"sigs.k8s.io/kustomize/kyaml/openapi"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/test"
 )
@@ -77,6 +80,29 @@ metadata:
 			actual, err := resmap.AsYaml()
 			assert.NoError(t, err)
 			assert.Equal(t, tcase.expected, string(actual))
+		})
+	}
+}
+
+func TestOpenApiInit(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		Kind       string
+		APIVersion string
+	}{
+		{Kind: "LinstorCluster", APIVersion: piraeusv1.GroupVersion.String()},
+		{Kind: "LinstorSatelliteConfiguration", APIVersion: piraeusv1.GroupVersion.String()},
+		{Kind: "LinstorSatellite", APIVersion: piraeusv1.GroupVersion.String()},
+	}
+
+	for i := range testcases {
+		tcase := &testcases[i]
+		t.Run(tcase.Kind, func(t *testing.T) {
+			t.Parallel()
+
+			actual := openapi.IsCertainlyClusterScoped(yaml.TypeMeta{Kind: tcase.Kind, APIVersion: tcase.APIVersion})
+			assert.True(t, actual)
 		})
 	}
 }
