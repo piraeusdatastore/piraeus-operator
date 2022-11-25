@@ -6,10 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
@@ -17,6 +17,8 @@ import (
 )
 
 var _ = Describe("LinstorSatelliteReconciler", func() {
+	TypeMeta := metav1.TypeMeta{Kind: "LinstorSatellite", APIVersion: piraeusiov1.GroupVersion.String()}
+
 	Context("When creating LinstorSatellite resources", func() {
 		BeforeEach(func(ctx context.Context) {
 			err := k8sClient.Create(ctx, &corev1.Node{
@@ -41,20 +43,17 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 		})
 
 		AfterEach(func(ctx context.Context) {
-			err := k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{
-				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-			})
+			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorSatellite{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() bool {
-				var satellite piraeusiov1.LinstorSatellite
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-				return apierrors.IsNotFound(err)
-			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+			Eventually(func() []piraeusiov1.LinstorSatellite {
+				var satellites piraeusiov1.LinstorSatelliteList
+				err = k8sClient.List(ctx, &satellites)
+				Expect(err).NotTo(HaveOccurred())
+				return satellites.Items
+			}, DefaultTimeout, DefaultCheckInterval).Should(BeEmpty())
 
-			err = k8sClient.Delete(ctx, &corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-			})
+			err = k8sClient.DeleteAllOf(ctx, &corev1.Node{})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -71,7 +70,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					return false
 				}
 				return condition.Status == metav1.ConditionTrue
-			}).Should(BeTrue())
+			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
 
 			Expect(satellite.Finalizers).To(ContainElement(vars.SatelliteFinalizer))
 
@@ -80,6 +79,48 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pod.Spec.InitContainers).To(HaveLen(1))
 			Expect(pod.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
+		})
+
+		Context("with additional finalizer", func() {
+			BeforeEach(func(ctx context.Context) {
+				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+					TypeMeta:   TypeMeta,
+					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName, Finalizers: []string{"piraeus.io/test"}},
+				}, client.Apply, client.FieldOwner("test"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func(ctx context.Context) {
+				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+					TypeMeta:   TypeMeta,
+					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				}, client.Apply, client.FieldOwner("test"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should continue to reconcile after deleting a k8s node", func(ctx context.Context) {
+				err := k8sClient.Delete(ctx, &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName}})
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() metav1.ConditionStatus {
+					var satellite piraeusiov1.LinstorSatellite
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
+					if err != nil {
+						return metav1.ConditionUnknown
+					}
+
+					condition := meta.FindStatusCondition(satellite.Status.Conditions, "EvacuationCompleted")
+					if condition == nil || condition.ObservedGeneration != satellite.Generation {
+						return metav1.ConditionUnknown
+					}
+					return condition.Status
+				}, DefaultTimeout, DefaultCheckInterval).Should(Equal(metav1.ConditionTrue))
+			})
 		})
 	})
 })

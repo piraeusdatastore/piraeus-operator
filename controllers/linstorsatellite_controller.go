@@ -90,22 +90,25 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	node := &corev1.Node{}
-	err = r.Get(ctx, req.NamespacedName, node)
-	if err != nil {
+	var node corev1.Node
+	err = r.Get(ctx, req.NamespacedName, &node)
+	if err != nil && !errors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
 
 	conds := conditions.New()
 
-	applyErr := r.reconcileAppliedResource(ctx, lsatellite, node)
-	if applyErr != nil {
-		conds.AddError(conditions.Applied, err)
-	} else {
-		conds.AddSuccess(conditions.Applied, "Resources applied")
-	}
+	var applyErr, stateErr error
+	if node.Name != "" {
+		applyErr = r.reconcileAppliedResource(ctx, lsatellite, &node)
+		if applyErr != nil {
+			conds.AddError(conditions.Applied, err)
+		} else {
+			conds.AddSuccess(conditions.Applied, "Resources applied")
+		}
 
-	stateErr := r.reconcileLinstorSatelliteState(ctx, lsatellite, node, conds)
+		stateErr = r.reconcileLinstorSatelliteState(ctx, lsatellite, &node, conds)
+	}
 
 	var deleteErr error
 	if lsatellite.GetDeletionTimestamp() != nil {

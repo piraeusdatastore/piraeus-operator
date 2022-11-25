@@ -2,7 +2,6 @@ package controllers_test
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,11 +17,6 @@ import (
 )
 
 var _ = Describe("LinstorCluster controller", func() {
-	const (
-		DefaultTimeout       = 30 * time.Second
-		DefaultCheckInterval = 5 * time.Second
-	)
-
 	Context("When creating an empty LinstorCluster", func() {
 		BeforeEach(func(ctx context.Context) {
 			err := k8sClient.Create(ctx, &piraeusiov1.LinstorCluster{
@@ -31,10 +25,15 @@ var _ = Describe("LinstorCluster controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		AfterEach(func(ctx context.Context) {
-			err := k8sClient.Delete(ctx, &piraeusiov1.LinstorCluster{
-				ObjectMeta: metav1.ObjectMeta{Name: "default"},
-			})
+			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorCluster{})
 			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func() []piraeusiov1.LinstorCluster {
+				var clusters piraeusiov1.LinstorClusterList
+				err := k8sClient.List(ctx, &clusters)
+				Expect(err).NotTo(HaveOccurred())
+				return clusters.Items
+			}).Should(BeEmpty())
 		})
 
 		It("Should set the available condition", func(ctx context.Context) {
