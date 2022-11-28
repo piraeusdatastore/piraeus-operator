@@ -252,6 +252,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 	lc, err := linstorhelper.NewClientForCluster(
 		ctx,
 		r.Client,
+		r.Namespace,
 		lsatellite.Spec.ClusterRef.Name,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)
@@ -443,6 +444,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 	lc, err := linstorhelper.NewClientForCluster(
 		ctx,
 		r.Client,
+		r.Namespace,
 		lsatellite.Spec.ClusterRef.Name,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)

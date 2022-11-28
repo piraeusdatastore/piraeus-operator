@@ -436,6 +436,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 	lc, err := linstorhelper.NewClientForCluster(
 		ctx,
 		r.Client,
+		r.Namespace,
 		lcluster.Name,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)
