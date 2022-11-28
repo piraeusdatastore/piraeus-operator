@@ -17,7 +17,7 @@ import (
 )
 
 var _ = Describe("LinstorCluster controller", func() {
-	Context("When creating an empty LinstorCluster", func() {
+	Context("when creating an empty LinstorCluster", func() {
 		BeforeEach(func(ctx context.Context) {
 			err := k8sClient.Create(ctx, &piraeusiov1.LinstorCluster{
 				ObjectMeta: metav1.ObjectMeta{Name: "default"},
@@ -28,15 +28,15 @@ var _ = Describe("LinstorCluster controller", func() {
 			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorCluster{})
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() []piraeusiov1.LinstorCluster {
-				var clusters piraeusiov1.LinstorClusterList
-				err := k8sClient.List(ctx, &clusters)
+			Eventually(func() []piraeusiov1.LinstorSatellite {
+				var satellites piraeusiov1.LinstorSatelliteList
+				err = k8sClient.List(ctx, &satellites)
 				Expect(err).NotTo(HaveOccurred())
-				return clusters.Items
-			}).Should(BeEmpty())
+				return satellites.Items
+			}, DefaultTimeout, DefaultCheckInterval).Should(BeEmpty())
 		})
 
-		It("Should set the available condition", func(ctx context.Context) {
+		It("should set the available condition", func(ctx context.Context) {
 			Eventually(func() bool {
 				cluster := &piraeusiov1.LinstorCluster{}
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, cluster)
@@ -47,7 +47,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				return meta.FindStatusCondition(cluster.Status.Conditions, string(conditions.Applied)) != nil
 			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
 		})
-		It("Should create controller resources", func(ctx context.Context) {
+		It("should create controller resources", func(ctx context.Context) {
 			Eventually(func() bool {
 				deploy := appsv1.Deployment{}
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: "piraeus-datastore"}, &deploy)
@@ -56,7 +56,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
 		})
 
-		Describe("With cluster nodes present", func() {
+		Describe("with cluster nodes present", func() {
 			BeforeEach(func(ctx context.Context) {
 				err := k8sClient.Create(ctx, &corev1.Node{
 					ObjectMeta: metav1.ObjectMeta{Name: "node-1a", Labels: map[string]string{"topology.kubernetes.io/zone": "a"}},
@@ -79,7 +79,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("Should create LinstorSatellite resources", func(ctx context.Context) {
+			It("should create LinstorSatellite resources", func(ctx context.Context) {
 				Eventually(func() bool {
 					var satellites piraeusiov1.LinstorSatelliteList
 					err := k8sClient.List(ctx, &satellites)
@@ -89,7 +89,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
 			})
 
-			It("Should apply LinstorSatelliteConfigs to matching nodes", func(ctx context.Context) {
+			It("should apply LinstorSatelliteConfigs to matching nodes", func(ctx context.Context) {
 				err := k8sClient.Create(ctx, &piraeusiov1.LinstorSatelliteConfiguration{
 					ObjectMeta: metav1.ObjectMeta{Name: "00-all-satellites"},
 					Spec: piraeusiov1.LinstorSatelliteConfigurationSpec{
@@ -194,6 +194,48 @@ var _ = Describe("LinstorCluster controller", func() {
 				Expect(&satNode1A.Spec).To(Equal(specZoneA))
 				Expect(&satNode1B.Spec).To(Equal(specZoneB))
 				Expect(&satNode2A.Spec).To(Equal(specZoneA))
+			})
+
+			It("should apply changes made to the cluster resource", func(ctx context.Context) {
+				Eventually(func() bool {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+
+					return len(satellites.Items) == 3
+				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+
+				var cluster piraeusiov1.LinstorCluster
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
+				Expect(err).NotTo(HaveOccurred())
+
+				cluster.Spec.Repository = "piraeus.io/test"
+				cluster.Spec.NodeSelector = map[string]string{"topology.kubernetes.io/zone": "a"}
+
+				err = k8sClient.Update(ctx, &cluster)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() []string {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+
+					var result []string
+					for i := range satellites.Items {
+						if satellites.Items[i].DeletionTimestamp == nil {
+							result = append(result, satellites.Items[i].Name)
+						}
+					}
+					return result
+				}, DefaultTimeout, DefaultCheckInterval).Should(ConsistOf("node-1a", "node-2a"))
+
+				Eventually(func() string {
+					var controllerDeployment appsv1.Deployment
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(controllerDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
+					return controllerDeployment.Spec.Template.Spec.Containers[0].Image
+				}, DefaultTimeout, DefaultCheckInterval).Should(HavePrefix("piraeus.io/test"))
 			})
 		})
 	})

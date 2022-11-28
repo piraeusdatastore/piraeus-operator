@@ -17,9 +17,9 @@ type Client struct {
 }
 
 // NewClientForCluster returns a LINSTOR client for a LINSTOR Controller managed by the operator.
-func NewClientForCluster(ctx context.Context, cl client.Client, clusterName string, options ...lapi.Option) (*Client, error) {
+func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clusterName string, options ...lapi.Option) (*Client, error) {
 	services := corev1.ServiceList{}
-	err := cl.List(ctx, &services, client.MatchingLabels{
+	err := cl.List(ctx, &services, client.InNamespace(namespace), client.MatchingLabels{
 		"app.kubernetes.io/instance":  clusterName,
 		"app.kubernetes.io/component": "linstor-controller",
 	})

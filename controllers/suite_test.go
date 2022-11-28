@@ -39,6 +39,7 @@ import (
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/k8sgc"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -121,8 +122,31 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		err = k8sManager.Start(ctx)
+		err := k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+	}()
+
+	go func() {
+		defer GinkgoRecover()
+		gc, err := k8sgc.New(ctx, k8sClient)
+		Expect(err).ToNot(HaveOccurred(), "failed to create GC")
+
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				_, err = gc.Run(ctx)
+				if ctx.Err() != nil {
+					return
+				}
+
+				Expect(err).ToNot(HaveOccurred(), "failed to run GC")
+			}
+		}
 	}()
 })
 
