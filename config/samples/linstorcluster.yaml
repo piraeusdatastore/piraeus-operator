@@ -1,0 +1,21 @@
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec: {}
+#  repository: registry.example.com
+#  nodeSelector:
+#    piraeus.io/satellite: "true"
+#  patches:
+#    - target:
+#        kind: Pod
+#        name: satellite
+#      patch: |-
+#        apiVersion: v1
+#        kind: Pod
+#        metadata:
+#          name: satellite
+#        spec:
+#          initContainers:
+#          - name: drbd-module-loader
+#            image: registry.example.com/my-custom-drbd9-loader:latest

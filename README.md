@@ -7,242 +7,134 @@
 The Piraeus Operator manages
 [LINSTOR](https://github.com/LINBIT/linstor-server) clusters in Kubernetes.
 
-All components of the LINSTOR software stack can be managed by the operator and
-associated Helm chart:
+All components of the LINSTOR software stack can be managed by the operator:
 * DRBD
 * LINSTOR
 * LINSTOR CSI driver
-* LINSTOR High Availability Controller
-* **Optional**: etcd cluster for LINSTOR
-* **Optional**: Stork scheduler with LINSTOR integration
 
-## Deployment with Helm v3 Chart
 
-The operator can be deployed with Helm v3 chart in /charts as follows:
+## Usage
 
-- Prepare the hosts for DRBD deployment. This depends on your host OS. You can find more information on the available
-  options in the [host setup guide](./doc/host-setup.md).
-
-- If you are deploying with images from private repositories, create
-  a kubernetes secret to allow obtaining the images. This example will create
-  a secret named `drbdiocred`:
-
-    ```
-    kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --docker-username=<YOUR_LOGIN> --docker-email=<YOUR_EMAIL> --docker-password=<YOUR_PASSWORD>
-    ```
-
-    The name of this secret must match the one specified in the Helm values, by
-    passing `--set drbdRepoCred=drbdiocred` to helm.
-
-- Configure storage for the LINSTOR etcd instance OR use the [new LINSTOR k8s backend (experimental) without ETCD](./doc/k8s-backend.md).
-
-  There are various options for configuring the etcd instance for LINSTOR:
-  * Use an existing storage provisioner with a default `StorageClass`.
-  * [Use `hostPath` volumes](#linstor-etcd-hostpath-persistence).
-  * Disable persistence for basic testing. This can be done by adding `--set
-    etcd.persistentVolume.enabled=false` to the `helm install` command below.
-
-- Configure a basic storage setup for LINSTOR:
-  * Create storage pools from available devices. Recommended for simple set ups. [Guide](doc/storage.md#preparing-physical-devices)
-  * Create storage pools from existing LVM setup. [Guide](doc/storage.md#configuring-storage-pool-creation)
-
-  Read [the storage guide](doc/storage.md) and configure as needed.
-
-- Read the [guide on securing the deployment](doc/security.md) and configure as needed.
-
-- Read up on [optional components](doc/optional-components.md) and configure as needed.
-
-- Finally, create a Helm deployment named `piraeus-op` that will set up
-  everything.
-
-    ```
-    helm install piraeus-op ./charts/piraeus
-    ```
-
-  You can pick from a number of example settings:
-
-  * default values [`values.yaml`](./charts/piraeus/values.yaml)
-  * images optimized for CN [`values.cn.yaml`](./charts/piraeus/values.cn.yaml).
-  * override for Openshift [`values-openshift.yaml`](./charts/piraeus/values-openshift.yaml)
-
-  A full list of all available options to pass to helm can be found [here](./doc/helm-values.adoc).
-
-### LINSTOR etcd `hostPath` persistence
-
-In general, we recommend using pre-provisioned persistent volumes (PB) when using Etcd as the LINSTOR database.
-You can use the included `pv-hostpath` Helm chart to quickly create such PVs.
+To deploy Piraeus Operator v2, first make sure to deploy [cert-manager](https://cert-manager.io)
 
 ```
-helm install piraeus-etcd-pv ./charts/pv-hostpath
+$ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.yaml
 ```
 
-These PVs are of type `hostPath`, i.e. a directory on the host is shared with the container. By default, a volume is
-created on every control-plane node (those labeled with `node-role.kubernetes.io/control-plane`). You can manually
-specify on which nodes PVs should be created by using `--set nodes={<nodename1>,<nodename2>}`.
-
-The chart defaults to using the `/var/lib/linstor-etcd` directory on the host. You can override this by using
-`--set path=/new/path`.
-
-#### `hostPath` volumes and SELinux
-
-Clusters with SELinux enabled hosts (for example: OpenShift clusters) need to relabel the created directory. This
-can be done automatically by passing `--set selinux=true` to the above `helm install` command.
-
-#### Override the default choice of chown job image
-
-The `pv-hostpath` chart will create a job for each created PV. The jobs are meant to ensure the host volumes are set up
-with the correct permission, so that etcd can run as a non-privileged container. To override the default choice of
-`quay.io/centos/centos:8`, use `--set chownerImage=<my-image>`.
-
-### Using an existing database
-
-LINSTOR can connect to an existing PostgreSQL, MariaDB or etcd database. For
-instance, for a PostgresSQL instance with the following configuration:
+Then, deploy the Operator from this repository:
 
 ```
-POSTGRES_DB: postgresdb
-POSTGRES_USER: postgresadmin
-POSTGRES_PASSWORD: admin123
+$ git clone https://github.com/piraeusdatastore/piraeus-operator --branch=v2
+$ cd piraeus-operator
+$ kubectl create -k config/default
+# Verify the operator is running:
+$ kubectl get pods -n piraeus-datastore
+NAME                                                 READY   STATUS    RESTARTS   AGE
+piraeus-operator-piraeus-operator-748c57bb8d-65cvw   2/2     Running   0          55s
 ```
 
-The Helm chart can be configured to use this database instead of deploying an
-etcd cluster by adding the following to the Helm install command:
+Now you can create a basic storage cluster by applying the [sample resources](./config/samples)
 
 ```
---set etcd.enabled=false --set "operator.controller.dbConnectionURL=jdbc:postgresql://postgres/postgresdb?user=postgresadmin&password=admin123"
+$ kubectl create -k config/samples
+linstorclusters.piraeus.io/linstorcluster created
+linstorsatelliteconfigurations.piraeus.io/all-satellites created
 ```
 
-### Pod resources
+## Configuration
 
-You can configure [resource requests and limits] for all deployed containers. Take a look at
-this [example chart configuration.](./examples/resource-requirements.yaml)
+The following customizations are available in the `LinstorCluster` resource:
 
-[resource requests and limits]: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+* Set a custom registry base. All Piraeus images will use that registry instead of `quay.io/piraeusdatastore`.
+  ```yaml
+  apiVersion: piraeus.io/v1
+  kind: LinstorCluster
+  metadata:
+    name: linstorcluster
+  spec:
+    repository: registry.example.com/piraeus
+  ```
+* A node selector. Satellites will only be started on nodes matching the given labels.
+  ```yaml
+  apiVersion: piraeus.io/v1
+  kind: LinstorCluster
+  metadata:
+    name: linstorcluster
+  spec:
+    nodeSelector:
+      piraeus.io/satellite: "true"
+  ```
+* A list of properties to apply on the controller level. For example, to configure LINSTOR to allocate Ports for DRBD
+  starting at 8000 (instead of the default 7000), you can apply the following change to the LinstorCluster resource
+  ```yaml
+  apiVersion: piraeus.io/v1
+  kind: LinstorCluster
+  metadata:
+    name: linstorcluster
+  spec:
+    properties:
+      - name: TcpPortAutoRange
+        value: "8000"
+  ```
+* [Kustomize patches](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/) to apply to
+  resources. When the operator applies resources, it will use `kustomize` to adapt the [base resources](./pkg/resources).
 
-### Running multiple replicas
+  For example, to change the number of replicas for the CSI Controller deployment, you can use the following patch:
+  ```yaml
+  apiVersion: piraeus.io/v1
+  kind: LinstorCluster
+  metadata:
+    name: linstorcluster
+  spec:
+    patches:
+      - target:
+          kind: Deployment
+          name: csi-controller
+        patch: |-
+          apiVersion: apps/v1
+          kind: csi-controller
+          metadata:
+            name: csi-controller
+          spec:
+            replicas: 3
+  ```
 
-Running multiple replicas of pods is recommended for high availability and fast error recovery.
-The following components can be started with multiple replicas:
+The `LinstorSatelliteConfiguration` resources allow customizing a set of satellites at once. The `spec.nodeSelector` is
+used to determine which customization is applied on a node.
 
-* Operator: Set [`operator.replicas`] to the desired number of operator pods.
-* CSI: Set [`csi.controllerReplicas`] to the desired number of CSI Controller pods.
-* Linstor Controller: Set [`operator.controller.replicas`] to the desired number of LINSTOR controller pods.
-* Etcd: Set [`etcd.replicas`] to the desired number of Etcd pods.
-* Stork: Set [`stork.replicas`] to the desired number of both Stork plugin and Stork scheduler pods.
-
-[`operator.replicas`]: ./doc/helm-values.adoc#operatorreplicas
-[`csi.controllerReplicas`]: ./doc/helm-values.adoc#csicontrollerreplicas
-[`operator.controller.replicas`]: ./doc/helm-values.adoc#operatorcontrollerreplicas
-[`etcd.replicas`]: ./doc/helm-values.adoc#etcdreplicas
-[`stork.replicas`]: ./doc/helm-values.adoc#storkreplicas
-
-### Influence pod scheduling
-
-You can influence the assignement of various components to specific nodes. See the [scheduling guide.](./doc/scheduling.md)
-
-### Terminating Helm deployment
-
-To protect the storage infrastructure of the cluster from accidentally deleting vital components, it is necessary
-to perform some manual steps before deleting a Helm deployment.
-
-1. Delete all volume claims managed by piraeus components.
-   You can use the following command to get a list of volume claims managed by Piraeus.
-   After checking that non of the listed volumes still hold needed data, you can delete them using the generated
-   `kubectl delete` command.
-
-   ```
-   $ kubectl get pvc --all-namespaces -o=jsonpath='{range .items[?(@.metadata.annotations.volume\.beta\.kubernetes\.io/storage-provisioner=="linstor.csi.linbit.com")]}kubectl delete pvc --namespace {.metadata.namespace} {.metadata.name}{"\n"}{end}'
-   kubectl delete pvc --namespace default data-mysql-0
-   kubectl delete pvc --namespace default data-mysql-1
-   kubectl delete pvc --namespace default data-mysql-2
-   ```
-
-   **WARNING** These volumes, once deleted, cannot be recovered.
-
-2. Delete the LINSTOR controller and satellite resources.
-
-   Deployment of LINSTOR satellite and controller is controlled by the `linstorsatelliteset` and `linstorcontroller`
-   resources. You can delete the resources associated with your deployment using `kubectl`
-
-   ```
-   kubectl delete linstorsatelliteset <helm-deploy-name>-ns
-   kubectl delete linstorcontroller <helm-deploy-name>-cs
-   ```
-
-   After a short wait, the controller and satellite pods should terminate. If they continue to run, you can
-   check the above resources for errors (they are only removed after all associated pods terminate)
-
-3. Delete the Helm deployment.
-
-   If you removed all PVCs and all LINSTOR pods have terminated, you can uninstall the helm deployment
-
-   ```
-   helm uninstall piraeus-op
-   ```
-
-   However, due to the Helm's current policy, the Custom Resource Definitions named
-   `linstorcontroller` and `linstorsatelliteset` will __not__ be deleted by the
-   command.
-
-   More information regarding Helm's current position on CRD's can be found
-   [here](https://helm.sh/docs/topics/chart_best_practices/custom_resource_definitions/#method-1-let-helm-do-it-for-you).
-
-4. Delete the LINSTOR passphrase.
-
-   If you removed all PVCs, and you are certain you won't need any of the current LINSTOR state (resources, snapshots,
-   backups) again, you can delete the LINSTOR passphrase secret. The secret is protected by a finalizer: accidental
-   removal would make the cluster inoperable. You should back up the passphrase to local storage.
-
-   ```
-   # Create a local backup of the passphrase
-   kubectl get secret piraeus-op-passphrase -o 'go-template={{ .data.MASTER_PASSPHRASE | base64decode}}' > secret-passphrase
-   # Remove the finalizer blocking deletion
-   kubectl patch -p '{"metadata": {"$deleteFromPrimitiveList/finalizers": ["piraeus.linbit.com/protect-master-passphrase"]}}' secret piraeus-op-passphrase
-   # Remove the secret
-   kubectl delete secret piraeus-op-passphrase
-   ```
-
-5. Delete LINSTOR database resources when using the K8s backend. [Guide](./doc/k8s-backend.md#delete-the-database)
-
-## Deployment without using Helm v3 chart
-
-### Configuration
-
-The operator must be deployed within the cluster in order for it to have access
-to the controller endpoint, which is a kubernetes service.
-
-### Kubernetes Secret for Repo Access
-
-If you are deploying with images from a private repository, create a kubernetes
-secret to allow obtaining the images.  Create a secret named `drbdiocred` like
-this:
-
+For example, if you have a set of storage nodes, all labelled with `example.com/storage-node=""`, and you want to:
+* Configure the default network interface to be the IPv6 address of your Pods.
+* Configure a storage pool on all nodes, setting up on the devices `/dev/vdb` using a LVM thinpool `vg1/thin1` and naming
+  it `thin1` in LINSTOR.
 ```
-kubectl create secret docker-registry drbdiocred --docker-server=<SERVER> --docker-username=<YOUR LOGIN> --docker-email=<YOUR EMAIL> --docker-password=<YOUR PASSWORD>
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: storage-satellites
+spec:
+  nodeSelector:
+    example.com/storage-node: ""
+  properties:
+    - name: PrefNic
+      value: default-ipv6
+  storagePools:
+    - name: thin1
+      lvmThin:
+        volumeGroup: vg1
+        thinPool: thin1
+      source:
+        hostDevices:
+          - /dev/vdb
 ```
 
-### Deploy Operator
+## Missing features
 
-First you need to create the resource definitions
+These are features that are currently present in Operator v1, and not yet available in this version of Operator v2:
 
-```
-kubectl apply -Rf charts/piraeus/crds/
-```
+* Automatic TLS set up between LINSTOR components
+* Backup of LINSTOR database before upgrades
+* Ensuring the CSI driver is reporting correct node labels by restarting the node pods.
 
-Then, take a look at the files in [`deploy/piraeus`](./deploy/piraeus) and make changes as
-you see fit. For example, you can edit the storage pool configuration by editing
-[`operator-satelliteset.yaml`](deploy/piraeus/templates/operator-satelliteset.yaml)
-like shown in [the storage guide](./doc/storage.md#configuring-storage-pool-creation).
-
-Now you can finally deploy the LINSTOR cluster with:
-```
-kubectl apply -Rf deploy/piraeus/
-```
-
-Or using Kustomize:
-```
-kubectl apply -k deploy
-```
 
 ## Upgrading
 
@@ -260,8 +152,8 @@ project's github page.
 
 ## Building and Development
 
-This project is built using the operator-sdk (version 0.19.4). Please refer to
-the [documentation for the sdk](https://github.com/operator-framework/operator-sdk/tree/v0.19.x).
+This project is built using the operator-sdk. Please refer to
+the [documentation for the sdk](https://github.com/operator-framework/operator-sdk).
 
 ## License
 

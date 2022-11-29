@@ -1,0 +1,24 @@
+# permissions for end users to edit linstorsatelliteconfigurations.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: linstorsatelliteconfiguration-editor-role
+rules:
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstorsatelliteconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstorsatelliteconfigurations/status
+  verbs:
+  - get

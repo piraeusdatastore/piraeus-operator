@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: linstor-controller-passphrase
+  namespace: system
+immutable: true
+data:
+  MASTER_PASSPHRASE: cGxlYXNlLWNoYW5nZS1tZQ== # please-change-me
