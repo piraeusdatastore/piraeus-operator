@@ -1,0 +1,24 @@
+# permissions for end users to edit linstorclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: linstorcluster-editor-role
+rules:
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstorclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstorclusters/status
+  verbs:
+  - get

@@ -1,0 +1,108 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Adds namespace to all resources.
+namespace: piraeus-datastore
+namePrefix: piraeus-operator-
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/name: piraeus-datastore
+
+images:
+- name: controller
+  newName: quay.io/piraeusdatastore/piraeus-operator
+  newTag: v2
+
+# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
+#- ../prometheus
+resources:
+- ../crd
+- ../rbac
+- ../manager
+- ../webhook
+- ../certmanager
+- linstor_passphrase.yaml
+
+patchesStrategicMerge:
+- manager_auth_proxy_patch.yaml
+- manager_webhook_patch.yaml
+- webhookcainjection_patch.yaml
+
+replacements:
+- source:
+    fieldPath: metadata.namespace
+    kind: Service
+    name: webhook-service
+  targets:
+  - fieldPaths:
+    - spec.dnsNames.0
+    options:
+      delimiter: .
+      index: 1
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+  - fieldPaths:
+    - spec.dnsNames.1
+    options:
+      delimiter: .
+      index: 1
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+- source:
+    kind: Service
+    name: webhook-service
+  targets:
+  - fieldPaths:
+    - spec.dnsNames.0
+    options:
+      delimiter: .
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+  - fieldPaths:
+    - spec.dnsNames.1
+    options:
+      delimiter: .
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+- source:
+    fieldPath: metadata.namespace
+    kind: Certificate
+    name: serving-cert
+  targets:
+  - fieldPaths:
+    - metadata.annotations.[cert-manager.io/inject-ca-from]
+    options:
+      delimiter: /
+    select:
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration
+- source:
+    fieldPath: metadata.name
+    kind: Certificate
+    name: serving-cert
+  targets:
+  - fieldPaths:
+    - metadata.annotations.[cert-manager.io/inject-ca-from]
+    options:
+      delimiter: /
+      index: 1
+    select:
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration

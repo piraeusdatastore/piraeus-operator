@@ -1,0 +1,12 @@
+resources:
+- manager.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- files:
+  - default_images.yaml
+  name: config
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

@@ -1,0 +1,67 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-piraeus-io-v1-linstorcluster
+  failurePolicy: Fail
+  name: vlinstorcluster.kb.io
+  rules:
+  - apiGroups:
+    - piraeus.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - linstorclusters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-piraeus-io-v1-linstorsatellite
+  failurePolicy: Fail
+  name: vlinstorsatellite.kb.io
+  rules:
+  - apiGroups:
+    - piraeus.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - linstorsatellites
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-piraeus-io-v1-linstorsatelliteconfiguration
+  failurePolicy: Fail
+  name: vlinstorsatelliteconfiguration.kb.io
+  rules:
+  - apiGroups:
+    - piraeus.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - linstorsatelliteconfigurations
+  sideEffects: None

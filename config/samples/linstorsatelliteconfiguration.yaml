@@ -1,0 +1,16 @@
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: all-satellites
+spec: {}
+#  nodeSelector:
+#    node-role.kubernetes.io/control-plane: ""
+#  properties:
+#    - name: PrefNic
+#      value: default-ipv6
+#  storagePools:
+#    - name: thinpool
+#      lvmThin: {}
+#      source:
+#        hostDevices:
+#          - /dev/vdb
