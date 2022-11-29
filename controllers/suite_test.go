@@ -25,15 +25,20 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
@@ -98,6 +103,19 @@ var _ = BeforeSuite(func() {
 
 	err = k8sClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: Namespace}})
 	Expect(err).NotTo(HaveOccurred())
+
+	// Override the builder function with some sensible defaults for tests
+	defaultNewControllerManagedBy := ctrl.NewControllerManagedBy
+	ctrl.NewControllerManagedBy = func(m manager.Manager) *builder.Builder {
+		return defaultNewControllerManagedBy(m).
+			// Set the maximum failure back off time to 10 seconds.
+			WithOptions(controller.Options{
+				RateLimiter: workqueue.NewMaxOfRateLimiter(
+					workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1*time.Second),
+					&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+				),
+			})
+	}
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
