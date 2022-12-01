@@ -22,7 +22,6 @@ resources:
 - ../manager
 - ../webhook
 - ../certmanager
-- linstor_passphrase.yaml
 
 patchesStrategicMerge:
 - manager_auth_proxy_patch.yaml

@@ -26,12 +26,6 @@ spec:
           env:
             - name: JAVA_OPTS
               value: '-Djdk.tls.acknowledgeCloseNotify=true'
-            - name: MASTER_PASSPHRASE
-              valueFrom:
-                secretKeyRef:
-                  name: linstor-controller-passphrase
-                  key: MASTER_PASSPHRASE
-                  optional: true
           ports:
             - name: api
               containerPort: 3370
