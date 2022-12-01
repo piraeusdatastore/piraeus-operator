@@ -80,3 +80,7 @@ tags
 
 # helm chart dependencies
 /charts/piraeus/charts/*.tgz
+
+# OLM Bundle
+/bundle.Dockerfile
+/bundle
