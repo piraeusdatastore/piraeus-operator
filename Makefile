@@ -92,6 +92,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	go run ./hack/csvinflater > config/manifests/csv-resource-patch.yaml
 	$(CONTROLLER_GEN) rbac:roleName=controller-manager crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate

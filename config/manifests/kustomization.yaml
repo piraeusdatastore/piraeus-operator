@@ -6,6 +6,14 @@ resources:
 - ../samples
 - ../scorecard
 
+patches:
+  - target:
+      kind: ClusterServiceVersion
+    path: csv-resource-patch.yaml
+  - target:
+      kind: ClusterServiceVersion
+    path: csv-status-patch.yaml
+
 # [WEBHOOK] To enable webhooks, uncomment all the sections with [WEBHOOK] prefix.
 # Do NOT uncomment sections with prefix [CERTMANAGER], as OLM does not support cert-manager.
 # These patches remove the unnecessary "cert" volume and its manager container volumeMount.
