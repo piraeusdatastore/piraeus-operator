@@ -47,6 +47,15 @@ type LinstorClusterSpec struct {
 	// See https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/ for how to create patches.
 	// +kubebuilder:validation:Optional
 	Patches []Patch `json:"patches,omitempty"`
+
+	// LinstorPassphraseSecret used to configure the LINSTOR master passphrase.
+	//
+	// The referenced secret must contain a single key "MASTER_PASSPHRASE". The master passphrase is used to
+	// * Derive encryption keys for volumes using the LUKS layer.
+	// * Store credentials for accessing remotes for backups.
+	// See https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-encrypt_commands for more information.
+	// +kubebuilder:validation:Optional
+	LinstorPassphraseSecret string `json:"linstorPassphraseSecret,omitempty"`
 }
 
 // LinstorClusterStatus defines the observed state of LinstorCluster

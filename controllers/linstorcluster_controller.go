@@ -265,7 +265,37 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 // * pull secret (if any)
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
-	return r.kustomize("controller", lcluster)
+	var patches []kusttypes.Patch
+
+	if lcluster.Spec.LinstorPassphraseSecret != "" {
+		passphrasePatch, err := utils.ToEncodedPatch(
+			&kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk(appsv1.GroupName, "v1", "Deployment"), "linstor-controller")},
+			applyappsv1.Deployment("linstor-controller", "").
+				WithSpec(applyappsv1.DeploymentSpec().
+					WithTemplate(applycorev1.PodTemplateSpec().
+						WithSpec(applycorev1.PodSpec().
+							WithContainers(applycorev1.Container().
+								WithName("linstor-controller").
+								WithEnv(applycorev1.EnvVar().
+									WithName("MASTER_PASSPHRASE").
+									WithValueFrom(applycorev1.EnvVarSource().
+										WithSecretKeyRef(applycorev1.SecretKeySelector().
+											WithName(lcluster.Spec.LinstorPassphraseSecret).WithKey("MASTER_PASSPHRASE")),
+									),
+								),
+							),
+						),
+					),
+				),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, *passphrasePatch)
+	}
+
+	return r.kustomize("controller", lcluster, patches...)
 }
 
 // Create the CSI controller and node agent resources.

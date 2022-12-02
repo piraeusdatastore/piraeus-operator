@@ -6,16 +6,18 @@ spec: {}
 #  repository: registry.example.com
 #  nodeSelector:
 #    piraeus.io/satellite: "true"
+#  linstorPassphraseSecret: my-linstor-passphrase
+#  properties:
+#    - name: TcpPortAutoRange
+#      value: "8000-8999"
 #  patches:
 #    - target:
-#        kind: Pod
-#        name: satellite
+#        kind: Deployment
+#        name: csi-controller
 #      patch: |-
-#        apiVersion: v1
-#        kind: Pod
+#        apiVersion: apps/v1
+#        kind: csi-controller
 #        metadata:
-#          name: satellite
+#          name: csi-controller
 #        spec:
-#          initContainers:
-#          - name: drbd-module-loader
-#            image: registry.example.com/my-custom-drbd9-loader:latest
+#          replicas: 3

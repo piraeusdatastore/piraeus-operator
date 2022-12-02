@@ -64,6 +64,17 @@ The following customizations are available in the `LinstorCluster` resource:
     nodeSelector:
       piraeus.io/satellite: "true"
   ```
+* A reference to a secret, containing the passphrase to unlock
+  [LINSTOR's secret store](https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-encrypt_commands). The secret
+  should contain a single key `MASTER_PASSPHRASE`.
+  ```yaml
+  apiVersion: piraeus.io/v1
+  kind: LinstorCluster
+  metadata:
+    name: linstorcluster
+  spec:
+    linstorPassphraseSecret: my-linstor-passphrase
+  ```
 * A list of properties to apply on the controller level. For example, to configure LINSTOR to allocate Ports for DRBD
   starting at 8000 (instead of the default 7000), you can apply the following change to the LinstorCluster resource
   ```yaml
@@ -74,7 +85,7 @@ The following customizations are available in the `LinstorCluster` resource:
   spec:
     properties:
       - name: TcpPortAutoRange
-        value: "8000"
+        value: "8000-8999"
   ```
 * [Kustomize patches](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/) to apply to
   resources. When the operator applies resources, it will use `kustomize` to adapt the [base resources](./pkg/resources).

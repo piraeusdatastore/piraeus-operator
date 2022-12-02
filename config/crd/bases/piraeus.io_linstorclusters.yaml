@@ -35,6 +35,14 @@ spec:
           spec:
             description: LinstorClusterSpec defines the desired state of LinstorCluster
             properties:
+              linstorPassphraseSecret:
+                description: "LinstorPassphraseSecret used to configure the LINSTOR
+                  master passphrase. \n The referenced secret must contain a single
+                  key \"MASTER_PASSPHRASE\". The master passphrase is used to * Derive
+                  encryption keys for volumes using the LUKS layer. * Store credentials
+                  for accessing remotes for backups. See https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-encrypt_commands
+                  for more information."
+                type: string
               nodeSelector:
                 additionalProperties:
                   type: string
