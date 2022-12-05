@@ -1,0 +1,14 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: linstor-controller
+  labels:
+    app.kubernetes.io/component: linstor-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: linstor-controller
+subjects:
+  - kind: ServiceAccount
+    name: linstor-controller

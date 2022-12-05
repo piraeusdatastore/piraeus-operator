@@ -26,6 +26,20 @@ spec:
           env:
             - name: JAVA_OPTS
               value: '-Djdk.tls.acknowledgeCloseNotify=true'
+            - name: K8S_AWAIT_ELECTION_ENABLED
+              value: "1"
+            - name: K8S_AWAIT_ELECTION_NAME
+              value: "linstor-controller"
+            - name: "K8S_AWAIT_ELECTION_LOCK_NAME"
+              value: "linstor-controller"
+            - name: "K8S_AWAIT_ELECTION_LOCK_NAMESPACE"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: K8S_AWAIT_ELECTION_IDENTITY
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
             - name: api
               containerPort: 3370

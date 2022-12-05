@@ -8,3 +8,5 @@ resources:
   - controller-service-account.yaml
   - controller-cluster-role.yaml
   - controller-cluster-role-binding.yaml
+  - controller-role.yaml
+  - controller-role-binding.yaml
