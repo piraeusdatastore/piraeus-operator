@@ -56,6 +56,15 @@ type LinstorClusterSpec struct {
 	// See https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-encrypt_commands for more information.
 	// +kubebuilder:validation:Optional
 	LinstorPassphraseSecret string `json:"linstorPassphraseSecret,omitempty"`
+
+	// InternalTLS secures the connection between LINSTOR Controller and Satellite.
+	//
+	// This configures the client certificate used when the Controller connects to a Satellite. This only has an effect
+	// when the Satellite is configured to for secure connections using `LinstorSatellite.spec.internalTLS`.
+	// +kubebuilder:validation:Optional
+	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
+	// +nullable
+	InternalTLS *TLSConfig `json:"internalTLS,omitempty"`
 }
 
 // LinstorClusterStatus defines the observed state of LinstorCluster

@@ -34,6 +34,10 @@ func SatelliteConfigurations(nodeLabels map[string]string, configs ...piraeusv1.
 		}
 
 		result.Spec.Patches = append(result.Spec.Patches, cfg.Spec.Patches...)
+
+		if cfg.Spec.InternalTLS != nil {
+			result.Spec.InternalTLS = cfg.Spec.InternalTLS
+		}
 	}
 
 	for _, v := range propsMap {

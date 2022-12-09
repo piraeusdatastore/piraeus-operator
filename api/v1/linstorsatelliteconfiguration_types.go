@@ -47,6 +47,14 @@ type LinstorSatelliteConfigurationSpec struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Properties []LinstorNodeProperty `json:"properties,omitempty"`
+
+	// InternalTLS configures secure communication for the LINSTOR Satellite.
+	//
+	// If set, the control traffic between LINSTOR Controller and Satellite will be encrypted using mTLS.
+	// +kubebuilder:validation:Optional
+	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
+	// +nullable
+	InternalTLS *TLSConfig `json:"internalTLS,omitempty"`
 }
 
 // LinstorSatelliteConfigurationStatus defines the observed state of LinstorSatelliteConfiguration

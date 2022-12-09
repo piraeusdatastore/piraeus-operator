@@ -104,6 +104,7 @@ var _ = Describe("LinstorCluster controller", func() {
 						Patches: []piraeusiov1.Patch{
 							{Target: &piraeusiov1.Selector{Kind: "ServiceAccount"}, Patch: "sa-patch1"},
 						},
+						InternalTLS: &piraeusiov1.TLSConfig{},
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -174,6 +175,7 @@ var _ = Describe("LinstorCluster controller", func() {
 						{Name: "pool1", Lvm: &piraeusiov1.LinstorStoragePoolLvm{}},
 						{Name: "pool2", LvmThin: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
 					},
+					InternalTLS: &piraeusiov1.TLSConfig{},
 				}
 
 				specZoneB := &piraeusiov1.LinstorSatelliteSpec{
@@ -189,6 +191,7 @@ var _ = Describe("LinstorCluster controller", func() {
 						{Name: "pool1", Lvm: &piraeusiov1.LinstorStoragePoolLvm{}},
 						{Name: "pool2", LvmThin: &piraeusiov1.LinstorStoragePoolLvmThin{}},
 					},
+					InternalTLS: &piraeusiov1.TLSConfig{},
 				}
 
 				Expect(&satNode1A.Spec).To(Equal(specZoneA))
@@ -238,5 +241,28 @@ var _ = Describe("LinstorCluster controller", func() {
 				}, DefaultTimeout, DefaultCheckInterval).Should(HavePrefix("piraeus.io/test"))
 			})
 		})
+	})
+
+	It("should add TLS secrets to the LINSTOR Controller", func(ctx context.Context) {
+		DeferCleanup(func(ctx context.Context) {
+			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorCluster{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		err := k8sClient.Create(ctx, &piraeusiov1.LinstorCluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "default"},
+			Spec: piraeusiov1.LinstorClusterSpec{
+				InternalTLS: &piraeusiov1.TLSConfig{SecretName: "my-controller-internal-tls"},
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func(g Gomega) {
+			var controllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(controllerDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
+			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-controller-internal-tls")))
+		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 	})
 })

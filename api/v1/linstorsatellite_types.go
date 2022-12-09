@@ -46,6 +46,15 @@ type LinstorSatelliteSpec struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Properties []LinstorNodeProperty `json:"properties,omitempty"`
+
+	// InternalTLS configures secure communication for the LINSTOR Satellite.
+	//
+	// If set, the control traffic between LINSTOR Controller and Satellite will be encrypted using mTLS.
+	// The Controller will use the client key from `LinstorCluster.spec.internalTLS` when connecting.
+	// +kubebuilder:validation:Optional
+	// + Without "nullable" the k8s API does not accept patches with 'internalTLS: {}', which seems to be a bug.
+	// +nullable
+	InternalTLS *TLSConfig `json:"internalTLS,omitempty"`
 }
 
 // LinstorSatelliteStatus defines the observed state of LinstorSatellite

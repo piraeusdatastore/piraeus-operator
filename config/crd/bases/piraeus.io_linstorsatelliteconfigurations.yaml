@@ -38,6 +38,17 @@ spec:
               state of a LinstorSatelliteSpec. \n All the LinstorSatelliteConfiguration
               resources with matching NodeSelector will be merged into a single LinstorSatelliteSpec."
             properties:
+              internalTLS:
+                description: "InternalTLS configures secure communication for the
+                  LINSTOR Satellite. \n If set, the control traffic between LINSTOR
+                  Controller and Satellite will be encrypted using mTLS."
+                nullable: true
+                properties:
+                  secretName:
+                    description: SecretName references a secret holding the TLS key
+                      and certificates.
+                    type: string
+                type: object
               nodeSelector:
                 additionalProperties:
                   type: string

@@ -44,6 +44,19 @@ spec:
                       satellite.
                     type: string
                 type: object
+              internalTLS:
+                description: "InternalTLS configures secure communication for the
+                  LINSTOR Satellite. \n If set, the control traffic between LINSTOR
+                  Controller and Satellite will be encrypted using mTLS. The Controller
+                  will use the client key from `LinstorCluster.spec.internalTLS` when
+                  connecting."
+                nullable: true
+                properties:
+                  secretName:
+                    description: SecretName references a secret holding the TLS key
+                      and certificates.
+                    type: string
+                type: object
               patches:
                 description: "Patches is a list of kustomize patches to apply. \n
                   See https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/

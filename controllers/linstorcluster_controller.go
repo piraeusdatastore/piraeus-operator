@@ -295,6 +295,49 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		patches = append(patches, *passphrasePatch)
 	}
 
+	if lcluster.Spec.InternalTLS != nil {
+		secretName := lcluster.Spec.InternalTLS.SecretName
+		if secretName == "" {
+			secretName = "linstor-controller-internal-tls"
+		}
+
+		mountPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+			ResId: resid.NewResId(resid.NewGvk("apps", "v1", "Deployment"), "linstor-controller"),
+		}, applyappsv1.Deployment("linstor-controller", "").
+			WithSpec(applyappsv1.DeploymentSpec().
+				WithTemplate(applycorev1.PodTemplateSpec().
+					WithSpec(applycorev1.PodSpec().
+						WithVolumes(
+							applycorev1.Volume().
+								WithName("internal-tls").
+								WithSecret(applycorev1.SecretVolumeSource().WithSecretName(secretName)),
+							applycorev1.Volume().
+								WithName("java-internal-tls").
+								WithEmptyDir(applycorev1.EmptyDirVolumeSource()),
+						).
+						WithContainers(applycorev1.Container().
+							WithName("linstor-controller").
+							WithVolumeMounts(
+								applycorev1.VolumeMount().
+									WithName("java-internal-tls").
+									WithMountPath("/etc/linstor/ssl"),
+								applycorev1.VolumeMount().
+									WithName("internal-tls").
+									WithMountPath("/etc/linstor/ssl-pem").
+									WithReadOnly(true),
+							),
+						),
+					),
+				),
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, *mountPatch)
+	}
+
 	return r.kustomize("controller", lcluster, patches...)
 }
 
@@ -371,6 +414,14 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 	patches := []utils.JsonPatch{renamePatch, repositoryPatch, clusterRefPatch}
 
 	cfg := merge.SatelliteConfigurations(node.ObjectMeta.Labels, configs...)
+
+	if cfg.Spec.InternalTLS != nil {
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/spec/internalTLS",
+			Value: cfg.Spec.InternalTLS,
+		})
+	}
 
 	for j := range cfg.Spec.Properties {
 		patches = append(patches, utils.JsonPatch{

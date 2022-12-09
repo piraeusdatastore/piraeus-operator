@@ -81,6 +81,24 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(pod.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
 		})
 
+		It("should create pod with TLS secret", func(ctx context.Context) {
+			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+				TypeMeta:   TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				Spec: piraeusiov1.LinstorSatelliteSpec{
+					InternalTLS: &piraeusiov1.TLSConfig{},
+				},
+			}, client.Apply, client.FieldOwner("test"))
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func(g Gomega) {
+				var pod corev1.Pod
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &pod)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(pod.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
+			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		})
+
 		Context("with additional finalizer", func() {
 			BeforeEach(func(ctx context.Context) {
 				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{

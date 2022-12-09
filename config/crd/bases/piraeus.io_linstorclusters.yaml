@@ -35,6 +35,19 @@ spec:
           spec:
             description: LinstorClusterSpec defines the desired state of LinstorCluster
             properties:
+              internalTLS:
+                description: "InternalTLS secures the connection between LINSTOR Controller
+                  and Satellite. \n This configures the client certificate used when
+                  the Controller connects to a Satellite. This only has an effect
+                  when the Satellite is configured to for secure connections using
+                  `LinstorSatellite.spec.internalTLS`."
+                nullable: true
+                properties:
+                  secretName:
+                    description: SecretName references a secret holding the TLS key
+                      and certificates.
+                    type: string
+                type: object
               linstorPassphraseSecret:
                 description: "LinstorPassphraseSecret used to configure the LINSTOR
                   master passphrase. \n The referenced secret must contain a single
