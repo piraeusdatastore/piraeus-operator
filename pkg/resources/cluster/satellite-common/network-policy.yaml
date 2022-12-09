@@ -19,6 +19,7 @@ spec:
       ports:
         - protocol: TCP
           port: 3366
+          endPort: 3367
     - from:
         - podSelector:
             matchLabels:

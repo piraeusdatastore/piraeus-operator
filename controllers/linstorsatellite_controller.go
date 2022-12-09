@@ -17,14 +17,17 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	linstor "github.com/LINBIT/golinstor"
 	lclient "github.com/LINBIT/golinstor/client"
+	"github.com/LINBIT/golinstor/linstortoml"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -176,61 +179,17 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 }
 
 func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) (resmap.ResMap, error) {
-	nodeAffinityPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-	}, applycorev1.Pod("satellite", "").
-		WithSpec(applycorev1.PodSpec().
-			WithAffinity(applycorev1.Affinity().
-				WithNodeAffinity(applycorev1.NodeAffinity().
-					WithRequiredDuringSchedulingIgnoredDuringExecution(applycorev1.NodeSelector().
-						WithNodeSelectorTerms(applycorev1.NodeSelectorTerm().
-							WithMatchFields(applycorev1.NodeSelectorRequirement().
-								WithKey("metadata.name").
-								WithOperator(corev1.NodeSelectorOpIn).
-								WithValues(node.Name),
-							),
-						),
-					),
-				),
-			),
-		),
-	)
+	patches, err := PerNodePatches(lsatellite.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	nodeNamePatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-	}, []utils.JsonPatch{{
-		Op:    utils.Replace,
-		Path:  "/metadata/name",
-		Value: lsatellite.Name,
-	}})
+	tlsPatches, err := TLSPatches(lsatellite)
 	if err != nil {
 		return nil, err
 	}
 
-	satelliteConfigPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "ConfigMap"), "satellite-config"),
-	}, []utils.JsonPatch{{
-		Op:    utils.Replace,
-		Path:  "/metadata/name",
-		Value: lsatellite.Name + "-satellite-config",
-	}})
-	if err != nil {
-		return nil, err
-	}
-
-	reactorConfigPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "ConfigMap"), "reactor-config"),
-	}, []utils.JsonPatch{{
-		Op:    utils.Replace,
-		Path:  "/metadata/name",
-		Value: lsatellite.Name + "-reactor-config",
-	}})
-	if err != nil {
-		return nil, err
-	}
+	patches = append(patches, tlsPatches...)
 
 	imgs, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 	if err != nil {
@@ -238,11 +197,12 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 	}
 
 	k := &kusttypes.Kustomization{
-		Namespace: r.Namespace,
-		Labels:    r.kustomLabels(lsatellite.Spec.ClusterRef.Name),
-		Resources: []string{"pod"},
-		Images:    imgs,
-		Patches:   append(utils.MakeKustPatches(lsatellite.Spec.Patches...), *nodeAffinityPatch, *nodeNamePatch, *satelliteConfigPatch, *reactorConfigPatch),
+		Namespace:    r.Namespace,
+		Labels:       r.kustomLabels(lsatellite.Spec.ClusterRef.Name),
+		Resources:    []string{"pod"},
+		Images:       imgs,
+		Replacements: SatelliteNameReplacements,
+		Patches:      append(utils.MakeKustPatches(lsatellite.Spec.Patches...), patches...),
 	}
 
 	return r.Kustomizer.Kustomize(k)
@@ -307,11 +267,18 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 			return nil
 		}
 
+		encryptType := linstor.ValNetcomTypePlain
+		port := linstor.DfltStltPortPlain
+		if lsatellite.Spec.InternalTLS != nil {
+			encryptType = linstor.ValNetcomTypeSsl
+			port = linstor.DfltStltPortSsl
+		}
+
 		netIfs = append(netIfs, lclient.NetInterface{
 			Name:                    name,
 			Address:                 ip,
-			SatellitePort:           3366,
-			SatelliteEncryptionType: linstor.ValNetcomTypePlain,
+			SatellitePort:           int32(port),
+			SatelliteEncryptionType: encryptType,
 		})
 	}
 
@@ -529,4 +496,132 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Complete(r)
+}
+
+func PerNodePatches(nodeName string) ([]kusttypes.Patch, error) {
+	nodeAffinityPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+	}, applycorev1.Pod("satellite", "").
+		WithSpec(applycorev1.PodSpec().
+			WithAffinity(applycorev1.Affinity().
+				WithNodeAffinity(applycorev1.NodeAffinity().
+					WithRequiredDuringSchedulingIgnoredDuringExecution(applycorev1.NodeSelector().
+						WithNodeSelectorTerms(applycorev1.NodeSelectorTerm().
+							WithMatchFields(applycorev1.NodeSelectorRequirement().
+								WithKey("metadata.name").
+								WithOperator(corev1.NodeSelectorOpIn).
+								WithValues(nodeName),
+							),
+						),
+					),
+				),
+			),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeNamePatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+	}, []utils.JsonPatch{{
+		Op:    utils.Replace,
+		Path:  "/metadata/name",
+		Value: nodeName,
+	}})
+	if err != nil {
+		return nil, err
+	}
+
+	return []kusttypes.Patch{*nodeAffinityPatch, *nodeNamePatch}, nil
+}
+
+func TLSPatches(lsatellite *piraeusiov1.LinstorSatellite) ([]kusttypes.Patch, error) {
+	if lsatellite.Spec.InternalTLS == nil {
+		return nil, nil
+	}
+
+	secretName := lsatellite.Spec.InternalTLS.SecretName
+	if secretName == "" {
+		secretName = lsatellite.Name + "-tls"
+	}
+
+	mountPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+	}, applycorev1.Pod("satellite", "").
+		WithSpec(applycorev1.PodSpec().
+			WithVolumes(
+				applycorev1.Volume().
+					WithName("internal-tls").
+					WithSecret(applycorev1.SecretVolumeSource().WithSecretName(secretName)),
+				applycorev1.Volume().
+					WithName("java-internal-tls").
+					WithEmptyDir(applycorev1.EmptyDirVolumeSource()),
+			).
+			WithContainers(applycorev1.Container().
+				WithName("linstor-satellite").
+				WithVolumeMounts(
+					applycorev1.VolumeMount().
+						WithName("java-internal-tls").
+						WithMountPath("/etc/linstor/ssl"),
+					applycorev1.VolumeMount().
+						WithName("internal-tls").
+						WithMountPath("/etc/linstor/ssl-pem").
+						WithReadOnly(true),
+				),
+			),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &linstortoml.Satellite{
+		NetCom: &linstortoml.SatelliteNetCom{
+			Type:                "ssl",
+			Port:                linstor.DfltStltPortSsl,
+			ServerCertificate:   "/etc/linstor/ssl/keystore.jks",
+			TrustedCertificates: "/etc/linstor/ssl/certificates.jks",
+			KeyPassword:         "linstor",
+			KeystorePassword:    "linstor",
+			TruststorePassword:  "linstor",
+			SslProtocol:         "TLSv1.2",
+		},
+	}
+	encodedCfg := bytes.Buffer{}
+	err = toml.NewEncoder(&encodedCfg).Encode(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	configPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+		ResId: resid.NewResId(resid.NewGvk("", "v1", "ConfigMap"), "satellite-config"),
+	}, applycorev1.ConfigMap("satellite-config", "").
+		WithData(map[string]string{
+			"linstor_satellite.toml": encodedCfg.String(),
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return []kusttypes.Patch{*mountPatch, *configPatch}, nil
+}
+
+// SatelliteNameReplacements are the kustomize replacements for renaming resources for a single satellite.
+var SatelliteNameReplacements = []kusttypes.ReplacementField{
+	{Replacement: kusttypes.Replacement{
+		Source: &kusttypes.SourceSelector{
+			ResId:     resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+			FieldPath: "metadata.name",
+		},
+		Targets: []*kusttypes.TargetSelector{
+			{
+				// Prefixes all config maps with "<nodename>-"
+				Select:     &kusttypes.Selector{ResId: resid.NewResIdKindOnly("ConfigMap", "")},
+				FieldPaths: []string{"metadata.name"},
+				Options:    &kusttypes.FieldOptions{Delimiter: "-", Index: -1},
+			},
+		},
+	}},
 }

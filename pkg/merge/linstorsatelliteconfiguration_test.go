@@ -27,6 +27,9 @@ var (
 				{Name: "prop1", Value: "config1"},
 				{Name: "prop2", Value: "config1"},
 			},
+			InternalTLS: &piraeusv1.TLSConfig{
+				SecretName: "config1",
+			},
 		},
 	}
 	Config2 = piraeusv1.LinstorSatelliteConfiguration{
@@ -62,6 +65,9 @@ var (
 			Properties: []piraeusv1.LinstorNodeProperty{
 				{Name: "prop2", Value: "config3"},
 				{Name: "prop3", Value: "config3"},
+			},
+			InternalTLS: &piraeusv1.TLSConfig{
+				SecretName: "config3",
 			},
 		},
 	}
@@ -111,6 +117,9 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 						{Name: "prop1", Value: "config2"},
 						{Name: "prop2", Value: "config3"},
 						{Name: "prop3", Value: "config3"},
+					},
+					InternalTLS: &piraeusv1.TLSConfig{
+						SecretName: "config3",
 					},
 				},
 			},

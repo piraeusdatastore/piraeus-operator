@@ -34,6 +34,9 @@ spec:
       image: linstor-satellite
       args:
         - startSatellite
+      env:
+        - name: JAVA_OPTS
+          value: -Djdk.tls.acknowledgeCloseNotify=true
       securityContext:
         readOnlyRootFilesystem: true
         privileged: true
@@ -61,7 +64,7 @@ spec:
           name: etc-lvm-backup
         - mountPath: /run
           name: run
-        - mountPath: tmp
+        - mountPath: /tmp
           name: tmp
         - mountPath: /run/lock
           name: run-lock
