@@ -23,6 +23,7 @@ import (
 	"sort"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	netwv1 "k8s.io/api/networking/v1"
@@ -93,6 +94,7 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshotclasses;volumesnapshots,verbs=get;list;watch
 //+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshotcontents,verbs=get;list;watch;patch;update;delete
 //+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshotcontents/status,verbs=patch;update
+//+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -196,6 +198,7 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 		&rbacv1.RoleBinding{},
 		&rbacv1.ClusterRoleBinding{},
 		&netwv1.NetworkPolicy{},
+		&certmanagerv1.Certificate{},
 	)
 	if err != nil {
 		return err
@@ -266,6 +269,7 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
 	var patches []kusttypes.Patch
+	resourceDirs := []string{"controller"}
 
 	if lcluster.Spec.LinstorPassphraseSecret != "" {
 		passphrasePatch, err := utils.ToEncodedPatch(
@@ -336,9 +340,38 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		}
 
 		patches = append(patches, *mountPatch)
+
+		if lcluster.Spec.InternalTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "controller/cert-manager")
+
+			issuerPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+				ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "linstor-controller-internal-tls"),
+			}, []utils.JsonPatch{
+				{
+					Op:    utils.Replace,
+					Path:  "/spec/issuerRef",
+					Value: lcluster.Spec.InternalTLS.CertManager,
+				},
+				{
+					Op:    utils.Replace,
+					Path:  "/metadata/name",
+					Value: secretName,
+				},
+				{
+					Op:    utils.Replace,
+					Path:  "/spec/secretName",
+					Value: secretName,
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, *issuerPatch)
+		}
 	}
 
-	return r.kustomize("controller", lcluster, patches...)
+	return r.kustomize(resourceDirs, lcluster, patches...)
 }
 
 // Create the CSI controller and node agent resources.
@@ -363,7 +396,7 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 		return nil, err
 	}
 
-	return r.kustomize("csi", lcluster, *selectorPatch)
+	return r.kustomize([]string{"csi"}, lcluster, *selectorPatch)
 }
 
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.
@@ -379,7 +412,7 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 // * pull secret (if any)
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
-	return r.kustomize("satellite-common", lcluster)
+	return r.kustomize([]string{"satellite-common"}, lcluster)
 }
 
 // Create the LINSTOR Satellite resources for a specific node.
@@ -455,11 +488,11 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 		return nil, err
 	}
 
-	return r.kustomize("satellite", lcluster, *patch)
+	return r.kustomize([]string{"satellite"}, lcluster, *patch)
 }
 
 // kustomize applies the common Kustomizations along with the given patches.
-func (r *LinstorClusterReconciler) kustomize(resources string, lcluster *piraeusiov1.LinstorCluster, patches ...kusttypes.Patch) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomize(resources []string, lcluster *piraeusiov1.LinstorCluster, patches ...kusttypes.Patch) (resmap.ResMap, error) {
 	imgs, err := r.ImageVersions.GetVersions(lcluster.Spec.Repository, "")
 	if err != nil {
 		return nil, err
@@ -473,7 +506,7 @@ func (r *LinstorClusterReconciler) kustomize(resources string, lcluster *piraeus
 	k := &kusttypes.Kustomization{
 		Namespace: r.Namespace,
 		Labels:    r.kustomLabels(lcluster),
-		Resources: []string{resources},
+		Resources: resources,
 		Images:    imgs,
 		Patches:   append(append(utils.MakeKustPatches(lcluster.Spec.Patches...), saPatch...), patches...),
 	}
