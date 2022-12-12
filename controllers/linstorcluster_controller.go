@@ -109,7 +109,7 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	applyErr := r.reconcileAppliedResource(ctx, lcluster)
 	if applyErr != nil {
-		conds.AddError(conditions.Applied, err)
+		conds.AddError(conditions.Applied, applyErr)
 	} else {
 		conds.AddSuccess(conditions.Applied, "Resources applied")
 	}
