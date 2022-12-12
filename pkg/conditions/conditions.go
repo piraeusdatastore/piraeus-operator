@@ -62,7 +62,7 @@ func (c Conditions) AddError(condType CondType, err error) {
 	ct := c.get(condType)
 	ct.Status = metav1.ConditionFalse
 	ct.Reason = ReasonError
-	ct.Message = append(ct.Message, fmt.Sprintf("Error: %s", err))
+	ct.Message = append(ct.Message, fmt.Sprintf("Error: %v", err))
 }
 
 func (c Conditions) AddUnknown(condType CondType, message string) {

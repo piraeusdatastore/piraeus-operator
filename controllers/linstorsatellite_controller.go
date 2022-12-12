@@ -105,7 +105,7 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if node.Name != "" {
 		applyErr = r.reconcileAppliedResource(ctx, lsatellite, &node)
 		if applyErr != nil {
-			conds.AddError(conditions.Applied, err)
+			conds.AddError(conditions.Applied, applyErr)
 		} else {
 			conds.AddSuccess(conditions.Applied, "Resources applied")
 		}
