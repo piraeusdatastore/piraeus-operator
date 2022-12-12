@@ -7,6 +7,11 @@ spec: {}
 #  nodeSelector:
 #    piraeus.io/satellite: "true"
 #  linstorPassphraseSecret: my-linstor-passphrase
+#  internalTLS:
+#    secretName: linstor-controller-internal-tls
+#    certManager:
+#      kind: Issuer
+#      name: piraeus-root
 #  properties:
 #    - name: TcpPortAutoRange
 #      value: "8000-8999"
