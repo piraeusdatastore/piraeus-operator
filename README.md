@@ -75,6 +75,20 @@ The following customizations are available in the `LinstorCluster` resource:
   spec:
     linstorPassphraseSecret: my-linstor-passphrase
   ```
+* A reference to a TLS secret, containing the secret key and certificate use in mutual authentication of  the satellites.
+  If [cert-manager](https://cert-manager.io/) is available, the certificates can be created on demand by the operator.
+  ```yaml
+  apiVersion: piraeus.io/v1
+  kind: LinstorCluster
+  metadata:
+    name: linstorcluster
+  spec:
+    internalTLS:
+      secretName: linstor-controller-internal-tls
+      certManager:
+        kind: Issuer
+        name: piraeus-root
+  ```
 * A list of properties to apply on the controller level. For example, to configure LINSTOR to allocate Ports for DRBD
   starting at 8000 (instead of the default 7000), you can apply the following change to the LinstorCluster resource
   ```yaml
@@ -115,6 +129,8 @@ used to determine which customization is applied on a node.
 
 For example, if you have a set of storage nodes, all labelled with `example.com/storage-node=""`, and you want to:
 * Configure the default network interface to be the IPv6 address of your Pods.
+* Configure secured control plane traffic via TLS, using a [cert-manager](https://cert-manager.io/) issuer named
+  `piraeus-root`.
 * Configure a storage pool on all nodes, setting up on the devices `/dev/vdb` using a LVM thinpool `vg1/thin1` and naming
   it `thin1` in LINSTOR.
 ```
@@ -125,6 +141,10 @@ metadata:
 spec:
   nodeSelector:
     example.com/storage-node: ""
+  internalTLS:
+    certManager:
+      kind: Issuer
+      name: piraeus-root
   properties:
     - name: PrefNic
       value: default-ipv6
