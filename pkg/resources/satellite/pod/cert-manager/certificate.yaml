@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls
+spec:
+  issuerRef:
+    name: FILLME
+  secretName: tls
+  dnsNames:
+    - FILLME
+  usages:
+  - "server auth"

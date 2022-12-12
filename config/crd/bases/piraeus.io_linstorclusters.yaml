@@ -43,6 +43,24 @@ spec:
                   `LinstorSatellite.spec.internalTLS`."
                 nullable: true
                 properties:
+                  certManager:
+                    description: CertManager references a cert-manager Issuer or ClusterIssuer.
+                      If set, a Certificate resource will be created, provisioning
+                      the secret references in SecretName using the issuer configured
+                      here.
+                    properties:
+                      group:
+                        description: Group of the resource being referred to.
+                        type: string
+                      kind:
+                        description: Kind of the resource being referred to.
+                        type: string
+                      name:
+                        description: Name of the resource being referred to.
+                        type: string
+                    required:
+                    - name
+                    type: object
                   secretName:
                     description: SecretName references a secret holding the TLS key
                       and certificates.

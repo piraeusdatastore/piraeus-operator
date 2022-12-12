@@ -28,6 +28,7 @@ import (
 	linstor "github.com/LINBIT/golinstor"
 	lclient "github.com/LINBIT/golinstor/client"
 	"github.com/LINBIT/golinstor/linstortoml"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -77,6 +78,7 @@ type LinstorSatelliteReconciler struct {
 //+kubebuilder:rbac:groups="",resources=pods;configmaps;secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -170,6 +172,7 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 		&corev1.Pod{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
+		&certmanagerv1.Certificate{},
 	)
 	if err != nil {
 		return err
@@ -179,17 +182,55 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 }
 
 func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) (resmap.ResMap, error) {
+	resourceDirs := []string{"pod"}
+
 	patches, err := PerNodePatches(lsatellite.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	tlsPatches, err := TLSPatches(lsatellite)
-	if err != nil {
-		return nil, err
-	}
+	if lsatellite.Spec.InternalTLS != nil {
+		secretName := lsatellite.Spec.InternalTLS.SecretName
+		if secretName == "" {
+			secretName = lsatellite.Name + "-tls"
+		}
 
-	patches = append(patches, tlsPatches...)
+		tlsPatches, err := TLSPatches(secretName)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, tlsPatches...)
+
+		if lsatellite.Spec.InternalTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "pod/cert-manager")
+
+			certPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+				ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls"),
+			}, []utils.JsonPatch{
+				{
+					Op:    utils.Replace,
+					Path:  "/spec/issuerRef",
+					Value: lsatellite.Spec.InternalTLS.CertManager,
+				},
+				{
+					Op:    utils.Replace,
+					Path:  "/metadata/name",
+					Value: secretName,
+				},
+				{
+					Op:    utils.Replace,
+					Path:  "/spec/secretName",
+					Value: secretName,
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, *certPatch)
+		}
+	}
 
 	imgs, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 	if err != nil {
@@ -199,7 +240,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 	k := &kusttypes.Kustomization{
 		Namespace:    r.Namespace,
 		Labels:       r.kustomLabels(lsatellite.Spec.ClusterRef.Name),
-		Resources:    []string{"pod"},
+		Resources:    resourceDirs,
 		Images:       imgs,
 		Replacements: SatelliteNameReplacements,
 		Patches:      append(utils.MakeKustPatches(lsatellite.Spec.Patches...), patches...),
@@ -536,16 +577,7 @@ func PerNodePatches(nodeName string) ([]kusttypes.Patch, error) {
 	return []kusttypes.Patch{*nodeAffinityPatch, *nodeNamePatch}, nil
 }
 
-func TLSPatches(lsatellite *piraeusiov1.LinstorSatellite) ([]kusttypes.Patch, error) {
-	if lsatellite.Spec.InternalTLS == nil {
-		return nil, nil
-	}
-
-	secretName := lsatellite.Spec.InternalTLS.SecretName
-	if secretName == "" {
-		secretName = lsatellite.Name + "-tls"
-	}
-
+func TLSPatches(secretName string) ([]kusttypes.Patch, error) {
 	mountPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
 		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
 	}, applycorev1.Pod("satellite", "").

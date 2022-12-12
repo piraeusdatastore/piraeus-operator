@@ -5,12 +5,14 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.0
 	github.com/LINBIT/golinstor v0.45.0
+	github.com/cert-manager/cert-manager v1.10.1
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo/v2 v2.5.1
 	github.com/onsi/gomega v1.24.1
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/exp v0.0.0-20221006183845-316c7553db56
+	golang.org/x/time v0.3.0
 	k8s.io/api v0.25.4
 	k8s.io/apimachinery v0.25.4
 	k8s.io/client-go v0.25.4
@@ -82,7 +84,6 @@ require (
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/term v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
