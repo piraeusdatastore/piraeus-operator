@@ -43,120 +43,13 @@ linstorsatelliteconfigurations.piraeus.io/all-satellites created
 
 ## Configuration
 
-The following customizations are available in the `LinstorCluster` resource:
+We are currently working on improving our documentation. Additional tutorials, how-to guides and explanation will be
+added soon.
 
-* Set a custom registry base. All Piraeus images will use that registry instead of `quay.io/piraeusdatastore`.
-  ```yaml
-  apiVersion: piraeus.io/v1
-  kind: LinstorCluster
-  metadata:
-    name: linstorcluster
-  spec:
-    repository: registry.example.com/piraeus
-  ```
-* A node selector. Satellites will only be started on nodes matching the given labels.
-  ```yaml
-  apiVersion: piraeus.io/v1
-  kind: LinstorCluster
-  metadata:
-    name: linstorcluster
-  spec:
-    nodeSelector:
-      piraeus.io/satellite: "true"
-  ```
-* A reference to a secret, containing the passphrase to unlock
-  [LINSTOR's secret store](https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-encrypt_commands). The secret
-  should contain a single key `MASTER_PASSPHRASE`.
-  ```yaml
-  apiVersion: piraeus.io/v1
-  kind: LinstorCluster
-  metadata:
-    name: linstorcluster
-  spec:
-    linstorPassphraseSecret: my-linstor-passphrase
-  ```
-* A reference to a TLS secret, containing the secret key and certificate use in mutual authentication of  the satellites.
-  If [cert-manager](https://cert-manager.io/) is available, the certificates can be created on demand by the operator.
-  ```yaml
-  apiVersion: piraeus.io/v1
-  kind: LinstorCluster
-  metadata:
-    name: linstorcluster
-  spec:
-    internalTLS:
-      secretName: linstor-controller-internal-tls
-      certManager:
-        kind: Issuer
-        name: piraeus-root
-  ```
-* A list of properties to apply on the controller level. For example, to configure LINSTOR to allocate Ports for DRBD
-  starting at 8000 (instead of the default 7000), you can apply the following change to the LinstorCluster resource
-  ```yaml
-  apiVersion: piraeus.io/v1
-  kind: LinstorCluster
-  metadata:
-    name: linstorcluster
-  spec:
-    properties:
-      - name: TcpPortAutoRange
-        value: "8000-8999"
-  ```
-* [Kustomize patches](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/) to apply to
-  resources. When the operator applies resources, it will use `kustomize` to adapt the [base resources](./pkg/resources).
+### [API Reference](./docs/reference)
 
-  For example, to change the number of replicas for the CSI Controller deployment, you can use the following patch:
-  ```yaml
-  apiVersion: piraeus.io/v1
-  kind: LinstorCluster
-  metadata:
-    name: linstorcluster
-  spec:
-    patches:
-      - target:
-          kind: Deployment
-          name: csi-controller
-        patch: |-
-          apiVersion: apps/v1
-          kind: csi-controller
-          metadata:
-            name: csi-controller
-          spec:
-            replicas: 3
-  ```
-
-The `LinstorSatelliteConfiguration` resources allow customizing a set of satellites at once. The `spec.nodeSelector` is
-used to determine which customization is applied on a node.
-
-For example, if you have a set of storage nodes, all labelled with `example.com/storage-node=""`, and you want to:
-* Configure the default network interface to be the IPv6 address of your Pods.
-* Configure secured control plane traffic via TLS, using a [cert-manager](https://cert-manager.io/) issuer named
-  `piraeus-root`.
-* Configure a storage pool on all nodes, setting up on the devices `/dev/vdb` using a LVM thinpool `vg1/thin1` and naming
-  it `thin1` in LINSTOR.
-```
-apiVersion: piraeus.io/v1
-kind: LinstorSatelliteConfiguration
-metadata:
-  name: storage-satellites
-spec:
-  nodeSelector:
-    example.com/storage-node: ""
-  internalTLS:
-    certManager:
-      kind: Issuer
-      name: piraeus-root
-  properties:
-    - name: PrefNic
-      value: default-ipv6
-  storagePools:
-    - name: thin1
-      lvmThin:
-        volumeGroup: vg1
-        thinPool: thin1
-      source:
-        hostDevices:
-          - /dev/vdb
-```
+The API Reference for the Piraeus Operator. Contains documentation of the LINSTOR related resources that the user can
+modify or observe.
 
 ## Missing features
 
