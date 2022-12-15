@@ -60,7 +60,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.io/piraeusdatastore/piraeus-operator:latest
+  image: quay.io/piraeusdatastore/piraeus-operator:v1.10.1
   affinity: {}
   tolerations: []
   resources: {}
