@@ -113,32 +113,32 @@ Valid values:: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and
 Description:: Tolerations to pass to the LINSTOR CSI controller.
 
 === `csi.csiAttacherImage`
-Default:: `k8s.gcr.io/sig-storage/csi-attacher:v3.0.2`
+Default:: `registry.k8s.io/sig-storage/csi-attacher:v3.0.2`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's attacher container: https://kubernetes-csi.github.io/docs/external-attacher.html[csi docs]
 
 === `csi.livenessProbeImage`
-Default:: `k8s.gcr.io/sig-storage/livenessprobe:v2.1.0`
+Default:: `registry.k8s.io/sig-storage/livenessprobe:v2.1.0`
 Valid values:: image ref
 Description: Image to use for LINSTOR CSI's liveness probe: https://kubernetes-csi.github.io/docs/livenessprobe.html
 
 === `csi.csiNodeDriverRegistrarImage`
-Default:: `k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.0.1`
+Default:: `registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.0.1`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's node registrar container: https://kubernetes-csi.github.io/docs/node-driver-registrar.html[csi docs]
 
 === `csi.csiProvisionerImage`
-Default:: `k8s.gcr.io/sig-storage/csi-provisioner:v2.0.4`
+Default:: `registry.k8s.io/sig-storage/csi-provisioner:v2.0.4`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's provision container: https://kubernetes-csi.github.io/docs/external-provisioner.html[csi docs]
 
 === `csi.csiResizerImage`
-Default:: `k8s.gcr.io/sig-storage/csi-resizer:v1.0.1`
+Default:: `registry.k8s.io/sig-storage/csi-resizer:v1.0.1`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's resizer container: https://kubernetes-csi.github.io/docs/external-resizer.html[csi docs]
 
 === `csi.csiSnapshotterImage`
-Default:: `k8s.gcr.io/sig-storage/csi-snapshotter:v3.0.2`
+Default:: `registry.k8s.io/sig-storage/csi-snapshotter:v3.0.2`
 Valid values:: image ref
 Description:: Image to use for LINSTOR CSI's snapshotter container: https://kubernetes-csi.github.io/docs/external-snapshotter.html[csi docs]
 
@@ -516,7 +516,7 @@ Valid values:: https://kubernetes.io/docs/concepts/configuration/manage-resource
 Description:: Resource requests and limits to apply to the kube scheduler containers.
 
 === `stork.schedulerImage`
-Default:: `k8s.gcr.io/kube-scheduler-amd64`
+Default:: `registry.k8s.io/kube-scheduler`
 Valid values:: image name
 Description:: (Base) name of the kube-scheduler image. Will be joined with `schedulerTag`
 
