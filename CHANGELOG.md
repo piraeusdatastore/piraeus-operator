@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Creating LVM thinpools no longer limits the ability to choose a VolumeGroup name.
+- Default images:
+  * LINSTOR 1.20.2
+  * LINSTOR CSI 0.22.0
+  * DRBD 9.1.12
+  * DRBD Reactor 0.10.2
+  * external CSI images upgraded to latest versions
+  * changed `k8s.gcr.io` to `registry.k8s.io`
 
 ## [v1.10.0] - 2022-10-18
 

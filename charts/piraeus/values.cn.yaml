@@ -15,7 +15,7 @@ etcd:
 stork:
   enabled: false
   storkImage: daocloud.io/piraeus/stork:2.8.2
-  schedulerImage: daocloud.io/piraeus/kube-scheduler-amd64
+  schedulerImage: daocloud.io/piraeus/kube-scheduler
   schedulerTag: ""
   replicas: 1
   storkResources: {} # resources requirements for the stork plugin containers
@@ -23,12 +23,12 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.20.0
+  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.22.0
   csiAttacherImage: daocloud.io/piraeus/csi-attacher:v4.0.0
-  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.7.0
-  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.5.1
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.2.1
-  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v6.0.1
+  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.8.0
+  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.6.2
+  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.3.0
+  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v6.1.0
   csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.6.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
@@ -74,7 +74,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.20.0
+    controllerImage: daocloud.io/piraeus/piraeus-server:v1.20.2
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -100,16 +100,16 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.20.0
+    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.20.2
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.9.0
+    monitoringImage: daocloud.io/piraeus/drbd-reactor:v0.10.2
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.11
+    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.12
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
