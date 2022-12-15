@@ -159,7 +159,8 @@ Configures a TLS secret used by the LINSTOR Controller to:
 * Validate the certificate of the LINSTOR Satellites, that is the Satellites must have certificates signed by `ca.crt`.
 * Provide a client certificate for authentication with LINSTOR Satellites, that is `tls.key` and `tls.crt` must be accepted by the Satellites.
 
-To configure TLS communication between Satellite and Controller, `LinstorSatellite.spec.internalTLS` must be set accordingly.
+To configure TLS communication between Satellite and Controller,
+[`LinstorSatelliteConfiguration.spec.internalTLS`](linstorsatelliteconfiguration.md#specinternaltls) must be set accordingly.
 
 Setting a `secretName` is optional, it will default to `linstor-controller-internal-tls`.
 
@@ -211,7 +212,7 @@ spec:
 
 ## `.status`
 
-Reports the actual state of the cluster
+Reports the actual state of the cluster.
 
 ## `.status.conditions`
 
