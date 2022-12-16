@@ -11,9 +11,7 @@ This resource controls the state of the LINSTOR® cluster and integration with K
 
 This resource controls the state of the LINSTOR Satellites, optionally applying it to only a subset of nodes.
 
-### `LinstorSatellite`
-
-*Coming soon*
+### [`LinstorSatellite`](./linstorsatellite.md)
 
 This resource controls the state of a single LINSTOR Satellite. This resource is not intended to be changed directly,
-instead it is created by the Piraeus Operator by merging all matching `LinstorSatelliteConfigurations`.
+instead it is created by the Piraeus Operator by merging all matching `LinstorSatelliteConfiguration` resources.
