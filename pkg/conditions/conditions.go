@@ -24,6 +24,13 @@ const (
 	ReasonError       Reason = "Error"
 )
 
+var conditionPriority = map[Reason]int{
+	ReasonNotObserved: 0,
+	ReasonAsExpected:  1,
+	ReasonUnknown:     2,
+	ReasonError:       3,
+}
+
 type condition struct {
 	Status  metav1.ConditionStatus
 	Reason  Reason
@@ -53,23 +60,29 @@ func (c Conditions) get(condType CondType) *condition {
 
 func (c Conditions) AddSuccess(condType CondType, message string) {
 	ct := c.get(condType)
-	ct.Status = metav1.ConditionTrue
-	ct.Reason = ReasonAsExpected
 	ct.Message = append(ct.Message, message)
+	if conditionPriority[ct.Reason] < conditionPriority[ReasonAsExpected] {
+		ct.Status = metav1.ConditionTrue
+		ct.Reason = ReasonAsExpected
+	}
 }
 
 func (c Conditions) AddError(condType CondType, err error) {
 	ct := c.get(condType)
-	ct.Status = metav1.ConditionFalse
-	ct.Reason = ReasonError
 	ct.Message = append(ct.Message, fmt.Sprintf("Error: %v", err))
+	if conditionPriority[ct.Reason] < conditionPriority[ReasonError] {
+		ct.Status = metav1.ConditionFalse
+		ct.Reason = ReasonError
+	}
 }
 
 func (c Conditions) AddUnknown(condType CondType, message string) {
 	ct := c.get(condType)
-	ct.Status = metav1.ConditionUnknown
-	ct.Reason = ReasonUnknown
 	ct.Message = append(ct.Message, message)
+	if conditionPriority[ct.Reason] < conditionPriority[ReasonUnknown] {
+		ct.Status = metav1.ConditionUnknown
+		ct.Reason = ReasonUnknown
+	}
 }
 
 func (c Conditions) ToConditions(generation int64) []metav1.Condition {
