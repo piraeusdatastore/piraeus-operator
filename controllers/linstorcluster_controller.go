@@ -21,18 +21,22 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
+	lapi "github.com/LINBIT/golinstor/client"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	netwv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	applyappsv1 "k8s.io/client-go/applyconfigurations/apps/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -78,6 +82,7 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatelliteconfigurations,verbs=get;list;watch
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatelliteconfigurations/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=persistentvolumes;events;configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=pods,verbs=list;watch;delete
 //+kubebuilder:rbac:groups=apps,resources=daemonsets;deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;clusterroles;rolebindings;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -87,7 +92,8 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=internal.linstor.linbit.com,resources=*,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=csidrivers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=storage.k8s.io,resources=csinodes;storageclasses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=csinodes,verbs=get;list;watch;patch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=get;list;watch;patch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments/status,verbs=patch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=csistoragecapacities,verbs=get;list;watch;create;update;patch;delete
@@ -590,7 +596,113 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 	}
 
 	conds.AddSuccess(conditions.Configured, "Properties applied")
+
+	return r.reconcileCSINodes(ctx, lcluster, lc, conds)
+}
+
+// reconcileCSINodes ensures that the CSINode resources are up-to-date.
+//
+// CSINode is a resource created by each Kubelet on registration of a CSI plugin. Among other things, it contains
+// the list of Node labels the plugin uses for CSI Topology. Since we allow our users to customize the set of labels
+// used, we need to ensure the CSINode resource is in-sync with those labels.
+//
+// Since labels are only synced once at plugin start-up, the only way we can sync the labels is by deleting the
+// CSI Driver Pod. To minimize the Pod disruptions, we do some conservative checks, and only delete a Pod if:
+// * the CSI Node pod is running and ready
+// * the CSINode object for LINSTOR exists on that node
+// * the Satellite is registered in LINSTOR
+// * the set of expected labels does not match the reported labels
+func (r *LinstorClusterReconciler) reconcileCSINodes(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, lc *linstorhelper.Client, conds conditions.Conditions) error {
+	var csiPods corev1.PodList
+	err := r.Client.List(ctx, &csiPods, client.InNamespace(r.Namespace), client.MatchingLabels{
+		"app.kubernetes.io/instance":  lcluster.Name,
+		"app.kubernetes.io/component": "csi-node",
+	})
+	if err != nil {
+		err := fmt.Errorf("failed to list csi-node pods: %w", err)
+		conds.AddUnknown(conditions.Configured, err.Error())
+		return err
+	}
+
+	for i := range csiPods.Items {
+		pod := &csiPods.Items[i]
+
+		if !PodReady(pod) {
+			conds.AddUnknown(conditions.Configured, fmt.Sprintf("CSI node pod '%s' not ready", pod.Name))
+			continue
+		}
+
+		var csiNode storagev1.CSINode
+		err = r.Client.Get(ctx, types.NamespacedName{Namespace: r.Namespace, Name: pod.Spec.NodeName}, &csiNode)
+		if err != nil {
+			conds.AddError(conditions.Configured, fmt.Errorf("failed to get CSI Node: %w", err))
+			continue
+		}
+
+		driver := GetCSINodeDriverFromNode(&csiNode)
+		if driver == nil {
+			conds.AddUnknown(conditions.Configured, fmt.Sprintf("CSI Node Driver not registered on node '%s'", pod.Spec.NodeName))
+			continue
+		}
+
+		node, err := lc.Nodes.Get(ctx, pod.Spec.NodeName)
+		if err != nil {
+			conds.AddError(conditions.Configured, fmt.Errorf("failed to get LINSTOR Node: %w", err))
+			continue
+		}
+
+		if !CSINodeMatchesLINSTOR(driver, &node) {
+			err := r.Client.Patch(
+				ctx,
+				&storagev1.CSINode{ObjectMeta: metav1.ObjectMeta{Name: pod.Spec.NodeName}},
+				client.RawPatch(types.StrategicMergePatchType, []byte(`{"spec":{"drivers":[{"name": "linstor.csi.linbit.com", "$patch": "delete"}]}}`)),
+			)
+			if err != nil {
+				err := fmt.Errorf("failed to remove outdated csi node '%s': %w", pod.Spec.NodeName, err)
+				conds.AddError(conditions.Configured, err)
+				continue
+			}
+
+			err = r.Client.Delete(ctx, pod)
+			if err != nil {
+				err := fmt.Errorf("failed to restart outdated csi node pod '%s': %w", pod.Name, err)
+				conds.AddError(conditions.Configured, err)
+			}
+		}
+	}
+
 	return nil
+}
+
+func GetCSINodeDriverFromNode(csiNode *storagev1.CSINode) *storagev1.CSINodeDriver {
+	for i := range csiNode.Spec.Drivers {
+		if csiNode.Spec.Drivers[i].Name == "linstor.csi.linbit.com" {
+			return &csiNode.Spec.Drivers[i]
+		}
+	}
+
+	return nil
+}
+
+func CSINodeMatchesLINSTOR(csiNodeDriver *storagev1.CSINodeDriver, linstorNode *lapi.Node) bool {
+	var expectedKeys []string
+	for k := range linstorNode.Props {
+		if strings.HasPrefix(k, "Aux/topology/") {
+			expectedKeys = append(expectedKeys, k[len("Aux/topology/"):])
+		}
+	}
+
+	return sets.NewString(csiNodeDriver.TopologyKeys...).Equal(sets.NewString(expectedKeys...))
+}
+
+func PodReady(pod *corev1.Pod) bool {
+	for _, c := range pod.Status.Conditions {
+		if c.Type == corev1.PodReady {
+			return c.Status == corev1.ConditionTrue
+		}
+	}
+
+	return false
 }
 
 // SetupWithManager sets up the controller with the Manager.
