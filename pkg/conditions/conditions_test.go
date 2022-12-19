@@ -65,6 +65,18 @@ func TestConditions(t *testing.T) {
 				{Type: string(conditions.Configured), Status: metav1.ConditionUnknown, Reason: string(conditions.ReasonNotObserved)},
 			},
 		},
+		{
+			name: "condition-set-multiple-no-reset-error",
+			mutate: func(c conditions.Conditions) {
+				c.AddError(conditions.Applied, errors.New("actually an error"))
+				c.AddSuccess(conditions.Applied, "success")
+			},
+			expected: []metav1.Condition{
+				{Type: string(conditions.Applied), Status: metav1.ConditionFalse, Reason: string(conditions.ReasonError), Message: "Error: actually an error\nsuccess"},
+				{Type: string(conditions.Available), Status: metav1.ConditionUnknown, Reason: string(conditions.ReasonNotObserved)},
+				{Type: string(conditions.Configured), Status: metav1.ConditionUnknown, Reason: string(conditions.ReasonNotObserved)},
+			},
+		},
 	}
 
 	for i := range testcases {
