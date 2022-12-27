@@ -78,6 +78,10 @@ the matching key. Available types are:
 * `lvmThin`: Configures a [LVM Thin Pool](https://man7.org/linux/man-pages/man7/lvmthin.7.html) as storage pool.
   Defaults to using the storage pool name as name for the thin pool volume and the storage pool name prefixed by
   `linstor_` as the VG name. Can be overridden by setting `thinPool` and `volumeGroup`.
+* `filePool`: Configures a file system based storage pool. Configures a host directory as location for the volume files.
+  Defaults to using the `/var/lib/linstor-pools/<storage pool name>` directory.
+* `fileThinPool`: Configures a file system based storage pool. Behaves the same as `filePool`, except the files will
+  be thinly allocated on file systems that support sparse files.
 
 Optionally, you can configure LINSTOR to automatically create the backing pools. `source.hostDevices` takes a list
 of raw block devices, which LINSTOR will prepare as the chosen backing pool.
@@ -89,6 +93,9 @@ This example configures three LINSTOR Storage Pools on all satellites:
 * A LVM Thin Pool named `vg1-thin`. It will use the thin pool `vg1/thin`, which also needs to exist on the nodes.
 * A LVM Pool named `vg2-from-raw-devices`. It will use the VG `vg2`, which will be created on demand from the raw
   devices `/dev/sdb` and `/dev/sdc` if it does not exist already.
+* A File System Pool named `fs1`. It will use the `/var/lib/linstor-pools/fs1` directory on the host, creating the
+  directory if necessary.
+* A File System Pool namef `fs2`, using sparse files. It will use the custom `/mnt/data` directory on the host.
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -110,6 +117,11 @@ spec:
         hostDevices:
           - /dev/sdb
           - /dev/sdc
+    - name: fs1
+      filePool: {}
+    - name: fs2
+      fileThinPool:
+        directory: /mnt/data
 ```
 
 ### `.spec.internalTLS`

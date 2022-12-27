@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -25,8 +26,18 @@ type LinstorStoragePool struct {
 	// +patchStrategy=merge
 	Properties []LinstorNodeProperty `json:"properties,omitempty"`
 
-	Lvm     *LinstorStoragePoolLvm     `json:"lvm,omitempty"`
+	// Configures a LVM Volume Group as storage pool.
+	// +kubebuilder:validation:Optional
+	Lvm *LinstorStoragePoolLvm `json:"lvm,omitempty"`
+	// Configures a LVM Thin Pool as storage pool.
+	// +kubebuilder:validation:Optional
 	LvmThin *LinstorStoragePoolLvmThin `json:"lvmThin,omitempty"`
+	// Configures a file system based storage pool, allocating a regular file per volume.
+	// +kubebuilder:validation:Optional
+	FilePool *LinstorStoragePoolFilePool `json:"filePool,omitempty"`
+	// Configures a file system based storage pool, allocating a sparse file per volume.
+	// +kubebuilder:validation:Optional
+	FileThinPool *LinstorStoragePoolFilePool `json:"fileThinPool,omitempty"`
 
 	Source *LinstorStoragePoolSource `json:"source,omitempty"`
 }
@@ -37,6 +48,10 @@ func (p *LinstorStoragePool) ProviderKind() lclient.ProviderKind {
 		return lclient.LVM
 	case p.LvmThin != nil:
 		return lclient.LVM_THIN
+	case p.FilePool != nil:
+		return lclient.FILE
+	case p.FileThinPool != nil:
+		return lclient.FILE_THIN
 	}
 
 	return ""
@@ -62,6 +77,10 @@ func (p *LinstorStoragePool) PoolName() string {
 		}
 
 		return fmt.Sprintf("%s/%s", vgName, lvName)
+	case p.FilePool != nil:
+		return p.FilePool.DirectoryOrDefault(p.Name)
+	case p.FileThinPool != nil:
+		return p.FileThinPool.DirectoryOrDefault(p.Name)
 	}
 	return ""
 }
@@ -74,6 +93,11 @@ type LinstorStoragePoolLvmThin struct {
 	VolumeGroup string `json:"volumeGroup,omitempty"`
 	// ThinPool is the name of the thinpool LV (without VG prefix).
 	ThinPool string `json:"thinPool,omitempty"`
+}
+
+type LinstorStoragePoolFilePool struct {
+	// Directory is the path to the host directory used to store volume data.
+	Directory string `json:"directory,omitempty"`
 }
 
 type LinstorStoragePoolSource struct {
@@ -131,6 +155,18 @@ func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *fiel
 			result = append(result, curSP.Lvm.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvm"))...)
 		}
 
+		if curSP.FilePool != nil {
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "file"))...)
+			result = append(result, curSP.FilePool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "file"), curSP.Name, false)...)
+			result = append(result, validateNoSource(curSP.Source, fieldPrefix.Child(strconv.Itoa(i)), "file")...)
+		}
+
+		if curSP.FileThinPool != nil {
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "fileThin"))...)
+			result = append(result, curSP.FileThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "fileThin"), curSP.Name, true)...)
+			result = append(result, validateNoSource(curSP.Source, fieldPrefix.Child(strconv.Itoa(i)), "fileThin")...)
+		}
+
 		if numPoolTypes == 0 {
 			result = append(result, field.Required(
 				fieldPrefix.Child(strconv.Itoa(i)),
@@ -144,6 +180,16 @@ func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *fiel
 	}
 
 	return result
+}
+
+func validateNoSource(src *LinstorStoragePoolSource, p *field.Path, name string) field.ErrorList {
+	if src != nil {
+		return field.ErrorList{
+			field.Invalid(p, src, fmt.Sprintf("Storage Pool Type '%s' does not support setting a source", name)),
+		}
+	}
+
+	return nil
 }
 
 func validateStoragePoolType(numPools *int, p *field.Path) field.ErrorList {
@@ -226,6 +272,42 @@ func (l *LinstorStoragePoolLvm) Validate(oldSP *LinstorStoragePool, fieldPrefix 
 	}
 
 	return result
+}
+
+func (l *LinstorStoragePoolFilePool) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path, name string, thin bool) field.ErrorList {
+	var result field.ErrorList
+
+	if oldSP != nil {
+		if thin && oldSP.FileThinPool == nil {
+			result = append(result, field.Forbidden(
+				fieldPrefix,
+				"Cannot change storage pool type",
+			))
+		} else if !thin && oldSP.FilePool == nil {
+			result = append(result, field.Forbidden(
+				fieldPrefix,
+				"Cannot change storage pool type",
+			))
+		}
+	}
+
+	if !filepath.IsAbs(l.DirectoryOrDefault(name)) || filepath.Clean(l.DirectoryOrDefault(name)) != l.DirectoryOrDefault(name) {
+		result = append(result, field.Invalid(
+			fieldPrefix.Child("directory"),
+			l.DirectoryOrDefault(name),
+			"Not an absolute path",
+		))
+	}
+
+	return result
+}
+
+func (l *LinstorStoragePoolFilePool) DirectoryOrDefault(name string) string {
+	if l.Directory == "" {
+		return filepath.Join("/var/lib/linstor-pools", name)
+	}
+
+	return l.Directory
 }
 
 func (s *LinstorStoragePoolSource) Validate(oldSP *LinstorStoragePool, knownDevices sets.String, fieldPrefix *field.Path) field.ErrorList {
