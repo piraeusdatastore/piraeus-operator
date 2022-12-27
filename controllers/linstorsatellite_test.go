@@ -99,6 +99,29 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 		})
 
+		It("should mount host directory for file storage", func(ctx context.Context) {
+			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+				TypeMeta:   TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				Spec: piraeusiov1.LinstorSatelliteSpec{
+					StoragePools: []piraeusiov1.LinstorStoragePool{
+						{
+							Name:         "pool1",
+							FileThinPool: &piraeusiov1.LinstorStoragePoolFilePool{},
+						},
+					},
+				},
+			}, client.Apply, client.FieldOwner("test"))
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func(g Gomega) {
+				var pod corev1.Pod
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &pod)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(pod.Spec.Volumes).To(ContainElement(HaveField("HostPath.Path", "/var/lib/linstor-pools/pool1")))
+			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		})
+
 		Context("with additional finalizer", func() {
 			BeforeEach(func(ctx context.Context) {
 				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{

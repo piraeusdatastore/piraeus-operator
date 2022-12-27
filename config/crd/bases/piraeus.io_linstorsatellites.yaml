@@ -161,12 +161,32 @@ spec:
                   on the node.
                 items:
                   properties:
+                    filePool:
+                      description: Configures a file system based storage pool, allocating
+                        a regular file per volume.
+                      properties:
+                        directory:
+                          description: Directory is the path to the host directory
+                            used to store volume data.
+                          type: string
+                      type: object
+                    fileThinPool:
+                      description: Configures a file system based storage pool, allocating
+                        a sparse file per volume.
+                      properties:
+                        directory:
+                          description: Directory is the path to the host directory
+                            used to store volume data.
+                          type: string
+                      type: object
                     lvm:
+                      description: Configures a LVM Volume Group as storage pool.
                       properties:
                         volumeGroup:
                           type: string
                       type: object
                     lvmThin:
+                      description: Configures a LVM Thin Pool as storage pool.
                       properties:
                         thinPool:
                           description: ThinPool is the name of the thinpool LV (without

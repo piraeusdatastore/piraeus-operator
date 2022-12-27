@@ -232,6 +232,42 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		}
 	}
 
+	for i := range lsatellite.Spec.StoragePools {
+		pool := &lsatellite.Spec.StoragePools[i]
+
+		if pool.FilePool == nil && pool.FileThinPool == nil {
+			continue
+		}
+
+		path := pool.PoolName()
+
+		hostDirectoryPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+		}, applycorev1.Pod("satellite", "").
+			WithSpec(applycorev1.PodSpec().
+				WithVolumes(applycorev1.Volume().
+					WithName(pool.Name).
+					WithHostPath(applycorev1.HostPathVolumeSource().
+						WithPath(path).
+						WithType(corev1.HostPathDirectoryOrCreate),
+					),
+				).
+				WithContainers(applycorev1.Container().
+					WithName("linstor-satellite").
+					WithVolumeMounts(applycorev1.VolumeMount().
+						WithName(pool.Name).
+						WithMountPath(path),
+					),
+				),
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, *hostDirectoryPatch)
+	}
+
 	imgs, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 	if err != nil {
 		return nil, err
