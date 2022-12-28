@@ -15,7 +15,7 @@ spec: {}
 #      value: default-ipv6
 #  storagePools:
 #    - name: thinpool
-#      lvmThin: {}
+#      lvmThinPool: {}
 #      source:
 #        hostDevices:
 #          - /dev/vdb

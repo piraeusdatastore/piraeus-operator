@@ -174,13 +174,13 @@ spec:
                             used to store volume data.
                           type: string
                       type: object
-                    lvm:
+                    lvmPool:
                       description: Configures a LVM Volume Group as storage pool.
                       properties:
                         volumeGroup:
                           type: string
                       type: object
-                    lvmThin:
+                    lvmThinPool:
                       description: Configures a LVM Thin Pool as storage pool.
                       properties:
                         thinPool:
