@@ -20,8 +20,8 @@ var (
 				{Patch: "patch2"},
 			},
 			StoragePools: []piraeusv1.LinstorStoragePool{
-				{Name: "sp1", Lvm: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg1"}, Source: &piraeusv1.LinstorStoragePoolSource{HostDevices: []string{"/dev/foobar"}}},
-				{Name: "sp2", Lvm: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg2"}},
+				{Name: "sp1", LvmPool: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg1"}, Source: &piraeusv1.LinstorStoragePoolSource{HostDevices: []string{"/dev/foobar"}}},
+				{Name: "sp2", LvmPool: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg2"}},
 			},
 			Properties: []piraeusv1.LinstorNodeProperty{
 				{Name: "prop1", Value: "config1"},
@@ -41,7 +41,7 @@ var (
 				{Patch: "patch3"},
 			},
 			StoragePools: []piraeusv1.LinstorStoragePool{
-				{Name: "sp1", LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}},
+				{Name: "sp1", LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}},
 			},
 			Properties: []piraeusv1.LinstorNodeProperty{
 				{Name: "prop1", Value: "config2"},
@@ -59,7 +59,7 @@ var (
 				{Patch: "patch5"},
 			},
 			StoragePools: []piraeusv1.LinstorStoragePool{
-				{Name: "sp2", LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg2", ThinPool: "thin2"}},
+				{Name: "sp2", LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg2", ThinPool: "thin2"}},
 				{Name: "sp3", Source: &piraeusv1.LinstorStoragePoolSource{HostDevices: []string{"/dev/bla"}}},
 			},
 			Properties: []piraeusv1.LinstorNodeProperty{
@@ -109,8 +109,8 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 						{Patch: "patch5"},
 					},
 					StoragePools: []piraeusv1.LinstorStoragePool{
-						{Name: "sp1", LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}},
-						{Name: "sp2", LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg2", ThinPool: "thin2"}},
+						{Name: "sp1", LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}},
+						{Name: "sp2", LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{VolumeGroup: "vg2", ThinPool: "thin2"}},
 						{Name: "sp3", Source: &piraeusv1.LinstorStoragePoolSource{HostDevices: []string{"/dev/bla"}}},
 					},
 					Properties: []piraeusv1.LinstorNodeProperty{

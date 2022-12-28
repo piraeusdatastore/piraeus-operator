@@ -35,7 +35,7 @@ var _ = Describe("LinstorSatellite webhook", func() {
 			StoragePools: []piraeusv1.LinstorStoragePool{
 				{
 					Name: "thinpool",
-					LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{
+					LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{
 						VolumeGroup: "linstor_thinpool",
 						ThinPool:    "thinpool",
 					},
@@ -102,8 +102,8 @@ var _ = Describe("LinstorSatellite webhook", func() {
 			Spec: piraeusv1.LinstorSatelliteSpec{
 				StoragePools: []piraeusv1.LinstorStoragePool{
 					{Name: "missing-type"},
-					{Name: "multiple-types", Lvm: &piraeusv1.LinstorStoragePoolLvm{}, LvmThin: &piraeusv1.LinstorStoragePoolLvmThin{}},
-					{Name: "valid-pool", Lvm: &piraeusv1.LinstorStoragePoolLvm{}},
+					{Name: "multiple-types", LvmPool: &piraeusv1.LinstorStoragePoolLvm{}, LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{}},
+					{Name: "valid-pool", LvmPool: &piraeusv1.LinstorStoragePoolLvm{}},
 				},
 			},
 		}

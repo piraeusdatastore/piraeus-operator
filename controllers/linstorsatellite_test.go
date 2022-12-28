@@ -107,7 +107,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					StoragePools: []piraeusiov1.LinstorStoragePool{
 						{
 							Name:         "pool1",
-							FileThinPool: &piraeusiov1.LinstorStoragePoolFilePool{},
+							FileThinPool: &piraeusiov1.LinstorStoragePoolFile{},
 						},
 					},
 				},

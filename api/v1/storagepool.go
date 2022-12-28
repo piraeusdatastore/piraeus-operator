@@ -28,25 +28,25 @@ type LinstorStoragePool struct {
 
 	// Configures a LVM Volume Group as storage pool.
 	// +kubebuilder:validation:Optional
-	Lvm *LinstorStoragePoolLvm `json:"lvm,omitempty"`
+	LvmPool *LinstorStoragePoolLvm `json:"lvmPool,omitempty"`
 	// Configures a LVM Thin Pool as storage pool.
 	// +kubebuilder:validation:Optional
-	LvmThin *LinstorStoragePoolLvmThin `json:"lvmThin,omitempty"`
+	LvmThinPool *LinstorStoragePoolLvmThin `json:"lvmThinPool,omitempty"`
 	// Configures a file system based storage pool, allocating a regular file per volume.
 	// +kubebuilder:validation:Optional
-	FilePool *LinstorStoragePoolFilePool `json:"filePool,omitempty"`
+	FilePool *LinstorStoragePoolFile `json:"filePool,omitempty"`
 	// Configures a file system based storage pool, allocating a sparse file per volume.
 	// +kubebuilder:validation:Optional
-	FileThinPool *LinstorStoragePoolFilePool `json:"fileThinPool,omitempty"`
+	FileThinPool *LinstorStoragePoolFile `json:"fileThinPool,omitempty"`
 
 	Source *LinstorStoragePoolSource `json:"source,omitempty"`
 }
 
 func (p *LinstorStoragePool) ProviderKind() lclient.ProviderKind {
 	switch {
-	case p.Lvm != nil:
+	case p.LvmPool != nil:
 		return lclient.LVM
-	case p.LvmThin != nil:
+	case p.LvmThinPool != nil:
 		return lclient.LVM_THIN
 	case p.FilePool != nil:
 		return lclient.FILE
@@ -59,19 +59,19 @@ func (p *LinstorStoragePool) ProviderKind() lclient.ProviderKind {
 
 func (p *LinstorStoragePool) PoolName() string {
 	switch {
-	case p.Lvm != nil:
-		if p.Lvm.VolumeGroup != "" {
-			return p.Lvm.VolumeGroup
+	case p.LvmPool != nil:
+		if p.LvmPool.VolumeGroup != "" {
+			return p.LvmPool.VolumeGroup
 		}
 
 		return p.Name
-	case p.LvmThin != nil:
-		lvName := p.LvmThin.ThinPool
+	case p.LvmThinPool != nil:
+		lvName := p.LvmThinPool.ThinPool
 		if lvName == "" {
 			lvName = p.Name
 		}
 
-		vgName := p.LvmThin.VolumeGroup
+		vgName := p.LvmThinPool.VolumeGroup
 		if vgName == "" {
 			vgName = fmt.Sprintf("linstor_%s", lvName)
 		}
@@ -95,7 +95,7 @@ type LinstorStoragePoolLvmThin struct {
 	ThinPool string `json:"thinPool,omitempty"`
 }
 
-type LinstorStoragePoolFilePool struct {
+type LinstorStoragePoolFile struct {
 	// Directory is the path to the host directory used to store volume data.
 	Directory string `json:"directory,omitempty"`
 }
@@ -145,14 +145,14 @@ func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *fiel
 		}
 
 		numPoolTypes := 0
-		if curSP.LvmThin != nil {
+		if curSP.LvmThinPool != nil {
 			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "lvmThin"))...)
-			result = append(result, curSP.LvmThin.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvmThin"))...)
+			result = append(result, curSP.LvmThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvmThin"))...)
 		}
 
-		if curSP.Lvm != nil {
+		if curSP.LvmPool != nil {
 			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "lvm"))...)
-			result = append(result, curSP.Lvm.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvm"))...)
+			result = append(result, curSP.LvmPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvm"))...)
 		}
 
 		if curSP.FilePool != nil {
@@ -206,7 +206,7 @@ func validateStoragePoolType(numPools *int, p *field.Path) field.ErrorList {
 func (l *LinstorStoragePoolLvmThin) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path) field.ErrorList {
 	var result field.ErrorList
 
-	if oldSP != nil && oldSP.LvmThin == nil {
+	if oldSP != nil && oldSP.LvmThinPool == nil {
 		result = append(result, field.Forbidden(
 			fieldPrefix,
 			"Cannot change storage pool type",
@@ -221,7 +221,7 @@ func (l *LinstorStoragePoolLvmThin) Validate(oldSP *LinstorStoragePool, fieldPre
 		))
 	}
 
-	if oldSP != nil && l.VolumeGroup != oldSP.LvmThin.VolumeGroup {
+	if oldSP != nil && l.VolumeGroup != oldSP.LvmThinPool.VolumeGroup {
 		result = append(result, field.Forbidden(
 			fieldPrefix.Child("volumeGroup"),
 			"Cannot change VG name",
@@ -236,7 +236,7 @@ func (l *LinstorStoragePoolLvmThin) Validate(oldSP *LinstorStoragePool, fieldPre
 		))
 	}
 
-	if oldSP != nil && l.ThinPool != oldSP.LvmThin.ThinPool {
+	if oldSP != nil && l.ThinPool != oldSP.LvmThinPool.ThinPool {
 		result = append(result, field.Forbidden(
 			fieldPrefix.Child("thinPool"),
 			"Cannot change thinpool LV name",
@@ -249,7 +249,7 @@ func (l *LinstorStoragePoolLvmThin) Validate(oldSP *LinstorStoragePool, fieldPre
 func (l *LinstorStoragePoolLvm) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path) field.ErrorList {
 	var result field.ErrorList
 
-	if oldSP != nil && oldSP.Lvm == nil {
+	if oldSP != nil && oldSP.LvmPool == nil {
 		result = append(result, field.Forbidden(
 			fieldPrefix,
 			"Cannot change storage pool type",
@@ -264,7 +264,7 @@ func (l *LinstorStoragePoolLvm) Validate(oldSP *LinstorStoragePool, fieldPrefix 
 		))
 	}
 
-	if oldSP != nil && l.VolumeGroup != oldSP.Lvm.VolumeGroup {
+	if oldSP != nil && l.VolumeGroup != oldSP.LvmPool.VolumeGroup {
 		result = append(result, field.Forbidden(
 			fieldPrefix.Child("volumeGroup"),
 			"Cannot change VG name",
@@ -274,7 +274,7 @@ func (l *LinstorStoragePoolLvm) Validate(oldSP *LinstorStoragePool, fieldPrefix 
 	return result
 }
 
-func (l *LinstorStoragePoolFilePool) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path, name string, thin bool) field.ErrorList {
+func (l *LinstorStoragePoolFile) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path, name string, thin bool) field.ErrorList {
 	var result field.ErrorList
 
 	if oldSP != nil {
@@ -302,7 +302,7 @@ func (l *LinstorStoragePoolFilePool) Validate(oldSP *LinstorStoragePool, fieldPr
 	return result
 }
 
-func (l *LinstorStoragePoolFilePool) DirectoryOrDefault(name string) string {
+func (l *LinstorStoragePoolFile) DirectoryOrDefault(name string) string {
 	if l.Directory == "" {
 		return filepath.Join("/var/lib/linstor-pools", name)
 	}

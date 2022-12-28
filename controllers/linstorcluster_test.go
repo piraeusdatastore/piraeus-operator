@@ -98,8 +98,8 @@ var _ = Describe("LinstorCluster controller", func() {
 							{Name: "prop2", Value: "val2"},
 						},
 						StoragePools: []piraeusiov1.LinstorStoragePool{
-							{Name: "pool1", Lvm: &piraeusiov1.LinstorStoragePoolLvm{}},
-							{Name: "pool2", LvmThin: &piraeusiov1.LinstorStoragePoolLvmThin{}},
+							{Name: "pool1", LvmPool: &piraeusiov1.LinstorStoragePoolLvm{}},
+							{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{}},
 						},
 						Patches: []piraeusiov1.Patch{
 							{Target: &piraeusiov1.Selector{Kind: "ServiceAccount"}, Patch: "sa-patch1"},
@@ -118,7 +118,7 @@ var _ = Describe("LinstorCluster controller", func() {
 							{Name: "prop3", Value: "val3"},
 						},
 						StoragePools: []piraeusiov1.LinstorStoragePool{
-							{Name: "pool2", LvmThin: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
+							{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
 						},
 						Patches: []piraeusiov1.Patch{
 							{Target: &piraeusiov1.Selector{Kind: "Pod"}, Patch: "pod-patch1"},
@@ -172,8 +172,8 @@ var _ = Describe("LinstorCluster controller", func() {
 						piraeusiov1.LinstorNodeProperty{Name: "prop3", Value: "val3"},
 					),
 					StoragePools: []piraeusiov1.LinstorStoragePool{
-						{Name: "pool1", Lvm: &piraeusiov1.LinstorStoragePoolLvm{}},
-						{Name: "pool2", LvmThin: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
+						{Name: "pool1", LvmPool: &piraeusiov1.LinstorStoragePoolLvm{}},
+						{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
 					},
 					InternalTLS: &piraeusiov1.TLSConfig{},
 				}
@@ -188,8 +188,8 @@ var _ = Describe("LinstorCluster controller", func() {
 						piraeusiov1.LinstorNodeProperty{Name: "prop2", Value: "val2"},
 					),
 					StoragePools: []piraeusiov1.LinstorStoragePool{
-						{Name: "pool1", Lvm: &piraeusiov1.LinstorStoragePoolLvm{}},
-						{Name: "pool2", LvmThin: &piraeusiov1.LinstorStoragePoolLvmThin{}},
+						{Name: "pool1", LvmPool: &piraeusiov1.LinstorStoragePoolLvm{}},
+						{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{}},
 					},
 					InternalTLS: &piraeusiov1.TLSConfig{},
 				}

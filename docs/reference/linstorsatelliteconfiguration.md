@@ -73,9 +73,9 @@ Configures LINSTOR Storage Pools.
 Every Storage Pool needs at least a `name`, and a type. Types are specified by setting a (potentially empty) value on
 the matching key. Available types are:
 
-* `lvm`: Configures a [LVM Volume Group](https://linbit.com/drbd-user-guide/drbd-guide-9_0-en/#s-lvm-primer) as storage
+* `lvmPool`: Configures a [LVM Volume Group](https://linbit.com/drbd-user-guide/drbd-guide-9_0-en/#s-lvm-primer) as storage
   pool. Defaults to using the storage pool name as the VG name. Can be overridden by setting `volumeGroup`.
-* `lvmThin`: Configures a [LVM Thin Pool](https://man7.org/linux/man-pages/man7/lvmthin.7.html) as storage pool.
+* `lvmThinPool`: Configures a [LVM Thin Pool](https://man7.org/linux/man-pages/man7/lvmthin.7.html) as storage pool.
   Defaults to using the storage pool name as name for the thin pool volume and the storage pool name prefixed by
   `linstor_` as the VG name. Can be overridden by setting `thinPool` and `volumeGroup`.
 * `filePool`: Configures a file system based storage pool. Configures a host directory as location for the volume files.
@@ -105,13 +105,13 @@ metadata:
 spec:
   storagePools:
     - name: vg1
-      lvm: {}
+      lvmPool: {}
     - name: vg1-thin
-      lvmThin:
+      lvmThinPool:
         volumeGroup: vg1
         thinPool: thin
     - name: vg2-from-raw-devices
-      lvm:
+      lvmPool:
         volumeGroup: vg2
       source:
         hostDevices:
