@@ -232,6 +232,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		}
 	}
 
+	var bindMountPaths []string
 	for i := range lsatellite.Spec.StoragePools {
 		pool := &lsatellite.Spec.StoragePools[i]
 
@@ -240,6 +241,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		}
 
 		path := pool.PoolName()
+		bindMountPaths = append(bindMountPaths, path)
 
 		hostDirectoryPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
 			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
@@ -266,6 +268,27 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		}
 
 		patches = append(patches, *hostDirectoryPatch)
+	}
+
+	if len(bindMountPaths) > 0 {
+		bindMountEnvPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
+			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+		}, applycorev1.Pod("satellite", "").
+			WithSpec(applycorev1.PodSpec().
+				WithContainers(applycorev1.Container().
+					WithName("linstor-satellite").
+					WithEnv(applycorev1.EnvVar().
+						WithName("LOSETUP_CONTAINER_BIND_MOUNTS").
+						WithValue(strings.Join(bindMountPaths, ":")),
+					),
+				),
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, *bindMountEnvPatch)
 	}
 
 	imgs, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
