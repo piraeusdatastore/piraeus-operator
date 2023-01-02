@@ -243,12 +243,15 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		path := pool.PoolName()
 		bindMountPaths = append(bindMountPaths, path)
 
+		// Use an index-based name, as volume names are restricted to [0-9a-z-], so we can't use the storage pool name.
+		volName := fmt.Sprintf("file-pool-%d", i)
+
 		hostDirectoryPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
 			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
 		}, applycorev1.Pod("satellite", "").
 			WithSpec(applycorev1.PodSpec().
 				WithVolumes(applycorev1.Volume().
-					WithName(pool.Name).
+					WithName(volName).
 					WithHostPath(applycorev1.HostPathVolumeSource().
 						WithPath(path).
 						WithType(corev1.HostPathDirectoryOrCreate),
@@ -257,7 +260,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 				WithContainers(applycorev1.Container().
 					WithName("linstor-satellite").
 					WithVolumeMounts(applycorev1.VolumeMount().
-						WithName(pool.Name).
+						WithName(volName).
 						WithMountPath(path),
 					),
 				),
