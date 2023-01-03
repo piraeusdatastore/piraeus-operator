@@ -132,7 +132,15 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return nil
 	})
 
-	return ctrl.Result{}, utils.AnyError(applyErr, stateErr, condErr)
+	result := ctrl.Result{
+		RequeueAfter: 1 * time.Minute,
+	}
+
+	if !conds.AllHaveStatus(metav1.ConditionTrue) {
+		result.RequeueAfter = 10 * time.Second
+	}
+
+	return result, utils.AnyError(applyErr, stateErr, condErr)
 }
 
 func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context, lcluster *piraeusiov1.LinstorCluster) error {

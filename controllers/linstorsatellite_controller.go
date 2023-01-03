@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -137,7 +138,15 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return nil
 	})
 
-	return ctrl.Result{}, utils.AnyError(applyErr, stateErr, deleteErr, condErr)
+	result := ctrl.Result{
+		RequeueAfter: 1 * time.Minute,
+	}
+
+	if !conds.AllHaveStatus(metav1.ConditionTrue) {
+		result.RequeueAfter = 10 * time.Second
+	}
+
+	return result, utils.AnyError(applyErr, stateErr, deleteErr, condErr)
 }
 
 func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
