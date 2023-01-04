@@ -5,12 +5,10 @@
     kind: Certificate
     name: linstor-controller-internal-tls
   patch: |
-    - op: replace
-      path: /metadata/name
-      value: $LINSTOR_INTERNAL_TLS_SECRET_NAME
-    - op: replace
-      path: /spec/secretName
-      value: $LINSTOR_INTERNAL_TLS_SECRET_NAME
-    - op: replace
-      path: /spec/issuerRef
-      value: $LINSTOR_INTERNAL_TLS_CERT_ISSUER
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: linstor-controller-internal-tls
+    spec:
+      secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+      issuerRef: $LINSTOR_INTERNAL_TLS_CERT_ISSUER
