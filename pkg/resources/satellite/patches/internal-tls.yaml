@@ -1,0 +1,45 @@
+---
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: satellite
+    spec:
+      volumes:
+        - name: internal-tls
+          secret:
+            secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+        - name: java-internal-tls
+          emptyDir: { }
+      containers:
+        - name: linstor-satellite
+          volumeMounts:
+            - name: internal-tls
+              mountPath: /etc/linstor/ssl-pem
+              readOnly: true
+            - name: java-internal-tls
+              mountPath: /etc/linstor/ssl
+- target:
+    version: v1
+    kind: ConfigMap
+    name: satellite-config
+  patch: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: satellite-config
+    data:
+      linstor_satellite.toml: |
+        [netcom]
+          type = "ssl"
+          port = 3367
+          server_certificate = "/etc/linstor/ssl/keystore.jks"
+          key_password = "linstor"
+          keystore_password = "linstor"
+          trusted_certificates = "/etc/linstor/ssl/certificates.jks"
+          truststore_password = "linstor"
+          ssl_protocol = "TLSv1.2"

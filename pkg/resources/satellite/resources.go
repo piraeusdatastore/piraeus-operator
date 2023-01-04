@@ -2,5 +2,5 @@ package satellite
 
 import "embed"
 
-//go:embed pod
+//go:embed pod patches
 var Resources embed.FS

@@ -37,8 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	applyappsv1 "k8s.io/client-go/applyconfigurations/apps/v1"
-	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -286,31 +284,12 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 	resourceDirs := []string{"controller"}
 
 	if lcluster.Spec.LinstorPassphraseSecret != "" {
-		passphrasePatch, err := utils.ToEncodedPatch(
-			&kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk(appsv1.GroupName, "v1", "Deployment"), "linstor-controller")},
-			applyappsv1.Deployment("linstor-controller", "").
-				WithSpec(applyappsv1.DeploymentSpec().
-					WithTemplate(applycorev1.PodTemplateSpec().
-						WithSpec(applycorev1.PodSpec().
-							WithContainers(applycorev1.Container().
-								WithName("linstor-controller").
-								WithEnv(applycorev1.EnvVar().
-									WithName("MASTER_PASSPHRASE").
-									WithValueFrom(applycorev1.EnvVarSource().
-										WithSecretKeyRef(applycorev1.SecretKeySelector().
-											WithName(lcluster.Spec.LinstorPassphraseSecret).WithKey("MASTER_PASSPHRASE")),
-									),
-								),
-							),
-						),
-					),
-				),
-		)
+		p, err := ClusterLinstorPassphrasePatch(lcluster.Spec.LinstorPassphraseSecret)
 		if err != nil {
 			return nil, err
 		}
 
-		patches = append(patches, *passphrasePatch)
+		patches = append(patches, p...)
 	}
 
 	if lcluster.Spec.InternalTLS != nil {
@@ -319,69 +298,21 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 			secretName = "linstor-controller-internal-tls"
 		}
 
-		mountPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-			ResId: resid.NewResId(resid.NewGvk("apps", "v1", "Deployment"), "linstor-controller"),
-		}, applyappsv1.Deployment("linstor-controller", "").
-			WithSpec(applyappsv1.DeploymentSpec().
-				WithTemplate(applycorev1.PodTemplateSpec().
-					WithSpec(applycorev1.PodSpec().
-						WithVolumes(
-							applycorev1.Volume().
-								WithName("internal-tls").
-								WithSecret(applycorev1.SecretVolumeSource().WithSecretName(secretName)),
-							applycorev1.Volume().
-								WithName("java-internal-tls").
-								WithEmptyDir(applycorev1.EmptyDirVolumeSource()),
-						).
-						WithContainers(applycorev1.Container().
-							WithName("linstor-controller").
-							WithVolumeMounts(
-								applycorev1.VolumeMount().
-									WithName("java-internal-tls").
-									WithMountPath("/etc/linstor/ssl"),
-								applycorev1.VolumeMount().
-									WithName("internal-tls").
-									WithMountPath("/etc/linstor/ssl-pem").
-									WithReadOnly(true),
-							),
-						),
-					),
-				),
-			),
-		)
+		p, err := ClusterLinstorInternalTLSPatch(secretName)
 		if err != nil {
 			return nil, err
 		}
-
-		patches = append(patches, *mountPatch)
+		patches = append(patches, p...)
 
 		if lcluster.Spec.InternalTLS.CertManager != nil {
 			resourceDirs = append(resourceDirs, "controller/cert-manager")
 
-			issuerPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-				ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "linstor-controller-internal-tls"),
-			}, []utils.JsonPatch{
-				{
-					Op:    utils.Replace,
-					Path:  "/spec/issuerRef",
-					Value: lcluster.Spec.InternalTLS.CertManager,
-				},
-				{
-					Op:    utils.Replace,
-					Path:  "/metadata/name",
-					Value: secretName,
-				},
-				{
-					Op:    utils.Replace,
-					Path:  "/spec/secretName",
-					Value: secretName,
-				},
-			})
+			p, err := ClusterLinstorInternalTLSCertManagerPatch(secretName, lcluster.Spec.InternalTLS.CertManager)
 			if err != nil {
 				return nil, err
 			}
 
-			patches = append(patches, *issuerPatch)
+			patches = append(patches, p...)
 		}
 	}
 
@@ -398,19 +329,12 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 // * restrict CSI driver daemon set to cluster's node selector
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
-	selectorPatch, err := utils.ToEncodedPatch(
-		&kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk(appsv1.GroupName, "v1", "DaemonSet"), "csi-node")},
-		applyappsv1.DaemonSet("satellite", "").
-			WithSpec(applyappsv1.DaemonSetSpec().
-				WithTemplate(applycorev1.PodTemplateSpec().
-					WithSpec(applycorev1.PodSpec().WithNodeSelector(lcluster.Spec.NodeSelector))),
-			),
-	)
+	p, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.kustomize([]string{"csi"}, lcluster, *selectorPatch)
+	return r.kustomize([]string{"csi"}, lcluster, p...)
 }
 
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.
@@ -533,15 +457,7 @@ func (r *LinstorClusterReconciler) pullSecretPatch() ([]kusttypes.Patch, error) 
 		return nil, nil
 	}
 
-	patch, err := utils.ToEncodedPatch(
-		&kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("", "v1", "ServiceAccount"), "")},
-		applycorev1.ServiceAccount("default", "").WithImagePullSecrets(applycorev1.LocalObjectReference().WithName(r.PullSecret)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return []kusttypes.Patch{*patch}, nil
+	return PullSecretPatch(r.PullSecret)
 }
 
 func (r *LinstorClusterReconciler) kustomLabels(lcluster *piraeusiov1.LinstorCluster) []kusttypes.Label {

@@ -1,0 +1,28 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: linstor-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-controller
+    spec:
+      template:
+        spec:
+          volumes:
+          - name: internal-tls
+            secret:
+              secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+          - name: java-internal-tls
+            emptyDir: {}
+          containers:
+          - name: linstor-controller
+            volumeMounts:
+              - name: internal-tls
+                mountPath: /etc/linstor/ssl-pem
+                readOnly: true
+              - name: java-internal-tls
+                mountPath: /etc/linstor/ssl

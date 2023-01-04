@@ -106,9 +106,13 @@ func CombineAllEmbededResources(fs *embed.FS) (resmap.ResMap, error) {
 		return nil, fmt.Errorf("failed to list embedded directories: %w", err)
 	}
 
-	subDirNames := make([]string, len(subDirs))
+	var subDirNames []string
 	for i := range subDirs {
-		subDirNames[i] = subDirs[i].Name()
+		if subDirs[i].Name() == "patches" {
+			continue
+		}
+
+		subDirNames = append(subDirNames, subDirs[i].Name())
 	}
 
 	return kustomizer.Kustomize(&kusttypes.Kustomization{
