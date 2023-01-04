@@ -561,15 +561,32 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 var SatelliteNameReplacements = []kusttypes.ReplacementField{
 	{Replacement: kusttypes.Replacement{
 		Source: &kusttypes.SourceSelector{
-			ResId:     resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-			FieldPath: "metadata.name",
+			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+			// Selects the name of the node we expected to be running on.
+			FieldPath: "spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.0.matchFields.0.values.0",
 		},
 		Targets: []*kusttypes.TargetSelector{
+			{
+				// Sets the name of the pod to the name of the node it is running on.
+				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite")},
+				FieldPaths: []string{"metadata.name"},
+			},
 			{
 				// Prefixes all config maps with "<nodename>-"
 				Select:     &kusttypes.Selector{ResId: resid.NewResIdKindOnly("ConfigMap", "")},
 				FieldPaths: []string{"metadata.name"},
 				Options:    &kusttypes.FieldOptions{Delimiter: "-", Index: -1},
+			},
+			{
+				// Sets the name of certificate to "<node-name>-tls"
+				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls")},
+				FieldPaths: []string{"metadata.name"},
+				Options:    &kusttypes.FieldOptions{Delimiter: "-", Index: -1},
+			},
+			{
+				// Sets the domain name of the issued certificate to "<node-name>"
+				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls")},
+				FieldPaths: []string{"spec.dnsNames.0"},
 			},
 		},
 	}},

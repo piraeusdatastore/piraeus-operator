@@ -18,11 +18,3 @@
                     operator: In
                     values:
                       - $NODE_NAME
-- target:
-    version: v1
-    kind: Pod
-    name: satellite
-  patch: |
-    - op: replace
-      path: /metadata/name
-      value: $NODE_NAME
