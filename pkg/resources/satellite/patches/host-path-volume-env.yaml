@@ -1,0 +1,16 @@
+---
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: satellite
+    spec:
+      containers:
+        - name: linstor-satellite
+          env:
+          - name: LOSETUP_CONTAINER_BIND_MOUNTS
+            value: $HOST_PATHS

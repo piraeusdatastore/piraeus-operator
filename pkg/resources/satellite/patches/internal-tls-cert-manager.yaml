@@ -1,0 +1,16 @@
+---
+- target:
+    group: cert-manager.io
+    version: v1
+    kind: Certificate
+    name: tls
+  patch: |
+    - op: replace
+      path: /metadata/name
+      value: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+    - op: replace
+      path: /spec/secretName
+      value: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+    - op: replace
+      path: /spec/issuerRef
+      value: $LINSTOR_INTERNAL_TLS_CERT_ISSUER

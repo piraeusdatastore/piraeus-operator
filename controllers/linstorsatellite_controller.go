@@ -17,17 +17,14 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	linstor "github.com/LINBIT/golinstor"
 	lclient "github.com/LINBIT/golinstor/client"
-	"github.com/LINBIT/golinstor/linstortoml"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -193,7 +189,7 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) (resmap.ResMap, error) {
 	resourceDirs := []string{"pod"}
 
-	patches, err := PerNodePatches(lsatellite.Name)
+	patches, err := SatelliteCommonNodePatch(lsatellite.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -204,40 +200,22 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 			secretName = lsatellite.Name + "-tls"
 		}
 
-		tlsPatches, err := TLSPatches(secretName)
+		p, err := SatelliteLinstorInternalTLSPatch(secretName)
 		if err != nil {
 			return nil, err
 		}
 
-		patches = append(patches, tlsPatches...)
+		patches = append(patches, p...)
 
 		if lsatellite.Spec.InternalTLS.CertManager != nil {
 			resourceDirs = append(resourceDirs, "pod/cert-manager")
 
-			certPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-				ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls"),
-			}, []utils.JsonPatch{
-				{
-					Op:    utils.Replace,
-					Path:  "/spec/issuerRef",
-					Value: lsatellite.Spec.InternalTLS.CertManager,
-				},
-				{
-					Op:    utils.Replace,
-					Path:  "/metadata/name",
-					Value: secretName,
-				},
-				{
-					Op:    utils.Replace,
-					Path:  "/spec/secretName",
-					Value: secretName,
-				},
-			})
+			p, err := SatelliteLinstorInternalTLSCertManagerPatch(secretName, lsatellite.Spec.InternalTLS.CertManager)
 			if err != nil {
 				return nil, err
 			}
 
-			patches = append(patches, *certPatch)
+			patches = append(patches, p...)
 		}
 	}
 
@@ -255,52 +233,21 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		// Use an index-based name, as volume names are restricted to [0-9a-z-], so we can't use the storage pool name.
 		volName := fmt.Sprintf("file-pool-%d", i)
 
-		hostDirectoryPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-		}, applycorev1.Pod("satellite", "").
-			WithSpec(applycorev1.PodSpec().
-				WithVolumes(applycorev1.Volume().
-					WithName(volName).
-					WithHostPath(applycorev1.HostPathVolumeSource().
-						WithPath(path).
-						WithType(corev1.HostPathDirectoryOrCreate),
-					),
-				).
-				WithContainers(applycorev1.Container().
-					WithName("linstor-satellite").
-					WithVolumeMounts(applycorev1.VolumeMount().
-						WithName(volName).
-						WithMountPath(path),
-					),
-				),
-			),
-		)
+		p, err := SatelliteHostPathVolumePatch(volName, path)
 		if err != nil {
 			return nil, err
 		}
 
-		patches = append(patches, *hostDirectoryPatch)
+		patches = append(patches, p...)
 	}
 
 	if len(bindMountPaths) > 0 {
-		bindMountEnvPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-		}, applycorev1.Pod("satellite", "").
-			WithSpec(applycorev1.PodSpec().
-				WithContainers(applycorev1.Container().
-					WithName("linstor-satellite").
-					WithEnv(applycorev1.EnvVar().
-						WithName("LOSETUP_CONTAINER_BIND_MOUNTS").
-						WithValue(strings.Join(bindMountPaths, ":")),
-					),
-				),
-			),
-		)
+		p, err := SatelliteHostPathVolumeEnvPatch(bindMountPaths)
 		if err != nil {
 			return nil, err
 		}
 
-		patches = append(patches, *bindMountEnvPatch)
+		patches = append(patches, p...)
 	}
 
 	imgs, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
@@ -608,107 +555,6 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Complete(r)
-}
-
-func PerNodePatches(nodeName string) ([]kusttypes.Patch, error) {
-	nodeAffinityPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-	}, applycorev1.Pod("satellite", "").
-		WithSpec(applycorev1.PodSpec().
-			WithAffinity(applycorev1.Affinity().
-				WithNodeAffinity(applycorev1.NodeAffinity().
-					WithRequiredDuringSchedulingIgnoredDuringExecution(applycorev1.NodeSelector().
-						WithNodeSelectorTerms(applycorev1.NodeSelectorTerm().
-							WithMatchFields(applycorev1.NodeSelectorRequirement().
-								WithKey("metadata.name").
-								WithOperator(corev1.NodeSelectorOpIn).
-								WithValues(nodeName),
-							),
-						),
-					),
-				),
-			),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeNamePatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-	}, []utils.JsonPatch{{
-		Op:    utils.Replace,
-		Path:  "/metadata/name",
-		Value: nodeName,
-	}})
-	if err != nil {
-		return nil, err
-	}
-
-	return []kusttypes.Patch{*nodeAffinityPatch, *nodeNamePatch}, nil
-}
-
-func TLSPatches(secretName string) ([]kusttypes.Patch, error) {
-	mountPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
-	}, applycorev1.Pod("satellite", "").
-		WithSpec(applycorev1.PodSpec().
-			WithVolumes(
-				applycorev1.Volume().
-					WithName("internal-tls").
-					WithSecret(applycorev1.SecretVolumeSource().WithSecretName(secretName)),
-				applycorev1.Volume().
-					WithName("java-internal-tls").
-					WithEmptyDir(applycorev1.EmptyDirVolumeSource()),
-			).
-			WithContainers(applycorev1.Container().
-				WithName("linstor-satellite").
-				WithVolumeMounts(
-					applycorev1.VolumeMount().
-						WithName("java-internal-tls").
-						WithMountPath("/etc/linstor/ssl"),
-					applycorev1.VolumeMount().
-						WithName("internal-tls").
-						WithMountPath("/etc/linstor/ssl-pem").
-						WithReadOnly(true),
-				),
-			),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := &linstortoml.Satellite{
-		NetCom: &linstortoml.SatelliteNetCom{
-			Type:                "ssl",
-			Port:                linstor.DfltStltPortSsl,
-			ServerCertificate:   "/etc/linstor/ssl/keystore.jks",
-			TrustedCertificates: "/etc/linstor/ssl/certificates.jks",
-			KeyPassword:         "linstor",
-			KeystorePassword:    "linstor",
-			TruststorePassword:  "linstor",
-			SslProtocol:         "TLSv1.2",
-		},
-	}
-	encodedCfg := bytes.Buffer{}
-	err = toml.NewEncoder(&encodedCfg).Encode(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	configPatch, err := utils.ToEncodedPatch(&kusttypes.Selector{
-		ResId: resid.NewResId(resid.NewGvk("", "v1", "ConfigMap"), "satellite-config"),
-	}, applycorev1.ConfigMap("satellite-config", "").
-		WithData(map[string]string{
-			"linstor_satellite.toml": encodedCfg.String(),
-		}),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return []kusttypes.Patch{*mountPatch, *configPatch}, nil
 }
 
 // SatelliteNameReplacements are the kustomize replacements for renaming resources for a single satellite.

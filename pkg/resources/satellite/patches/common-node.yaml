@@ -1,0 +1,28 @@
+---
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: satellite
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchFields:
+                  - key: metadata.name
+                    operator: In
+                    values:
+                      - $NODE_NAME
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    - op: replace
+      path: /metadata/name
+      value: $NODE_NAME

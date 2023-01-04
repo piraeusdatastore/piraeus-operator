@@ -1,0 +1,21 @@
+---
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: satellite
+    spec:
+      volumes:
+        - name: $VOLUME_NAME
+          hostPath:
+            path: $HOST_PATH
+            type: DirectoryOrCreate
+      containers:
+        - name: linstor-satellite
+          volumeMounts:
+            - name: $VOLUME_NAME
+              mountPath: $HOST_PATH
