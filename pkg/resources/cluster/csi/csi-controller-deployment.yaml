@@ -37,7 +37,6 @@ spec:
           image: linstor-csi
           args:
             - --csi-endpoint=unix://$(ADDRESS)
-            - --linstor-endpoint=$(LS_CONTROLLERS)
             - --property-namespace=Aux/topology
             - --label-by-storage-pool=false
           env:

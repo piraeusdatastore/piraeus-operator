@@ -35,6 +35,49 @@ spec:
           spec:
             description: LinstorClusterSpec defines the desired state of LinstorCluster
             properties:
+              apiTLS:
+                description: "ApiTLS secures the LINSTOR API. \n This configures the
+                  TLS key and certificate used to secure the LINSTOR API."
+                nullable: true
+                properties:
+                  apiSecretName:
+                    description: ApiSecretName references a secret holding the TLS
+                      key and certificate used to protect the API. Defaults to "linstor-api-tls".
+                    type: string
+                  certManager:
+                    description: CertManager references a cert-manager Issuer or ClusterIssuer.
+                      If set, cert-manager.io/Certificate resources will be created,
+                      provisioning the secrets referenced in *SecretName using the
+                      issuer configured here.
+                    properties:
+                      group:
+                        description: Group of the resource being referred to.
+                        type: string
+                      kind:
+                        description: Kind of the resource being referred to.
+                        type: string
+                      name:
+                        description: Name of the resource being referred to.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  clientSecretName:
+                    description: ClientSecretName references a secret holding the
+                      TLS key and certificate used by the operator to configure the
+                      cluster. Defaults to "linstor-client-tls".
+                    type: string
+                  csiControllerSecretName:
+                    description: CsiControllerSecretName references a secret holding
+                      the TLS key and certificate used by the CSI Controller to provision
+                      volumes. Defaults to "linstor-csi-controller-tls".
+                    type: string
+                  csiNodeSecretName:
+                    description: CsiNodeSecretName references a secret holding the
+                      TLS key and certificate used by the CSI Nodes to query the volume
+                      state. Defaults to "linstor-csi-node-tls".
+                    type: string
+                type: object
               internalTLS:
                 description: "InternalTLS secures the connection between LINSTOR Controller
                   and Satellite. \n This configures the client certificate used when

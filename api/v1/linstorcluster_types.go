@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -65,6 +66,74 @@ type LinstorClusterSpec struct {
 	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
 	// +nullable
 	InternalTLS *TLSConfig `json:"internalTLS,omitempty"`
+
+	// ApiTLS secures the LINSTOR API.
+	//
+	// This configures the TLS key and certificate used to secure the LINSTOR API.
+	// +kubebuilder:validation:Optional
+	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
+	// +nullable
+	ApiTLS *LinstorClusterApiTLS `json:"apiTLS,omitempty"`
+}
+
+type LinstorClusterApiTLS struct {
+	// ApiSecretName references a secret holding the TLS key and certificate used to protect the API.
+	// Defaults to "linstor-api-tls".
+	//+kubebuilder:validation:Optional
+	ApiSecretName string `json:"apiSecretName,omitempty"`
+
+	// ClientSecretName references a secret holding the TLS key and certificate used by the operator to configure
+	// the cluster. Defaults to "linstor-client-tls".
+	//+kubebuilder:validation:Optional
+	ClientSecretName string `json:"clientSecretName,omitempty"`
+
+	// CsiControllerSecretName references a secret holding the TLS key and certificate used by the CSI Controller
+	// to provision volumes. Defaults to "linstor-csi-controller-tls".
+	//+kubebuilder:validation:Optional
+	CsiControllerSecretName string `json:"csiControllerSecretName,omitempty"`
+
+	// CsiNodeSecretName references a secret holding the TLS key and certificate used by the CSI Nodes to query
+	// the volume state. Defaults to "linstor-csi-node-tls".
+	//+kubebuilder:validation:Optional
+	CsiNodeSecretName string `json:"csiNodeSecretName,omitempty"`
+
+	// CertManager references a cert-manager Issuer or ClusterIssuer.
+	// If set, cert-manager.io/Certificate resources will be created, provisioning the secrets referenced in
+	// *SecretName using the issuer configured here.
+	//+kubebuilder:validation:Optional
+	CertManager *cmmetav1.ObjectReference `json:"certManager,omitempty"`
+}
+
+func (l *LinstorClusterApiTLS) GetApiSecretName() string {
+	if l.ApiSecretName == "" {
+		return "linstor-api-tls"
+	}
+
+	return l.ApiSecretName
+}
+
+func (l *LinstorClusterApiTLS) GetClientSecretName() string {
+	if l.ClientSecretName == "" {
+		return "linstor-client-tls"
+	}
+
+	return l.ClientSecretName
+}
+
+func (l *LinstorClusterApiTLS) GetCsiControllerSecretName() string {
+	if l.CsiControllerSecretName == "" {
+		return "linstor-csi-controller-tls"
+	}
+
+	return l.CsiControllerSecretName
+}
+
+func (l *LinstorClusterApiTLS) GetCsiNodeSecretName() string {
+	if l.CsiNodeSecretName == "" {
+		return "linstor-csi-node-tls"
+	}
+
+	return l.CsiNodeSecretName
 }
 
 // LinstorClusterStatus defines the observed state of LinstorCluster

@@ -1,0 +1,15 @@
+---
+- target:
+    group: cert-manager.io
+    version: v1
+    kind: Certificate
+    name: linstor-api-tls
+  patch: |
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: linstor-api-tls
+    spec:
+      secretName: $LINSTOR_API_TLS_SECRET_NAME
+      issuerRef: $LINSTOR_API_TLS_CERT_ISSUER
+      dnsNames: $LINSTOR_API_TLS_DNS_NAMES

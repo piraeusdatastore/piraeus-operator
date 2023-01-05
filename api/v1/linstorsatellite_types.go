@@ -69,6 +69,9 @@ type LinstorSatelliteStatus struct {
 type ClusterReference struct {
 	// Name of the LinstorCluster resource controlling this satellite.
 	Name string `json:"name,omitempty"`
+
+	// ClientSecretName references the secret used by the operator to validate the https endpoint.
+	ClientSecretName string `json:"clientSecretName,omitempty"`
 }
 
 // LinstorSatellite is the Schema for the linstorsatellites API
