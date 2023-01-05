@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: csi-controller
+  name: linstor-csi-controller
   labels:
-    app.kubernetes.io/component: csi-controller
+    app.kubernetes.io/component: linstor-csi-controller
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: csi-controller
+      app.kubernetes.io/component: linstor-csi-controller
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: linstor-csi
       labels:
-        app.kubernetes.io/component: csi-controller
+        app.kubernetes.io/component: linstor-csi-controller
     spec:
       enableServiceLinks: false
-      serviceAccountName: csi-controller
+      serviceAccountName: linstor-csi-controller
       initContainers:
         - name: linstor-wait-api-online
           image: linstor-csi
