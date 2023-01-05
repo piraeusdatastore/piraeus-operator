@@ -305,7 +305,7 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		patches = append(patches, p...)
 
 		if lcluster.Spec.InternalTLS.CertManager != nil {
-			resourceDirs = append(resourceDirs, "controller/cert-manager")
+			resourceDirs = append(resourceDirs, "controller/cert-manager/internal")
 
 			p, err := ClusterLinstorInternalTLSCertManagerPatch(secretName, lcluster.Spec.InternalTLS.CertManager)
 			if err != nil {
@@ -313,6 +313,41 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 			}
 
 			patches = append(patches, p...)
+		}
+	}
+
+	if lcluster.Spec.ApiTLS != nil {
+		apiSecretName := lcluster.Spec.ApiTLS.GetApiSecretName()
+		clientSecretName := lcluster.Spec.ApiTLS.GetClientSecretName()
+
+		p, err := ClusterApiTLSPatch(apiSecretName, clientSecretName)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+
+		if lcluster.Spec.ApiTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "controller/cert-manager/api", "client-cert")
+
+			serviceNames := []string{
+				fmt.Sprintf("linstor-controller.%s.svc", r.Namespace),
+				fmt.Sprintf("linstor-controller.%s", r.Namespace),
+				"linstor-controller",
+			}
+
+			apiPatch, err := ClusterApiTLSCertManagerPatch(apiSecretName, lcluster.Spec.ApiTLS.CertManager, serviceNames)
+			if err != nil {
+				return nil, err
+			}
+
+			clientPatch, err := ClusterApiTLSClientCertManagerPatch("linstor-client-tls", clientSecretName, lcluster.Spec.ApiTLS.CertManager)
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, apiPatch...)
+			patches = append(patches, clientPatch...)
 		}
 	}
 
@@ -329,12 +364,43 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 // * restrict CSI driver daemon set to cluster's node selector
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
-	p, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
+	resourceDirs := []string{"csi"}
+
+	patches, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.kustomize([]string{"csi"}, lcluster, p...)
+	if lcluster.Spec.ApiTLS != nil {
+		controllerSecret := lcluster.Spec.ApiTLS.GetCsiControllerSecretName()
+		nodeSecret := lcluster.Spec.ApiTLS.GetCsiNodeSecretName()
+
+		p, err := ClusterCSIApiTLSPatch(controllerSecret, nodeSecret)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+
+		if lcluster.Spec.ApiTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "csi/cert-manager/csi-controller", "csi/cert-manager/csi-node")
+
+			controllerPatches, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-controller-tls", controllerSecret, lcluster.Spec.ApiTLS.CertManager)
+			if err != nil {
+				return nil, err
+			}
+
+			nodePatches, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-node-tls", nodeSecret, lcluster.Spec.ApiTLS.CertManager)
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, controllerPatches...)
+			patches = append(patches, nodePatches...)
+		}
+	}
+
+	return r.kustomize(resourceDirs, lcluster, patches...)
 }
 
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.
@@ -374,11 +440,16 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 		Value: lcluster.Spec.Repository,
 	}
 
+	clientSecret := ""
+	if lcluster.Spec.ApiTLS != nil {
+		clientSecret = lcluster.Spec.ApiTLS.GetClientSecretName()
+	}
 	clusterRefPatch := utils.JsonPatch{
 		Op:   utils.Replace,
 		Path: "/spec/clusterRef",
 		Value: &piraeusiov1.ClusterReference{
-			Name: lcluster.Name,
+			Name:             lcluster.Name,
+			ClientSecretName: clientSecret,
 		},
 	}
 
@@ -477,11 +548,17 @@ func (r *LinstorClusterReconciler) kustomLabels(lcluster *piraeusiov1.LinstorClu
 }
 
 func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, conds conditions.Conditions) error {
+	clientSecret := ""
+	if lcluster.Spec.ApiTLS != nil {
+		clientSecret = lcluster.Spec.ApiTLS.GetClientSecretName()
+	}
+
 	lc, err := linstorhelper.NewClientForCluster(
 		ctx,
 		r.Client,
 		r.Namespace,
 		lcluster.Name,
+		clientSecret,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)
 	if err != nil || lc == nil {

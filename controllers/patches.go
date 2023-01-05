@@ -55,6 +55,48 @@ func ClusterCSINodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch,
 		})
 }
 
+func ClusterApiTLSPatch(apiSecretName, clientSecretName string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls.yaml",
+		map[string]any{
+			"LINSTOR_API_TLS_SECRET_NAME":        apiSecretName,
+			"LINSTOR_API_TLS_CLIENT_SECRET_NAME": clientSecretName,
+		})
+}
+
+func ClusterApiTLSCertManagerPatch(secretName string, issuer *cmmetav1.ObjectReference, dnsNames []string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls-cert-manager.yaml",
+		map[string]any{
+			"LINSTOR_API_TLS_SECRET_NAME": secretName,
+			"LINSTOR_API_TLS_CERT_ISSUER": issuer,
+			"LINSTOR_API_TLS_DNS_NAMES":   dnsNames,
+		})
+}
+
+func ClusterCSIApiTLSPatch(controllerSecret, nodeSecret string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls-csi.yaml",
+		map[string]any{
+			"LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME": controllerSecret,
+			"LINSTOR_CSI_NODE_API_TLS_SECRET_NAME":       nodeSecret,
+		})
+}
+
+func ClusterApiTLSClientCertManagerPatch(certName, secretName string, issuer *cmmetav1.ObjectReference) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls-client-cert-manager.yaml",
+		map[string]any{
+			"CERTIFICATE_NAME":                   certName,
+			"LINSTOR_API_TLS_CLIENT_SECRET_NAME": secretName,
+			"LINSTOR_API_TLS_CLIENT_CERT_ISSUER": issuer,
+		})
+}
+
 func PullSecretPatch(secretName string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,

@@ -39,6 +39,10 @@ spec:
                 description: ClusterRef references the LinstorCluster used to create
                   this LinstorSatellite.
                 properties:
+                  clientSecretName:
+                    description: ClientSecretName references the secret used by the
+                      operator to validate the https endpoint.
+                    type: string
                   name:
                     description: Name of the LinstorCluster resource controlling this
                       satellite.

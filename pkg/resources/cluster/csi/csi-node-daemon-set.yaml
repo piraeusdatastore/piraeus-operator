@@ -40,7 +40,6 @@ spec:
           args:
             - --csi-endpoint=unix://$(CSI_ENDPOINT)
             - --node=$(KUBE_NODE_NAME)
-            - --linstor-endpoint=$(LS_CONTROLLERS)
             - --property-namespace=Aux/topology
             - --label-by-storage-pool=false
           securityContext:

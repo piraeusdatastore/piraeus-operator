@@ -1,0 +1,78 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: linstor-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-controller
+    spec:
+      template:
+        spec:
+          containers:
+            - name: linstor-controller
+              volumeMounts:
+                - name: api-tls
+                  mountPath: /etc/linstor/https-pem
+                  readOnly: true
+                - name: java-api-tls
+                  mountPath: /etc/linstor/https
+                - name: client-tls
+                  mountPath: /etc/linstor/client
+                  readOnly: true
+              ports:
+                - name: secure-api
+                  containerPort: 3371
+                  protocol: TCP
+          volumes:
+            - name: java-api-tls
+              emptyDir: { }
+            - name: api-tls
+              secret:
+                secretName: $LINSTOR_API_TLS_SECRET_NAME
+            - name: client-tls
+              secret:
+                secretName: $LINSTOR_API_TLS_CLIENT_SECRET_NAME
+- target:
+    version: v1
+    kind: ConfigMap
+    name: linstor-controller-config
+  patch: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: linstor-controller-config
+    data:
+      linstor-client.conf: |
+        [global]
+        controllers = https://linstor-controller:3371
+        cafile      = /etc/linstor/client/ca.crt
+        certfile    = /etc/linstor/client/tls.crt
+        keyfile     = /etc/linstor/client/tls.key
+
+      linstor.toml: |
+        [https]
+          enabled = true
+          keystore = "/etc/linstor/https/keystore.jks"
+          keystore_password = "linstor"
+          truststore = "/etc/linstor/https/truststore.jks"
+          truststore_password = "linstor"
+
+        [db]
+          connection_url = "k8s"
+- target:
+    version: v1
+    kind: Service
+    name: linstor-controller
+  patch: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: linstor-controller
+    spec:
+      ports:
+        - port: 3371
+          name: secure-api

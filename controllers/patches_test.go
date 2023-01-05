@@ -73,6 +73,34 @@ func TestPatches(t *testing.T) {
 				return controllers.SatelliteHostPathVolumeEnvPatch([]string{"/path1", "/path2"})
 			},
 		},
+		{
+			name: "ClusterApiTLSPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controllers.ClusterApiTLSPatch("apiSecret", "clientSecret")
+			},
+		},
+		{
+			name: "ClusterApiTLSCertManagerPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controllers.ClusterApiTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
+					Name: "issuer",
+				}, []string{"api.ns.svc"})
+			},
+		},
+		{
+			name: "ClusterCSIApiTLSPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controllers.ClusterCSIApiTLSPatch("controller", "node")
+			},
+		},
+		{
+			name: "ClusterApiTLSClientCertManagerPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controllers.ClusterApiTLSClientCertManagerPatch("cert", "secret", &cmmetav1.ObjectReference{
+					Name: "issuer",
+				})
+			},
+		},
 	}
 
 	for i := range testcases {

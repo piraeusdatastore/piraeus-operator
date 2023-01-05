@@ -20,6 +20,9 @@
   - group: apps
     kind: Deployment
     version: v1
+  - group: cert-manager.io
+    kind: Certificate
+    version: v1
   - group: networking.k8s.io
     kind: NetworkPolicy
     version: v1
@@ -45,6 +48,9 @@
   path: /spec/customresourcedefinitions/owned/0/resources
   value:
   - kind: CSIDriver
+    name: ""
+    version: v1
+  - kind: Certificate
     name: ""
     version: v1
   - kind: ClusterRole
