@@ -540,10 +540,10 @@ func (r *LinstorClusterReconciler) reconcileCSINodes(ctx context.Context, lclust
 	var csiPods corev1.PodList
 	err := r.Client.List(ctx, &csiPods, client.InNamespace(r.Namespace), client.MatchingLabels{
 		"app.kubernetes.io/instance":  lcluster.Name,
-		"app.kubernetes.io/component": "csi-node",
+		"app.kubernetes.io/component": "linstor-csi-node",
 	})
 	if err != nil {
-		err := fmt.Errorf("failed to list csi-node pods: %w", err)
+		err := fmt.Errorf("failed to list linstor-csi-node pods: %w", err)
 		conds.AddUnknown(conditions.Configured, err.Error())
 		return err
 	}

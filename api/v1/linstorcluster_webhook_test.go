@@ -31,10 +31,10 @@ var _ = Describe("LinstorCluster webhook", func() {
 			Patches: []piraeusv1.Patch{
 				{
 					Target: &piraeusv1.Selector{
-						Name: "csi-controller",
+						Name: "linstor-csi-controller",
 						Kind: "Deployment",
 					},
-					Patch: "[{\"op\": \"replace\", \"path\": \"/metadata/name\", \"value\": \"csi-controller-of-the-universe\"}]",
+					Patch: "[{\"op\": \"replace\", \"path\": \"/metadata/name\", \"value\": \"linstor-csi-controller-of-the-universe\"}]",
 				},
 			},
 		},
