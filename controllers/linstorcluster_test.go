@@ -236,8 +236,9 @@ var _ = Describe("LinstorCluster controller", func() {
 					var controllerDeployment appsv1.Deployment
 					err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(controllerDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
-					return controllerDeployment.Spec.Template.Spec.Containers[0].Image
+					controller := GetContainer(controllerDeployment.Spec.Template.Spec.Containers, "linstor-controller")
+					Expect(controller).NotTo(BeNil())
+					return controller.Image
 				}, DefaultTimeout, DefaultCheckInterval).Should(HavePrefix("piraeus.io/test"))
 			})
 		})
@@ -261,8 +262,98 @@ var _ = Describe("LinstorCluster controller", func() {
 			var controllerDeployment appsv1.Deployment
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
 			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(controllerDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-controller-internal-tls")))
 		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 	})
+
+	It("should add TLS secrets to the LINSTOR Components, configuring HTTPS access", func(ctx context.Context) {
+		DeferCleanup(func(ctx context.Context) {
+			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorCluster{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		err := k8sClient.Create(ctx, &piraeusiov1.LinstorCluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "default"},
+			Spec: piraeusiov1.LinstorClusterSpec{
+				ApiTLS: &piraeusiov1.LinstorClusterApiTLS{
+					ApiSecretName:           "my-api-tls",
+					ClientSecretName:        "my-client-tls",
+					CsiControllerSecretName: "my-csi-controller-tls",
+					CsiNodeSecretName:       "my-csi-node-tls",
+				},
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func(g Gomega) {
+			var controllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
+			g.Expect(err).NotTo(HaveOccurred())
+			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-api-tls")))
+			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-client-tls")))
+		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+		csiEnvCheck := func(g Gomega, container *corev1.Container, secretName string) {
+			g.Expect(container).NotTo(BeNil())
+			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
+				Name:  "LS_CONTROLLERS",
+				Value: "https://linstor-controller:3371",
+			})))
+			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
+				Name: "LS_ROOT_CA",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+						Key:                  "ca.crt",
+					},
+				},
+			})))
+			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
+				Name: "LS_USER_CERTIFICATE",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+						Key:                  "tls.crt",
+					},
+				},
+			})))
+			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
+				Name: "LS_USER_KEY",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+						Key:                  "tls.key",
+					},
+				},
+			})))
+		}
+
+		Eventually(func(g Gomega) {
+			var csiControllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-controller", Namespace: Namespace}, &csiControllerDeployment)
+			g.Expect(err).NotTo(HaveOccurred())
+
+			linstorCsi := GetContainer(csiControllerDeployment.Spec.Template.Spec.Containers, "linstor-csi")
+			csiEnvCheck(g, linstorCsi, "my-csi-controller-tls")
+		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+		Eventually(func(g Gomega) {
+			var csiNodeDaemonSet appsv1.DaemonSet
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-node", Namespace: Namespace}, &csiNodeDaemonSet)
+			g.Expect(err).NotTo(HaveOccurred())
+
+			linstorCsi := GetContainer(csiNodeDaemonSet.Spec.Template.Spec.Containers, "linstor-csi")
+			csiEnvCheck(g, linstorCsi, "my-csi-node-tls")
+		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+	})
 })
+
+func GetContainer(containers []corev1.Container, name string) *corev1.Container {
+	for i := range containers {
+		if containers[i].Name == name {
+			return &containers[i]
+		}
+	}
+
+	return nil
+}
