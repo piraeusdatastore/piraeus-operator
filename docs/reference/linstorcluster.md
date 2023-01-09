@@ -210,6 +210,79 @@ spec:
       name: piraeus-root
 ```
 
+### `.spec.apiTLS`
+
+Configures the TLS secrets used to secure the LINSTOR API. There are four different secrets to configure:
+
+* `apiSecretName`: sets the name of the secret used by the LINSTOR Controller to enable HTTPS. Defaults to
+  `linstor-api-tls`. All clients of the API must have certificates signed by the `ca.crt` of this secret.
+* `clientSecretName`: sets the name of the secret used by the Operator to connect to the LINSTOR API. Defaults to
+  `linstor-client-tls`. Must be trusted by `ca.crt` in the API Secret. Also used by the LINSTOR Controller to configure
+  the included LINSTOR CLI.
+* `csiControllerSecretName` sets the name of the secret used by the CSI Controller. Defaults to
+  `linstor-csi-controller-tls`. Must be trusted by `ca.crt` in the API Secret.
+* `csiNodeSecretName` sets the name of the secret used by the CSI Controller. Defaults to `linstor-csi-node-tls`.
+  Must be trusted by `ca.crt` in the API Secret.
+
+Optional, a reference to a [cert-manager `Issuer`](https://cert-manager.io/docs/concepts/issuer/) can be provided
+to let the operator create the required secrets.
+
+#### Example
+
+This example creates a manually provisioned TLS secret and references it in the
+LinstorCluster configuration. It uses the same secret for all clients of the LINSTOR API.
+
+```yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-linstor-api-tls
+  namespace: piraeus-datastore
+data:
+  ca.crt: LS0tLS1CRUdJT...
+  tls.crt: LS0tLS1CRUdJT...
+  tls.key: LS0tLS1CRUdJT...
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-linstor-client-tls
+  namespace: piraeus-datastore
+data:
+  ca.crt: LS0tLS1CRUdJT...
+  tls.crt: LS0tLS1CRUdJT...
+  tls.key: LS0tLS1CRUdJT...
+---
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  apiTLS:
+    apiSecretName: my-linstor-api-tls
+    clientSecretName: my-linstor-client-tls
+    csiControllerSecretName: my-linstor-client-tls
+    csiNodeSecretName: my-linstor-client-tls
+```
+
+#### Example
+
+This example sets up automatic creation of the LINSTOR API and LINSTOR Client TLS secret using a
+cert-manager issuer named `piraeus-root`.
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  apiTLS:
+    certManager:
+      kind: Issuer
+      name: piraeus-root
+```
+
 ## `.status`
 
 Reports the actual state of the cluster.
