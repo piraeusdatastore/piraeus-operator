@@ -43,8 +43,12 @@ linstorsatelliteconfigurations.piraeus.io/all-satellites created
 
 ## Configuration
 
-We are currently working on improving our documentation. Additional tutorials, how-to guides and explanation will be
+We are currently working on improving our documentation. Additional tutorials and explanation will be
 added soon.
+
+### [How-To Guides](./docs/how-to)
+
+How-To Guides show you how to configure a specific aspect or achieve a specific task with Piraeus Operator.
 
 ### [API Reference](./docs/reference)
 
