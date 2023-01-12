@@ -185,6 +185,30 @@ spec:
             capabilities:
               drop:
                 - ALL
+        - name: csi-health-monitor
+          image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.8.0
+          args:
+            - '--v=5'
+            - '--csi-address=$(ADDRESS)'
+            - '--timeout=1m'
+            - '--leader-election=true'
+            - '--leader-election-namespace=$(NAMESPACE)'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: socket-dir
           emptyDir: {}
