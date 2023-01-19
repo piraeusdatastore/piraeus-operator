@@ -46,6 +46,10 @@ linstorsatelliteconfigurations.piraeus.io/all-satellites created
 We are currently working on improving our documentation. Additional tutorials and explanation will be
 added soon.
 
+### [Tutorials](./docs/tutorial)
+
+Tutorials help you get started with Piraeus Operator.
+
 ### [How-To Guides](./docs/how-to)
 
 How-To Guides show you how to configure a specific aspect or achieve a specific task with Piraeus Operator.
