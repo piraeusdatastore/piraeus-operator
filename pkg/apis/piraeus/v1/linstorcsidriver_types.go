@@ -19,6 +19,7 @@ package v1
 
 import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -88,6 +89,11 @@ type LinstorCSIDriverSpec struct {
 	// deployment.
 	// +optional
 	ControllerReplicas *int32 `json:"controllerReplicas"`
+
+	// controllerStrategy describes how to replace existing pods with new ones.
+	// +optional
+	// +nullable
+	ControllerStrategy appsv1.DeploymentStrategy `json:"controllerStrategy,omitempty"`
 
 	// Cluster URL of the linstor controller.
 	// If not set, will be determined from the current resource name.

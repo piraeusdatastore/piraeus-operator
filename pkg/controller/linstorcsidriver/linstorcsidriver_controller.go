@@ -993,6 +993,7 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 				MatchLabels: meta.Labels,
 			},
 			Replicas: csiResource.Spec.ControllerReplicas,
+			Strategy: csiResource.Spec.ControllerStrategy,
 			Template: template,
 		},
 	}

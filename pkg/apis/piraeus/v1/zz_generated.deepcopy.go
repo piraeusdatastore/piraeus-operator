@@ -95,6 +95,7 @@ func (in *LinstorCSIDriverSpec) DeepCopyInto(out *LinstorCSIDriverSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	in.ControllerStrategy.DeepCopyInto(&out.ControllerStrategy)
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.NodeAffinity != nil {
 		in, out := &in.NodeAffinity, &out.NodeAffinity

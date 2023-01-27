@@ -44,6 +44,9 @@ spec:
   linstorHttpsClientSecret: {{ include "client.httpsSecretName" . | quote }}
   priorityClassName: {{ .Values.priorityClassName | default "" | quote }}
   controllerReplicas: {{ .Values.csi.controllerReplicas }}
+{{- if .Values.csi.controllerStrategy }}
+  controllerStrategy: {{ .Values.csi.controllerStrategy }}
+{{- end }}
   controllerEndpoint: {{ template "controller.endpoint" . }}
   nodeAffinity: {{ .Values.csi.nodeAffinity | toJson }}
   nodeTolerations: {{ .Values.csi.nodeTolerations | toJson}}
