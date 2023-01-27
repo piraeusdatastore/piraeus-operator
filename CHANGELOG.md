@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option `controllerStrategy` to describe how to replace existing pods with new ones for csi-controller
+
 ## [v1.10.1] - 2022-12-15
 
 ### Changed

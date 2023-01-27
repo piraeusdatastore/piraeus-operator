@@ -35,6 +35,7 @@ csi:
   csiSnapshotterWorkerThreads: 10
   csiResizerWorkerThreads: 10
   controllerReplicas: 1
+  controllerStrategy: {}
   nodeAffinity: {}
   nodeTolerations: []
   controllerAffinity: {}
