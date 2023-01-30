@@ -13,6 +13,11 @@ All components of the LINSTOR software stack can be managed by the operator:
 * LINSTOR CSI driver
 
 
+## Legacy Operator
+
+The previous version of Piraeus Operator is still available [here](https://github.com/piraeusdatastore/piraeus-operator/tree/master).
+It will be maintained, receiving updates to fix issues or new software versions until a stable upgrade path to v2 is available.
+
 ## Usage
 
 To deploy Piraeus Operator v2, first make sure to deploy [cert-manager](https://cert-manager.io)
@@ -63,10 +68,8 @@ modify or observe.
 
 These are features that are currently present in Operator v1, and not yet available in this version of Operator v2:
 
-* Automatic TLS set up between LINSTOR components
+* Helm Chart
 * Backup of LINSTOR database before upgrades
-* Ensuring the CSI driver is reporting correct node labels by restarting the node pods.
-
 
 ## Upgrading
 
