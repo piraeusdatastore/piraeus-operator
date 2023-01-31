@@ -9,16 +9,16 @@ metadata:
     app.kubernetes.io/name: piraeus-op
 spec:
   imagePullSecret: ""
-  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.22.0"
+  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v0.22.1"
   imagePullPolicy: "IfNotPresent"
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node
-  csiAttacherImage: "registry.k8s.io/sig-storage/csi-attacher:v4.0.0"
-  csiLivenessProbeImage: "registry.k8s.io/sig-storage/livenessprobe:v2.8.0"
-  csiNodeDriverRegistrarImage: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.6.2"
-  csiProvisionerImage: "registry.k8s.io/sig-storage/csi-provisioner:v3.3.0"
-  csiResizerImage: "registry.k8s.io/sig-storage/csi-resizer:v1.6.0"
-  csiSnapshotterImage: "registry.k8s.io/sig-storage/csi-snapshotter:v6.1.0"
+  csiAttacherImage: "registry.k8s.io/sig-storage/csi-attacher:v4.1.0"
+  csiLivenessProbeImage: "registry.k8s.io/sig-storage/livenessprobe:v2.9.0"
+  csiNodeDriverRegistrarImage: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0"
+  csiProvisionerImage: "registry.k8s.io/sig-storage/csi-provisioner:v3.4.0"
+  csiResizerImage: "registry.k8s.io/sig-storage/csi-resizer:v1.7.0"
+  csiSnapshotterImage: "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1"
   linstorHttpsClientSecret: ""
   priorityClassName: ""
   controllerReplicas: 1
