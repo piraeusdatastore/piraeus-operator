@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Option `controllerStrategy` to describe how to replace existing pods with new ones for csi-controller
 
+### Changed
+
+- Default images:
+  * LINSTOR 1.20.3
+  * LINSTOR CSI 0.22.1
+  * DRBD 9.1.13
+  * DRBD Reactor 1.0.0
+  * external CSI images upgraded to latest versions
+
 ## [v1.10.1] - 2022-12-15
 
 ### Changed
