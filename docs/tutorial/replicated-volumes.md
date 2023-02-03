@@ -17,7 +17,7 @@ replicated volumes. We will be using the `pool1` storage pool from the [Get Star
 this time also set the `placementCount` to 2, telling LINSTOR® to store the volume data on two nodes.
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -35,7 +35,7 @@ Next, we will again create a [`PersistentVolumeClaim`](https://kubernetes.io/doc
 requesting a 1G replicated volume from our newly created `StorageClass`.
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -54,7 +54,7 @@ For our workload, we will create a Pod which will use the replicated volume to l
 node it is running on.
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:

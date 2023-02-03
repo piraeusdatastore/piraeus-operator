@@ -39,7 +39,7 @@ Now, we will deploy Piraeus Datastore using a new resource managed by Piraeus Op
 which creates all the necessary resources (Deployments, Pods, and so on...) for our Datastore:
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: piraeus.io/v1
 kind: LinstorCluster
 metadata:
@@ -83,7 +83,7 @@ We have not yet configured any storage location for our volumes. This can be acc
 We chose `fileThinPool` as it does not require further configuration on the host.
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
 metadata:
@@ -135,7 +135,7 @@ First, we will set up a new [`StorageClass`](https://kubernetes.io/docs/concepts
 volumes. In the `StorageClass`, we specify the storage pool from above:
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -152,7 +152,7 @@ Next, we will create a [`PersistentVolumeClaim`](https://kubernetes.io/docs/conc
 requesting 1G of storage from our newly created `StorageClass`.
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -179,7 +179,7 @@ We first need to create a "consumer", which in this case is just a `Pod`. For ou
 for a simple web server, serving files from our volume.
 
 ```
-$ cat <<EOF | kubectl apply -f -
+$ kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
