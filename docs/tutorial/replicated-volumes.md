@@ -44,7 +44,7 @@ spec:
   storageClassName: piraeus-storage-replicated
   resources:
     requests:
-      storage: 1G
+      storage: 1Gi
   accessModes:
     - ReadWriteOnce
 EOF
@@ -104,7 +104,7 @@ $ kubectl wait pod --for=condition=Ready -l app.kubernetes.io/name=volume-logger
 pod/volume-logger-84dd47f4cb-trh4l
 $ kubectl get persistentvolumeclaim
 NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS                 AGE
-replicated-volume   Bound    pvc-dbe422ac-c5ae-4786-a624-74d2be8a262d   976563Ki   RWO            piraeus-storage-replicated   1m
+replicated-volume   Bound    pvc-dbe422ac-c5ae-4786-a624-74d2be8a262d   1Gi        RWO            piraeus-storage-replicated   1m
 $ kubectl -n piraeus-datastore exec deploy/linstor-controller -- linstor resource list-volumes
 +-------------------------------------------------------------------------------------------------------------------------------------------+
 | Node           | Resource                                 | StoragePool | VolNr | MinorNr | DeviceName    | Allocated | InUse  |    State |
