@@ -161,7 +161,7 @@ spec:
   storageClassName: piraeus-storage
   resources:
     requests:
-      storage: 1G
+      storage: 1Gi
   accessModes:
     - ReadWriteOnce
 EOF
@@ -213,7 +213,7 @@ $ kubectl wait pod --for=condition=Ready -l app.kubernetes.io/name=web-server
 pod/web-server-84867b5449-hgdzx condition met
 $ kubectl get persistentvolumeclaim
 NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS      AGE
-data-volume   Bound    pvc-9e1149e7-33db-47a7-8fc6-172514422143   976563Ki   RWO            piraeus-storage   1m
+data-volume   Bound    pvc-9e1149e7-33db-47a7-8fc6-172514422143   1Gi        RWO            piraeus-storage   1m
 ```
 
 Checking the running container, we see that the volume is mounted where we expected it:
@@ -221,7 +221,7 @@ Checking the running container, we see that the volume is mounted where we expec
 ```
 $ kubectl exec deploy/web-server -- df -h /usr/share/nginx/html
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/drbd1000   921M   24K  857M   1% /usr/share/nginx/html
+/dev/drbd1000   973M   24K  906M   1% /usr/share/nginx/html
 ```
 
 Taking a look with the `linstor` client, we can see that the volume is listed in LINSTOR and marked as `InUse` by the
