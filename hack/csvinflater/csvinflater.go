@@ -13,6 +13,7 @@ import (
 	"log"
 	"sort"
 
+	"github.com/cert-manager/cert-manager/pkg/apis/certmanager"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/resmap"
@@ -26,12 +27,6 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/satellite"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )
-
-type apiResource struct {
-	Kind    string `json:"kind"`
-	Version string `json:"version"`
-	Name    string `json:"name"`
-}
 
 func main() {
 	clusterRes, err := CombineAllEmbededResources(&cluster.Resources)
@@ -56,33 +51,14 @@ func main() {
 			Value: "LinstorCluster",
 		},
 		{
-			Op:    utils.Add,
-			Path:  "/spec/customresourcedefinitions/owned/0/resources",
-			Value: GetApiResources(clusterRes.AllIds()...),
-		},
-		{
 			Op:    utils.Test,
 			Path:  "/spec/customresourcedefinitions/owned/1/kind",
 			Value: "LinstorSatelliteConfiguration",
 		},
 		{
-			Op:   utils.Add,
-			Path: "/spec/customresourcedefinitions/owned/1/resources",
-			Value: []apiResource{
-				// Technically this is a lie but scorecard is not happy otherwise. The Configuration itself does not
-				// create any kind of resource, only in combination with a LinstorSatellite.
-				{Version: piraeusv1.GroupVersion.Version, Kind: "LinstorSatellite"},
-			},
-		},
-		{
 			Op:    utils.Test,
 			Path:  "/spec/customresourcedefinitions/owned/2/kind",
 			Value: "LinstorSatellite",
-		},
-		{
-			Op:    utils.Add,
-			Path:  "/spec/customresourcedefinitions/owned/2/resources",
-			Value: GetApiResources(satelliteRes.AllIds()...),
 		},
 	}
 
@@ -120,37 +96,18 @@ func CombineAllEmbededResources(fs *embed.FS) (resmap.ResMap, error) {
 	})
 }
 
-func GetApiResources(rs ...resid.ResId) []apiResource {
-	allGvk := make(map[string]struct{})
-	for _, r := range rs {
-		allGvk[r.Gvk.String()] = struct{}{}
-	}
-
-	result := make([]apiResource, 0, len(allGvk))
-	for k := range allGvk {
-		gvk := resid.GvkFromString(k)
-		result = append(result, apiResource{
-			Kind:    gvk.Kind,
-			Version: gvk.Version,
-		})
-	}
-
-	sort.Slice(result, func(i, j int) bool {
-		if result[i].Version == result[j].Version {
-			return result[i].Kind < result[j].Kind
-		}
-		return result[i].Version < result[j].Version
-	})
-
-	return result
-}
-
 func GetNativeAPI(rs ...resid.ResId) []metav1.GroupVersionKind {
 	allGvk := make(map[string]struct{})
 	for _, r := range rs {
-		if r.Group != piraeusv1.GroupVersion.Group {
-			allGvk[r.Gvk.String()] = struct{}{}
+		if r.Group == piraeusv1.GroupVersion.Group {
+			continue
 		}
+
+		if r.Group == certmanager.GroupName {
+			continue
+		}
+
+		allGvk[r.Gvk.String()] = struct{}{}
 	}
 
 	result := make([]metav1.GroupVersionKind, 0, len(allGvk))

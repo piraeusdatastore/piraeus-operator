@@ -10,9 +10,9 @@ resources:
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-- patches/webhook_in_linstorclusters.yaml
-- patches/webhook_in_linstorsatellites.yaml
-- patches/webhook_in_linstorsatelliteconfigurations.yaml
+#- patches/webhook_in_linstorclusters.yaml
+#- patches/webhook_in_linstorsatellites.yaml
+#- patches/webhook_in_linstorsatelliteconfigurations.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.

@@ -32,6 +32,8 @@ components:
         name: drbd9-centos8
       - osImage: AlmaLinux 8
         image: drbd9-almalinux8
+      - osImage: Red Hat Enterprise Linux CoreOS
+        image: drbd9-almalinux8
       - osImage: AlmaLinux 9
         image: drbd9-almalinux9
       - osImage: Ubuntu 18\.04
