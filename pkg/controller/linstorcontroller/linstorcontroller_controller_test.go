@@ -47,7 +47,6 @@ func TestNewConfigMapForPCS(t *testing.T) {
 `,
 					"linstor-client.conf": `[global]
 controllers = http://test.default-ns.svc:3370
-
 `,
 				},
 			},
@@ -79,7 +78,6 @@ controllers = http://test.default-ns.svc:3370
 `,
 					"linstor-client.conf": `[global]
 controllers = http://test.default-ns.svc:3370
-
 `,
 				},
 			},
@@ -114,7 +112,6 @@ controllers = http://test.default-ns.svc:3370
 `,
 					"linstor-client.conf": `[global]
 controllers = http://test.default-ns.svc:3370
-
 `,
 				},
 			},
@@ -162,7 +159,6 @@ controllers = https://test.default-ns.svc:3371
 cafile      = /etc/linstor/client/ca.crt
 certfile    = /etc/linstor/client/tls.crt
 keyfile     = /etc/linstor/client/tls.key
-
 `,
 				},
 			},
