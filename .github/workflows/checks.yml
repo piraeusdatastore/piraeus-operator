@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
       - uses: golangci/golangci-lint-action@v3
         with:
           args: --timeout=3m
@@ -23,11 +25,11 @@ jobs:
       # These hooks will run separately in github actions
       SKIP: golangci-lint
     steps:
+      - uses: actions/checkout@v3
       - name: Setup Go environment
         uses: actions/setup-go@v3
         with:
-          go-version: '1.18'
-      - uses: actions/checkout@v3
+          go-version: '1.19'
       - uses: actions/setup-python@v4
       - name: Run pre-commit checks on changes files
         uses: pre-commit/action@v3.0.0

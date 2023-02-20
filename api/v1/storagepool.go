@@ -115,8 +115,8 @@ var (
 func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *field.Path) field.ErrorList {
 	var result field.ErrorList
 
-	spNames := sets.NewString()
-	devNames := sets.NewString()
+	spNames := sets.New[string]()
+	devNames := sets.New[string]()
 
 	for i := range curSPs {
 		curSP := &curSPs[i]
@@ -310,7 +310,7 @@ func (l *LinstorStoragePoolFile) DirectoryOrDefault(name string) string {
 	return l.Directory
 }
 
-func (s *LinstorStoragePoolSource) Validate(oldSP *LinstorStoragePool, knownDevices sets.String, fieldPrefix *field.Path) field.ErrorList {
+func (s *LinstorStoragePoolSource) Validate(oldSP *LinstorStoragePool, knownDevices sets.Set[string], fieldPrefix *field.Path) field.ErrorList {
 	if s == nil {
 		return nil
 	}
