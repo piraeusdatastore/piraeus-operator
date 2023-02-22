@@ -12,11 +12,12 @@ All components of the LINSTOR software stack can be managed by the operator:
 * LINSTOR
 * LINSTOR CSI driver
 
-
 ## Legacy Operator
 
 The previous version of Piraeus Operator is still available [here](https://github.com/piraeusdatastore/piraeus-operator/tree/master).
-It will be maintained, receiving updates to fix issues or new software versions until a stable upgrade path to v2 is available.
+
+If you are **currently using Piraeus Operator v1**, please continue to use it. It will be maintained, receiving updates
+to fix issues or new software versions until a stable upgrade path to v2 is available.
 
 ## Usage
 
@@ -29,9 +30,7 @@ $ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/downloa
 Then, deploy the Operator from this repository:
 
 ```
-$ git clone https://github.com/piraeusdatastore/piraeus-operator --branch=v2
-$ cd piraeus-operator
-$ kubectl create -k config/default
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2"
 # Verify the operator is running:
 $ kubectl get pods -n piraeus-datastore
 NAME                                                 READY   STATUS    RESTARTS   AGE

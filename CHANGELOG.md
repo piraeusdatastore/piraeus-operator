@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- Removed existing CRD `LinstorController`, `LinstorSatelliteSet` and `LinstorCSIDriver`.
+- Helm chart deprecated in favor of new `kustomize` deployment.
+- Helm chart changed to only deploy the Operator. The LinstorCluster resource to create the storage cluster needs to be created separately.
+
+### Added
+
+- New CRDs to control storage cluster: `LinstorCluster` and `LinstorSatelliteConfiguration`.
+- [Tutorials](./docs/tutorial) on how to get started.
+- Automatic selection of loader images based on operating system of node.
+- Customization of single nodes or groups of nodes.
+- Possibility to run DRBD replication using the container network.
+- Support for file system backed storage pools
+
 ## [v1.10.0] - 2022-10-18
 
 ### Added
