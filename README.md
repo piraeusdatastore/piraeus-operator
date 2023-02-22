@@ -11,6 +11,7 @@ All components of the LINSTOR software stack can be managed by the operator:
 * DRBD
 * LINSTOR
 * LINSTOR CSI driver
+* LINSTOR High-Availability Controller
 
 ## Legacy Operator
 
@@ -67,7 +68,6 @@ modify or observe.
 
 These are features that are currently present in Operator v1, and not yet available in this version of Operator v2:
 
-* Helm Chart
 * Backup of LINSTOR database before upgrades
 
 ## Upgrading

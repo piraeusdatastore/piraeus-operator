@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ha-controller
+  labels:
+    app.kubernetes.io/component: ha-controller
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: ha-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: ha-controller
+    spec:
+      serviceAccountName: ha-controller
+      containers:
+        - name: ha-controller
+          args:
+            - /agent
+            - --v=1
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+          image: ha-controller
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          startupProbe:
+            httpGet:
+              port: 8000
+              path: /healthz
+          livenessProbe:
+            httpGet:
+              port: 8000
+              path: /healthz
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+        - effect: NoSchedule
+          key: drbd.linbit.com/lost-quorum
+        - effect: NoSchedule
+          key: drbd.linbit.com/force-io-error

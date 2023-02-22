@@ -81,11 +81,14 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatelliteconfigurations/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=persistentvolumes;events;configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=pods,verbs=list;watch;delete
+//+kubebuilder:rbac:groups="",resources=pods/eviction,verbs=create
+//+kubebuilder:rbac:groups="events.k8s.io",resources=events,verbs=get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups="storage.k8s.io",resources=volumeattachments,verbs=delete
 //+kubebuilder:rbac:groups=apps,resources=daemonsets;deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;clusterroles;rolebindings;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=nodes;persistentvolumeclaims,verbs=get;list;watch;update
+//+kubebuilder:rbac:groups="",resources=nodes;persistentvolumeclaims,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims/status,verbs=patch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=internal.linstor.linbit.com,resources=*,verbs=get;list;watch;create;update;patch;delete
@@ -100,6 +103,7 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshotcontents/status,verbs=patch;update
 //+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,resourceNames=privileged,verbs=use
+//+kube
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -231,6 +235,11 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 		return nil, err
 	}
 
+	haControllerRes, err := r.kustomizeHAControllerResources(lcluster)
+	if err != nil {
+		return nil, err
+	}
+
 	commonNodeRes, err := r.kustomizeNodeCommonResources(lcluster)
 	if err != nil {
 		return nil, err
@@ -260,6 +269,11 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 	}
 
 	err = resMap.AppendAll(csiRes)
+	if err != nil {
+		return nil, err
+	}
+
+	err = resMap.AppendAll(haControllerRes)
 	if err != nil {
 		return nil, err
 	}
@@ -402,6 +416,24 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 	}
 
 	return r.kustomize(resourceDirs, lcluster, patches...)
+}
+
+// Create the HA Controller resources.
+//
+// Applies the following changes over the base resources:
+// * Namespace
+// * default labels
+// * default images
+// * pull secret (if any)
+// * restrict daemon set to cluster's node selector
+// * user defined patches
+func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
+	patches, err := ClusterHAControllerNodeSelectorPatch(lcluster.Spec.NodeSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.kustomize([]string{"ha-controller"}, lcluster, patches...)
 }
 
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.

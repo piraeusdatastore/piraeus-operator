@@ -55,6 +55,15 @@ func ClusterCSINodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch,
 		})
 }
 
+func ClusterHAControllerNodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/ha-controller-node-selector.yaml",
+		map[string]any{
+			"NODE_SELECTOR": selector,
+		})
+}
+
 func ClusterApiTLSPatch(apiSecretName, clientSecretName string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
