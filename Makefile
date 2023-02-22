@@ -124,11 +124,11 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker buildx build --platform ${PLATFORM} -t ${IMG} .
+	docker buildx build --platform ${PLATFORM} --build-arg=VERSION=$(shell git describe --tags --match "v*.*" --dirty) -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	docker buildx build --platform ${PLATFORM} --push -t ${IMG} .
+	docker buildx build --platform ${PLATFORM} --build-arg=VERSION=$(shell git describe --tags --match "v*.*" --dirty) --push -t ${IMG} .
 
 ##@ Deployment
 

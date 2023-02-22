@@ -1,16 +1,11 @@
 # General notes
 
-Upgrading using the Piraeus etcd deployment requires etcd to use persistent storage. Only follow these steps if
-etcd was deployed using `etcd.persistentVolume.enabled=true`
-
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
-# Upgrades when using the `k8s` database
+# Upgrades from v1 to v2
 
-If you are using the `k8s` database _and_ you also upgrade from **before Operator 1.8.0** you **need to perform a manual
-backup** of the database. The required steps are included in the
-[k8s-backend guide](./doc/k8s-backend.md#manually-creating-a-backup-of-linstor-internal-resources).
+There currently is no documented upgrade path from Operator v1 to v2.
 
 # Upgrade from v1.9 to v1.10
 
