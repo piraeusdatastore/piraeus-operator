@@ -19,6 +19,9 @@ components:
   drbd-reactor:
     tag: v1.0.0
     image: drbd-reactor
+  ha-controller:
+    image: piraeus-ha-controller
+    tag: v1.1.2
   drbd-module-loader:
     tag: v9.2.2
     # The special "match" attribute is used to select an image based on the node's reported OS.

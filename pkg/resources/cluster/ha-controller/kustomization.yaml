@@ -1,0 +1,4 @@
+---
+resources:
+  - rbac.yaml
+  - daemonset.yaml

@@ -116,6 +116,11 @@ spec:
               mountPath: /csi
           args:
             - '--csi-address=/csi/csi.sock'
+      tolerations:
+        - effect: NoSchedule
+          key: drbd.linbit.com/lost-quorum
+        - effect: NoSchedule
+          key: drbd.linbit.com/force-io-error
       volumes:
         - name: device-dir
           hostPath:

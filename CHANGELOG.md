@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Default deployment for HA Controller. Since we switch to defaulting to `suspend-io` for lost quorum, we should include a way for Pods to get unstuck.
+
 ## [v2.0.0-rc.1] - 2023-02-22
 
 ### Breaking

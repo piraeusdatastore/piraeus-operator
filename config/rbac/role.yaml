@@ -52,6 +52,7 @@ rules:
   verbs:
   - get
   - list
+  - patch
   - update
   - watch
 - apiGroups:
@@ -68,6 +69,12 @@ rules:
   - delete
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/eviction
+  verbs:
+  - create
 - apiGroups:
   - apiextensions.k8s.io
   resources:
@@ -106,6 +113,17 @@ rules:
   verbs:
   - create
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
   - get
   - list
   - patch
@@ -299,6 +317,7 @@ rules:
   resources:
   - volumeattachments
   verbs:
+  - delete
   - get
   - list
   - patch
