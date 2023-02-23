@@ -31,7 +31,7 @@ $ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/downloa
 Then, deploy the Operator from this repository:
 
 ```
-$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2"
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.0.0"
 # Verify the operator is running:
 $ kubectl get pods -n piraeus-datastore
 NAME                                                 READY   STATUS    RESTARTS   AGE
