@@ -5,7 +5,7 @@ It looks like the necessary CRDs for Piraeus Operator are still missing.
 
 To apply them via helm now use:
 
-  helm upgrade {{ .Release.Name }} ./charts/piraeus-operator --reuse-values --set installCRDs=true
+  helm upgrade {{ .Release.Name }} ./charts/piraeus --reuse-values --set installCRDs=true
 
 Alternatively, you can manage them manually:
 

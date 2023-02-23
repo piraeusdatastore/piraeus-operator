@@ -38,12 +38,16 @@ NAME                                                 READY   STATUS    RESTARTS 
 piraeus-operator-piraeus-operator-748c57bb8d-65cvw   2/2     Running   0          55s
 ```
 
-Now you can create a basic storage cluster by applying the [sample resources](./config/samples)
+Now you can create a basic storage cluster by applying the `LinstorCluster` resource.
 
 ```
-$ kubectl create -k config/samples
-linstorclusters.piraeus.io/linstorcluster created
-linstorsatelliteconfigurations.piraeus.io/all-satellites created
+$ kubectl apply -f - <<EOF
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec: {}
+EOF
 ```
 
 ## Configuration

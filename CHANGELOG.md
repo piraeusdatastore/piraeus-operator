@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Default deployment for HA Controller. Since we switch to defaulting to `suspend-io` for lost quorum, we should include a way for Pods to get unstuck.
-
-## [v2.0.0-rc.1] - 2023-02-22
-
 ### Breaking
 
 - Removed existing CRD `LinstorController`, `LinstorSatelliteSet` and `LinstorCSIDriver`.
@@ -27,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Customization of single nodes or groups of nodes.
 - Possibility to run DRBD replication using the container network.
 - Support for file system backed storage pools
+- Default deployment for HA Controller. Since we switch to defaulting to `suspend-io` for lost quorum, we should include a way for Pods to get unstuck.
 
 ## [v1.10.0] - 2022-10-18
 
@@ -665,5 +660,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v1.9.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.8.2...v1.9.0
 [v1.9.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.9.0...v1.9.1
 [v1.10.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.9.1...v1.10.0
-[v2.0.0-rc.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.10.0...v2.0.0-rc.1
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v1.10.0...HEAD
