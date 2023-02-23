@@ -46,7 +46,7 @@ done
 
 # replace chart version+appVersion
 $YQ ".version = \"$VERSION\"" -i charts/piraeus/Chart.yaml
-$YQ ".appVersion = \"$VERSION\"" -i charts/piraeus/Chart.yaml
+$YQ ".appVersion = \"v$VERSION\"" -i charts/piraeus/Chart.yaml
 
 # commit as current release + tag
 git commit -aevm "Release v$VERSION" --signoff
