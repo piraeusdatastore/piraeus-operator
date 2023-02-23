@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- HA Controller deployment requires additional rules to run on OpenShift.
+
 ## [v2.0.0] - 2023-02-23
 
 ### Breaking
