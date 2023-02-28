@@ -78,6 +78,8 @@ spec:
               mountPropagation: Bidirectional
             - name: device-dir
               mountPath: /dev
+            - name: run-mount
+              mountPath: /run/mount
         - name: csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1
           args:
@@ -138,3 +140,7 @@ spec:
           hostPath:
             path: /var/lib/kubelet/plugins/linstor.csi.linbit.com
             type: DirectoryOrCreate
+        - name: run-mount
+          hostPath:
+            path: /run/mount
+            type: Directory

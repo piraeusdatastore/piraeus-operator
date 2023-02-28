@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated LINSTOR CSI to 1.0.0, mounting the `/run/mount` directory from the host to enable the `_netdev` mount option.
+
 ### Fixed
 
 - HA Controller deployment requires additional rules to run on OpenShift.
