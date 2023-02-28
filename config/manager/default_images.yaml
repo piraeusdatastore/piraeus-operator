@@ -14,7 +14,7 @@ components:
     tag: v1.20.3
     image: piraeus-server
   linstor-csi:
-    tag: v0.22.1
+    tag: v1.0.0
     image: piraeus-csi
   drbd-reactor:
     tag: v1.0.0
