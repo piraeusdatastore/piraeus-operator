@@ -40,6 +40,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -137,10 +138,6 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	result := ctrl.Result{
 		RequeueAfter: 1 * time.Minute,
-	}
-
-	if !conds.AllHaveStatus(metav1.ConditionTrue) {
-		result.RequeueAfter = 10 * time.Second
 	}
 
 	return result, utils.AnyError(applyErr, stateErr, condErr)
@@ -740,12 +737,16 @@ func PodReady(pod *corev1.Pod) bool {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	kustomizer, err := resources.NewKustomizer(&cluster.Resources, krusty.MakeDefaultOptions())
 	if err != nil {
 		return err
 	}
 	r.Kustomizer = kustomizer
+
+	if opts.RateLimiter == nil {
+		opts.RateLimiter = DefaultRateLimiter()
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorCluster{}).
@@ -777,6 +778,7 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &piraeusiov1.LinstorSatelliteConfiguration{}}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{})),
 		).
+		WithOptions(opts).
 		Complete(r)
 }
 
