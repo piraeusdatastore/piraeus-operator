@@ -1,0 +1,28 @@
+---
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: satellite
+    spec:
+      volumes:
+      - name: lib-modules
+        $patch: delete
+      - name: usr-src
+        $patch: delete
+      initContainers:
+      - name: drbd-module-loader
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
+          $patch: delete
+        - name: usr-src
+          mountPath: /usr/src
+          $patch: delete
+        env:
+        - name: LB_HOW
+          value: shipped_modules

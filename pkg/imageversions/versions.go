@@ -21,8 +21,9 @@ type ComponentConfig struct {
 }
 
 type OsMatch struct {
-	OsImage string `yaml:"osImage"`
-	Image   string `yaml:"image"`
+	OsImage     string `yaml:"osImage"`
+	Image       string `yaml:"image"`
+	Precompiled bool   `yaml:"precompiled"`
 }
 
 type Component string
@@ -45,13 +46,18 @@ func (n *notConfigured) Error() string {
 
 var _ error = &notConfigured{}
 
-func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, error) {
+func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bool, error) {
 	result := make([]kusttypes.Image, 0, len(f.Components))
+
+	precompiled := false
+
 	for c := range f.Components {
-		name, tag, err := f.get(c, base, osImage)
+		name, tag, compiled, err := f.get(c, base, osImage)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
+
+		precompiled = precompiled || compiled
 
 		if name != "" {
 			result = append(result, kusttypes.Image{
@@ -62,28 +68,28 @@ func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, er
 		}
 	}
 
-	return result, nil
+	return result, precompiled, nil
 }
 
-func (f *Config) get(c Component, base string, osImage string) (string, string, error) {
+func (f *Config) get(c Component, base string, osImage string) (string, string, bool, error) {
 	if base == "" {
 		base = f.Base
 	}
 
 	img, ok := f.Components[c]
 	if !ok {
-		return "", "", &notConfigured{c: c}
+		return "", "", false, &notConfigured{c: c}
 	}
 
 	for _, matchRule := range img.Match {
 		if ok, _ := regexp.MatchString(matchRule.OsImage, osImage); ok {
-			return fmt.Sprintf("%s/%s", base, matchRule.Image), img.Tag, nil
+			return fmt.Sprintf("%s/%s", base, matchRule.Image), img.Tag, matchRule.Precompiled, nil
 		}
 	}
 
 	if img.Image == "" {
-		return "", "", nil
+		return "", "", false, nil
 	}
 
-	return fmt.Sprintf("%s/%s", base, img.Image), img.Tag, nil
+	return fmt.Sprintf("%s/%s", base, img.Image), img.Tag, false, nil
 }
