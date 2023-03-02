@@ -105,13 +105,3 @@ func (c Conditions) ToConditions(generation int64) []metav1.Condition {
 
 	return result
 }
-
-func (c Conditions) AllHaveStatus(status metav1.ConditionStatus) bool {
-	for _, cond := range c {
-		if cond.Status != status {
-			return false
-		}
-	}
-
-	return true
-}

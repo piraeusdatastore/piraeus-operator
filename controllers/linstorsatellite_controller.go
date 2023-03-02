@@ -30,13 +30,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -136,10 +136,6 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	result := ctrl.Result{
 		RequeueAfter: 1 * time.Minute,
-	}
-
-	if !conds.AllHaveStatus(metav1.ConditionTrue) {
-		result.RequeueAfter = 10 * time.Second
 	}
 
 	return result, utils.AnyError(applyErr, stateErr, deleteErr, condErr)
@@ -546,12 +542,16 @@ func (r *LinstorSatelliteReconciler) kustomLabels(instance string) []kusttypes.L
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	kustomizer, err := resources.NewKustomizer(&satellite.Resources, krusty.MakeDefaultOptions())
 	if err != nil {
 		return err
 	}
 	r.Kustomizer = kustomizer
+
+	if opts.RateLimiter == nil {
+		opts.RateLimiter = DefaultRateLimiter()
+	}
 
 	r.log = mgr.GetLogger().WithName("LinstorSatelliteReconciler")
 
@@ -566,6 +566,7 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: object.GetName()}}}
 			}),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+		WithOptions(opts).
 		Complete(r)
 }
 
