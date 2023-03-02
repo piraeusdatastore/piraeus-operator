@@ -68,6 +68,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "SatellitePrecompiledModulePatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controllers.SatellitePrecompiledModulePatch()
+			},
+		},
+		{
 			name: "SatelliteHostPathVolumeEnvPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controllers.SatelliteHostPathVolumeEnvPatch([]string{"/path1", "/path2"})

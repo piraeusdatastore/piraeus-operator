@@ -535,7 +535,7 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 
 // kustomize applies the common Kustomizations along with the given patches.
 func (r *LinstorClusterReconciler) kustomize(resources []string, lcluster *piraeusiov1.LinstorCluster, patches ...kusttypes.Patch) (resmap.ResMap, error) {
-	imgs, err := r.ImageVersions.GetVersions(lcluster.Spec.Repository, "")
+	imgs, _, err := r.ImageVersions.GetVersions(lcluster.Spec.Repository, "")
 	if err != nil {
 		return nil, err
 	}

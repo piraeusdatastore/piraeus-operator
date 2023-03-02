@@ -250,9 +250,19 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		patches = append(patches, p...)
 	}
 
-	imgs, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
+	imgs, precompiled, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 	if err != nil {
 		return nil, err
+	}
+
+	if precompiled {
+		// Module is precompiled, so we can skip bind-mounting and add the LB_HOW variable
+		p, err := SatellitePrecompiledModulePatch()
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
 	}
 
 	k := &kusttypes.Kustomization{

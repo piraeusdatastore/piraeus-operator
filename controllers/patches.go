@@ -146,6 +146,14 @@ func SatelliteCommonNodePatch(nodeName string) ([]kusttypes.Patch, error) {
 	)
 }
 
+func SatellitePrecompiledModulePatch() ([]kusttypes.Patch, error) {
+	return render(
+		satellite.Resources,
+		"patches/precompiled-module.yaml",
+		nil,
+	)
+}
+
 func SatelliteHostPathVolumePatch(volumeName, hostPath string) ([]kusttypes.Patch, error) {
 	return render(
 		satellite.Resources,

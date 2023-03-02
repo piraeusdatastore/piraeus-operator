@@ -24,18 +24,19 @@ func TestConfigs_GetVersions(t *testing.T) {
 				Image: "fallback",
 				Match: []imageversions.OsMatch{
 					{OsImage: "Ubuntu", Image: "ubuntu"},
-					{OsImage: "AlmaLinux [7-8]", Image: "old-alma"},
-					{OsImage: "AlmaLinux 9", Image: "new-alma"},
+					{OsImage: "AlmaLinux [7-8]", Image: "old-alma", Precompiled: true},
+					{OsImage: "AlmaLinux 9", Image: "new-alma", Precompiled: true},
 				},
 			},
 		},
 	}
 
 	testcases := []struct {
-		name     string
-		base     string
-		os       string
-		expected []kusttypes.Image
+		name              string
+		base              string
+		os                string
+		expected          []kusttypes.Image
+		expectPrecompiled bool
 	}{
 		{
 			name: "default-ubuntu",
@@ -53,6 +54,7 @@ func TestConfigs_GetVersions(t *testing.T) {
 				{Name: string(imageversions.LinstorSatellite), NewName: "quay.io/example/satellite", NewTag: "v1"},
 				{Name: string(imageversions.DrbdModuleLoader), NewName: "quay.io/example/new-alma", NewTag: "v2"},
 			},
+			expectPrecompiled: true,
 		},
 		{
 			name: "with-base-fallback",
@@ -70,8 +72,9 @@ func TestConfigs_GetVersions(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := base.GetVersions(tcase.base, tcase.os)
+			actual, precompiled, err := base.GetVersions(tcase.base, tcase.os)
 			assert.NoError(t, err)
+			assert.Equal(t, tcase.expectPrecompiled, precompiled)
 			assert.ElementsMatch(t, tcase.expected, actual)
 		})
 	}
