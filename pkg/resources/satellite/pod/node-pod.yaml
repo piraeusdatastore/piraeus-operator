@@ -23,8 +23,8 @@ spec:
           add:
             - SYS_MODULE
       volumeMounts:
-        - mountPath: /usr/lib/modules
-          name: usr-lib-modules
+        - mountPath: /lib/modules
+          name: lib-modules
           readOnly: true
         - mountPath: /usr/src
           name: usr-src
@@ -84,9 +84,9 @@ spec:
           name: reactor-config
           readOnly: true
   volumes:
-    - name: usr-lib-modules
+    - name: lib-modules
       hostPath:
-        path: /usr/lib/modules
+        path: /lib/modules
         type: Directory
     - name: usr-src
       hostPath:
