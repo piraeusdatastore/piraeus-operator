@@ -22,6 +22,9 @@ components:
   ha-controller:
     image: piraeus-ha-controller
     tag: v1.1.2
+  drbd-shutdown-guard:
+    image: drbd-shutdown-guard
+    tag: v1.0.0
   drbd-module-loader:
     tag: v9.2.2
     # The special "match" attribute is used to select an image based on the node's reported OS.
