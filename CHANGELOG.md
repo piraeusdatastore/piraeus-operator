@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `drbd-shutdown-guard` init-container, installing a systemd unit that runs on shutdown.
+  It's purpose is to run `drbdsetup secondary --force` during shutdown, so that systemd can unmount all volumes, even with `suspend-io`.
+
 ### Changed
 
 - Updated LINSTOR CSI to 1.0.0, mounting the `/run/mount` directory from the host to enable the `_netdev` mount option.
