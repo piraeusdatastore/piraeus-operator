@@ -10,16 +10,11 @@
       name: satellite
     spec:
       volumes:
-      - name: lib-modules
-        $patch: delete
       - name: usr-src
         $patch: delete
       initContainers:
       - name: drbd-module-loader
         volumeMounts:
-        - name: lib-modules
-          mountPath: /lib/modules
-          $patch: delete
         - name: usr-src
           mountPath: /usr/src
           $patch: delete
