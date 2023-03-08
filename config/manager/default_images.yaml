@@ -5,7 +5,7 @@
 base: quay.io/piraeusdatastore
 # "components" is a mapping of image placeholders to actual image names with tag.
 # For example, the image name "linstor-controller" in the kustomize-resources will be replaced by:
-#   quay.io/piraeusdatastore/piraeus-server:v1.20.2
+#   quay.io/piraeusdatastore/piraeus-server:v1.20.3
 components:
   linstor-controller:
     tag: v1.20.3
@@ -33,9 +33,9 @@ components:
     image: drbd9-jammy # Fallback image: chose a fairly recent kernel, which can hopefully compile whatever config is actually in use
     match:
       - osImage: CentOS Linux 7
-        name: drbd9-centos7
+        image: drbd9-centos7
       - osImage: CentOS Linux 8
-        name: drbd9-centos8
+        image: drbd9-centos8
       - osImage: AlmaLinux 8
         image: drbd9-almalinux8
       - osImage: Red Hat Enterprise Linux CoreOS
