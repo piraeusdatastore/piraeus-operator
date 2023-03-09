@@ -10,12 +10,12 @@ etcd:
   replicas: 1 # How many instances of etcd will be added to the initial cluster.
   resources: {} # resource requirements for etcd containers
   image:
-    repository: daocloud.io/piraeus/etcd
+    repository: gcr.m.daocloud.io/etcd-development/etcd
     tag: v3.4.15
 stork:
   enabled: false
-  storkImage: daocloud.io/piraeus/stork:2.8.2
-  schedulerImage: daocloud.io/piraeus/kube-scheduler
+  storkImage: docker.m.daocloud.io/openstorage/stork:2.8.2
+  schedulerImage: k8s-gcr.m.daocloud.io/kube-scheduler
   schedulerTag: ""
   replicas: 1
   storkResources: {} # resources requirements for the stork plugin containers
@@ -23,13 +23,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: daocloud.io/piraeus/piraeus-csi:v0.22.1
-  csiAttacherImage: daocloud.io/piraeus/csi-attacher:v4.1.0
-  csiLivenessProbeImage: daocloud.io/piraeus/livenessprobe:v2.9.0
-  csiNodeDriverRegistrarImage: daocloud.io/piraeus/csi-node-driver-registrar:v2.7.0
-  csiProvisionerImage: daocloud.io/piraeus/csi-provisioner:v3.4.0
-  csiSnapshotterImage: daocloud.io/piraeus/csi-snapshotter:v6.2.1
-  csiResizerImage: daocloud.io/piraeus/csi-resizer:v1.7.0
+  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v0.22.1
+  csiAttacherImage: k8s-gcr.m.daocloud.io/sig-storage/csi-attacher:v4.1.0
+  csiLivenessProbeImage: k8s-gcr.m.daocloud.io/sig-storage/livenessprobe:v2.9.0
+  csiNodeDriverRegistrarImage: k8s-gcr.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.7.0
+  csiProvisionerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-provisioner:v3.4.0
+  csiSnapshotterImage: k8s-gcr.m.daocloud.io/sig-storage/csi-snapshotter:v6.2.1
+  csiResizerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-resizer:v1.7.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
@@ -61,7 +61,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: daocloud.io/piraeus/piraeus-operator:latest
+  image: quay.m.daocloud.io/piraeusdatastore/piraeus-operator:latest
   affinity: {}
   tolerations: []
   resources: {}
@@ -75,7 +75,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: daocloud.io/piraeus/piraeus-server:v1.20.3
+    controllerImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.20.3
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -101,16 +101,16 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: daocloud.io/piraeus/piraeus-server:v1.20.3
+    satelliteImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.20.3
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: daocloud.io/piraeus/drbd-reactor:v1.0.0
+    monitoringImage: quay.m.daocloud.io/piraeusdatastore/drbd-reactor:v1.0.0
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: daocloud.io/piraeus/drbd9-bionic:v9.1.13
+    kernelModuleInjectionImage: quay.m.daocloud.io/piraeusdatastore/drbd9-centos7:v9.1.13
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
@@ -122,7 +122,7 @@ operator:
     customAnnotations: {}
 haController:
   enabled: false
-  image: daocloud.io/piraeus/piraeus-ha-controller:v0.3.0
+  image: quay.m.daocloud.io/piraeusdatastore/piraeus-ha-controller:v0.3.0
   affinity: {}
   tolerations: []
   resources: {}
