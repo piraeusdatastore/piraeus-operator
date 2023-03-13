@@ -44,7 +44,7 @@ helm-values:
       | sed 's/gcr.io/gcr.m.daocloud.io/' \
       | sed 's/ghcr.io/gcr.m.daocloud.io/' \
       | sed 's/bionic/centos7/' \
-      > ./charts/piraeus/values.cn.yaml  
+      > ./charts/piraeus/values.cn.yaml 
 
 release:
 	# check that VERSION is set
