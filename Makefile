@@ -36,13 +36,15 @@ crds:
 	mv ./config/crd/bases/* ./charts/piraeus/crds
 
 helm-values:
-	cp ./charts/piraeus/values.yaml ./charts/piraeus/values.cn.yaml
-	sed 's|gcr.io/etcd-development/etcd|daocloud.io/piraeus/etcd|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|docker.io/openstorage/stork|daocloud.io/piraeus/stork|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|registry.k8s.io/kube-scheduler|daocloud.io/piraeus/kube-scheduler|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|quay.io/piraeusdatastore|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|registry.k8s.io/sig-storage|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
-	sed 's|quay.io/k8scsi|daocloud.io/piraeus|' -i ./charts/piraeus/values.cn.yaml
+	cat ./charts/piraeus/values.yaml \
+      | sed 's/docker.io/docker.m.daocloud.io/' \
+      | sed 's/quay.io/quay.m.daocloud.io/' \
+      | sed 's/registry.k8s.io/k8s-gcr.m.daocloud.io/' \
+      | sed 's/k8s.gcr.io/k8s-gcr.m.daocloud.io/' \
+      | sed 's/gcr.io/gcr.m.daocloud.io/' \
+      | sed 's/ghcr.io/gcr.m.daocloud.io/' \
+      | sed 's/bionic/centos7/' \
+      > ./charts/piraeus/values.cn.yaml  
 
 release:
 	# check that VERSION is set
