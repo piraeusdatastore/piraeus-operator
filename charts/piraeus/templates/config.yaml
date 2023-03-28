@@ -54,3 +54,7 @@ data:
             image: drbd9-focal
           - osImage: Ubuntu 22\.04
             image: drbd9-jammy
+          - osImage: Debian GNU/Linux 11 (bullseye)
+            image: drbd9-bullseye
+          - osImage: Debian GNU/Linux 10 (buster)
+            image: drbd9-buster
