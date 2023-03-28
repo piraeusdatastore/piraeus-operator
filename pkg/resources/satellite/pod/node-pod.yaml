@@ -29,6 +29,9 @@ spec:
         - mountPath: /usr/src
           name: usr-src
           readOnly: true
+        - mountPath: /usr/lib
+          name: usr-lib
+          readOnly: true
     - name: drbd-shutdown-guard
       image: drbd-shutdown-guard
       securityContext:
@@ -103,6 +106,10 @@ spec:
     - name: usr-src
       hostPath:
         path: /usr/src
+        type: Directory
+    - name: usr-lib
+      hostPath:
+        path: /usr/lib
         type: Directory
     - name: dev
       hostPath:
