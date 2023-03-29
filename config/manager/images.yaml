@@ -5,28 +5,28 @@
 base: quay.io/piraeusdatastore
 # "components" is a mapping of image placeholders to actual image names with tag.
 # For example, the image name "linstor-controller" in the kustomize-resources will be replaced by:
-#   quay.io/piraeusdatastore/piraeus-server:v1.20.3
+#   quay.io/piraeusdatastore/piraeus-server:v1.22.0
 components:
   linstor-controller:
-    tag: v1.20.3
+    tag: v1.22.0
     image: piraeus-server
   linstor-satellite:
-    tag: v1.20.3
+    tag: v1.22.0
     image: piraeus-server
   linstor-csi:
     tag: v1.0.0
     image: piraeus-csi
   drbd-reactor:
-    tag: v1.0.0
+    tag: v1.1.0
     image: drbd-reactor
   ha-controller:
+    tag: v1.1.3
     image: piraeus-ha-controller
-    tag: v1.1.2
   drbd-shutdown-guard:
-    image: drbd-shutdown-guard
     tag: v1.0.0
+    image: drbd-shutdown-guard
   drbd-module-loader:
-    tag: v9.2.2
+    tag: v9.2.3
     # The special "match" attribute is used to select an image based on the node's reported OS.
     # The operator will first check the k8s node's ".status.nodeInfo.osImage" field, and compare it against the list
     # here. If one matches, that specific image name will be used instead of the fallback image.

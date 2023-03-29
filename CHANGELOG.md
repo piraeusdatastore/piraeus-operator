@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fix an issue where the CSI node driver would use the CSI socket not through the expected path in the container.
+- Updated images:
+  * LINSTOR 1.22.0
+  * DRBD 9.2.3
+  * DRBD Reactor 1.1.0
+  * HA Controller 1.1.3
 
 ## [v2.0.1] - 2023-03-08
 
