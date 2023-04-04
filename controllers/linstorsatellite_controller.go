@@ -280,6 +280,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		r.Namespace,
 		lsatellite.Spec.ClusterRef.Name,
 		lsatellite.Spec.ClusterRef.ClientSecretName,
+		lsatellite.Spec.ClusterRef.ExternalController,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)
 	if err != nil || lc == nil {
@@ -480,6 +481,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		r.Namespace,
 		lsatellite.Spec.ClusterRef.Name,
 		lsatellite.Spec.ClusterRef.ClientSecretName,
+		lsatellite.Spec.ClusterRef.ExternalController,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)
 	if err != nil {

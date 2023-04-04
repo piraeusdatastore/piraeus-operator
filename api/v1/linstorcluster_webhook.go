@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"net/url"
 	"strconv"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -72,11 +73,25 @@ func (r *LinstorCluster) ValidateDelete() error {
 }
 
 func (r *LinstorCluster) validate(old *LinstorCluster) field.ErrorList {
-	errs := ValidateNodeSelector(r.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))
+	errs := ValidateExternalController(r.Spec.ExternalController, field.NewPath("spec", "externalController"))
+	errs = append(errs, ValidateNodeSelector(r.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))...)
 	errs = append(errs, ValidateControllerProperties(r.Spec.Properties, field.NewPath("spec", "properties"))...)
 	for i := range r.Spec.Patches {
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
 	}
 
 	return errs
+}
+
+func ValidateExternalController(ref *LinstorExternalControllerRef, path *field.Path) field.ErrorList {
+	var result field.ErrorList
+
+	if ref != nil {
+		_, err := url.Parse(ref.URL)
+		if err != nil {
+			result = append(result, field.Invalid(path.Child("url"), ref.URL, err.Error()))
+		}
+	}
+
+	return result
 }

@@ -104,4 +104,18 @@ var _ = Describe("LinstorCluster webhook", func() {
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
 	})
+
+	It("should reject invalid external URLs", func(ctx context.Context) {
+		clusterConfig := &piraeusv1.LinstorCluster{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "invalid-labels"},
+			Spec: piraeusv1.LinstorClusterSpec{
+				ExternalController: &piraeusv1.LinstorExternalControllerRef{
+					URL: ":::///&&aabb",
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, clusterConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).To(HaveOccurred())
+	})
 })

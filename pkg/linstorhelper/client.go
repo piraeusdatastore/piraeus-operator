@@ -13,6 +13,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 )
 
 // Client is a LINSTOR client with convenience functions.
@@ -21,23 +23,41 @@ type Client struct {
 }
 
 // NewClientForCluster returns a LINSTOR client for a LINSTOR Controller managed by the operator.
-func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clusterName, clientSecretName string, options ...lapi.Option) (*Client, error) {
-	services := corev1.ServiceList{}
-	err := cl.List(ctx, &services, client.InNamespace(namespace), client.MatchingLabels{
-		"app.kubernetes.io/instance":  clusterName,
-		"app.kubernetes.io/component": "linstor-controller",
-	})
-	if err != nil {
-		return nil, err
+func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clusterName, clientSecretName string, externalCluster *piraeusv1.LinstorExternalControllerRef, options ...lapi.Option) (*Client, error) {
+	var clientUrl *url.URL
+	if externalCluster != nil {
+		u, err := url.Parse(externalCluster.URL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse external controller URL: %w", err)
+		}
+
+		clientUrl = u
+	} else {
+		services := corev1.ServiceList{}
+		err := cl.List(ctx, &services, client.InNamespace(namespace), client.MatchingLabels{
+			"app.kubernetes.io/instance":  clusterName,
+			"app.kubernetes.io/component": "linstor-controller",
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(services.Items) != 1 {
+			return nil, nil
+		}
+
+		s := services.Items[0]
+
+		scheme, port, ok := extractSchemeAndPort(&s)
+		if !ok {
+			return nil, nil
+		}
+
+		clientUrl = &url.URL{
+			Scheme: scheme,
+			Host:   fmt.Sprintf("%s.%s.svc:%d", s.Name, s.Namespace, port),
+		}
 	}
-
-	if len(services.Items) != 1 {
-		return nil, nil
-	}
-
-	s := services.Items[0]
-
-	scheme, port := extractSchemeAndPort(&s)
 
 	if clientSecretName != "" {
 		var secret corev1.Secret
@@ -58,31 +78,37 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 		}))
 	}
 
-	options = append(options, lapi.BaseURL(&url.URL{
-		Scheme: scheme,
-		Host:   fmt.Sprintf("%s.%s.svc:%d", s.Name, s.Namespace, port),
-	}))
+	options = append(options, lapi.BaseURL(clientUrl))
 
 	c, err := lapi.NewClient(options...)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Client{*c}, nil
 }
 
-func extractSchemeAndPort(svc *corev1.Service) (string, int32) {
-	port := int32(3370)
+// extractSchemeAndPort returns the preferred connection scheme and port from the service.
+// It prefers HTTPS connections when it finds a "secure-api" port and falls back to the "api" service otherwise.
+// If no suitable port was found, the last argument will return false.
+func extractSchemeAndPort(svc *corev1.Service) (string, int32, bool) {
+	var port int32
+	var scheme string
+	found := false
+
 	for _, p := range svc.Spec.Ports {
 		if p.Name == "secure-api" {
-			return "https", p.Port
+			return "https", p.Port, true
 		}
 
 		if p.Name == "api" {
 			port = p.Port
+			scheme = "http"
+			found = true
 		}
 	}
 
-	return "http", port
+	return scheme, port, found
 }
 
 func secretToTlsConfig(secret *corev1.Secret) (*tls.Config, error) {

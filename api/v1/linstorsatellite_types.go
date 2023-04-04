@@ -72,6 +72,11 @@ type ClusterReference struct {
 
 	// ClientSecretName references the secret used by the operator to validate the https endpoint.
 	ClientSecretName string `json:"clientSecretName,omitempty"`
+
+	// ExternalController references an external controller.
+	// When set, the Operator uses the external cluster to register satellites.
+	// +kubebuilder:validation:Optional
+	ExternalController *LinstorExternalControllerRef `json:"externalController,omitempty"`
 }
 
 // LinstorSatellite is the Schema for the linstorsatellites API

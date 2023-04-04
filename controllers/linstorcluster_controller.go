@@ -292,6 +292,10 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 // * pull secret (if any)
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
+	if lcluster.Spec.ExternalController != nil {
+		return resmap.New(), nil
+	}
+
 	var patches []kusttypes.Patch
 	resourceDirs := []string{"controller"}
 
@@ -382,6 +386,13 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 	if err != nil {
 		return nil, err
 	}
+
+	endpointPatches, err := ClusterApiEndpointPatch(LinstorControllerUrl(lcluster))
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, endpointPatches...)
 
 	if lcluster.Spec.ApiTLS != nil {
 		controllerSecret := lcluster.Spec.ApiTLS.GetCsiControllerSecretName()
@@ -478,8 +489,9 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 		Op:   utils.Replace,
 		Path: "/spec/clusterRef",
 		Value: &piraeusiov1.ClusterReference{
-			Name:             lcluster.Name,
-			ClientSecretName: clientSecret,
+			Name:               lcluster.Name,
+			ClientSecretName:   clientSecret,
+			ExternalController: lcluster.Spec.ExternalController,
 		},
 	}
 
@@ -589,6 +601,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		r.Namespace,
 		lcluster.Name,
 		clientSecret,
+		lcluster.Spec.ExternalController,
 		linstorhelper.Logr(log.FromContext(ctx)),
 	)
 	if err != nil || lc == nil {
@@ -606,7 +619,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		return err
 	}
 
-	conds.AddSuccess(conditions.Available, fmt.Sprintf("Deployed Controller %s (API: %s, Git: %s)", version.Version, version.RestApiVersion, version.GitHash))
+	conds.AddSuccess(conditions.Available, fmt.Sprintf("Controller %s (API: %s, Git: %s) reachable at '%s'", version.Version, version.RestApiVersion, version.GitHash, lc.BaseURL()))
 
 	current, err := lc.Controller.GetProps(ctx)
 	if err != nil {
@@ -734,6 +747,18 @@ func PodReady(pod *corev1.Pod) bool {
 	}
 
 	return false
+}
+
+func LinstorControllerUrl(cluster *piraeusiov1.LinstorCluster) string {
+	if cluster.Spec.ExternalController != nil {
+		return cluster.Spec.ExternalController.URL
+	}
+
+	if cluster.Spec.ApiTLS != nil {
+		return "https://linstor-controller:3371"
+	}
+
+	return "http://linstor-controller:3370"
 }
 
 // SetupWithManager sets up the controller with the Manager.

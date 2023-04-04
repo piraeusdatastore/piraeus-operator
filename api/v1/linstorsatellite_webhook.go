@@ -77,7 +77,8 @@ func (r *LinstorSatellite) validate(old *LinstorSatellite) field.ErrorList {
 		oldSPs = old.Spec.StoragePools
 	}
 
-	errs := ValidateStoragePools(r.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))
+	errs := ValidateExternalController(r.Spec.ClusterRef.ExternalController, field.NewPath("spec", "clusterRef", "externalController"))
+	errs = append(errs, ValidateStoragePools(r.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))...)
 	errs = append(errs, ValidateNodeProperties(r.Spec.Properties, field.NewPath("spec", "properties"))...)
 	for i := range r.Spec.Patches {
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
