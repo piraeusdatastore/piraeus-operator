@@ -85,6 +85,15 @@ func ClusterApiTLSCertManagerPatch(secretName string, issuer *cmmetav1.ObjectRef
 		})
 }
 
+func ClusterApiEndpointPatch(url string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-endpoint.yaml",
+		map[string]any{
+			"LINSTOR_CONTROLLER_URL": url,
+		})
+}
+
 func ClusterCSIApiTLSPatch(controllerSecret, nodeSecret string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,

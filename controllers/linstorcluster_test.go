@@ -266,6 +266,45 @@ var _ = Describe("LinstorCluster controller", func() {
 		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 	})
 
+	It("should not deploy a controller when using external controller ref", func(ctx context.Context) {
+		DeferCleanup(func(ctx context.Context) {
+			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorCluster{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		err := k8sClient.Create(ctx, &piraeusiov1.LinstorCluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "default"},
+			Spec: piraeusiov1.LinstorClusterSpec{
+				ExternalController: &piraeusiov1.LinstorExternalControllerRef{
+					URL: "http://linstor-controller.invalid:3370",
+				},
+			},
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(func(g Gomega) {
+			var csiControllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-controller", Namespace: Namespace}, &csiControllerDeployment)
+			g.Expect(err).NotTo(HaveOccurred())
+			container := GetContainer(csiControllerDeployment.Spec.Template.Spec.Containers, "linstor-csi")
+			g.Expect(container).NotTo(BeNil())
+			g.Expect(container.Env[0]).To(Equal(corev1.EnvVar{Name: "LS_CONTROLLERS", Value: "http://linstor-controller.invalid:3370"}))
+		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+		Eventually(func(g Gomega) {
+			var csiDaemonSet appsv1.DaemonSet
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-node", Namespace: Namespace}, &csiDaemonSet)
+			g.Expect(err).NotTo(HaveOccurred())
+			container := GetContainer(csiDaemonSet.Spec.Template.Spec.Containers, "linstor-csi")
+			g.Expect(container).NotTo(BeNil())
+			g.Expect(container.Env[0]).To(Equal(corev1.EnvVar{Name: "LS_CONTROLLERS", Value: "http://linstor-controller.invalid:3370"}))
+		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+		var controllerDeployment appsv1.Deployment
+		err = k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
+		Expect(err).NotTo(BeNil())
+	})
+
 	It("should add TLS secrets to the LINSTOR Components, configuring HTTPS access", func(ctx context.Context) {
 		DeferCleanup(func(ctx context.Context) {
 			err := k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorCluster{})

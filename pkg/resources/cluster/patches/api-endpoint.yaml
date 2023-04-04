@@ -1,0 +1,46 @@
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: linstor-csi-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-csi-controller
+    spec:
+      template:
+        spec:
+          initContainers:
+          - name: linstor-wait-api-online
+            env:
+              - name: LS_CONTROLLERS
+                value: $LINSTOR_CONTROLLER_URL
+          containers:
+          - name: linstor-csi
+            env:
+              - name: LS_CONTROLLERS
+                value: $LINSTOR_CONTROLLER_URL
+- target:
+    group: apps
+    version: v1
+    kind: DaemonSet
+    name: linstor-csi-node
+  patch: |
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: linstor-csi-node
+    spec:
+      template:
+        spec:
+          initContainers:
+          - name:  linstor-wait-node-online
+            env:
+              - name: LS_CONTROLLERS
+                value: $LINSTOR_CONTROLLER_URL
+          containers:
+          - name: linstor-csi
+            env:
+              - name: LS_CONTROLLERS
+                value: $LINSTOR_CONTROLLER_URL

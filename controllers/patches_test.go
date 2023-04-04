@@ -94,6 +94,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ClusterApiEndpointPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controllers.ClusterApiEndpointPatch("https://example.com:8888")
+			},
+		},
+		{
 			name: "ClusterCSIApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controllers.ClusterCSIApiTLSPatch("controller", "node")

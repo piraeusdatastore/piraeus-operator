@@ -78,6 +78,18 @@ spec:
                       state. Defaults to "linstor-csi-node-tls".
                     type: string
                 type: object
+              externalController:
+                description: ExternalController references an external controller.
+                  When set, the Operator will skip deploying a LINSTOR Controller
+                  and instead use the external cluster to register satellites.
+                properties:
+                  url:
+                    description: URL of the external controller.
+                    minLength: 3
+                    type: string
+                required:
+                - url
+                type: object
               internalTLS:
                 description: "InternalTLS secures the connection between LINSTOR Controller
                   and Satellite. \n This configures the client certificate used when

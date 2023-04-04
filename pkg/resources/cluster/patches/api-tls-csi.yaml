@@ -14,8 +14,6 @@
           initContainers:
           - name: linstor-wait-api-online
             env:
-              - name: LS_CONTROLLERS
-                value: https://linstor-controller:3371
               - name: LS_ROOT_CA
                 valueFrom:
                   secretKeyRef:
@@ -34,8 +32,6 @@
           containers:
           - name: linstor-csi
             env:
-              - name: LS_CONTROLLERS
-                value: https://linstor-controller:3371
               - name: LS_ROOT_CA
                 valueFrom:
                   secretKeyRef:
@@ -67,8 +63,6 @@
           initContainers:
           - name:  linstor-wait-node-online
             env:
-              - name: LS_CONTROLLERS
-                value: https://linstor-controller:3371
               - name: LS_ROOT_CA
                 valueFrom:
                   secretKeyRef:
@@ -87,8 +81,6 @@
           containers:
           - name: linstor-csi
             env:
-              - name: LS_CONTROLLERS
-                value: https://linstor-controller:3371
               - name: LS_ROOT_CA
                 valueFrom:
                   secretKeyRef:

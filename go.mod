@@ -3,10 +3,11 @@ module github.com/piraeusdatastore/piraeus-operator/v2
 go 1.19
 
 require (
-	github.com/LINBIT/golinstor v0.46.1
+	github.com/LINBIT/golinstor v0.47.0
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.3
+	github.com/google/go-cmp v0.5.9
 	github.com/onsi/ginkgo/v2 v2.8.3
 	github.com/onsi/gomega v1.27.1
 	github.com/stretchr/testify v1.8.1
@@ -39,7 +40,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect

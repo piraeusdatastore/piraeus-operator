@@ -43,6 +43,18 @@ spec:
                     description: ClientSecretName references the secret used by the
                       operator to validate the https endpoint.
                     type: string
+                  externalController:
+                    description: ExternalController references an external controller.
+                      When set, the Operator uses the external cluster to register
+                      satellites.
+                    properties:
+                      url:
+                        description: URL of the external controller.
+                        minLength: 3
+                        type: string
+                    required:
+                    - url
+                    type: object
                   name:
                     description: Name of the LinstorCluster resource controlling this
                       satellite.

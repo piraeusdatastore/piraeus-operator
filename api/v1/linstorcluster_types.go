@@ -27,6 +27,12 @@ type LinstorClusterSpec struct {
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
 
+	// ExternalController references an external controller.
+	// When set, the Operator will skip deploying a LINSTOR Controller and instead use the external cluster
+	// to register satellites.
+	// +kubebuilder:validation:Optional
+	ExternalController *LinstorExternalControllerRef `json:"externalController,omitempty"`
+
 	// NodeSelector selects the nodes on which LINSTOR Satellites will be deployed.
 	// See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +kubebuilder:validation:Optional
@@ -74,6 +80,12 @@ type LinstorClusterSpec struct {
 	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
 	// +nullable
 	ApiTLS *LinstorClusterApiTLS `json:"apiTLS,omitempty"`
+}
+
+type LinstorExternalControllerRef struct {
+	// URL of the external controller.
+	//+kubebuilder:validation:MinLength=3
+	URL string `json:"url"`
 }
 
 type LinstorClusterApiTLS struct {
