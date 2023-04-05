@@ -20,14 +20,19 @@ This can be achieved by updating the machine config:
 machine:
   install:
     extensions:
-      - image: ghcr.io/siderolabs/drbd:9.2.0-v1.3.5
+      - image: ghcr.io/siderolabs/drbd:9.2.0-v1.3.6
+  kernel:
+    modules:
+      - name: drbd
+      - name: drbd_transport_tcp
 ```
-**NOTE**: Replace `v1.3.5` with the Talos version running.
+**NOTE**: Replace `v1.3.6` with the Talos version running.
 
 Validate `drbd` module is loaded:
 ```shell
 $ talosctl -n <NODE_IP> read /proc/modules
-drbd 643072 - - Live 0xffffffffc0010000 (O)
+drbd_transport_tcp 28672 - - Live 0xffffffffc046c000 (O)
+drbd 643072 - - Live 0xffffffffc03b9000 (O)
 ```
 
 ## Configure the DRBD Module Loader
