@@ -24,6 +24,8 @@ machine:
   kernel:
     modules:
       - name: drbd
+        parameters:
+          - usermode_helper=disabled
       - name: drbd_transport_tcp
 ```
 **NOTE**: Replace `v1.3.6` with the Talos version running.
@@ -33,6 +35,12 @@ Validate `drbd` module is loaded:
 $ talosctl -n <NODE_IP> read /proc/modules
 drbd_transport_tcp 28672 - - Live 0xffffffffc046c000 (O)
 drbd 643072 - - Live 0xffffffffc03b9000 (O)
+```
+
+Validate `drbd` module parameter `usermode_helper` is set to `disabled`:
+```shell
+$ talosctl -n <NODE_IP> read /sys/module/drbd/parameters/usermode_helper
+disabled
 ```
 
 ## Configure the DRBD Module Loader
