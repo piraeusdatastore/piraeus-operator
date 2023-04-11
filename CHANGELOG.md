@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ability to skip deploying the LINSTOR Controller by setting `LinstorCluster.spec.externalController`.
 
+### Changed
+
+- Fix an issue where the CSI node driver would use the CSI socket not through the expected path in the container.
+
 ## [v2.0.1] - 2023-03-08
 
 ### Added

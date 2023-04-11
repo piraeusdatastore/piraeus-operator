@@ -13,6 +13,7 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
 * [How to Load DRBD on OpenShift](./openshift.md)
 * [How to Load DRBD on Talos Linux](./talos.md)
+* [How to Configure Piraeus Datastore on MicroK8s](./microk8s.md)
 
 ## Configuration
 
