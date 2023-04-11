@@ -38,7 +38,7 @@ spec:
         - name: linstor-csi
           image: linstor-csi
           args:
-            - --csi-endpoint=unix://$(CSI_ENDPOINT)
+            - --csi-endpoint=unix:///csi/csi.sock
             - --node=$(KUBE_NODE_NAME)
             - --property-namespace=Aux/topology
             - --label-by-storage-pool=false
@@ -51,8 +51,6 @@ spec:
               add:
                 - SYS_ADMIN
           env:
-            - name: CSI_ENDPOINT
-              value: /var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
