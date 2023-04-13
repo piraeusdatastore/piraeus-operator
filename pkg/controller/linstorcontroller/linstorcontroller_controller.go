@@ -361,6 +361,10 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 	log.V(DEBUG).Info("register controller pods in LINSTOR")
 
 	for _, pod := range ourPods.Items {
+		if pod.Status.Phase != corev1.PodRunning || pod.Status.PodIP == "" {
+			continue
+		}
+
 		log.V(DEBUG).Info("register controller pod", "pod", pod.Name)
 		_, err := linstorClient.GetNodeOrCreate(ctx, lapi.Node{
 			Name: pod.Name,

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Skip registration of non-running Controller Pods.
+
 ## [v1.10.3] - 2023-04-24
 
 ### Changed
