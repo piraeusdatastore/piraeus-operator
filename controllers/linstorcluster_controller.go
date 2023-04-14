@@ -67,11 +67,11 @@ import (
 // LinstorClusterReconciler reconciles a LinstorCluster object
 type LinstorClusterReconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	Namespace     string
-	PullSecret    string
-	ImageVersions *imageversions.Config
-	Kustomizer    *resources.Kustomizer
+	Scheme             *runtime.Scheme
+	Namespace          string
+	PullSecret         string
+	ImageConfigMapName string
+	Kustomizer         *resources.Kustomizer
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorclusters,verbs=get;list;watch;create;update;patch;delete
@@ -156,7 +156,7 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 		return err
 	}
 
-	resMap, err := r.kustomizeResources(lcluster, satelliteNodes.Items, satelliteConfigs.Items)
+	resMap, err := r.kustomizeResources(ctx, lcluster, satelliteNodes.Items, satelliteConfigs.Items)
 	if err != nil {
 		return err
 	}
@@ -221,23 +221,33 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 	return nil
 }
 
-func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.LinstorCluster, satelliteNodes []corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration) (resmap.ResMap, error) {
-	ctrlRes, err := r.kustomizeControllerResources(lcluster)
+func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, satelliteNodes []corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration) (resmap.ResMap, error) {
+	cfg, err := imageversions.FromConfigMap(ctx, r.Client, types.NamespacedName{Name: r.ImageConfigMapName, Namespace: r.Namespace})
 	if err != nil {
 		return nil, err
 	}
 
-	csiRes, err := r.kustomizeCsiResources(lcluster)
+	imgs, _, err := cfg.GetVersions(lcluster.Spec.Repository, "")
 	if err != nil {
 		return nil, err
 	}
 
-	haControllerRes, err := r.kustomizeHAControllerResources(lcluster)
+	ctrlRes, err := r.kustomizeControllerResources(lcluster, imgs)
 	if err != nil {
 		return nil, err
 	}
 
-	commonNodeRes, err := r.kustomizeNodeCommonResources(lcluster)
+	csiRes, err := r.kustomizeCsiResources(lcluster, imgs)
+	if err != nil {
+		return nil, err
+	}
+
+	haControllerRes, err := r.kustomizeHAControllerResources(lcluster, imgs)
+	if err != nil {
+		return nil, err
+	}
+
+	commonNodeRes, err := r.kustomizeNodeCommonResources(lcluster, imgs)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +259,7 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 	})
 
 	for i := range satelliteNodes {
-		satRes, err := r.kustomizeLinstorSatellite(lcluster, &satelliteNodes[i], configs)
+		satRes, err := r.kustomizeLinstorSatellite(lcluster, &satelliteNodes[i], configs, imgs)
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +301,7 @@ func (r *LinstorClusterReconciler) kustomizeResources(lcluster *piraeusiov1.Lins
 // * default images
 // * pull secret (if any)
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	if lcluster.Spec.ExternalController != nil {
 		return resmap.New(), nil
 	}
@@ -367,7 +377,7 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		}
 	}
 
-	return r.kustomize(resourceDirs, lcluster, patches...)
+	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
 // Create the CSI controller and node agent resources.
@@ -379,7 +389,7 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 // * pull secret (if any)
 // * restrict CSI driver daemon set to cluster's node selector
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	resourceDirs := []string{"csi"}
 
 	patches, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
@@ -423,7 +433,7 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 		}
 	}
 
-	return r.kustomize(resourceDirs, lcluster, patches...)
+	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
 // Create the HA Controller resources.
@@ -435,13 +445,13 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 // * pull secret (if any)
 // * restrict daemon set to cluster's node selector
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	patches, err := ClusterHAControllerNodeSelectorPatch(lcluster.Spec.NodeSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.kustomize([]string{"ha-controller"}, lcluster, patches...)
+	return r.kustomize([]string{"ha-controller"}, lcluster, imgs, patches...)
 }
 
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.
@@ -456,8 +466,8 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 // * default images
 // * pull secret (if any)
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeusiov1.LinstorCluster) (resmap.ResMap, error) {
-	return r.kustomize([]string{"satellite-common"}, lcluster)
+func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	return r.kustomize([]string{"satellite-common"}, lcluster, imgs)
 }
 
 // Create the LINSTOR Satellite resources for a specific node.
@@ -468,7 +478,7 @@ func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeu
 // * Set the cluster reference to the owning LinstorCluster
 // * Apply the result of merging all LinstorSatelliteConfigurations to the LinstorSatellite
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusiov1.LinstorCluster, node *corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusiov1.LinstorCluster, node *corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	renamePatch := utils.JsonPatch{
 		Op:    utils.Replace,
 		Path:  "/metadata/name",
@@ -539,16 +549,11 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 		return nil, err
 	}
 
-	return r.kustomize([]string{"satellite"}, lcluster, *patch)
+	return r.kustomize([]string{"satellite"}, lcluster, imgs, *patch)
 }
 
 // kustomize applies the common Kustomizations along with the given patches.
-func (r *LinstorClusterReconciler) kustomize(resources []string, lcluster *piraeusiov1.LinstorCluster, patches ...kusttypes.Patch) (resmap.ResMap, error) {
-	imgs, _, err := r.ImageVersions.GetVersions(lcluster.Spec.Repository, "")
-	if err != nil {
-		return nil, err
-	}
-
+func (r *LinstorClusterReconciler) kustomize(resources []string, lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image, patches ...kusttypes.Patch) (resmap.ResMap, error) {
 	saPatch, err := r.pullSecretPatch()
 	if err != nil {
 		return nil, err
@@ -802,6 +807,13 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		Watches(
 			&source.Kind{Type: &piraeusiov1.LinstorSatelliteConfiguration{}}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{})),
+		).
+		Watches(
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
+				return object.GetName() == r.ImageConfigMapName && object.GetNamespace() == r.Namespace
+			})),
 		).
 		WithOptions(opts).
 		Complete(r)

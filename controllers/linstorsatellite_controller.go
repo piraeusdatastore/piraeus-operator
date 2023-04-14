@@ -62,11 +62,11 @@ import (
 // LinstorSatelliteReconciler reconciles a LinstorSatellite object
 type LinstorSatelliteReconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	Namespace     string
-	ImageVersions *imageversions.Config
-	Kustomizer    *resources.Kustomizer
-	log           logr.Logger
+	Scheme             *runtime.Scheme
+	Namespace          string
+	ImageConfigMapName string
+	Kustomizer         *resources.Kustomizer
+	log                logr.Logger
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites,verbs=get;list;watch;create;update;patch;delete
@@ -142,7 +142,7 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 }
 
 func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
-	resMap, err := r.kustomizeNodeResources(lsatellite, node)
+	resMap, err := r.kustomizeNodeResources(ctx, lsatellite, node)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 	return nil
 }
 
-func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) (resmap.ResMap, error) {
+func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) (resmap.ResMap, error) {
 	resourceDirs := []string{"pod"}
 
 	patches, err := SatelliteCommonNodePatch(lsatellite.Name)
@@ -246,7 +246,12 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(lsatellite *piraeusi
 		patches = append(patches, p...)
 	}
 
-	imgs, precompiled, err := r.ImageVersions.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
+	cfg, err := imageversions.FromConfigMap(ctx, r.Client, types.NamespacedName{Name: r.ImageConfigMapName, Namespace: r.Namespace})
+	if err != nil {
+		return nil, err
+	}
+
+	imgs, precompiled, err := cfg.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 	if err != nil {
 		return nil, err
 	}
@@ -568,8 +573,29 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: object.GetName()}}}
 			}),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+		Watches(
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			handler.EnqueueRequestsFromMapFunc(r.allSatelliteRequests),
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
+				return object.GetName() == r.ImageConfigMapName && object.GetNamespace() == r.Namespace
+			})),
+		).
 		WithOptions(opts).
 		Complete(r)
+}
+
+func (r *LinstorSatelliteReconciler) allSatelliteRequests(_ client.Object) []reconcile.Request {
+	satellites := piraeusiov1.LinstorSatelliteList{}
+	_ = r.Client.List(context.Background(), &satellites)
+	requests := make([]reconcile.Request, 0, len(satellites.Items))
+
+	for i := range satellites.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{Name: satellites.Items[i].Name},
+		})
+	}
+
+	return requests
 }
 
 // SatelliteNameReplacements are the kustomize replacements for renaming resources for a single satellite.

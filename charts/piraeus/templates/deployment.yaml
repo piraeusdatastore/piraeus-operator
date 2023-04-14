@@ -31,6 +31,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: IMAGE_CONFIG_MAP_NAME
+          value: {{ include "piraeus-operator.fullname" . }}-image-config
         image: {{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag | default .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
         livenessProbe:

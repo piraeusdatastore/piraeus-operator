@@ -20,23 +20,20 @@ import (
 	"flag"
 	"os"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/yaml"
-
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
-	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
 )
@@ -60,7 +57,7 @@ func main() {
 	var probeAddr string
 	var namespace string
 	var pullSecret string
-	var imageConfig string
+	var imageConfigMapName string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -68,7 +65,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&namespace, "namespace", os.Getenv("NAMESPACE"), "The namespace to create resources in.")
 	flag.StringVar(&pullSecret, "pull-secret", os.Getenv("PULL_SECRET"), "The pull secret to use for all containers")
-	flag.StringVar(&imageConfig, "image-config", "/etc/operator/default_images.yaml", "The default images to use")
+	flag.StringVar(&imageConfigMapName, "image-config-map-name", os.Getenv("IMAGE_CONFIG_MAP_NAME"), "Config map holding default images to use")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -83,19 +80,6 @@ func main() {
 			os.Exit(1)
 		}
 		namespace = string(raw)
-	}
-
-	rawDefaults, err := os.ReadFile(imageConfig)
-	if err != nil {
-		setupLog.Error(err, "unable to load default images")
-		os.Exit(1)
-	}
-
-	var imageDefaults imageversions.Config
-	err = yaml.Unmarshal(rawDefaults, &imageDefaults)
-	if err != nil {
-		setupLog.Error(err, "unable to load default images")
-		os.Exit(1)
 	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
@@ -115,20 +99,20 @@ func main() {
 	}
 
 	if err = (&controllers.LinstorClusterReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		Namespace:     namespace,
-		ImageVersions: &imageDefaults,
-		PullSecret:    pullSecret,
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		Namespace:          namespace,
+		ImageConfigMapName: imageConfigMapName,
+		PullSecret:         pullSecret,
 	}).SetupWithManager(mgr, controller.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorCluster")
 		os.Exit(1)
 	}
 	if err = (&controllers.LinstorSatelliteReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		Namespace:     namespace,
-		ImageVersions: &imageDefaults,
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		Namespace:          namespace,
+		ImageConfigMapName: imageConfigMapName,
 	}).SetupWithManager(mgr, controller.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)

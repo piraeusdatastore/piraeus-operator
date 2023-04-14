@@ -6,7 +6,7 @@ generatorOptions:
 
 configMapGenerator:
 - files:
-  - default_images.yaml
-  name: config
+  - images.yaml
+  name: image-config
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
