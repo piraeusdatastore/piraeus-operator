@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Ability to skip deploying the LINSTOR Controller by setting `LinstorCluster.spec.externalController`.
+- Automatically reconcile changed image configuration.
 
 ### Changed
 

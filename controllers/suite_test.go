@@ -38,11 +38,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/yaml"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
-	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/k8sgc"
 	//+kubebuilder:scaffold:imports
 )
@@ -51,6 +49,7 @@ const (
 	DefaultTimeout       = 30 * time.Second
 	DefaultCheckInterval = 5 * time.Second
 	Namespace            = "piraeus-datastore"
+	ImageConfigMapName   = "image-config"
 	ExampleNodeName      = "node1.example.com"
 )
 
@@ -70,11 +69,7 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	rawDefaults, err := os.ReadFile(filepath.Join("..", "config", "manager", "default_images.yaml"))
-	Expect(err).NotTo(HaveOccurred())
-
-	var imageDefaults imageversions.Config
-	err = yaml.Unmarshal(rawDefaults, &imageDefaults)
+	imageConfig, err := os.ReadFile(filepath.Join("..", "config", "manager", "images.yaml"))
 	Expect(err).NotTo(HaveOccurred())
 
 	By("bootstrapping test environment")
@@ -106,6 +101,17 @@ var _ = BeforeSuite(func() {
 	err = k8sClient.Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: Namespace}})
 	Expect(err).NotTo(HaveOccurred())
 
+	err = k8sClient.Create(ctx, &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ImageConfigMapName,
+			Namespace: Namespace,
+		},
+		Data: map[string]string{
+			"images.yaml": string(imageConfig),
+		},
+	})
+	Expect(err).NotTo(HaveOccurred())
+
 	// Increase the requeue rate limit to make tests faster and more stable
 	opts := controller.Options{
 		RateLimiter: workqueue.NewMaxOfRateLimiter(
@@ -120,18 +126,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&controllers.LinstorClusterReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        k8sManager.GetScheme(),
-		Namespace:     Namespace,
-		ImageVersions: &imageDefaults,
+		Client:             k8sManager.GetClient(),
+		Scheme:             k8sManager.GetScheme(),
+		Namespace:          Namespace,
+		ImageConfigMapName: ImageConfigMapName,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&controllers.LinstorSatelliteReconciler{
-		Client:        k8sManager.GetClient(),
-		Scheme:        k8sManager.GetScheme(),
-		Namespace:     Namespace,
-		ImageVersions: &imageDefaults,
+		Client:             k8sManager.GetClient(),
+		Scheme:             k8sManager.GetScheme(),
+		Namespace:          Namespace,
+		ImageConfigMapName: ImageConfigMapName,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
