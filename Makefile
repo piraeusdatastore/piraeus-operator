@@ -255,3 +255,7 @@ catalog-push: ## Push a catalog image.
 .PHONY: release
 release: $(YQ) $(KUSTOMIZE)
 	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) hack/make-release.sh $(VERSION)
+
+.PHONY: sync-chart
+sync-chart:
+	hack/copy-image-config-to-chart.sh

@@ -30,3 +30,8 @@ repos:
         language: system
         pass_filenames: false
         entry: make test
+      - id: sync-chart
+        name: Run make sync-chart
+        language: system
+        pass_filenames: false
+        entry: make sync-chart
