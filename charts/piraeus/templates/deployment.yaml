@@ -60,9 +60,6 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-        - mountPath: /etc/operator
-          name: operator-config
-          readOnly: true
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -94,6 +91,3 @@ spec:
         secret:
           defaultMode: 420
           secretName: {{ include "piraeus-operator.certifcateName" . }}
-      - configMap:
-          name: {{ include "piraeus-operator.fullname" . }}-config
-        name: operator-config
