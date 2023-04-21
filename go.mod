@@ -5,9 +5,9 @@ go 1.19
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/LINBIT/golinstor v0.46.1
+	github.com/go-logr/logr v1.2.3
 	github.com/linbit/k8s-await-election v0.3.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.63.0
-	github.com/sirupsen/logrus v1.9.0
 	gopkg.in/ini.v1 v1.67.0
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
@@ -25,7 +25,6 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect

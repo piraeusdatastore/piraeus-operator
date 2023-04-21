@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,7 +111,7 @@ func TestReconcileLinstorCSIDriver_Reconcile(t *testing.T) {
 			// Create controller fake client.
 			controllerClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(testcase.initialResources...).Build()
 
-			reconciler := ReconcileLinstorCSIDriver{controllerClient, scheme.Scheme}
+			reconciler := ReconcileLinstorCSIDriver{client: controllerClient, scheme: scheme.Scheme, log: logr.Discard()}
 
 			_, err := reconciler.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "bar"}})
 			if testcase.withError {

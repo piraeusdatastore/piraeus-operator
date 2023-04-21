@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/sirupsen/logrus"
+	"github.com/go-logr/logr"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +27,7 @@ import (
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	. "github.com/piraeusdatastore/piraeus-operator/pkg/logconsts"
 )
 
 const (
@@ -40,13 +41,13 @@ const (
 
 // reconcileLinstorControllerDatabaseBackup ensures a backup of all LINSTOR database resources exists when the image is updated.
 func (r *ReconcileLinstorController) reconcileLinstorControllerDatabaseBackup(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
-	log := logrus.WithFields(logrus.Fields{
-		"name":      controllerResource.Name,
-		"namespace": controllerResource.Namespace,
-		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
-	})
+	log := r.log.WithValues(
+		"name", controllerResource.Name,
+		"namespace", controllerResource.Namespace,
+		"spec", fmt.Sprintf("%+v", controllerResource.Spec),
+	)
 
-	log.Info("reconciling LINSTOR Controller Database database")
+	log.V(INFO).Info("reconciling LINSTOR Controller Database database")
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -64,13 +65,13 @@ func (r *ReconcileLinstorController) reconcileLinstorControllerDatabaseBackup(ct
 	}
 
 	// 1. Check if image version has changed
-	previousVersion, err := getPreviousDeployment(ctx, clientset, controllerResource)
+	previousVersion, err := getPreviousDeployment(ctx, clientset, controllerResource, log)
 	if err != nil {
 		return err
 	}
 
 	if previousVersion == controllerResource.Spec.ControllerImage {
-		log.WithField("version", previousVersion).Info("image up to date, no backup necessary")
+		log.V(INFO).Info("image up to date, no backup necessary", "version", previousVersion)
 
 		return nil
 	}
@@ -82,13 +83,13 @@ func (r *ReconcileLinstorController) reconcileLinstorControllerDatabaseBackup(ct
 	}
 
 	if len(crds) == 0 {
-		log.Info("no resources to back up")
+		log.V(INFO).Info("no resources to back up")
 
 		return nil
 	}
 
 	// 3. Ensure backup exists
-	err = createBackup(ctx, clientset, dynClient, controllerResource, previousVersion, crds)
+	err = createBackup(ctx, clientset, dynClient, controllerResource, previousVersion, crds, log)
 	if err != nil {
 		return err
 	}
@@ -96,10 +97,10 @@ func (r *ReconcileLinstorController) reconcileLinstorControllerDatabaseBackup(ct
 	return nil
 }
 
-func createBackup(ctx context.Context, clientset kubernetes.Interface, dynClient dynamic.Interface, controllerResource *piraeusv1.LinstorController, previousVersion string, crds []*unstructured.Unstructured) error {
+func createBackup(ctx context.Context, clientset kubernetes.Interface, dynClient dynamic.Interface, controllerResource *piraeusv1.LinstorController, previousVersion string, crds []*unstructured.Unstructured, log logr.Logger) error {
 	meta := getBackupMetadata(controllerResource, previousVersion)
 
-	log.WithField("backup", meta.Name).Info("check for existing backup")
+	log.V(INFO).Info("check for existing backup", "backup", meta.Name)
 
 	_, err := clientset.CoreV1().Secrets(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
@@ -107,7 +108,7 @@ func createBackup(ctx context.Context, clientset kubernetes.Interface, dynClient
 	}
 
 	if err == nil {
-		log.Info("backup already exists")
+		log.V(INFO).Info("backup already exists")
 
 		return nil
 	}
@@ -117,26 +118,26 @@ func createBackup(ctx context.Context, clientset kubernetes.Interface, dynClient
 
 	_, err = os.Stat(filepath)
 	if err == nil {
-		log.Info("backup already exists in filesystem")
+		log.V(INFO).Info("backup already exists in filesystem")
 
 		return &manualDownloadRequiredError{secretName: meta.Name, namespace: meta.Namespace, filepath: filepath}
 	}
 
-	log.Debug("ensure LINSTOR Controller is offline while taking a resource snapshot")
+	log.V(DEBUG).Info("ensure LINSTOR Controller is offline while taking a resource snapshot")
 
-	err = stopDeployment(ctx, clientset, controllerResource)
+	err = stopDeployment(ctx, clientset, controllerResource, log)
 	if err != nil {
 		return err
 	}
 
-	log.Info("collecting LINSTOR Controller database resources")
+	log.V(INFO).Info("collecting LINSTOR Controller database resources")
 
-	backupContent, err := collectLinstorDatabase(ctx, dynClient, crds)
+	backupContent, err := collectLinstorDatabase(ctx, dynClient, crds, log)
 	if err != nil {
 		return err
 	}
 
-	log.WithField("path", filepath).Info("persist LINSTOR backup to container fs location")
+	log.V(INFO).Info("persist LINSTOR backup to container fs location", "path", filepath)
 
 	err = ioutil.WriteFile(filepath, backupContent.Bytes(), os.FileMode(0o644)) // nolint:gomnd // File permissions don't seem too magic to me
 	if err != nil {
@@ -182,7 +183,7 @@ func (e *manualDownloadRequiredError) Error() string {
 }
 
 // collectLinstorDatabase fetches all LINSTOR internal resources, including the defining CRDs.
-func collectLinstorDatabase(ctx context.Context, dynClient dynamic.Interface, crds []*unstructured.Unstructured) (*bytes.Buffer, error) {
+func collectLinstorDatabase(ctx context.Context, dynClient dynamic.Interface, crds []*unstructured.Unstructured, log logr.Logger) (*bytes.Buffer, error) {
 	buffer := &bytes.Buffer{}
 
 	compressionWriter, err := gzip.NewWriterLevel(buffer, gzip.BestCompression)
@@ -207,7 +208,7 @@ func collectLinstorDatabase(ctx context.Context, dynClient dynamic.Interface, cr
 		_, _ = crdBuffer.WriteString("---\n")
 		_, _ = crdBuffer.Write(serializedCrd)
 
-		serializedResources, err := getResourcesForCrd(ctx, dynClient, linstorCrd)
+		serializedResources, err := getResourcesForCrd(ctx, dynClient, linstorCrd, log)
 		if err != nil {
 			return nil, err
 		}
@@ -252,10 +253,10 @@ func getLinstorCRDs(ctx context.Context, dynClient dynamic.Interface) ([]*unstru
 }
 
 // getResourcesForCrd returns a serialized form of all the resources of a specific type.
-func getResourcesForCrd(ctx context.Context, dynClient dynamic.Interface, crd *unstructured.Unstructured) ([]byte, error) {
+func getResourcesForCrd(ctx context.Context, dynClient dynamic.Interface, crd *unstructured.Unstructured, log logr.Logger) ([]byte, error) {
 	versions := getList(crd.Object, "spec", "versions")
 	if len(versions) == 0 {
-		log.WithField("crd", crd.GetName()).Info("crd has no version, skipping")
+		log.V(INFO).Info("crd has no version, skipping", "crd", crd.GetName())
 
 		return nil, nil
 	}
@@ -353,15 +354,15 @@ func ToCleanedK8sResourceYAML(obj Resource) ([]byte, error) {
 }
 
 // getPreviousDeployment returns the name of the image currently deployed in the cluster.
-func getPreviousDeployment(ctx context.Context, clientset kubernetes.Interface, controllerResource *piraeusv1.LinstorController) (string, error) {
-	log := logrus.WithFields(logrus.Fields{
-		"name":      controllerResource.Name,
-		"namespace": controllerResource.Namespace,
-	})
+func getPreviousDeployment(ctx context.Context, clientset kubernetes.Interface, controllerResource *piraeusv1.LinstorController, log logr.Logger) (string, error) {
+	log = log.WithValues(
+		"name", controllerResource.Name,
+		"namespace", controllerResource.Namespace,
+	)
 
 	meta := getObjectMeta(controllerResource, "%s-controller")
 
-	log.WithField("meta", meta).Debug("fetching existing deployment")
+	log.V(DEBUG).Info("fetching existing deployment", "meta", meta)
 
 	deployment, err := clientset.AppsV1().Deployments(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
@@ -369,12 +370,12 @@ func getPreviousDeployment(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	if deployment == nil {
-		log.Debug("no deployment found, previous deployment unknown")
+		log.V(DEBUG).Info("no deployment found, previous deployment unknown")
 
 		return "unknown", nil
 	}
 
-	log.Debug("got deployment")
+	log.V(DEBUG).Info("got deployment")
 
 	containers := deployment.Spec.Template.Spec.Containers
 
@@ -388,7 +389,7 @@ func getPreviousDeployment(ctx context.Context, clientset kubernetes.Interface, 
 }
 
 // stopDeployment scale the deployment to 0 and waits for all pods to terminate.
-func stopDeployment(ctx context.Context, clientset kubernetes.Interface, controllerResource *piraeusv1.LinstorController) error {
+func stopDeployment(ctx context.Context, clientset kubernetes.Interface, controllerResource *piraeusv1.LinstorController, log logr.Logger) error {
 	meta := getObjectMeta(controllerResource, "%s-controller")
 
 	_, err := clientset.AppsV1().Deployments(meta.Namespace).UpdateScale(ctx, meta.Name, &autoscalingv1.Scale{
@@ -407,7 +408,7 @@ func stopDeployment(ctx context.Context, clientset kubernetes.Interface, control
 		return fmt.Errorf("failed to update controller scale: %w", err)
 	}
 
-	log.Debug("wait for pods to terminate")
+	log.V(DEBUG).Info("wait for pods to terminate")
 
 	pods, err := clientset.CoreV1().Pods(meta.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: meta.Labels}),
@@ -429,10 +430,10 @@ func stopDeployment(ctx context.Context, clientset kubernetes.Interface, control
 	count := len(pods.Items)
 
 	for {
-		log.WithField("count", count).Debug("watch remaining pods")
+		log.V(DEBUG).Info("watch remaining pods", "count", count)
 
 		if count == 0 {
-			log.Debug("all pods terminated")
+			log.V(DEBUG).Info("all pods terminated")
 
 			return nil
 		}

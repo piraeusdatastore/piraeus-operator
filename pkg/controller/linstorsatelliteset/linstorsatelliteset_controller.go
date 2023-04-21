@@ -31,8 +31,8 @@ import (
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/LINBIT/golinstor/linstortoml"
+	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -56,18 +56,22 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+	. "github.com/piraeusdatastore/piraeus-operator/pkg/logconsts"
 )
 
 // CreateMonitoring controls if the operator will create a monitoring resources.
 var CreateMonitoring = true
 
 func newSatelliteReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileLinstorSatelliteSet{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileLinstorSatelliteSet{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		log:    mgr.GetLogger().WithName("LinstorSatelliteSet-controller"),
+	}
 }
 
 func addSatelliteReconciler(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	log.Debug("satellite add: Adding a satelliteSet controller ")
 	c, err := controller.New("LinstorSatelliteSet-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
@@ -99,6 +103,7 @@ type ReconcileLinstorSatelliteSet struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+	log    logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a LinstorSatelliteSet object and makes changes based on
@@ -109,17 +114,17 @@ type ReconcileLinstorSatelliteSet struct {
 // that doesn't make a lot of sense to put elsewhere, so don't lint it for cyclomatic complexity.
 // nolint:gocyclo
 func (r *ReconcileLinstorSatelliteSet) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := log.WithFields(logrus.Fields{
-		"requestName":      request.Name,
-		"requestNamespace": request.Namespace,
-		"Controller":       "linstorsatelliteset",
-	})
-	log.Info("reconciling LinstorSatelliteSet")
+	log := r.log.WithValues(
+		"requestName", request.Name,
+		"requestNamespace", request.Namespace,
+		"Controller", "linstorsatelliteset",
+	)
+	log.V(INFO).Info("reconciling LinstorSatelliteSet")
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
-	log.Debug("fetch resource")
+	log.V(DEBUG).Info("fetch resource")
 
 	satelliteSet := &piraeusv1.LinstorSatelliteSet{}
 	err := r.client.Get(ctx, request.NamespacedName, satelliteSet)
@@ -138,16 +143,13 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(ctx context.Context, request re
 
 	statusErr := r.reconcileStatus(ctx, satelliteSet, errs)
 	if statusErr != nil {
-		log.Warnf("failed to update status. original errors: %v", errs)
+		log.Error(statusErr, "failed to update status", "originalErrs", errs)
 		return reconcile.Result{}, statusErr
 	}
 
 	result, err := reconcileutil.ToReconcileResult(errs...)
 
-	log.WithFields(logrus.Fields{
-		"result": result,
-		"err":    err,
-	}).Info("satellite Reconcile: reconcile loop end")
+	log.V(INFO).Info("satellite Reconcile: reconcile loop end", "result", result, "err", err)
 
 	triggerStatusUpdate := reconcile.Result{RequeueAfter: 1 * time.Minute}
 
@@ -155,14 +157,14 @@ func (r *ReconcileLinstorSatelliteSet) Reconcile(ctx context.Context, request re
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) []error {
-	log := log.WithFields(logrus.Fields{
-		"Op":         "reconcileSpec",
-		"Controller": "linstorsatelliteset",
-		"Spec":       satelliteSet.Spec,
-	})
-	log.Info("reconcile spec")
+	log := r.log.WithValues(
+		"Op", "reconcileSpec",
+		"Controller", "linstorsatelliteset",
+		"Spec", satelliteSet.Spec,
+	)
+	log.V(INFO).Info("reconcile spec")
 
-	log.Debug("reconcile spec with env")
+	log.V(DEBUG).Info("reconcile spec with env")
 
 	specs := []reconcileutil.EnvSpec{
 		{Env: kubeSpec.ImageLinstorSatelliteEnv, Target: &satelliteSet.Spec.SatelliteImage},
@@ -175,34 +177,34 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 		return []error{fmt.Errorf("failed to update spec with env: %w", err)}
 	}
 
-	log.Debug("upgrade spec and set default values")
+	log.V(DEBUG).Info("upgrade spec and set default values")
 
 	err = r.reconcileResource(ctx, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to update spec using default values: %w", err)}
 	}
 
-	log.Debug("check for deletion flag")
+	log.V(DEBUG).Info("check for deletion flag")
 
 	markedForDeletion := satelliteSet.GetDeletionTimestamp() != nil
 	if markedForDeletion {
 		return r.finalizeSatelliteSet(ctx, satelliteSet)
 	}
 
-	log.Debug("add finalizer")
+	log.V(DEBUG).Info("add finalizer")
 
 	if err := r.addFinalizer(ctx, satelliteSet); err != nil {
 		return []error{fmt.Errorf("failed to add finalizer to resource: %w", err)}
 	}
 
-	log.Debug("reconcile legacy config map name")
+	log.V(DEBUG).Info("reconcile legacy config map name")
 
 	err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.ConfigMap{ObjectMeta: getObjectMeta(satelliteSet, "%s-config")}, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to delete legacy config map: %w", err)}
 	}
 
-	log.Debug("reconcile satellite configmap")
+	log.V(DEBUG).Info("reconcile satellite configmap")
 
 	// Create the satellite configuration
 	satelliteCM, err := newSatelliteConfigMap(satelliteSet)
@@ -215,26 +217,26 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSpec(ctx context.Context, satell
 		return []error{fmt.Errorf("failed to reconcile satellite configmap: %w", err)}
 	}
 
-	log.WithField("changed", satelliteCMChanged).Debug("reconcile satellite configmap: done")
+	log.V(DEBUG).Info("reconcile satellite configmap: done", "changed", satelliteCMChanged)
 
 	drbdReactorCM, err := r.reconcileMonitoring(ctx, satelliteSet)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile monitoring resources: %w", err)}
 	}
 
-	log.Debug("reconcile satellite daemonset")
+	log.V(DEBUG).Info("reconcile satellite daemonset")
 
-	ds := newSatelliteDaemonSet(satelliteSet, satelliteCM, drbdReactorCM)
+	ds := newSatelliteDaemonSet(satelliteSet, satelliteCM, drbdReactorCM, log)
 
 	daemonsetChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ds, satelliteSet, reconcileutil.OnPatchErrorRecreate)
 	if err != nil {
 		return []error{fmt.Errorf("failed to reconcile satellite daemonset: %w", err)}
 	}
 
-	log.WithField("changed", daemonsetChanged).Debug("reconcile satellite daemonset: done")
+	log.V(DEBUG).Info("reconcile satellite daemonset: done", "changed", daemonsetChanged)
 
 	if satelliteCMChanged && !daemonsetChanged {
-		log.Debug("restart LINSTOR Satellites")
+		log.V(DEBUG).Info("restart LINSTOR Satellites")
 
 		err := reconcileutil.RestartRollout(ctx, r.client, ds)
 		if err != nil {
@@ -250,14 +252,14 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 		return nil, nil
 	}
 
-	log.Debug("reconcile legacy monitoring config map name")
+	r.log.V(DEBUG).Info("reconcile legacy monitoring config map name")
 
 	err := reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.ConfigMap{ObjectMeta: getObjectMeta(satelliteSet, "%s-monitoring")}, satelliteSet)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete legacy monitoring config map: %w", err)
 	}
 
-	log.Debug("reconcile drbd-reactor configmap")
+	r.log.V(DEBUG).Info("reconcile drbd-reactor configmap")
 
 	drbdReactorCM := newMonitoringConfigMap(satelliteSet)
 
@@ -266,16 +268,16 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 		return nil, fmt.Errorf("failed to reconcile drbd-reactor configmap")
 	}
 
-	log.WithField("changed", drbdReactorCMChanged).Debug("reconcile drbd-reactor configmap: done")
+	r.log.V(DEBUG).Info("reconcile drbd-reactor configmap: done", "changed", drbdReactorCMChanged)
 
-	log.Debug("reconcile legacy monitoring service name")
+	r.log.V(DEBUG).Info("reconcile legacy monitoring service name")
 
 	err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.Service{ObjectMeta: getObjectMeta(satelliteSet, "%s-monitoring")}, satelliteSet)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete legacy monitoring service: %w", err)
 	}
 
-	log.Debug("reconciling monitoring service definition")
+	r.log.V(DEBUG).Info("reconciling monitoring service definition")
 
 	monitoringService := newMonitoringService(satelliteSet)
 
@@ -285,7 +287,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 			return nil, fmt.Errorf("failed to reconcile monitoring service definition")
 		}
 
-		log.WithField("changed", monitoringServiceChanged).Debug("reconciling monitoring service definition: done")
+		r.log.V(DEBUG).Info("reconciling monitoring service definition: done", "changed", monitoringServiceChanged)
 	} else {
 		err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.Service{ObjectMeta: getObjectMeta(satelliteSet, "%s-node-monitoring")}, satelliteSet)
 		if err != nil {
@@ -295,9 +297,9 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 
 	if monitoring.Enabled(ctx, r.client, r.scheme) {
 		if CreateMonitoring {
-			log.Debug("monitoring is available in cluster, reconciling monitoring")
+			r.log.V(DEBUG).Info("monitoring is available in cluster, reconciling monitoring")
 
-			log.Debug("reconciling ServiceMonitor definition")
+			r.log.V(DEBUG).Info("reconciling ServiceMonitor definition")
 
 			serviceMonitor := monitoring.MonitorForService(monitoringService)
 
@@ -306,7 +308,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 				return nil, fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
 			}
 
-			log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+			r.log.V(DEBUG).Info("reconciling monitoring service definition: done", "changed", serviceMonitorChanged)
 		} else {
 			err = reconcileutil.DeleteIfOwned(ctx, r.client, &monitoringv1.ServiceMonitor{ObjectMeta: getObjectMeta(satelliteSet, "%s-node-monitoring")}, satelliteSet)
 			if err != nil {
@@ -319,48 +321,48 @@ func (r *ReconcileLinstorSatelliteSet) reconcileMonitoring(ctx context.Context, 
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileResource(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) error {
-	logger := log.WithFields(logrus.Fields{
-		"Name":      satelliteSet.Name,
-		"Namespace": satelliteSet.Namespace,
-		"Op":        "reconcileResource",
-	})
-	logger.Debug("performing upgrades and fill defaults in resource")
+	logger := r.log.WithValues(
+		"Name", satelliteSet.Name,
+		"Namespace", satelliteSet.Namespace,
+		"Op", "reconcileResource",
+	)
+	logger.V(DEBUG).Info("performing upgrades and fill defaults in resource")
 
 	changed := false
 
-	logger.Debug("performing upgrade/fill: #0 -> replace nil with zero objects")
+	logger.V(DEBUG).Info("performing upgrade/fill: #0 -> replace nil with zero objects")
 
 	if satelliteSet.Spec.StoragePools == nil {
 		satelliteSet.Spec.StoragePools = &shared.StoragePools{}
 		changed = true
 
-		logger.Info("set storage pool to empty default object")
+		logger.V(INFO).Info("set storage pool to empty default object")
 	}
 
 	if satelliteSet.Spec.StoragePools.LVMPools == nil {
 		satelliteSet.Spec.StoragePools.LVMPools = make([]*shared.StoragePoolLVM, 0)
 		changed = true
 
-		logger.Info("set storage pool 'LVM' to empty list")
+		logger.V(INFO).Info("set storage pool 'LVM' to empty list")
 	}
 
 	if satelliteSet.Spec.StoragePools.LVMThinPools == nil {
 		satelliteSet.Spec.StoragePools.LVMThinPools = make([]*shared.StoragePoolLVMThin, 0)
 		changed = true
 
-		logger.Info("set storage pool 'LVMThin' to empty list")
+		logger.V(INFO).Info("set storage pool 'LVMThin' to empty list")
 	}
 
 	if satelliteSet.Spec.StoragePools.ZFSPools == nil {
 		satelliteSet.Spec.StoragePools.ZFSPools = make([]*shared.StoragePoolZFS, 0)
 		changed = true
 
-		logger.Info("set storage pool 'ZFSPool' to empty list")
+		logger.V(INFO).Info("set storage pool 'ZFSPool' to empty list")
 	}
 
-	logger.Debugf("finished upgrade/fill: #0 -> replace nil with zero objects: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #0 -> replace nil with zero objects", "changed", changed)
 
-	logger.Debug("performing upgrade/fill: #1 -> Set default endpoint URL for Client")
+	logger.V(DEBUG).Info("performing upgrade/fill: #1 -> Set default endpoint URL for Client")
 
 	if satelliteSet.Spec.ControllerEndpoint == "" {
 		serviceName := types.NamespacedName{Name: satelliteSet.Name[:len(satelliteSet.Name)-3] + "-cs", Namespace: satelliteSet.Namespace}
@@ -369,26 +371,26 @@ func (r *ReconcileLinstorSatelliteSet) reconcileResource(ctx context.Context, sa
 		satelliteSet.Spec.ControllerEndpoint = defaultEndpoint
 		changed = true
 
-		logger.Infof("set controller endpoint URL to '%s'", satelliteSet.Spec.ControllerEndpoint)
+		logger.V(INFO).Info("set controller endpoint URL", "url", satelliteSet.Spec.ControllerEndpoint)
 	}
 
-	logger.Debugf("finished upgrade/fill: #1 -> Set default endpoint URL for Client: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #1 -> Set default endpoint URL for Client", "changed", changed)
 
-	logger.Debugf("performing upgrade/fill: #2 -> Set default automatic storage setup type")
+	logger.V(DEBUG).Info("performing upgrade/fill: #2 -> Set default automatic storage setup type")
 
 	if satelliteSet.Spec.AutomaticStorageType == "" {
 		satelliteSet.Spec.AutomaticStorageType = automaticStorageTypeNone
 		changed = true
 
-		logger.Infof("set default automatic storage setup type to '%s'", automaticStorageTypeNone)
+		logger.V(INFO).Info("set default automatic storage setup type", "type", automaticStorageTypeNone)
 	}
 
-	logger.Debugf("finished upgrade/fill: #2 -> Set default automatic storage setup type: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #2 -> Set default automatic storage setup type", "changed", changed)
 
-	logger.Debug("finished all upgrades/fills")
+	logger.V(DEBUG).Info("finished all upgrades/fills")
 
 	if changed {
-		logger.Info("save updated spec")
+		logger.V(INFO).Info("save updated spec")
 		return r.client.Update(ctx, satelliteSet)
 	}
 
@@ -396,19 +398,20 @@ func (r *ReconcileLinstorSatelliteSet) reconcileResource(ctx context.Context, sa
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) []error {
-	logger := log.WithFields(logrus.Fields{
-		"Name":      satelliteSet.Name,
-		"Namespace": satelliteSet.Namespace,
-		"Op":        "reconcileAllNodesOnController",
-	})
-	logger.Debug("start per-node reconciliation")
+	logger := r.log.WithValues(
+		"Name", satelliteSet.Name,
+		"Namespace", satelliteSet.Namespace,
+		"Op", "reconcileAllNodesOnController",
+	)
+	logger.V(DEBUG).Info("start per-node reconciliation")
 
-	logger.Debug("ensure LINSTOR controller is reachable")
+	logger.V(DEBUG).Info("ensure LINSTOR controller is reachable")
 
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		satelliteSet.Spec.ControllerEndpoint,
 		&satelliteSet.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, satelliteSet.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return []error{err}
@@ -444,13 +447,13 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 		k8sNode := findK8sNode(k8sNodes.Items, pod.Spec.NodeName)
 
 		if k8sNode == nil {
-			logger.WithField("pod", pod.Name).Debug("Node for pod not found, assuming node deleted.")
+			logger.V(DEBUG).Info("Node for pod not found, assuming node deleted", "pod", pod.Name)
 
 			continue
 		}
 
 		if pod.Status.Phase != corev1.PodRunning {
-			logger.WithField("pod", pod.Name).Debug("Pod not running.")
+			logger.V(DEBUG).Info("Pod not running", "pod", pod.Name)
 
 			continue
 		}
@@ -479,7 +482,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 		return nonNilErrs
 	}
 
-	logger.Debug("remove registered satellites without Kubernetes node")
+	logger.V(DEBUG).Info("remove registered satellites without Kubernetes node")
 
 	err = r.removeDanglingSatellites(ctx, linstorClient, k8sNodes.Items)
 	if err != nil {
@@ -490,34 +493,34 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAllNodesOnController(ctx context
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcilePod(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod, k8sNode *corev1.Node) error {
-	podLog := log.WithFields(logrus.Fields{
-		"podName":      pod.Name,
-		"podNameSpace": pod.Namespace,
-		"Op":           "reconcilePod",
-	})
+	podLog := r.log.WithValues(
+		"podName", pod.Name,
+		"podNameSpace", pod.Namespace,
+		"Op", "reconcilePod",
+	)
 
-	podLog.Debug("reconcile node registration")
+	podLog.V(DEBUG).Info("reconcile node registration")
 
 	err := r.reconcileSingleNodeRegistration(ctx, linstorClient, satelliteSet, pod, k8sNode)
 	if err != nil {
 		return err
 	}
 
-	podLog.Debug("reconcile automatic device setup")
+	podLog.V(DEBUG).Info("reconcile automatic device setup")
 
 	err = r.reconcileAutomaticDeviceSetup(ctx, linstorClient, satelliteSet, pod)
 	if err != nil {
 		return err
 	}
 
-	podLog.Debug("reconcile storage pool setup")
+	podLog.V(DEBUG).Info("reconcile storage pool setup")
 
 	err = r.reconcileStoragePoolsOnNode(ctx, linstorClient, satelliteSet, pod)
 	if err != nil {
 		return err
 	}
 
-	podLog.Debug("reconcile node registration: success")
+	podLog.V(DEBUG).Info("reconcile node registration: success")
 
 	return nil
 }
@@ -568,14 +571,14 @@ func (r *ReconcileLinstorSatelliteSet) reconcileSingleNodeRegistration(ctx conte
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod) error {
-	logger := log.WithFields(logrus.Fields{
-		"Name":      satelliteSet.Name,
-		"Namespace": satelliteSet.Namespace,
-		"Pod":       pod.Name,
-		"Op":        "reconcileAutomaticDeviceSetup",
-	})
+	logger := r.log.WithValues(
+		"Name", satelliteSet.Name,
+		"Namespace", satelliteSet.Namespace,
+		"Pod", pod.Name,
+		"Op", "reconcileAutomaticDeviceSetup",
+	)
 
-	logger.Debug("get existing storage pools on node")
+	logger.V(DEBUG).Info("get existing storage pools on node")
 
 	cached := true
 
@@ -584,7 +587,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 		return fmt.Errorf("failed to list existing storage pools: %w", err)
 	}
 
-	logger.Debug("check for re-used device paths or existing storage pools")
+	logger.V(DEBUG).Info("check for re-used device paths or existing storage pools")
 
 	devsToConfigure := sets.NewString()
 
@@ -601,15 +604,15 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 		devsToConfigure.Insert(poolConfig.GetDevicePaths()...)
 	}
 
-	logger.Debug("no device re-used")
+	logger.V(DEBUG).Info("no device re-used")
 
 	if devsToConfigure.Len() == 0 {
-		logger.Debug("no device to configure")
+		logger.V(DEBUG).Info("no device to configure")
 
 		return nil
 	}
 
-	logger.Debug("fetch available devices for node")
+	logger.V(DEBUG).Info("fetch available devices for node")
 
 	storageList, err := linstorClient.Nodes.GetPhysicalStorage(ctx, pod.Spec.NodeName)
 	if err != nil {
@@ -622,15 +625,15 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 		emptyDevices.Insert(entry.Device)
 	}
 
-	logger.WithField("emptyDevices", emptyDevices).Debug("got available devices")
+	logger.V(DEBUG).Info("got available devices", "emptyDevices", emptyDevices)
 
 	for _, pool := range satelliteSet.Spec.StoragePools.AllPhysicalStorageCreators() {
-		logger := logger.WithField("pool", pool)
+		logger := logger.WithValues("pool", pool)
 
-		logger.Debug("checking configuration for storage pool")
+		logger.V(DEBUG).Info("checking configuration for storage pool")
 
 		if !emptyDevices.HasAny(pool.GetDevicePaths()...) {
-			logger.Debug("no device to configure, skipping")
+			logger.V(DEBUG).Info("no device to configure, skipping")
 			continue
 		}
 
@@ -646,7 +649,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 		emptyDevices.Delete(pool.GetDevicePaths()...)
 	}
 
-	logger.Debug("finished setting up devices for storage pool")
+	logger.V(DEBUG).Info("finished setting up devices for storage pool")
 
 	// Skip setting up remaining devices
 	if satelliteSet.Spec.AutomaticStorageType == automaticStorageTypeNone {
@@ -675,12 +678,12 @@ func (r *ReconcileLinstorSatelliteSet) reconcileAutomaticDeviceSetup(ctx context
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(ctx context.Context, linstorClient *lc.HighLevelClient, satelliteSet *piraeusv1.LinstorSatelliteSet, pod *corev1.Pod) error {
-	log := log.WithFields(logrus.Fields{
-		"podName":      pod.Name,
-		"podNameSpace": pod.Namespace,
-		"podPhase":     pod.Status.Phase,
-	})
-	log.Debug("reconcile storage pools: started")
+	log := r.log.WithValues(
+		"podName", pod.Name,
+		"podNameSpace", pod.Namespace,
+		"podPhase", pod.Status.Phase,
+	)
+	log.V(DEBUG).Info("reconcile storage pools: started")
 
 	cached := true
 
@@ -689,14 +692,14 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(ctx context.C
 		return fmt.Errorf("failed to fetch storage pools: %w", err)
 	}
 
-	log.WithField("currentPools", currentPools).Debug("got current storage pools")
+	log.V(DEBUG).Info("got current storage pools", "currentPools", currentPools)
 
 	poolsFromSpec := satelliteSet.Spec.StoragePools.All()
 
 	for i := range currentPools {
 		existingPool := &currentPools[i]
 
-		log := log.WithField("existing pool", existingPool.StoragePoolName)
+		log := log.WithValues("existing pool", existingPool.StoragePoolName)
 
 		registeredByOperator := false
 		if val, ok := existingPool.Props[kubeSpec.LinstorRegistrationProperty]; ok {
@@ -704,11 +707,11 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(ctx context.C
 		}
 
 		if !registeredByOperator {
-			log.Debug("skipping pool not managed by operator")
+			log.V(DEBUG).Info("skipping pool not managed by operator")
 			continue
 		}
 
-		log.Debug("searching matching spec")
+		log.V(DEBUG).Info("searching matching spec")
 
 		var matchingSpec shared.StoragePool
 
@@ -722,10 +725,10 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(ctx context.C
 			}
 		}
 
-		log.WithField("spec", matchingSpec).Debug("search complete")
+		log.V(DEBUG).Info("search complete", "spec", matchingSpec)
 
 		if matchingSpec == nil {
-			log.WithField("pool", existingPool.StoragePoolName).Debug("removing outdated storage pool")
+			log.V(DEBUG).Info("removing outdated storage pool", "pool", existingPool.StoragePoolName)
 
 			// LINSTOR already ensures that the storage pool does not contain any resources
 			err := linstorClient.Nodes.DeleteStoragePool(ctx, pod.Spec.NodeName, existingPool.StoragePoolName)
@@ -756,25 +759,25 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStoragePoolsOnNode(ctx context.C
 	}
 
 	for _, pool := range poolsFromSpec {
-		log.WithField("spec pool", pool).Debug("creating missing storage pool")
+		log.V(DEBUG).Info("creating missing storage pool", "spec pool", pool)
 		err := linstorClient.Nodes.CreateStoragePool(ctx, pod.Spec.NodeName, pool.ToLinstorStoragePool())
 		if err != nil {
 			return err
 		}
 	}
 
-	log.Debug("reconcile storage pools: finished")
+	log.V(DEBUG).Info("reconcile storage pools: finished")
 
 	return nil
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet, errs []error) error {
-	logger := log.WithFields(logrus.Fields{
-		"Name":      satelliteSet.Name,
-		"Namespace": satelliteSet.Namespace,
-	})
+	logger := r.log.WithValues(
+		"Name", satelliteSet.Name,
+		"Namespace", satelliteSet.Namespace,
+	)
 
-	logger.Debug("reconcile status of all nodes")
+	logger.V(DEBUG).Info("reconcile status of all nodes")
 
 	// This always needs to be non-nil
 	satelliteSet.Status.SatelliteStatuses = []*shared.SatelliteStatus{}
@@ -784,7 +787,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, sate
 		errs = append(errs, fmt.Errorf("failed to fetch updated status for satellites: %w", err))
 	}
 
-	logger.Debug("reconcile error list")
+	logger.V(DEBUG).Info("reconcile error list")
 
 	satelliteSet.Status.Errors = reconcileutil.ErrorStrings(errs...)
 
@@ -796,26 +799,27 @@ func (r *ReconcileLinstorSatelliteSet) reconcileStatus(ctx context.Context, sate
 }
 
 func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) error {
-	log := log.WithFields(logrus.Fields{
-		"Name":      satelliteSet.Name,
-		"Namespace": satelliteSet.Namespace,
-		"Op":        "reconcileLinstorStatus",
-	})
+	log := r.log.WithValues(
+		"Name", satelliteSet.Name,
+		"Namespace", satelliteSet.Namespace,
+		"Op", "reconcileLinstorStatus",
+	)
 
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		satelliteSet.Spec.ControllerEndpoint,
 		&satelliteSet.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, satelliteSet.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("get all node pods")
+	log.V(DEBUG).Info("get all node pods")
 
 	pods, err := r.getAllNodePods(ctx, satelliteSet)
 	if err != nil {
-		log.Warnf("could not find pods: %v, continue with empty pod list...", err)
+		log.Error(err, "could not find pods, continue with empty pod list...")
 	}
 
 	nodeNames := make([]string, 0)
@@ -823,14 +827,14 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 		nodeNames = append(nodeNames, pods[i].Spec.NodeName)
 	}
 
-	log.Debug("find all satellite nodes from linstor")
+	log.V(DEBUG).Info("find all satellite nodes from linstor")
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, reachableTimeout)
 	defer cancel()
 
 	linstorNodes, err := linstorClient.Nodes.GetAll(timeoutCtx, &lapi.ListOpts{Node: nodeNames})
 	if err != nil {
-		log.Warnf("could not fetch nodes from LINSTOR: %v, continue with empty node list", err)
+		log.Error(err, "could not fetch nodes from LINSTOR, continue with empty node list")
 	}
 
 	satelliteSet.Status.SatelliteStatuses = make([]*shared.SatelliteStatus, len(pods))
@@ -857,7 +861,7 @@ func (r *ReconcileLinstorSatelliteSet) reconcileLinstorStatus(ctx context.Contex
 
 			pools, err = linstorClient.Nodes.GetStoragePools(timeoutCtx, pod.Spec.NodeName, &lapi.ListOpts{Cached: &cached})
 			if err != nil {
-				log.Warnf("failed to get storage pools for node %s: %v", pod.Spec.NodeName, err)
+				log.Error(err, "failed to get storage pools for node", "node", pod.Spec.NodeName)
 			}
 
 			cancel()
@@ -905,10 +909,7 @@ func satelliteStatusFromLinstor(pod *corev1.Pod, node *lapi.Node, pools []lapi.S
 }
 
 func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) ([]corev1.Pod, error) {
-	log.WithFields(logrus.Fields{
-		"Name":      satelliteSet.Name,
-		"Namespace": satelliteSet.Namespace,
-	}).Debug("list all node pods to register on controller")
+	r.log.V(DEBUG).Info("list all node pods to register on controller", "Name", satelliteSet.Name, "Namespace", satelliteSet.Namespace)
 
 	// Filters
 	namespaceSelector := client.InNamespace(satelliteSet.Namespace)
@@ -924,7 +925,7 @@ func (r *ReconcileLinstorSatelliteSet) getAllNodePods(ctx context.Context, satel
 	return pods.Items, nil
 }
 
-func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satelliteCM, drbdReactorConfig *corev1.ConfigMap) *apps.DaemonSet {
+func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satelliteCM, drbdReactorConfig *corev1.ConfigMap, log logr.Logger) *apps.DaemonSet {
 	var pullSecrets []corev1.LocalObjectReference
 	if satelliteSet.Spec.DrbdRepoCred != "" {
 		pullSecrets = append(pullSecrets, corev1.LocalObjectReference{Name: satelliteSet.Spec.DrbdRepoCred})
@@ -1033,7 +1034,7 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 		},
 	}
 
-	ds = daemonSetWithDRBDKernelModuleInjection(ds, satelliteSet)
+	ds = daemonSetWithDRBDKernelModuleInjection(ds, satelliteSet, log)
 	ds = daemonsetWithMonitoringContainer(ds, satelliteSet, drbdReactorConfig)
 	ds = daemonSetWithSslConfiguration(ds, satelliteSet)
 	ds = daemonSetWithHttpsConfiguration(ds, satelliteSet)
@@ -1220,13 +1221,13 @@ enums = true
 	}
 }
 
-func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *piraeusv1.LinstorSatelliteSet) *apps.DaemonSet {
+func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *piraeusv1.LinstorSatelliteSet, log logr.Logger) *apps.DaemonSet {
 	var kernelModHow string
 
 	mode := satelliteSet.Spec.KernelModuleInjectionMode
 	switch mode {
 	case shared.ModuleInjectionNone:
-		log.WithField("drbdKernelModuleInjectionMode", mode).Warnf("using deprecated injection mode: beginning with injector image version 9.0.23, it is recommended to use '%s' instead", shared.ModuleInjectionDepsOnly)
+		log.Info("using deprecated injection mode", "drbdKernelModuleInjectionMode", mode, "replacement", shared.ModuleInjectionDepsOnly)
 		return ds
 	case shared.ModuleInjectionCompile:
 		kernelModHow = kubeSpec.LinstorKernelModCompile
@@ -1235,9 +1236,7 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 	case shared.ModuleInjectionDepsOnly:
 		kernelModHow = kubeSpec.LinstorKernelModDepsOnly
 	default:
-		log.WithFields(logrus.Fields{
-			"mode": mode,
-		}).Warn("Unknown kernel module injection mode; skipping")
+		log.Info("Unknown kernel module injection mode; skipping", "mode", mode)
 		return ds
 	}
 
@@ -1389,13 +1388,13 @@ func getServiceAccountName(satelliteSet *piraeusv1.LinstorSatelliteSet) string {
 }
 
 func (r *ReconcileLinstorSatelliteSet) finalizeNode(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet, linstorClient *lc.HighLevelClient, nodeName string) error {
-	log := log.WithFields(logrus.Fields{
-		"name":      satelliteSet.Name,
-		"namespace": satelliteSet.Namespace,
-		"spec":      fmt.Sprintf("%+v", satelliteSet.Spec),
-		"node":      nodeName,
-	})
-	log.Debug("satellite finalizing node")
+	log := r.log.WithValues(
+		"name", satelliteSet.Name,
+		"namespace", satelliteSet.Namespace,
+		"spec", satelliteSet.Spec,
+		"node", nodeName,
+	)
+	log.V(DEBUG).Info("satellite finalizing node")
 	// Determine if any resources still remain on the node.
 	resList, err := linstorClient.GetAllResourcesOnNode(ctx, nodeName)
 	if err != nil {
@@ -1438,12 +1437,12 @@ func (r *ReconcileLinstorSatelliteSet) deleteFinalizer(ctx context.Context, sate
 }
 
 func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context, satelliteSet *piraeusv1.LinstorSatelliteSet) []error {
-	log := log.WithFields(logrus.Fields{
-		"name":      satelliteSet.Name,
-		"namespace": satelliteSet.Namespace,
-		"spec":      fmt.Sprintf("%+v", satelliteSet.Spec),
-	})
-	log.Info("found LinstorSatelliteSet marked for deletion, finalizing...")
+	log := r.log.WithValues(
+		"name", satelliteSet.Name,
+		"namespace", satelliteSet.Namespace,
+		"spec", satelliteSet.Spec,
+	)
+	log.V(INFO).Info("found LinstorSatelliteSet marked for deletion, finalizing...")
 
 	if !mdutil.HasFinalizer(satelliteSet, linstorSatelliteFinalizer) {
 		return nil
@@ -1459,6 +1458,7 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context,
 		satelliteSet.Spec.ControllerEndpoint,
 		&satelliteSet.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, satelliteSet.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return []error{err}
@@ -1472,7 +1472,7 @@ func (r *ReconcileLinstorSatelliteSet) finalizeSatelliteSet(ctx context.Context,
 	}
 
 	if len(errs) == 0 {
-		log.Info("finalizing finished, removing finalizer")
+		log.V(INFO).Info("finalizing finished, removing finalizer")
 
 		err := r.deleteFinalizer(ctx, satelliteSet)
 
@@ -1504,7 +1504,7 @@ func (r *ReconcileLinstorSatelliteSet) removeDanglingSatellites(ctx context.Cont
 	for i := range lnodes {
 		node := &lnodes[i]
 
-		log := log.WithField("node", node.Name)
+		log := r.log.WithValues("node", node.Name)
 
 		if node.Type != lc.Satellite {
 			continue
@@ -1513,12 +1513,12 @@ func (r *ReconcileLinstorSatelliteSet) removeDanglingSatellites(ctx context.Cont
 		k8sNode := findK8sNode(k8sNodes, node.Name)
 
 		if k8sNode != nil {
-			log.Debug("node exists in kubernetes, no eviction")
+			log.V(DEBUG).Info("node exists in kubernetes, no eviction")
 
 			continue
 		}
 
-		log.Debug("node does not exist in kubernetes, evicting")
+		log.V(DEBUG).Info("node does not exist in kubernetes, evicting")
 
 		if node.ConnectionStatus != lc.Offline {
 			return fmt.Errorf("online satellite registered by operator without associated k8s node")
@@ -1530,7 +1530,7 @@ func (r *ReconcileLinstorSatelliteSet) removeDanglingSatellites(ctx context.Cont
 		}
 
 		if mdutil.SliceContains(node.Flags, linstor.FlagEvicted) {
-			log.Debug("node evicted, deleting")
+			log.V(DEBUG).Info("node evicted, deleting")
 
 			err := linstorClient.Nodes.Lost(ctx, node.Name)
 			if err != nil {

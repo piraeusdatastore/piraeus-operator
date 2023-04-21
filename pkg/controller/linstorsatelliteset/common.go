@@ -1,10 +1,6 @@
 package linstorsatelliteset
 
 import (
-	"os"
-
-	"github.com/sirupsen/logrus"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -20,16 +16,6 @@ const (
 	// requeue reconciliation after connectionRetrySeconds
 	connectionRetrySeconds = 10
 )
-
-func init() {
-	logrus.SetFormatter(&logrus.TextFormatter{})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
-}
-
-var log = logrus.WithFields(logrus.Fields{
-	"controller": "LinstorSatelliteSet",
-})
 
 // Add creates a new LinstorSatelliteSet Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
