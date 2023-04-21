@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
-	"github.com/sirupsen/logrus"
+	"github.com/go-logr/logr"
 	ini "gopkg.in/ini.v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -80,7 +79,7 @@ func NamedSecret(ctx context.Context, client client.Client, namespace string) Se
 
 // NewHighLevelLinstorClientFromConfig configures a HighLevelClient with an
 // in-cluster url based on service naming convention.
-func NewHighLevelLinstorClientFromConfig(endpoint string, config *shared.LinstorClientConfig, secretFetcher SecretFetcher) (*HighLevelClient, error) {
+func NewHighLevelLinstorClientFromConfig(endpoint string, config *shared.LinstorClientConfig, secretFetcher SecretFetcher, log logr.Logger) (*HighLevelClient, error) {
 	tlsConfig, err := newTLSConfigFromConfig(config, secretFetcher)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create TLSSecret for HTTP client: %w", err)
@@ -97,11 +96,7 @@ func NewHighLevelLinstorClientFromConfig(endpoint string, config *shared.Linstor
 
 	c, err := NewHighLevelClient(
 		lapi.BaseURL(u),
-		lapi.Log(&logrus.Logger{
-			Level:     logrus.DebugLevel,
-			Out:       os.Stdout,
-			Formatter: &logrus.TextFormatter{},
-		}),
+		lapi.Log(&logrAdapter{Logger: log}),
 		lapi.HTTPClient(&http.Client{Transport: &transport}),
 	)
 	if err != nil {

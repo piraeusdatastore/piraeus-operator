@@ -20,14 +20,13 @@ package linstorcsidriver
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	lapiconst "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
-	"github.com/sirupsen/logrus"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -48,13 +47,8 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+	. "github.com/piraeusdatastore/piraeus-operator/pkg/logconsts"
 )
-
-func init() {
-	logrus.SetFormatter(&logrus.TextFormatter{})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
-}
 
 // Add creates a new LinstorCSIDriver Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -64,7 +58,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileLinstorCSIDriver{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileLinstorCSIDriver{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		log:    mgr.GetLogger().WithName("linstorcsidriver-controller"),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -109,16 +107,17 @@ type ReconcileLinstorCSIDriver struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+	log    logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a LinstorCSIDriver object and makes changes based on the state read
 // and what is in the LinstorCSIDriver.Spec
 func (r *ReconcileLinstorCSIDriver) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := logrus.WithFields(logrus.Fields{
-		"requestName":      request.Name,
-		"requestNamespace": request.Namespace,
-	})
-	reqLogger.Info("Reconciling LinstorCSIDriver")
+	reqLogger := r.log.WithValues(
+		"requestName", request.Name,
+		"requestNamespace", request.Namespace,
+	)
+	reqLogger.V(INFO).Info("Reconciling LinstorCSIDriver")
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
@@ -137,7 +136,7 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(ctx context.Context, request recon
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Debug("reconcile spec with env")
+	reqLogger.V(DEBUG).Info("reconcile spec with env")
 
 	specs := []reconcileutil.EnvSpec{
 		{Env: kubeSpec.ImageCSIPluginEnv, Target: &csiResource.Spec.LinstorPluginImage},
@@ -154,7 +153,7 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(ctx context.Context, request recon
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Debug("reconcile spec with resources")
+	reqLogger.V(DEBUG).Info("reconcile spec with resources")
 
 	resourceErr := r.reconcileResource(ctx, csiResource)
 	if resourceErr != nil {
@@ -173,62 +172,62 @@ func (r *ReconcileLinstorCSIDriver) Reconcile(ctx context.Context, request recon
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileResource",
-	})
-	logger.Debug("performing upgrades and fill defaults in resource")
+	logger := r.log.WithValues(
+		"Name", csiResource.Name,
+		"Namespace", csiResource.Namespace,
+		"Op", "reconcileResource",
+	)
+	logger.V(DEBUG).Info("performing upgrades and fill defaults in resource")
 
 	changed := false
 
-	logger.Debug("performing upgrade/fill: #1 -> Set default image names for CSI")
+	logger.V(DEBUG).Info("performing upgrade/fill: #1 -> Set default image names for CSI")
 
 	if csiResource.Spec.CSIAttacherImage == "" {
 		csiResource.Spec.CSIAttacherImage = DefaultAttacherImage
 		changed = true
 
-		logger.Infof("set csi attacher image to '%s'", csiResource.Spec.CSIAttacherImage)
+		logger.V(INFO).Info("set csi attacher image", "imaqe", csiResource.Spec.CSIAttacherImage)
 	}
 
 	if csiResource.Spec.CSILivenessProbeImage == "" {
 		csiResource.Spec.CSILivenessProbeImage = DefaultLivenessProbeImage
 		changed = true
 
-		logger.Infof("set csi liveness probe image to '%s'", csiResource.Spec.CSILivenessProbeImage)
+		logger.V(INFO).Info("set csi liveness probe image", "image", csiResource.Spec.CSILivenessProbeImage)
 	}
 
 	if csiResource.Spec.CSINodeDriverRegistrarImage == "" {
 		csiResource.Spec.CSINodeDriverRegistrarImage = DefaultNodeDriverRegistrarImage
 		changed = true
 
-		logger.Infof("set csi node driver registrar image to '%s'", csiResource.Spec.CSINodeDriverRegistrarImage)
+		logger.V(INFO).Info("set csi node driver registrar image", "image", csiResource.Spec.CSINodeDriverRegistrarImage)
 	}
 
 	if csiResource.Spec.CSIProvisionerImage == "" {
 		csiResource.Spec.CSIProvisionerImage = DefaultProvisionerImage
 		changed = true
 
-		logger.Infof("set csi provisioner image to '%s'", csiResource.Spec.CSIProvisionerImage)
+		logger.V(INFO).Info("set csi provisioner image", "image", csiResource.Spec.CSIProvisionerImage)
 	}
 
 	if csiResource.Spec.CSISnapshotterImage == "" {
 		csiResource.Spec.CSISnapshotterImage = DefaultSnapshotterImage
 		changed = true
 
-		logger.Infof("set csi snapshotter image to '%s'", csiResource.Spec.CSISnapshotterImage)
+		logger.V(INFO).Info("set csi snapshotter image", "image", csiResource.Spec.CSISnapshotterImage)
 	}
 
 	if csiResource.Spec.CSIResizerImage == "" {
 		csiResource.Spec.CSIResizerImage = DefaultResizerImage
 		changed = true
 
-		logger.Infof("set csi resizer image to '%s'", csiResource.Spec.CSIResizerImage)
+		logger.V(INFO).Info("set csi resizer image", "image", csiResource.Spec.CSIResizerImage)
 	}
 
-	logger.Debugf("finished upgrade/fill: #1 -> Set default image names for CSI: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #1 -> Set default image names for CSI", "changed", changed)
 
-	logger.Debug("performing upgrade/fill: #2 -> Set default endpoint URL for client")
+	logger.V(DEBUG).Info("performing upgrade/fill: #2 -> Set default endpoint URL for client")
 
 	if csiResource.Spec.ControllerEndpoint == "" {
 		serviceName := types.NamespacedName{Name: csiResource.Name + "-cs", Namespace: csiResource.Namespace}
@@ -237,43 +236,43 @@ func (r *ReconcileLinstorCSIDriver) reconcileResource(ctx context.Context, csiRe
 		csiResource.Spec.ControllerEndpoint = defaultEndpoint
 		changed = true
 
-		logger.Infof("set controller endpoint URL to '%s'", csiResource.Spec.ControllerEndpoint)
+		logger.V(INFO).Info("set controller endpoint URL", "url", csiResource.Spec.ControllerEndpoint)
 	}
 
-	logger.Debugf("finished upgrade/fill: #2 -> Set default endpoint URL for client: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #2 -> Set default endpoint URL for client", "changed", changed)
 
-	logger.Debug("performing upgrade/fill: #3 -> Set service account names to previous implicit values")
+	logger.V(DEBUG).Info("performing upgrade/fill: #3 -> Set service account names to previous implicit values")
 
 	if csiResource.Spec.CSINodeServiceAccountName == "" {
 		csiResource.Spec.CSINodeServiceAccountName = csiResource.Name + NodeServiceAccount
 		changed = true
 
-		logger.Infof("set csi node service account to '%s'", csiResource.Spec.CSINodeServiceAccountName)
+		logger.V(INFO).Info("set csi node service account", "serviceAccount", csiResource.Spec.CSINodeServiceAccountName)
 	}
 
 	if csiResource.Spec.CSIControllerServiceAccountName == "" {
 		csiResource.Spec.CSIControllerServiceAccountName = csiResource.Name + ControllerServiceAccount
 		changed = true
 
-		logger.Infof("set csi controller service account to '%s'", csiResource.Spec.CSIControllerServiceAccountName)
+		logger.V(INFO).Info("set csi controller service account", "serviceAccount", csiResource.Spec.CSIControllerServiceAccountName)
 	}
 
-	logger.Debugf("finished upgrade/fill: #3 -> Set service account names to previous implicit values: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #3 -> Set service account names to previous implicit values", "changed", changed)
 
-	logger.Debugf("performing upgrade/fill: #4 -> Set kubelet path to default")
+	logger.V(DEBUG).Info("performing upgrade/fill: #4 -> Set kubelet path to default")
 
 	if csiResource.Spec.KubeletPath == "" {
 		csiResource.Spec.KubeletPath = DefaultKubeletPath
 		changed = true
 
-		logger.Infof("set kubelet path to '%s'", csiResource.Spec.KubeletPath)
+		logger.V(DEBUG).Info("set kubelet path", "kubeletPath", csiResource.Spec.KubeletPath)
 	}
 
-	logger.Debugf("finished upgrade/fill: #4 -> Set kubelet path to: changed=%t", changed)
+	logger.V(DEBUG).Info("finished upgrade/fill: #4 -> Set kubelet path to", "changed", changed)
 
-	logger.Debug("finished all upgrades/fills")
+	logger.V(DEBUG).Info("finished all upgrades/fills")
 	if changed {
-		logger.Info("save updated spec")
+		logger.V(INFO).Info("save updated spec")
 		return r.client.Update(ctx, csiResource)
 	}
 	return nil
@@ -333,25 +332,25 @@ func (r *ReconcileLinstorCSIDriver) reconcileStatus(ctx context.Context, csiReso
 
 	err = r.client.Status().Update(updateCtx, csiResource)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"requestName":      csiResource.Name,
-			"requestNamespace": csiResource.Namespace,
-			"Op":               "reconcileStatus",
-			"originalError":    specError,
-			"updateError":      err,
-		}).Error("Failed to update status")
+		r.log.WithValues(
+			"requestName", csiResource.Name,
+			"requestNamespace", csiResource.Namespace,
+			"Op", "reconcileStatus",
+			"originalError", specError,
+			"updateError", err,
+		).Info("Failed to update status")
 	}
 
 	return err
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileNodes(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileNodes",
-	})
-	logger.Debug("creating csi node daemon set")
+	logger := r.log.WithValues(
+		"Name", csiResource.Name,
+		"Namespace", csiResource.Namespace,
+		"Op", "reconcileNodes",
+	)
+	logger.V(DEBUG).Info("creating csi node daemon set")
 
 	nodeDaemonSet := newCSINodeDaemonSet(csiResource)
 
@@ -360,7 +359,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileNodes(ctx context.Context, csiResou
 		return fmt.Errorf("failed to reconcile daemonset: %w", err)
 	}
 
-	logger.Debug("reconciling csi node objects")
+	logger.V(DEBUG).Info("reconciling csi node objects")
 
 	err = r.reconcileCSINodeObjects(ctx, csiResource)
 	if err != nil {
@@ -375,29 +374,30 @@ func (r *ReconcileLinstorCSIDriver) reconcileNodes(ctx context.Context, csiResou
 // Topology keys are only queried once at start-up. LINSTOR's keys are updated periodically by the operator, and so
 // the set of supported keys can change. The only reliable way to update them is restart the whole pod.
 func (r *ReconcileLinstorCSIDriver) reconcileCSINodeObjects(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileCSINodeObjects",
-	})
-	logger.Debug("creating linstor client")
+	logger := r.log.WithValues(
+		"Name", csiResource.Name,
+		"Namespace", csiResource.Namespace,
+		"Op", "reconcileCSINodeObjects",
+	)
+	logger.V(DEBUG).Info("creating linstor client")
 
 	lclient, err := lc.NewHighLevelLinstorClientFromConfig(
 		csiResource.Spec.ControllerEndpoint,
 		&csiResource.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, csiResource.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create linstor client: %w", err)
 	}
 
 	if !lclient.ControllerReachable(ctx) {
-		logger.Debug("controller not online, nothing to reconcile")
+		logger.V(DEBUG).Info("controller not online, nothing to reconcile")
 
 		return nil
 	}
 
-	logger.Debug("fetching linstor nodes")
+	logger.V(DEBUG).Info("fetching linstor nodes")
 
 	lnodes, err := lclient.Nodes.GetAll(ctx)
 	if err != nil {
@@ -432,22 +432,22 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSINodeObjects(ctx context.Context,
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileCSINodeForPod(ctx context.Context, pod *corev1.Pod, lnodes []lapi.Node, csiNodes []storagev1.CSINode) error {
-	logger := logrus.WithField("pod", pod.Name)
+	logger := r.log.WithValues("pod", pod.Name)
 
-	logger.Debug("searching matching linstor node")
+	logger.V(DEBUG).Info("searching matching linstor node")
 
 	lnode := nodeByName(lnodes, pod.Spec.NodeName)
 	if lnode == nil {
-		logger.Debug("no linstor node found, skipping")
+		logger.V(DEBUG).Info("no linstor node found, skipping")
 
 		return nil
 	}
 
-	logger.Debug("searching matching csi driver spec")
+	logger.V(DEBUG).Info("searching matching csi driver spec")
 
 	csiDriver := csiDriverForNode(csiNodes, pod.Spec.NodeName)
 	if csiDriver == nil {
-		logger.Debug("no csi driver found, skipping")
+		logger.V(DEBUG).Info("no csi driver found, skipping")
 
 		return nil
 	}
@@ -463,7 +463,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSINodeForPod(ctx context.Context, 
 		expectedKey := k[len(lapiconst.NamespcAuxiliary+"/"):]
 
 		if !mdutil.SliceContains(csiDriver.TopologyKeys, expectedKey) {
-			logger.WithField("topologyKey", expectedKey).Debug("key missing in exported topology keys")
+			logger.V(DEBUG).Info("key missing in exported topology keys", "topologyKey", expectedKey)
 
 			hasAllKeys = false
 
@@ -475,7 +475,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSINodeForPod(ctx context.Context, 
 		return nil
 	}
 
-	logger.Debug("not all labels are marked as exported, removing csi node")
+	logger.V(DEBUG).Info("not all labels are marked as exported, removing csi node")
 
 	err := r.client.Patch(
 		ctx,
@@ -486,7 +486,7 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSINodeForPod(ctx context.Context, 
 		return fmt.Errorf("failed to remove outdated csi node object: %w", err)
 	}
 
-	logger.Debug("not all labels are marked as exported, removing pod to trigger recreation")
+	logger.V(DEBUG).Info("not all labels are marked as exported, removing pod to trigger recreation")
 
 	err = r.client.Delete(ctx, pod)
 	if err != nil {
@@ -523,12 +523,12 @@ func csiDriverForNode(csiNodes []storagev1.CSINode, name string) *storagev1.CSIN
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileControllerDeployment",
-	})
-	logger.Debugf("creating csi controller deployment")
+	logger := r.log.WithValues(
+		"Name", csiResource.Name,
+		"Namespace", csiResource.Namespace,
+		"Op", "reconcileControllerDeployment",
+	)
+	logger.V(DEBUG).Info("creating csi controller deployment")
 	controllerDeployment := newCSIControllerDeployment(csiResource)
 
 	_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, controllerDeployment, csiResource, reconcileutil.OnPatchErrorRecreate)
@@ -537,12 +537,12 @@ func (r *ReconcileLinstorCSIDriver) reconcileControllerDeployment(ctx context.Co
 }
 
 func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
-	logger := logrus.WithFields(logrus.Fields{
-		"Name":      csiResource.Name,
-		"Namespace": csiResource.Namespace,
-		"Op":        "reconcileCSIDriver",
-	})
-	logger.Debugf("creating csi driver resource")
+	logger := r.log.WithValues(
+		"Name", csiResource.Name,
+		"Namespace", csiResource.Namespace,
+		"Op", "reconcileCSIDriver",
+	)
+	logger.V(DEBUG).Info("creating csi driver resource")
 	csiDriver := newCSIDriver(csiResource)
 
 	_, err := reconcileutil.CreateOrUpdate(ctx, r.client, r.scheme, csiDriver, reconcileutil.OnPatchErrorRecreate)

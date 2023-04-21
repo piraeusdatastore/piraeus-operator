@@ -28,9 +28,9 @@ import (
 	"github.com/BurntSushi/toml"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/LINBIT/golinstor/linstortoml"
+	"github.com/go-logr/logr"
 	awaitelection "github.com/linbit/k8s-await-election/pkg/consts"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +52,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
+	. "github.com/piraeusdatastore/piraeus-operator/pkg/logconsts"
 )
 
 // CreateBackups controls if the operator will create a backup of the LINSTOR resources before upgrading.
@@ -62,7 +63,11 @@ var CreateMonitoring = true
 
 // newControllerReconciler returns a new reconcile.Reconciler
 func newControllerReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileLinstorController{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileLinstorController{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		log:    mgr.GetLogger().WithName("LinstorController-controller"),
+	}
 }
 
 // addControllerReconciler adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -99,17 +104,18 @@ type ReconcileLinstorController struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+	log    logr.Logger
 }
 
 // Reconcile reads that state of the cluster for a LinstorController object and makes changes based
 // on the state read and what is in the LinstorController.Spec
 func (r *ReconcileLinstorController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := log.WithFields(logrus.Fields{
-		"resquestName":      request.Name,
-		"resquestNamespace": request.Namespace,
-	})
+	log := r.log.WithValues(
+		"requestName", request.Name,
+		"requestNamespace", request.Namespace,
+	)
 
-	log.Info("controller Reconcile: Entering")
+	log.V(INFO).Info("controller Reconcile: Entering")
 
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
@@ -132,16 +138,13 @@ func (r *ReconcileLinstorController) Reconcile(ctx context.Context, request reco
 
 	statusErr := r.reconcileStatus(ctx, controllerResource, resErr)
 	if statusErr != nil {
-		log.Warnf("failed to update status. original error: %v", resErr)
+		log.Error(resErr, "failed to update status")
 		return reconcile.Result{}, statusErr
 	}
 
 	result, err := reconcileutil.ToReconcileResult(resErr)
 
-	log.WithFields(logrus.Fields{
-		"result": result,
-		"err":    err,
-	}).Info("controller Reconcile: reconcile loop end")
+	log.V(INFO).Info("controller Reconcile: reconcile loop end", "result", result, "err", err)
 
 	triggerStatusUpdate := reconcile.Result{RequeueAfter: 1 * time.Minute}
 
@@ -149,13 +152,13 @@ func (r *ReconcileLinstorController) Reconcile(ctx context.Context, request reco
 }
 
 func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
-	log := log.WithFields(logrus.Fields{
-		"Op":         "reconcileSpec",
-		"Controller": "linstorcontroller",
-		"Spec":       controllerResource.Spec,
-	})
+	log := r.log.WithValues(
+		"Op", "reconcileSpec",
+		"Controller", "linstorcontroller",
+		"Spec", controllerResource.Spec,
+	)
 
-	log.Info("reconcile spec with env")
+	log.V(INFO).Info("reconcile spec with env")
 
 	specs := []reconcileutil.EnvSpec{
 		{Env: kubeSpec.ImageLinstorControllerEnv, Target: &controllerResource.Spec.ControllerImage},
@@ -166,28 +169,28 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		return err
 	}
 
-	log.Debug("check for deletion flag")
+	log.V(DEBUG).Info("check for deletion flag")
 
 	markedForDeletion := controllerResource.GetDeletionTimestamp() != nil
 	if markedForDeletion {
 		return r.finalizeControllerSet(ctx, controllerResource)
 	}
 
-	log.Debug("reconcile finalizer")
+	log.V(DEBUG).Info("reconcile finalizer")
 
 	err = r.addFinalizer(ctx, controllerResource)
 	if err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	log.Debug("reconcile legacy config map name")
+	log.V(DEBUG).Info("reconcile legacy config map name")
 
 	err = reconcileutil.DeleteIfOwned(ctx, r.client, &corev1.ConfigMap{ObjectMeta: getObjectMeta(controllerResource, "%s-config")}, controllerResource)
 	if err != nil {
 		return fmt.Errorf("failed to delete legacy config map: %w", err)
 	}
 
-	log.Debug("reconcile LINSTOR Service")
+	log.V(DEBUG).Info("reconcile LINSTOR Service")
 
 	ctrlService := newServiceForResource(controllerResource)
 	_, err = reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlService, controllerResource, reconcileutil.OnPatchErrorReturn)
@@ -195,7 +198,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		return fmt.Errorf("failed to reconcile LINSTOR Service: %w", err)
 	}
 
-	log.Debug("reconcile LINSTOR Controller ConfigMap")
+	log.V(DEBUG).Info("reconcile LINSTOR Controller ConfigMap")
 
 	configMap, err := NewConfigMapForResource(controllerResource)
 	if err != nil {
@@ -214,7 +217,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		}
 	}
 
-	log.Debug("reconcile LINSTOR Controller Deployment")
+	log.V(DEBUG).Info("reconcile LINSTOR Controller Deployment")
 
 	ctrlDeployment := newDeploymentForResource(controllerResource)
 	deploymentChanged, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, ctrlDeployment, controllerResource, reconcileutil.OnPatchErrorRecreate)
@@ -223,7 +226,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 	}
 
 	if configmapChanged && !deploymentChanged {
-		log.Debug("restart LINSTOR Controller")
+		log.V(DEBUG).Info("restart LINSTOR Controller")
 
 		err := reconcileutil.RestartRollout(ctx, r.client, ctrlDeployment)
 		if err != nil {
@@ -232,9 +235,9 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 	}
 
 	if monitoring.Enabled(ctx, r.client, r.scheme) {
-		log.Debug("monitoring is available in cluster, reconciling monitoring")
+		log.V(DEBUG).Info("monitoring is available in cluster, reconciling monitoring")
 
-		log.Debug("reconciling ServiceMonitor definition")
+		log.V(DEBUG).Info("reconciling ServiceMonitor definition")
 
 		serviceMonitor := monitoring.MonitorForService(ctrlService)
 
@@ -271,7 +274,7 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 				return fmt.Errorf("failed to reconcile servicemonitor definition: %w", err)
 			}
 
-			log.WithField("changed", serviceMonitorChanged).Debug("reconciling monitoring service definition: done")
+			log.V(DEBUG).Info("reconciling monitoring service definition: done", "changed", serviceMonitorChanged)
 		} else {
 			err = reconcileutil.DeleteIfOwned(ctx, r.client, &monitoringv1.ServiceMonitor{ObjectMeta: getObjectMeta(controllerResource, "%s")}, controllerResource)
 			if err != nil {
@@ -280,29 +283,30 @@ func (r *ReconcileLinstorController) reconcileSpec(ctx context.Context, controll
 		}
 	}
 
-	log.Debug("reconcile LINSTOR")
+	log.V(DEBUG).Info("reconcile LINSTOR")
 
 	return r.reconcileControllers(ctx, controllerResource)
 }
 
 func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
-	log := log.WithFields(logrus.Fields{
-		"name":      controllerResource.Name,
-		"namespace": controllerResource.Namespace,
-		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
-	})
-	log.Info("controller Reconcile: reconciling controller Nodes")
+	log := r.log.WithValues(
+		"name", controllerResource.Name,
+		"namespace", controllerResource.Namespace,
+		"spec", controllerResource.Spec,
+	)
+	log.V(INFO).Info("controller Reconcile: reconciling controller Nodes")
 
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		expectedEndpoint(controllerResource),
 		&controllerResource.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, controllerResource.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("wait for controller service to come online")
+	log.V(DEBUG).Info("wait for controller service to come online")
 
 	err = r.controllerReachable(ctx, linstorClient)
 	if err != nil {
@@ -312,7 +316,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		}
 	}
 
-	log.Debug("ensuring additional properties are set")
+	log.V(DEBUG).Info("ensuring additional properties are set")
 
 	allProperties, err := linstorClient.Controller.GetProps(ctx)
 	if err != nil {
@@ -333,7 +337,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		return fmt.Errorf("could not reconcile additional properties: %w", err)
 	}
 
-	log.Debug("find existing controller nodes")
+	log.V(DEBUG).Info("find existing controller nodes")
 	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
 		return err
@@ -354,10 +358,10 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		return err
 	}
 
-	log.Debug("register controller pods in LINSTOR")
+	log.V(DEBUG).Info("register controller pods in LINSTOR")
 
 	for _, pod := range ourPods.Items {
-		log.WithField("pod", pod.Name).Debug("register controller pod")
+		log.V(DEBUG).Info("register controller pod", "pod", pod.Name)
 		_, err := linstorClient.GetNodeOrCreate(ctx, lapi.Node{
 			Name: pod.Name,
 			Type: lc.Controller,
@@ -379,7 +383,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		}
 	}
 
-	log.Debug("remove controllers without pods from LINSTOR")
+	log.V(DEBUG).Info("remove controllers without pods from LINSTOR")
 
 	for _, linstorController := range ourControllers {
 		found := false
@@ -391,7 +395,7 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 		}
 
 		if !found {
-			log.WithField("node", linstorController.Name).Debug("remove controller pod")
+			log.V(DEBUG).Info("remove controller pod", "node", linstorController.Name)
 			err = linstorClient.Nodes.Delete(ctx, linstorController.Name)
 			if err != nil {
 				return err
@@ -403,17 +407,17 @@ func (r *ReconcileLinstorController) reconcileControllers(ctx context.Context, c
 }
 
 func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, controllerResource *piraeusv1.LinstorController, resErr error) error {
-	log := log.WithFields(logrus.Fields{
-		"Name":      controllerResource.Name,
-		"Namespace": controllerResource.Namespace,
-	})
-	log.Info("reconcile status")
+	log := r.log.WithValues(
+		"Name", controllerResource.Name,
+		"Namespace", controllerResource.Namespace,
+	)
+	log.V(INFO).Info("reconcile status")
 
 	linstorStatusErr := r.reconcileLinstorStatus(ctx, controllerResource)
 
 	controllerResource.Status.Errors = reconcileutil.ErrorStrings(resErr, linstorStatusErr)
 
-	log.Debug("update status in resource")
+	log.V(DEBUG).Info("update status in resource")
 
 	// Status update should always happen, even if the actual update context is canceled
 	updateCtx, updateCancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -423,16 +427,17 @@ func (r *ReconcileLinstorController) reconcileStatus(ctx context.Context, contro
 }
 
 func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
-	log := log.WithFields(logrus.Fields{
-		"Name":      controllerResource.Name,
-		"Namespace": controllerResource.Namespace,
-		"Op":        "reconcileLinstorStatus",
-	})
+	log := r.log.WithValues(
+		"Name", controllerResource.Name,
+		"Namespace", controllerResource.Namespace,
+		"Op", "reconcileLinstorStatus",
+	)
 
 	linstorClient, err := lc.NewHighLevelLinstorClientFromConfig(
 		expectedEndpoint(controllerResource),
 		&controllerResource.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, controllerResource.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return err
@@ -443,15 +448,15 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 
 	err = r.controllerReachable(ctx, linstorClient)
 	if err != nil {
-		log.Debug("controller not reachable, status checks will be skipped")
+		log.V(DEBUG).Info("controller not reachable, status checks will be skipped")
 		cancel()
 	}
 
-	log.Debug("find active controller pod")
+	log.V(DEBUG).Info("find active controller pod")
 
 	controllerName, err := r.findActiveControllerPodName(ctx, linstorClient)
 	if err != nil {
-		log.Warnf("failed to find active controller pod: %v", err)
+		log.Error(err, "failed to find active controller pod")
 	}
 
 	controllerResource.Status.ControllerStatus = &shared.NodeStatus{
@@ -459,11 +464,11 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 		RegisteredOnController: false,
 	}
 
-	log.Debug("check if controller pod is registered")
+	log.V(DEBUG).Info("check if controller pod is registered")
 
 	allNodes, err := linstorClient.Nodes.GetAll(ctx)
 	if err != nil {
-		log.Warnf("failed to fetch list of LINSTOR nodes: %v", err)
+		log.Error(err, "failed to fetch list of LINSTOR nodes")
 	}
 
 	for _, node := range allNodes {
@@ -472,11 +477,11 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 		}
 	}
 
-	log.Debug("fetch all properties set on controller")
+	log.V(DEBUG).Info("fetch all properties set on controller")
 
 	allProps, err := linstorClient.Controller.GetProps(ctx)
 	if err != nil {
-		log.Warnf("failed to fetch list of properties from controller: %v", err)
+		log.Error(err, "failed to fetch list of properties from controller")
 	}
 
 	if allProps == nil {
@@ -486,11 +491,11 @@ func (r *ReconcileLinstorController) reconcileLinstorStatus(ctx context.Context,
 
 	controllerResource.Status.ControllerProperties = allProps
 
-	log.Debug("fetch information about storage nodes")
+	log.V(DEBUG).Info("fetch information about storage nodes")
 
 	nodes, err := linstorClient.GetAllStorageNodes(ctx)
 	if err != nil {
-		log.Warnf("unable to get LINSTOR storage nodes: %v, continue with empty node list", err)
+		log.Error(err, "unable to get LINSTOR storage nodes, continue with empty node list")
 		nodes = nil
 	}
 
@@ -544,12 +549,12 @@ func (r *ReconcileLinstorController) findActiveControllerPodName(ctx context.Con
 
 // finalizeControllerSet returns whether it is finished as well as potentially an error
 func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, controllerResource *piraeusv1.LinstorController) error {
-	log := log.WithFields(logrus.Fields{
-		"name":      controllerResource.Name,
-		"namespace": controllerResource.Namespace,
-		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
-	})
-	log.Info("controller finalizeControllerSet: found LinstorController marked for deletion, finalizing...")
+	log := r.log.WithValues(
+		"name", controllerResource.Name,
+		"namespace", controllerResource.Namespace,
+		"spec", controllerResource.Spec,
+	)
+	log.V(INFO).Info("controller finalizeControllerSet: found LinstorController marked for deletion, finalizing...")
 
 	if !mdutil.HasFinalizer(controllerResource, linstorControllerFinalizer) {
 		return nil
@@ -559,6 +564,7 @@ func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, 
 		expectedEndpoint(controllerResource),
 		&controllerResource.Spec.LinstorClientConfig,
 		lc.NamedSecret(ctx, r.client, controllerResource.Namespace),
+		r.log,
 	)
 	if err != nil {
 		return err
@@ -568,7 +574,7 @@ func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, 
 
 	statusErr := r.reconcileStatus(ctx, controllerResource, nodesOnControllerErr)
 	if statusErr != nil {
-		log.Warnf("failed to update status. original error: %v", nodesOnControllerErr)
+		log.Error(nodesOnControllerErr, "failed to update status")
 		return statusErr
 	}
 
@@ -576,20 +582,20 @@ func (r *ReconcileLinstorController) finalizeControllerSet(ctx context.Context, 
 		return nodesOnControllerErr
 	}
 
-	log.Info("controller finalizing finished, removing finalizer")
+	log.V(INFO).Info("controller finalizing finished, removing finalizer")
 
 	return r.deleteFinalizer(ctx, controllerResource)
 }
 
 // returns an error if nodes are still registered.
 func (r *ReconcileLinstorController) ensureNoNodesOnController(ctx context.Context, controllerResource *piraeusv1.LinstorController, linstorClient *lc.HighLevelClient) error {
-	log := log.WithFields(logrus.Fields{
-		"name":      controllerResource.Name,
-		"namespace": controllerResource.Namespace,
-		"spec":      fmt.Sprintf("%+v", controllerResource.Spec),
-	})
+	log := r.log.WithValues(
+		"name", controllerResource.Name,
+		"namespace", controllerResource.Namespace,
+		"spec", fmt.Sprintf("%+v", controllerResource.Spec),
+	)
 	if controllerResource.Status.ControllerStatus.NodeName == "" {
-		log.Info("controller never deployed; finalization OK")
+		log.V(INFO).Info("controller never deployed; finalization OK")
 		return nil
 	}
 
