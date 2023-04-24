@@ -23,11 +23,11 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v0.22.1
-  csiAttacherImage: k8s-gcr.m.daocloud.io/sig-storage/csi-attacher:v4.1.0
+  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v1.0.1
+  csiAttacherImage: k8s-gcr.m.daocloud.io/sig-storage/csi-attacher:v4.2.0
   csiLivenessProbeImage: k8s-gcr.m.daocloud.io/sig-storage/livenessprobe:v2.9.0
   csiNodeDriverRegistrarImage: k8s-gcr.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.7.0
-  csiProvisionerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-provisioner:v3.4.0
+  csiProvisionerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-provisioner:v3.4.1
   csiSnapshotterImage: k8s-gcr.m.daocloud.io/sig-storage/csi-snapshotter:v6.2.1
   csiResizerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-resizer:v1.7.0
   csiAttacherWorkerThreads: 10
@@ -75,7 +75,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.20.3
+    controllerImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.22.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -101,16 +101,16 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.20.3
+    satelliteImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.22.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: quay.m.daocloud.io/piraeusdatastore/drbd-reactor:v1.0.0
+    monitoringImage: quay.m.daocloud.io/piraeusdatastore/drbd-reactor:v1.1.0
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: quay.m.daocloud.io/piraeusdatastore/drbd9-centos7:v9.1.13
+    kernelModuleInjectionImage: quay.m.daocloud.io/piraeusdatastore/drbd9-centos7:v9.1.14
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
