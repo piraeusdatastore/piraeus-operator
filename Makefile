@@ -78,7 +78,7 @@ release:
 	yq ".appVersion = \"$(VERSION)\"" -i charts/piraeus/Chart.yaml
 	# set operator image to tagged version
 	yq ".operator.image = \"quay.io/piraeusdatastore/piraeus-operator:v$(VERSION)\"" -i charts/piraeus/values.yaml
-	yq ".operator.image = \"daocloud.io/piraeus/piraeus-operator:v$(VERSION)\"" -i charts/piraeus/values.cn.yaml
+	yq ".operator.image = \"quay.m.daocloud.io/piraeusdatastore/piraeus-operator:v$(VERSION)\"" -i charts/piraeus/values.cn.yaml
 	# update full yaml deployment
 	$(MAKE) deploy/piraeus
 	git add --update
@@ -90,7 +90,7 @@ release:
 	echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$(VERSION)...HEAD" >> CHANGELOG.md
 	# set operator image back to :latest during development
 	yq ".operator.image = \"quay.io/piraeusdatastore/piraeus-operator:latest\"" -i charts/piraeus/values.yaml
-	yq ".operator.image = \"daocloud.io/piraeus/piraeus-operator:latest\"" -i charts/piraeus/values.cn.yaml
+	yq ".operator.image = \"quay.m.daocloud.io/piraeusdatastore/piraeus-operator:latest\"" -i charts/piraeus/values.cn.yaml
 	# reset full yaml deployment
 	$(MAKE) deploy/piraeus
 	# commit begin of new dev cycle
