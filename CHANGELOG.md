@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Switch controller logging to be controlled by the `zap-log-level` flag.
+- Default images:
+  * LINSTOR 1.22.0
+  * LINSTOR CSI 1.0.1
+  * DRBD 9.1.14
+  * DRBD Reactor 1.1.0
+  * external CSI images upgraded to latest versions
+
 ## [v1.10.2] - 2023-01-31
 
 ### Added
