@@ -12,7 +12,7 @@ labels:
 images:
 - name: controller
   newName: quay.io/piraeusdatastore/piraeus-operator
-  newTag: v2
+  newTag: v2.1.0
 
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 #- ../prometheus
@@ -110,8 +110,8 @@ replacements:
     kind: ConfigMap
     name: image-config
   targets:
-    - select:
-        kind: Deployment
-        name: controller-manager
-      fieldPaths:
-        - spec.template.spec.containers.[name=manager].env.[name=IMAGE_CONFIG_MAP_NAME].value
+  - fieldPaths:
+    - spec.template.spec.containers.[name=manager].env.[name=IMAGE_CONFIG_MAP_NAME].value
+    select:
+      kind: Deployment
+      name: controller-manager
