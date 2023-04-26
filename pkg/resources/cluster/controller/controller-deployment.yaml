@@ -18,6 +18,39 @@ spec:
       labels:
         app.kubernetes.io/component: linstor-controller
     spec:
+      initContainers:
+        - name: run-migration
+          image: linstor-controller
+          args:
+            - runMigration
+          env:
+            - name: K8S_AWAIT_ELECTION_ENABLED
+              value: "1"
+            - name: K8S_AWAIT_ELECTION_NAME
+              value: "linstor-controller"
+            - name: "K8S_AWAIT_ELECTION_LOCK_NAME"
+              value: "linstor-controller"
+            - name: "K8S_AWAIT_ELECTION_LOCK_NAMESPACE"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: K8S_AWAIT_ELECTION_IDENTITY
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /run/migration
+              name: migration
+            - mountPath: /etc/linstor
+              name: etc-linstor
+              readOnly: true
+            - mountPath: /tmp
+              name: tmp
       containers:
         - name: linstor-controller
           image: linstor-controller
@@ -74,6 +107,8 @@ spec:
         - name: var-log-linstor-controller
           emptyDir: { }
         - name: tmp
+          emptyDir: { }
+        - name: migration
           emptyDir: { }
       tolerations:
         - key: "node.kubernetes.io/unreachable"
