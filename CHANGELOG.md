@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- LINSTOR Controller deployment now runs DB migrations as a separate init container, creating
+  a backup of current DB state if needed.
+
 ### Fixed
 
 - Fixed a bug where `LinstorSatellite` resources would be not be cleaned up when the satellite is already gone.

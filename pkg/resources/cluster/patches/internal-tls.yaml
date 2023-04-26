@@ -18,6 +18,14 @@
               secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
           - name: java-internal-tls
             emptyDir: {}
+          initContainers:
+          - name: run-migration
+            volumeMounts:
+              - name: internal-tls
+                mountPath: /etc/linstor/ssl-pem
+                readOnly: true
+              - name: java-internal-tls
+                mountPath: /etc/linstor/ssl
           containers:
           - name: linstor-controller
             volumeMounts:

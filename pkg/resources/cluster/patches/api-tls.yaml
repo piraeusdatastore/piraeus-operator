@@ -12,6 +12,17 @@
     spec:
       template:
         spec:
+          initContainers:
+            - name: run-migration
+              volumeMounts:
+                - name: api-tls
+                  mountPath: /etc/linstor/https-pem
+                  readOnly: true
+                - name: java-api-tls
+                  mountPath: /etc/linstor/https
+                - name: client-tls
+                  mountPath: /etc/linstor/client
+                  readOnly: true
           containers:
             - name: linstor-controller
               volumeMounts:
