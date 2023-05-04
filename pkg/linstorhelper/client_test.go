@@ -26,6 +26,7 @@ import (
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
 func TestNewClientForCluster(t *testing.T) {
@@ -74,7 +75,10 @@ func TestNewClientForCluster(t *testing.T) {
 			externalRef: &piraeusv1.LinstorExternalControllerRef{
 				URL: "http://other-cluster.example.com:3370",
 			},
-			expectedOptions: []lapi.Option{lapi.BaseURL(&url.URL{Scheme: "http", Host: "other-cluster.example.com:3370"})},
+			expectedOptions: []lapi.Option{
+				lapi.BaseURL(&url.URL{Scheme: "http", Host: "other-cluster.example.com:3370"}),
+				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
+			},
 		},
 		{
 			name: "cluster-external-controller-with-tls",
@@ -94,6 +98,7 @@ func TestNewClientForCluster(t *testing.T) {
 				lapi.HTTPClient(&http.Client{Transport: &http.Transport{
 					TLSClientConfig: tlsConfig,
 				}}),
+				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
 			},
 		},
 		{
@@ -132,7 +137,10 @@ func TestNewClientForCluster(t *testing.T) {
 					},
 				},
 			},
-			expectedOptions: []lapi.Option{lapi.BaseURL(&url.URL{Scheme: "http", Host: "test-cluster-service.test.svc:3370"})},
+			expectedOptions: []lapi.Option{
+				lapi.BaseURL(&url.URL{Scheme: "http", Host: "test-cluster-service.test.svc:3370"}),
+				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
+			},
 		},
 		{
 			name: "cluster-with-service-with-port-tls",
@@ -163,6 +171,7 @@ func TestNewClientForCluster(t *testing.T) {
 			expectedOptions: []lapi.Option{
 				lapi.BaseURL(&url.URL{Scheme: "https", Host: "test-cluster-service.test.svc:3371"}),
 				lapi.HTTPClient(&http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}),
+				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
 			},
 		},
 	}
