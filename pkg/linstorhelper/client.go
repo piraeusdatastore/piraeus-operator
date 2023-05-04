@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
 // Client is a LINSTOR client with convenience functions.
@@ -78,7 +79,7 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 		}))
 	}
 
-	options = append(options, lapi.BaseURL(clientUrl))
+	options = append(options, lapi.BaseURL(clientUrl), lapi.UserAgent(vars.OperatorName+"/"+vars.Version))
 
 	c, err := lapi.NewClient(options...)
 	if err != nil {
