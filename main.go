@@ -21,6 +21,7 @@ import (
 	"os"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"golang.org/x/time/rate"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -58,6 +59,7 @@ func main() {
 	var namespace string
 	var pullSecret string
 	var imageConfigMapName string
+	var linstorApiQps float64
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -66,6 +68,7 @@ func main() {
 	flag.StringVar(&namespace, "namespace", os.Getenv("NAMESPACE"), "The namespace to create resources in.")
 	flag.StringVar(&pullSecret, "pull-secret", os.Getenv("PULL_SECRET"), "The pull secret to use for all containers")
 	flag.StringVar(&imageConfigMapName, "image-config-map-name", os.Getenv("IMAGE_CONFIG_MAP_NAME"), "Config map holding default images to use")
+	flag.Float64Var(&linstorApiQps, "linstor-api-qps", 100.0, "Limit requests to the LINSTOR API to this many queries per second")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -81,6 +84,8 @@ func main() {
 		}
 		namespace = string(raw)
 	}
+
+	linstorLimiter := rate.NewLimiter(rate.Limit(linstorApiQps), 1)
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -104,6 +109,7 @@ func main() {
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
 		PullSecret:         pullSecret,
+		LinstorApiLimiter:  linstorLimiter,
 	}).SetupWithManager(mgr, controller.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorCluster")
 		os.Exit(1)
@@ -113,6 +119,7 @@ func main() {
 		Scheme:             mgr.GetScheme(),
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
+		LinstorApiLimiter:  linstorLimiter,
 	}).SetupWithManager(mgr, controller.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)
