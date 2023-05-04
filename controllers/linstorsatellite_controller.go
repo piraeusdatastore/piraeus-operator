@@ -505,7 +505,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 	}
 
 	ress, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{Node: []string{lsatellite.Name}})
-	if err != nil {
+	if err != nil && err != lclient.NotFoundError {
 		return err
 	}
 
