@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a bug where `LinstorSatellite` resources would be not be cleaned up when the satellite is already gone.
+
 ## [v2.1.0] - 2023-04-24
 
 ### Added
