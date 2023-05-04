@@ -27,6 +27,7 @@ import (
 	lclient "github.com/LINBIT/golinstor/client"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -65,6 +66,7 @@ type LinstorSatelliteReconciler struct {
 	Scheme             *runtime.Scheme
 	Namespace          string
 	ImageConfigMapName string
+	LinstorApiLimiter  *rate.Limiter
 	Kustomizer         *resources.Kustomizer
 	log                logr.Logger
 }
@@ -287,6 +289,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		lsatellite.Spec.ClusterRef.ClientSecretName,
 		lsatellite.Spec.ClusterRef.ExternalController,
 		linstorhelper.Logr(log.FromContext(ctx)),
+		lclient.Limiter(r.LinstorApiLimiter),
 	)
 	if err != nil || lc == nil {
 		conds.AddError(conditions.Available, err)
@@ -488,6 +491,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		lsatellite.Spec.ClusterRef.ClientSecretName,
 		lsatellite.Spec.ClusterRef.ExternalController,
 		linstorhelper.Logr(log.FromContext(ctx)),
+		lclient.Limiter(r.LinstorApiLimiter),
 	)
 	if err != nil {
 		return err

@@ -26,6 +26,7 @@ import (
 
 	lapi "github.com/LINBIT/golinstor/client"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"golang.org/x/time/rate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	netwv1 "k8s.io/api/networking/v1"
@@ -71,6 +72,7 @@ type LinstorClusterReconciler struct {
 	Namespace          string
 	PullSecret         string
 	ImageConfigMapName string
+	LinstorApiLimiter  *rate.Limiter
 	Kustomizer         *resources.Kustomizer
 }
 
@@ -608,6 +610,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		clientSecret,
 		lcluster.Spec.ExternalController,
 		linstorhelper.Logr(log.FromContext(ctx)),
+		lapi.Limiter(r.LinstorApiLimiter),
 	)
 	if err != nil || lc == nil {
 		conds.AddError(conditions.Available, err)

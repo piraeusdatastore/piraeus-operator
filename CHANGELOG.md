@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - LINSTOR Controller deployment now runs DB migrations as a separate init container, creating
   a backup of current DB state if needed.
+- Apply global rate limit to LINSTOR API, defaulting to 100 qps.
 
 ### Fixed
 

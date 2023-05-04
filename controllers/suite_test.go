@@ -125,11 +125,14 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
+	unlimiter := rate.NewLimiter(rate.Inf, 0)
+
 	err = (&controllers.LinstorClusterReconciler{
 		Client:             k8sManager.GetClient(),
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
+		LinstorApiLimiter:  unlimiter,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -138,6 +141,7 @@ var _ = BeforeSuite(func() {
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
+		LinstorApiLimiter:  unlimiter,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
