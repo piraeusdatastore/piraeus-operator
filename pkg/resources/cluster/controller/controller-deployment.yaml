@@ -80,9 +80,11 @@ spec:
           livenessProbe:
             httpGet:
               port: api
+              path: /health
           startupProbe:
             httpGet:
               port: api
+              path: /health
             failureThreshold: 30
             periodSeconds: 10
           securityContext:
