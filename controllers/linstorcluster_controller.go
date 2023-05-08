@@ -566,7 +566,7 @@ func (r *LinstorClusterReconciler) kustomize(resources []string, lcluster *pirae
 		Labels:    r.kustomLabels(lcluster),
 		Resources: resources,
 		Images:    imgs,
-		Patches:   append(append(utils.MakeKustPatches(lcluster.Spec.Patches...), saPatch...), patches...),
+		Patches:   append(append(patches, saPatch...), utils.MakeKustPatches(lcluster.Spec.Patches...)...),
 	}
 
 	return r.Kustomizer.Kustomize(k)
