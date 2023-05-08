@@ -274,7 +274,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		Resources:    resourceDirs,
 		Images:       imgs,
 		Replacements: SatelliteNameReplacements,
-		Patches:      append(utils.MakeKustPatches(lsatellite.Spec.Patches...), patches...),
+		Patches:      append(patches, utils.MakeKustPatches(lsatellite.Spec.Patches...)...),
 	}
 
 	return r.Kustomizer.Kustomize(k)
