@@ -143,6 +143,10 @@ spec:
       hostPath:
         path: /run/dbus/system_bus_socket
         type: Socket
+    - name: var-log-linstor-satellite
+      hostPath:
+        path: /var/log/linstor-satellite
+        type: DirectoryOrCreate
     - name: satellite-config
       configMap:
         name: satellite-config
@@ -151,8 +155,6 @@ spec:
       configMap:
         name: reactor-config
         defaultMode: 0440
-    - name: var-log-linstor-satellite
-      emptyDir: { }
     - name: tmp
       emptyDir: { }
     - name: run-lock

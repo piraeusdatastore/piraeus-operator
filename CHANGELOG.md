@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a backup of current DB state if needed.
 - Apply global rate limit to LINSTOR API, defaulting to 100 qps.
 
+### Changed
+
+- Store LINSTOR Satellite logs on the host.
+
 ### Fixed
 
 - Fixed a bug where `LinstorSatellite` resources would be not be cleaned up when the satellite is already gone.
