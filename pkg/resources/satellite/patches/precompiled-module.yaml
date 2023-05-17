@@ -12,16 +12,11 @@
       volumes:
       - name: usr-src
         $patch: delete
-      - name: usr-lib
-        $patch: delete
       initContainers:
       - name: drbd-module-loader
         volumeMounts:
         - name: usr-src
           mountPath: /usr/src
-          $patch: delete
-        - name: usr-lib
-          mountPath: /usr/lib
           $patch: delete
         env:
         - name: LB_HOW
