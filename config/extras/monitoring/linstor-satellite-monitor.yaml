@@ -3,7 +3,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: linstor-satellite
-  namespace: system
   labels:
     app.kubernetes.io/component: linstor-satellite
 spec:

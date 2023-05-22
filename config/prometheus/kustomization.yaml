@@ -1,4 +1,0 @@
-resources:
-- controllermonitor.yaml
-- monitor.yaml
-- satellitemonitor.yaml
