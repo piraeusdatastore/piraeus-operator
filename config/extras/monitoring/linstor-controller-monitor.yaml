@@ -3,7 +3,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: linstor-controller
-  namespace: system
   labels:
     app.kubernetes.io/component: linstor-controller
 spec:

@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - linstor-controller-monitor.yaml
+  - linstor-satellite-monitor.yaml
+  - alerts.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: piraeus-datastore-dashboard
+    namespace: prometheus
+    options:
+      labels:
+        grafana_dashboard: "1"
+    files:
+      - piraeus-dashboard.json
