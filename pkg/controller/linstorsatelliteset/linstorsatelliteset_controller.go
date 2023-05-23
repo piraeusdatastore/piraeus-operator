@@ -1260,12 +1260,18 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 		MountPath: kubeSpec.ModulesDir,
 	},
 	)
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		Name:      kubeSpec.UsrLibDirName,
+		MountPath: kubeSpec.UsrLibDirMountPath,
+	},
+	)
 
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "kernel-module-injector",
 			Image:           satelliteSet.Spec.KernelModuleInjectionImage,
 			ImagePullPolicy: satelliteSet.Spec.ImagePullPolicy,
+			Command:         []string{"/bin/bash", "-c", "find /host/usr/lib -maxdepth 1 -mindepth 1 -exec ln -vs {} /usr/lib \\; 2>/dev/null; exec /entry.sh"},
 			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
 			Env:             env,
 			VolumeMounts:    volumeMounts,
@@ -1290,6 +1296,15 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: hostSrcDir,
+					Type: &kubeSpec.HostPathDirectoryType,
+				},
+			},
+		})
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: kubeSpec.UsrLibDirName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: kubeSpec.UsrLibDir,
 					Type: &kubeSpec.HostPathDirectoryType,
 				},
 			},
