@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Store LINSTOR Satellite logs on the host.
+- Updated images:
+  * LINSTOR 1.23.0
+  * LINSTOR CSI 1.1.0
+  * DRBD Reactor 1.2.0
+  * HA Controller 1.1.4
+  * external CSI images upgraded to latest versions
 
 ### Fixed
 
