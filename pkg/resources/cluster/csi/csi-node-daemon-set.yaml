@@ -79,7 +79,7 @@ spec:
             - name: run-mount
               mountPath: /run/mount
         - name: csi-node-driver-registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
           args:
             - '--v=5'
             - '--csi-address=/csi/csi.sock'
@@ -105,7 +105,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: csi-livenessprobe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.9.0
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.10.0
           securityContext:
             readOnlyRootFilesystem: true
             capabilities:
