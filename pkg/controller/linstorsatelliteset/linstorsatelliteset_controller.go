@@ -960,7 +960,8 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 							}, // Run linstor-satellite.
 							Env:             satelliteSet.Spec.AdditionalEnv,
 							ImagePullPolicy: satelliteSet.Spec.ImagePullPolicy,
-							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
+							SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged,
+								SELinuxOptions: &corev1.SELinuxOptions{Level: kubeSpec.Level, Type: kubeSpec.Type}},
 							Ports: []corev1.ContainerPort{
 								{
 									HostPort:      satelliteSet.Spec.SslConfig.Port(),
@@ -1266,10 +1267,11 @@ func daemonSetWithDRBDKernelModuleInjection(ds *apps.DaemonSet, satelliteSet *pi
 			Name:            "kernel-module-injector",
 			Image:           satelliteSet.Spec.KernelModuleInjectionImage,
 			ImagePullPolicy: satelliteSet.Spec.ImagePullPolicy,
-			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged},
-			Env:             env,
-			VolumeMounts:    volumeMounts,
-			Resources:       satelliteSet.Spec.KernelModuleInjectionResources,
+			SecurityContext: &corev1.SecurityContext{Privileged: &kubeSpec.Privileged,
+				SELinuxOptions: &corev1.SELinuxOptions{Level: kubeSpec.Level, Type: kubeSpec.Type}},
+			Env:          env,
+			VolumeMounts: volumeMounts,
+			Resources:    satelliteSet.Spec.KernelModuleInjectionResources,
 		},
 	}
 

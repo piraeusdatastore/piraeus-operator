@@ -115,7 +115,9 @@ operator:
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
     kernelModuleInjectionExtraVolumeMounts: []
-    additionalEnv: []
+    additionalEnv:
+    - name: LB_SELINUX_AS
+      value: "modules_object_t"
     dnsPolicy: ""
     sidecars: []
     extraVolumes: []

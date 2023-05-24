@@ -23,3 +23,4 @@ spec:
   kernelModuleInjectionMode: "Compile"
   kernelModuleInjectionImage: "quay.io/piraeusdatastore/drbd9-bionic:v9.1.15"
   kernelModuleInjectionResources: {}
+  additionalEnv: [{"name":"LB_SELINUX_AS","value":"modules_object_t"}]
