@@ -100,11 +100,13 @@ var (
 	HostPathDirectoryType         = corev1.HostPathDirectory
 	HostPathDirectoryOrCreateType = corev1.HostPathDirectoryOrCreate
 	MountPropagationBidirectional = corev1.MountPropagationBidirectional
-	FileType = corev1.HostPathFile
+	FileType                      = corev1.HostPathFile
 )
 
 // Shared consts common to container security. These need to be vars, so they
 // are addressible.
 var (
 	Privileged = true
+	Level      = "s0"
+	Type       = "spc_t"
 )
