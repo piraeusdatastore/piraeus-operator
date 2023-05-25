@@ -20,6 +20,7 @@ import (
 
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/shared"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
+	"github.com/piraeusdatastore/piraeus-operator/version"
 )
 
 // Various lapi consts yet to be defined in golinstor.
@@ -98,6 +99,7 @@ func NewHighLevelLinstorClientFromConfig(endpoint string, config *shared.Linstor
 		lapi.BaseURL(u),
 		lapi.Log(&logrAdapter{Logger: log}),
 		lapi.HTTPClient(&http.Client{Transport: &transport}),
+		lapi.UserAgent(kubeSpec.Name+"/"+version.Version),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create LINSTOR API client: %v", err)
