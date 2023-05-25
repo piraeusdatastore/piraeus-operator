@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Skip registration of non-running Controller Pods.
+- Default images:
+  * LINSTOR 1.23.0
+  * LINSTOR CSI 1.1.0
+  * DRBD Reactor 1.2.0
+  * external CSI images upgraded to latest versions
 
 ## [v1.10.3] - 2023-04-24
 
