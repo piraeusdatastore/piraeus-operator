@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Set User-Agent Header when querying LINSTOR.
 - Skip registration of non-running Controller Pods.
 - Default images:
   * LINSTOR 1.23.0
