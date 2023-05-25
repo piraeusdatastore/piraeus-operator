@@ -23,13 +23,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v1.0.1
-  csiAttacherImage: registry.k8s.io/sig-storage/csi-attacher:v4.2.0
-  csiLivenessProbeImage: registry.k8s.io/sig-storage/livenessprobe:v2.9.0
-  csiNodeDriverRegistrarImage: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0
-  csiProvisionerImage: registry.k8s.io/sig-storage/csi-provisioner:v3.4.1
+  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v1.1.0
+  csiAttacherImage: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
+  csiLivenessProbeImage: registry.k8s.io/sig-storage/livenessprobe:v2.10.0
+  csiNodeDriverRegistrarImage: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
+  csiProvisionerImage: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
   csiSnapshotterImage: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1
-  csiResizerImage: registry.k8s.io/sig-storage/csi-resizer:v1.7.0
+  csiResizerImage: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
@@ -75,7 +75,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.22.0
+    controllerImage: quay.io/piraeusdatastore/piraeus-server:v1.23.0
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -101,14 +101,14 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.22.0
+    satelliteImage: quay.io/piraeusdatastore/piraeus-server:v1.23.0
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v1.1.0
+    monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v1.2.0
     monitoringBindAddress: ""
     kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.14
     kernelModuleInjectionMode: Compile
