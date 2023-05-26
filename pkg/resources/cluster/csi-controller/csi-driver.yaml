@@ -11,3 +11,4 @@ spec:
     - Persistent
   storageCapacity: true
   requiresRepublish: false
+  seLinuxMount: true
