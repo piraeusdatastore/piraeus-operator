@@ -11,16 +11,16 @@ COPY go.sum go.sum
 RUN go mod download
 
 # Copy the go source
-COPY main.go main.go
+COPY cmd/ cmd/
 COPY api/ api/
-COPY controllers/ controllers/
+COPY internal/ internal/
 COPY pkg/ pkg/
 
 # Build
 ARG VERSION=devel
 ARG TARGETARCH
 ARG TARGETOS
-RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-X github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars.Version=$VERSION" -o manager main.go
+RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -ldflags "-X github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars.Version=$VERSION" -o manager ./cmd
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade to operator-sdk 1.29
+- Upgrade to kubebuilder v4 layout
+
 ## [v2.1.1] - 2023-05-24
 
 ### Added

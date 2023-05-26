@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers_test
+package controller_test
 
 import (
 	"context"
@@ -34,13 +34,14 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	crtController "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
+
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
-	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/k8sgc"
 	//+kubebuilder:scaffold:imports
 )
@@ -69,12 +70,12 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	imageConfig, err := os.ReadFile(filepath.Join("..", "config", "manager", "images.yaml"))
+	imageConfig, err := os.ReadFile(filepath.Join("..", "..", "config", "manager", "images.yaml"))
 	Expect(err).NotTo(HaveOccurred())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -113,7 +114,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// Increase the requeue rate limit to make tests faster and more stable
-	opts := controller.Options{
+	opts := crtController.Options{
 		RateLimiter: workqueue.NewMaxOfRateLimiter(
 			workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1*time.Second),
 			&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
@@ -127,7 +128,7 @@ var _ = BeforeSuite(func() {
 
 	unlimiter := rate.NewLimiter(rate.Inf, 0)
 
-	err = (&controllers.LinstorClusterReconciler{
+	err = (&controller.LinstorClusterReconciler{
 		Client:             k8sManager.GetClient(),
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
@@ -136,7 +137,7 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&controllers.LinstorSatelliteReconciler{
+	err = (&controller.LinstorSatelliteReconciler{
 		Client:             k8sManager.GetClient(),
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,

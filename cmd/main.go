@@ -29,12 +29,12 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	crtController "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
-	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
+	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
 )
@@ -103,24 +103,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.LinstorClusterReconciler{
+	if err = (&controller.LinstorClusterReconciler{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
 		PullSecret:         pullSecret,
 		LinstorApiLimiter:  linstorLimiter,
-	}).SetupWithManager(mgr, controller.Options{}); err != nil {
+	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorCluster")
 		os.Exit(1)
 	}
-	if err = (&controllers.LinstorSatelliteReconciler{
+	if err = (&controller.LinstorSatelliteReconciler{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
 		LinstorApiLimiter:  linstorLimiter,
-	}).SetupWithManager(mgr, controller.Options{}); err != nil {
+	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)
 	}
