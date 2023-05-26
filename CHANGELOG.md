@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New DRBD loader detection for:
   - Debian 12 (Bookworm)
   - Rocky Linux 8 & 9
+- Report `seLinuxMount` capability for the CSI Driver, speeding up volume mounts with SELinux
+  relabelling enabled.
 
 ## [v2.4.0] - 2024-01-30
 
