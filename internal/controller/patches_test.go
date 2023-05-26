@@ -1,4 +1,4 @@
-package controllers_test
+package controller_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
 
-	"github.com/piraeusdatastore/piraeus-operator/v2/controllers"
+	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 )
 
 func TestPatches(t *testing.T) {
@@ -20,19 +20,19 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterLinstorPassphrasePatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterLinstorPassphrasePatch("secret")
+				return controller.ClusterLinstorPassphrasePatch("secret")
 			},
 		},
 		{
 			name: "ClusterLinstorInternalTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterLinstorInternalTLSPatch("secret")
+				return controller.ClusterLinstorInternalTLSPatch("secret")
 			},
 		},
 		{
 			name: "ClusterLinstorInternalTLSCertManagerPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterLinstorInternalTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
+				return controller.ClusterLinstorInternalTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
 					Name: "issuer",
 				})
 			},
@@ -40,55 +40,55 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterCSINodeSelectorPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterCSINodeSelectorPatch(map[string]string{"foo": "bar"})
+				return controller.ClusterCSINodeSelectorPatch(map[string]string{"foo": "bar"})
 			},
 		},
 		{
 			name: "PullSecretPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.PullSecretPatch("secret")
+				return controller.PullSecretPatch("secret")
 			},
 		},
 		{
 			name: "SatelliteLinstorInternalTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.SatelliteLinstorInternalTLSPatch("secret")
+				return controller.SatelliteLinstorInternalTLSPatch("secret")
 			},
 		},
 		{
 			name: "SatelliteCommonNodePatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.SatelliteCommonNodePatch("node")
+				return controller.SatelliteCommonNodePatch("node")
 			},
 		},
 		{
 			name: "SatelliteHostPathVolumePatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.SatelliteHostPathVolumePatch("vol-name", "/host/path")
+				return controller.SatelliteHostPathVolumePatch("vol-name", "/host/path")
 			},
 		},
 		{
 			name: "SatellitePrecompiledModulePatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.SatellitePrecompiledModulePatch()
+				return controller.SatellitePrecompiledModulePatch()
 			},
 		},
 		{
 			name: "SatelliteHostPathVolumeEnvPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.SatelliteHostPathVolumeEnvPatch([]string{"/path1", "/path2"})
+				return controller.SatelliteHostPathVolumeEnvPatch([]string{"/path1", "/path2"})
 			},
 		},
 		{
 			name: "ClusterApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterApiTLSPatch("apiSecret", "clientSecret")
+				return controller.ClusterApiTLSPatch("apiSecret", "clientSecret")
 			},
 		},
 		{
 			name: "ClusterApiTLSCertManagerPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterApiTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
+				return controller.ClusterApiTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
 					Name: "issuer",
 				}, []string{"api.ns.svc"})
 			},
@@ -96,19 +96,19 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterApiEndpointPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterApiEndpointPatch("https://example.com:8888")
+				return controller.ClusterApiEndpointPatch("https://example.com:8888")
 			},
 		},
 		{
 			name: "ClusterCSIApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterCSIApiTLSPatch("controller", "node")
+				return controller.ClusterCSIApiTLSPatch("controller", "node")
 			},
 		},
 		{
 			name: "ClusterApiTLSClientCertManagerPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controllers.ClusterApiTLSClientCertManagerPatch("cert", "secret", &cmmetav1.ObjectReference{
+				return controller.ClusterApiTLSClientCertManagerPatch("cert", "secret", &cmmetav1.ObjectReference{
 					Name: "issuer",
 				})
 			},
