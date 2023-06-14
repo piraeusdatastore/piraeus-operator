@@ -253,10 +253,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		return nil, err
 	}
 
-	imgs, precompiled, err := cfg.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
-	if err != nil {
-		return nil, err
-	}
+	imgs, precompiled := cfg.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 
 	if precompiled {
 		// Module is precompiled, so we can skip bind-mounting and add the LB_HOW variable

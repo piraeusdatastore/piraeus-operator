@@ -9,17 +9,15 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 )
 
-func TestConfigs_GetVersions(t *testing.T) {
-	t.Parallel()
-
-	base := imageversions.Config{
+var (
+	BaseConfig = imageversions.Config{
 		Base: "repo.example.com/base",
-		Components: map[imageversions.Component]imageversions.ComponentConfig{
-			imageversions.LinstorSatellite: {
+		Components: map[string]imageversions.ComponentConfig{
+			"linstor-satellite": {
 				Image: "satellite",
 				Tag:   "v1",
 			},
-			imageversions.DrbdModuleLoader: {
+			"drbd-module-loader": {
 				Tag:   "v2",
 				Image: "fallback",
 				Match: []imageversions.OsMatch{
@@ -30,6 +28,19 @@ func TestConfigs_GetVersions(t *testing.T) {
 			},
 		},
 	}
+	OverrideConfig = imageversions.Config{
+		Base: "example.com/override",
+		Components: map[string]imageversions.ComponentConfig{
+			"linstor-satellite": {
+				Image: "different-satellite",
+				Tag:   "v2",
+			},
+		},
+	}
+)
+
+func TestConfig_GetVersions(t *testing.T) {
+	t.Parallel()
 
 	testcases := []struct {
 		name              string
@@ -42,8 +53,8 @@ func TestConfigs_GetVersions(t *testing.T) {
 			name: "default-ubuntu",
 			os:   "Ubuntu 20.04.5 LTS",
 			expected: []kusttypes.Image{
-				{Name: string(imageversions.LinstorSatellite), NewName: "repo.example.com/base/satellite", NewTag: "v1"},
-				{Name: string(imageversions.DrbdModuleLoader), NewName: "repo.example.com/base/ubuntu", NewTag: "v2"},
+				{Name: "linstor-satellite", NewName: "repo.example.com/base/satellite", NewTag: "v1"},
+				{Name: "drbd-module-loader", NewName: "repo.example.com/base/ubuntu", NewTag: "v2"},
 			},
 		},
 		{
@@ -51,8 +62,8 @@ func TestConfigs_GetVersions(t *testing.T) {
 			base: "quay.io/example",
 			os:   "AlmaLinux 9.0 (Emerald Puma)",
 			expected: []kusttypes.Image{
-				{Name: string(imageversions.LinstorSatellite), NewName: "quay.io/example/satellite", NewTag: "v1"},
-				{Name: string(imageversions.DrbdModuleLoader), NewName: "quay.io/example/new-alma", NewTag: "v2"},
+				{Name: "linstor-satellite", NewName: "quay.io/example/satellite", NewTag: "v1"},
+				{Name: "drbd-module-loader", NewName: "quay.io/example/new-alma", NewTag: "v2"},
 			},
 			expectPrecompiled: true,
 		},
@@ -61,8 +72,8 @@ func TestConfigs_GetVersions(t *testing.T) {
 			base: "quay.io/example2",
 			os:   "Debian GNU/Linux 11 (bullseye)",
 			expected: []kusttypes.Image{
-				{Name: string(imageversions.LinstorSatellite), NewName: "quay.io/example2/satellite", NewTag: "v1"},
-				{Name: string(imageversions.DrbdModuleLoader), NewName: "quay.io/example2/fallback", NewTag: "v2"},
+				{Name: "linstor-satellite", NewName: "quay.io/example2/satellite", NewTag: "v1"},
+				{Name: "drbd-module-loader", NewName: "quay.io/example2/fallback", NewTag: "v2"},
 			},
 		},
 	}
@@ -72,10 +83,27 @@ func TestConfigs_GetVersions(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, precompiled, err := base.GetVersions(tcase.base, tcase.os)
-			assert.NoError(t, err)
+			actual, precompiled := BaseConfig.GetVersions(tcase.base, tcase.os)
 			assert.Equal(t, tcase.expectPrecompiled, precompiled)
 			assert.ElementsMatch(t, tcase.expected, actual)
 		})
 	}
+}
+
+func TestConfigs_GetVersions_prefer_later_config(t *testing.T) {
+	configs := imageversions.Configs{&BaseConfig, &OverrideConfig}
+	actual, precompiled := configs.GetVersions("", "Ubuntu 20.04.5 LTS")
+	assert.False(t, precompiled)
+	assert.ElementsMatch(t, []kusttypes.Image{
+		{Name: "linstor-satellite", NewName: "example.com/override/different-satellite", NewTag: "v2"},
+		{Name: "drbd-module-loader", NewName: "repo.example.com/base/ubuntu", NewTag: "v2"},
+	}, actual)
+
+	reversedConfigs := imageversions.Configs{&OverrideConfig, &BaseConfig}
+	actual, precompiled = reversedConfigs.GetVersions("", "Ubuntu 20.04.5 LTS")
+	assert.False(t, precompiled)
+	assert.ElementsMatch(t, []kusttypes.Image{
+		{Name: "linstor-satellite", NewName: "repo.example.com/base/satellite", NewTag: "v1"},
+		{Name: "drbd-module-loader", NewName: "repo.example.com/base/ubuntu", NewTag: "v2"},
+	}, actual)
 }

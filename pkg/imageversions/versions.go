@@ -8,10 +8,14 @@ import (
 	kusttypes "sigs.k8s.io/kustomize/api/types"
 )
 
+// Configs is a list of Config, where later
+type Configs []*Config
+
 // Config represents a default image mapping used by the operator.
 type Config struct {
-	Base       string                        `yaml:"base"`
-	Components map[Component]ComponentConfig `yaml:"components"`
+	source     string
+	Base       string                     `yaml:"base"`
+	Components map[string]ComponentConfig `yaml:"components"`
 }
 
 type ComponentConfig struct {
@@ -26,36 +30,33 @@ type OsMatch struct {
 	Precompiled bool   `yaml:"precompiled"`
 }
 
-type Component string
+func (c Configs) GetVersions(base string, osImage string) ([]kusttypes.Image, bool) {
+	uniqImages := make(map[string]*kusttypes.Image)
+	precompiled := false
 
-const (
-	LinstorController Component = "linstor-controller"
-	LinstorSatellite  Component = "linstor-satellite"
-	LinstorCSI        Component = "linstor-csi"
-	DrbdReactor       Component = "drbd-reactor"
-	DrbdModuleLoader  Component = "drbd-module-loader"
-)
+	for _, cfg := range c {
+		imgs, compiled := cfg.GetVersions(base, osImage)
+		precompiled = precompiled || compiled
+		for i := range imgs {
+			uniqImages[imgs[i].Name] = &imgs[i]
+		}
+	}
 
-type notConfigured struct {
-	c Component
+	result := make([]kusttypes.Image, 0, len(uniqImages))
+	for _, img := range uniqImages {
+		result = append(result, *img)
+	}
+
+	return result, precompiled
 }
 
-func (n *notConfigured) Error() string {
-	return fmt.Sprintf("missing configuration for component '%s'", n.c)
-}
-
-var _ error = &notConfigured{}
-
-func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bool, error) {
+func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bool) {
 	result := make([]kusttypes.Image, 0, len(f.Components))
 
 	precompiled := false
 
 	for c := range f.Components {
-		name, tag, compiled, err := f.get(c, base, osImage)
-		if err != nil {
-			return nil, false, err
-		}
+		name, tag, compiled := f.get(f.Components[c], base, osImage)
 
 		precompiled = precompiled || compiled
 
@@ -68,28 +69,23 @@ func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bo
 		}
 	}
 
-	return result, precompiled, nil
+	return result, precompiled
 }
 
-func (f *Config) get(c Component, base string, osImage string) (string, string, bool, error) {
+func (f *Config) get(img ComponentConfig, base string, osImage string) (string, string, bool) {
 	if base == "" {
 		base = f.Base
 	}
 
-	img, ok := f.Components[c]
-	if !ok {
-		return "", "", false, &notConfigured{c: c}
-	}
-
 	for _, matchRule := range img.Match {
 		if ok, _ := regexp.MatchString(matchRule.OsImage, osImage); ok {
-			return fmt.Sprintf("%s/%s", base, matchRule.Image), img.Tag, matchRule.Precompiled, nil
+			return fmt.Sprintf("%s/%s", base, matchRule.Image), img.Tag, matchRule.Precompiled
 		}
 	}
 
 	if img.Image == "" {
-		return "", "", false, nil
+		return "", "", false
 	}
 
-	return fmt.Sprintf("%s/%s", base, img.Image), img.Tag, false, nil
+	return fmt.Sprintf("%s/%s", base, img.Image), img.Tag, false
 }
