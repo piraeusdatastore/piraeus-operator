@@ -229,10 +229,7 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		return nil, err
 	}
 
-	imgs, _, err := cfg.GetVersions(lcluster.Spec.Repository, "")
-	if err != nil {
-		return nil, err
-	}
+	imgs, _ := cfg.GetVersions(lcluster.Spec.Repository, "")
 
 	ctrlRes, err := r.kustomizeControllerResources(lcluster, imgs)
 	if err != nil {

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow image configuration to be customized by adding additional items to the config map. Items using a "greater" key
+  take precedence when referencing the same images.
+
 ### Changed
 
 - Upgrade to operator-sdk 1.29
