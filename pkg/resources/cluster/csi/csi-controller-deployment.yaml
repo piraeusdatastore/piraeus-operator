@@ -62,7 +62,7 @@ spec:
               drop:
                 - ALL
         - name: csi-attacher
-          image: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
+          image: csi-attacher
           args:
             - '--v=5'
             - '--csi-address=$(ADDRESS)'
@@ -87,7 +87,7 @@ spec:
               drop:
                 - ALL
         - name: csi-livenessprobe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.10.0
+          image: csi-livenessprobe
           args:
             - '--csi-address=$(ADDRESS)'
           env:
@@ -102,7 +102,7 @@ spec:
               drop:
                 - ALL
         - name: csi-provisioner
-          image: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
+          image: csi-provisioner
           args:
             - '--csi-address=$(ADDRESS)'
             - '--timeout=1m'
@@ -136,7 +136,7 @@ spec:
               drop:
                 - ALL
         - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1
+          image: csi-snapshotter
           args:
             - '--timeout=1m'
             - '--csi-address=$(ADDRESS)'
@@ -160,7 +160,7 @@ spec:
               drop:
                 - ALL
         - name: csi-resizer
-          image: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
+          image: csi-resizer
           args:
             - '--v=5'
             - '--csi-address=$(ADDRESS)'
@@ -186,7 +186,7 @@ spec:
               drop:
                 - ALL
         - name: csi-health-monitor
-          image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.9.0
+          image: csi-external-health-monitor-controller
           args:
             - '--v=5'
             - '--csi-address=$(ADDRESS)'

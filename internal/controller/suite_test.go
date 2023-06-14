@@ -70,7 +70,10 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	imageConfig, err := os.ReadFile(filepath.Join("..", "..", "config", "manager", "images.yaml"))
+	piraeusImageConfig, err := os.ReadFile(filepath.Join("..", "..", "config", "manager", "0_piraeus_datastore_images.yaml"))
+	Expect(err).NotTo(HaveOccurred())
+
+	sigStorageImageConfig, err := os.ReadFile(filepath.Join("..", "..", "config", "manager", "0_sig_storage_images.yaml"))
 	Expect(err).NotTo(HaveOccurred())
 
 	By("bootstrapping test environment")
@@ -108,7 +111,8 @@ var _ = BeforeSuite(func() {
 			Namespace: Namespace,
 		},
 		Data: map[string]string{
-			"images.yaml": string(imageConfig),
+			"0_piraeus_datastore_images.yaml": string(piraeusImageConfig),
+			"0_sig_storage_images.yaml":       string(sigStorageImageConfig),
 		},
 	})
 	Expect(err).NotTo(HaveOccurred())

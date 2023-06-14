@@ -6,7 +6,8 @@ generatorOptions:
 
 configMapGenerator:
 - files:
-  - images.yaml
+  - 0_piraeus_datastore_images.yaml
+  - 0_sig_storage_images.yaml
   name: image-config
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
