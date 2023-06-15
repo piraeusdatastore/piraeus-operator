@@ -117,10 +117,14 @@ spec:
           args:
             - '--csi-address=/csi/csi.sock'
       tolerations:
-        - effect: NoSchedule
-          key: drbd.linbit.com/lost-quorum
-        - effect: NoSchedule
-          key: drbd.linbit.com/force-io-error
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: drbd.linbit.com/lost-quorum
+          effect: NoSchedule
+        - key: drbd.linbit.com/force-io-error
+          effect: NoSchedule
       volumes:
         - name: device-dir
           hostPath:

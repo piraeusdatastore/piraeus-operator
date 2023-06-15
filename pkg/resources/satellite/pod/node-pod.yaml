@@ -156,6 +156,10 @@ spec:
       emptyDir: { }
   restartPolicy: Always
   tolerations:
+    - key: node-role.kubernetes.io/master
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
     - key: node.kubernetes.io/not-ready
       effect: NoExecute
     - key: node.kubernetes.io/unreachable
@@ -166,7 +170,7 @@ spec:
       effect: NoSchedule
     - key: node.kubernetes.io/unschedulable
       effect: NoSchedule
-    - effect: NoSchedule
-      key: drbd.linbit.com/lost-quorum
-    - effect: NoSchedule
-      key: drbd.linbit.com/force-io-error
+    - key: drbd.linbit.com/lost-quorum
+      effect: NoSchedule
+    - key: drbd.linbit.com/force-io-error
+      effect: NoSchedule
