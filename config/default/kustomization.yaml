@@ -23,10 +23,10 @@ resources:
 - ../webhook
 - ../certmanager
 
-patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
-- manager_webhook_patch.yaml
-- webhookcainjection_patch.yaml
+patches:
+- path: manager_webhook_patch.yaml
+- path: webhookcainjection_patch.yaml
+# - path: manager_auth_proxy_patch.yaml
 
 replacements:
 - source:

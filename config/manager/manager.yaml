@@ -31,6 +31,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - --metrics-bind-address=0
         - --namespace=$(NAMESPACE)
         - --image-config-map-name=$(IMAGE_CONFIG_MAP_NAME)
         image: controller:latest

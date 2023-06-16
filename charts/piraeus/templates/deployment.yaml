@@ -20,7 +20,11 @@ spec:
       containers:
       - args:
           - --health-probe-bind-address=:8081
+        {{- if .Values.kubeRbacProxy.enabled }}
           - --metrics-bind-address=127.0.0.1:8080
+        {{- else }}
+          - --metrics-bind-address=0
+        {{- end }}
         {{- range $opt, $val := .Values.operator.options }}
           - --{{ $opt | kebabcase }}={{ $val }}
         {{- end }}
@@ -60,6 +64,7 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+      {{- if .Values.kubeRbacProxy.enabled }}
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -82,6 +87,7 @@ spec:
         volumeMounts:
           - mountPath: /etc/tls
             name: cert
+      {{- end }}
       securityContext:
         runAsNonRoot: true
       serviceAccountName: {{ include "piraeus-operator.serviceAccountName" . }}
