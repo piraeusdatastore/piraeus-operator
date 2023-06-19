@@ -17,9 +17,14 @@ spec:
       env:
         - name: LB_FAIL_IF_USERMODE_HELPER_NOT_DISABLED
           value: "yes"
+        - name: LB_SELINUX_AS
+          value: "modules_object_t"
       securityContext:
-        # NB: We don't use RO root here, as SELinux likes to complain
-        # if we try to insert a module from a emptyDir volume.
+        readOnlyRootFilesystem: true
+        seLinuxOptions:
+          # "super privileged container"_t to allow changing of labels if required
+          type: spc_t
+          level: s0
         capabilities:
           drop:
             - ALL
@@ -32,6 +37,8 @@ spec:
         - mountPath: /usr/src
           name: usr-src
           readOnly: true
+        - mountPath: /tmp
+          name: tmp
     - name: drbd-shutdown-guard
       image: drbd-shutdown-guard
       securityContext:
