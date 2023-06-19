@@ -22,20 +22,13 @@ to fix issues or new software versions until a stable upgrade path to v2 is avai
 
 ## Usage
 
-To deploy Piraeus Operator v2, first make sure to deploy [cert-manager](https://cert-manager.io)
-
-```
-$ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.yaml
-```
-
-Then, deploy the Operator from this repository:
+To deploy Piraeus Operator v2 from this repository, simply run:
 
 ```
 $ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2"
 # Verify the operator is running:
-$ kubectl get pods -n piraeus-datastore
-NAME                                                 READY   STATUS    RESTARTS   AGE
-piraeus-operator-piraeus-operator-748c57bb8d-65cvw   2/2     Running   0          55s
+$ kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
+pod/piraeus-operator-controller-manager-dd898f48c-bhbtv condition met
 ```
 
 Now you can create a basic storage cluster by applying the `LinstorCluster` resource.
@@ -50,10 +43,7 @@ spec: {}
 EOF
 ```
 
-## Configuration
-
-We are currently working on improving our documentation. Additional tutorials and explanation will be
-added soon.
+## Documentation
 
 ### [Tutorials](./docs/tutorial)
 
@@ -67,6 +57,10 @@ How-To Guides show you how to configure a specific aspect or achieve a specific 
 
 The API Reference for the Piraeus Operator. Contains documentation of the LINSTOR related resources that the user can
 modify or observe.
+
+### [Understanding Piraeus Datastore](./docs/explanation)
+
+These documents explain how Piraeus Datastore works, and why it works the way it does.
 
 ## Missing features
 

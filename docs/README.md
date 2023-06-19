@@ -14,3 +14,7 @@ How-To Guides show you how to configure a specific aspect or achieve a specific 
 
 The API Reference for the Piraeus Operator. Contains documentation of the LINSTOR related resources that the user can
 modify or observe.
+
+### [Understanding Piraeus Datastore](./explanation)
+
+These documents explain how Piraeus Datastore works, and why it works the way it does.

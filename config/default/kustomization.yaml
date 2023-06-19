@@ -21,90 +21,35 @@ resources:
 - ../rbac
 - ../manager
 - ../webhook
-- ../certmanager
+- ../gencert
 
 patches:
 - path: manager_webhook_patch.yaml
-- path: webhookcainjection_patch.yaml
-# - path: manager_auth_proxy_patch.yaml
 
 replacements:
 - source:
-    fieldPath: metadata.namespace
     kind: Service
     name: webhook-service
   targets:
   - fieldPaths:
-    - spec.dnsNames.0
-    options:
-      delimiter: .
-      index: 1
+    - spec.template.spec.containers.[name=gencert].env.[name=WEBHOOK_SERVICE_NAME].value
     select:
-      group: cert-manager.io
-      kind: Certificate
-      name: serving-cert
-      namespace: system
-      version: v1
-  - fieldPaths:
-    - spec.dnsNames.1
-    options:
-      delimiter: .
-      index: 1
-    select:
-      group: cert-manager.io
-      kind: Certificate
-      name: serving-cert
-      namespace: system
-      version: v1
+      kind: Deployment
+      name: gencert
 - source:
-    kind: Service
-    name: webhook-service
+    kind: ValidatingWebhookConfiguration
+    name: validating-webhook-configuration
   targets:
   - fieldPaths:
-    - spec.dnsNames.0
-    options:
-      delimiter: .
+    - spec.template.spec.containers.[name=gencert].env.[name=WEBHOOK_CONFIGURATION_NAME].value
     select:
-      group: cert-manager.io
-      kind: Certificate
-      name: serving-cert
-      namespace: system
-      version: v1
+      kind: Deployment
+      name: gencert
   - fieldPaths:
-    - spec.dnsNames.1
-    options:
-      delimiter: .
+    - rules.0.resourceNames.0
     select:
-      group: cert-manager.io
-      kind: Certificate
-      name: serving-cert
-      namespace: system
-      version: v1
-- source:
-    fieldPath: metadata.namespace
-    kind: Certificate
-    name: serving-cert
-  targets:
-  - fieldPaths:
-    - metadata.annotations.[cert-manager.io/inject-ca-from]
-    options:
-      delimiter: /
-    select:
-      kind: ValidatingWebhookConfiguration
-      name: validating-webhook-configuration
-- source:
-    fieldPath: metadata.name
-    kind: Certificate
-    name: serving-cert
-  targets:
-  - fieldPaths:
-    - metadata.annotations.[cert-manager.io/inject-ca-from]
-    options:
-      delimiter: /
-      index: 1
-    select:
-      kind: ValidatingWebhookConfiguration
-      name: validating-webhook-configuration
+      kind: ClusterRole
+      name: gencert
 - source:
     fieldPath: metadata.name
     kind: ConfigMap

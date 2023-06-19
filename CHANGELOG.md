@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Disable operator metrics by default. This removes a dependency on an external container.
+- Dependency on cert-manager for initial deployment.
 
 ## [v2.1.1] - 2023-05-24
 

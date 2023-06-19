@@ -9,8 +9,9 @@ var (
 )
 
 const (
-	FieldOwner         = Domain + "/operator"
-	ApplyAnnotation    = Domain + "/last-applied"
-	ManagedByLabel     = Domain + "/managed-by"
-	SatelliteFinalizer = Domain + "/satellite-protection"
+	FieldOwner              = Domain + "/operator"
+	ApplyAnnotation         = Domain + "/last-applied"
+	ManagedByLabel          = Domain + "/managed-by"
+	SatelliteFinalizer      = Domain + "/satellite-protection"
+	GenCertLeaderElectionID = OperatorName + "-gencert"
 )

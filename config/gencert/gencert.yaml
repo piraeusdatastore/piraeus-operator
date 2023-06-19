@@ -1,0 +1,67 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gencert
+  labels:
+    app.kubernetes.io/component: piraeus-operator-gencert
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: piraeus-operator-gencert
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: gencert
+      labels:
+        app.kubernetes.io/component: piraeus-operator-gencert
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - command:
+            - /gencert
+          args:
+            - --leader-elect
+            - --namespace=$(NAMESPACE)
+            - --webhook-configuration-name=$(WEBHOOK_CONFIGURATION_NAME)
+            - --webhook-service-name=$(WEBHOOK_SERVICE_NAME)
+            - --webhook-tls-secret-name=$(WEBHOOK_TLS_SECRET_NAME)
+          image: controller:latest
+          name: gencert
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: WEBHOOK_CONFIGURATION_NAME
+              value: validating-webhook-configuration
+            - name: WEBHOOK_SERVICE_NAME
+              value: webhook-service
+            - name: WEBHOOK_TLS_SECRET_NAME
+              value: webhook-server-cert
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 50m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 32Mi
+      serviceAccountName: gencert
+      terminationGracePeriodSeconds: 10
