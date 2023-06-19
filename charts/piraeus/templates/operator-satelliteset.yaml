@@ -49,6 +49,9 @@ spec:
   {{- if .Values.operator.satelliteSet.logLevel }}
   logLevel: {{ .Values.operator.satelliteSet.logLevel | quote }}
   {{- end }}
+  {{- if .Values.operator.satelliteSet.dnsPolicy }}
+  dnsPolicy: {{ .Values.operator.satelliteSet.dnsPolicy }}
+  {{- end }}
   {{- if .Values.operator.satelliteSet.sidecars }}
   sidecars: {{ .Values.operator.satelliteSet.sidecars | toJson }}
   {{- end }}

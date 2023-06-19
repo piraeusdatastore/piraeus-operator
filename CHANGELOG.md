@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to set the dns policy used for satellites.
+
 ## [v1.10.4] - 2023-05-25
 
 ### Changed

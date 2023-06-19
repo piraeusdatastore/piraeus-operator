@@ -146,6 +146,12 @@ type LinstorSatelliteSetSpec struct {
 	// +optional
 	// +nullable
 	MountDrbdResourceDirectoriesFromHost bool `json:"mountDrbdResourceDirectoriesFromHost"`
+
+	// DNSPolicy sets the DNS policy for the pod.
+	// +optional
+	// +nullable
+	// +kubebuilder:validation:Enum=ClusterFirstWithHostNet;ClusterFirst;Default;None
+	DNSPolicy *corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
 }
 
 // LinstorSatelliteSetStatus defines the observed state of LinstorSatelliteSet

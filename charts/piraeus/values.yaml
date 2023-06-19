@@ -116,6 +116,7 @@ operator:
     kernelModuleInjectionResources: {}
     kernelModuleInjectionExtraVolumeMounts: []
     additionalEnv: []
+    dnsPolicy: ""
     sidecars: []
     extraVolumes: []
     customLabels: {}
