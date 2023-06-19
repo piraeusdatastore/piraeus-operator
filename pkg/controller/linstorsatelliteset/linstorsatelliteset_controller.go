@@ -947,8 +947,8 @@ func newSatelliteDaemonSet(satelliteSet *piraeusv1.LinstorSatelliteSet, satellit
 				Spec: corev1.PodSpec{
 					Affinity:           satelliteSet.Spec.Affinity,
 					Tolerations:        satelliteSet.Spec.Tolerations,
-					HostNetwork:        true, // INFO: Per Roland, set to true
-					DNSPolicy:          corev1.DNSClusterFirstWithHostNet,
+					HostNetwork:        true,
+					DNSPolicy:          getDNSPolicy(satelliteSet),
 					PriorityClassName:  satelliteSet.Spec.PriorityClassName.GetName(satelliteSet.Namespace),
 					ServiceAccountName: getServiceAccountName(satelliteSet),
 					Containers: append([]corev1.Container{
@@ -1540,6 +1540,14 @@ func (r *ReconcileLinstorSatelliteSet) removeDanglingSatellites(ctx context.Cont
 	}
 
 	return nil
+}
+
+func getDNSPolicy(satelliteSet *piraeusv1.LinstorSatelliteSet) corev1.DNSPolicy {
+	if satelliteSet.Spec.DNSPolicy == nil {
+		return corev1.DNSClusterFirstWithHostNet
+	}
+
+	return *satelliteSet.Spec.DNSPolicy
 }
 
 func findStoragePool(pools []lapi.StoragePool, name string) *lapi.StoragePool {

@@ -978,6 +978,15 @@ spec:
                 description: Cluster URL of the linstor controller. If not set, will
                   be determined from the current resource name.
                 type: string
+              dnsPolicy:
+                description: DNSPolicy sets the DNS policy for the pod.
+                enum:
+                - ClusterFirstWithHostNet
+                - ClusterFirst
+                - Default
+                - None
+                nullable: true
+                type: string
               drbdRepoCred:
                 description: drbdRepoCred is the name of the kubernetes secret that
                   holds the credential for the DRBD repositories
