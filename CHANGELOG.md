@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgrade to operator-sdk 1.29
 - Upgrade to kubebuilder v4 layout
+- Updated images:
+  * LINSTOR CSI 1.2.0
+  * DRBD 9.2.4
 
 ### Removed
 
