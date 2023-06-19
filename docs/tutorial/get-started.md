@@ -4,11 +4,6 @@ Learn about the ways to get started with Piraeus Datastore by deploying Piraeus 
 
 ## Prerequisites
 
-* [Install `cert-manager`](https://cert-manager.io/docs/installation/). You can quickly install `cert-manager` by
-  applying its static manifests:
-  ```
-  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
-  ```
 * [Install the Linux kernel headers on the hosts](./install-kernel-headers.md).
 * [Install `kubectl` version `>= 1.22`](https://kubernetes.io/docs/tasks/tools/)
 
