@@ -14,6 +14,9 @@ spec:
   initContainers:
     - name: drbd-module-loader
       image: drbd-module-loader
+      env:
+        - name: LB_FAIL_IF_USERMODE_HELPER_NOT_DISABLED
+          value: "yes"
       securityContext:
         # NB: We don't use RO root here, as SELinux likes to complain
         # if we try to insert a module from a emptyDir volume.
