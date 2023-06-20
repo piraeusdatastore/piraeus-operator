@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Option to set the dns policy used for satellites.
 
+### Changed
+
+- Default images:
+  * LINSTOR CSI 1.2.0
+  * DRBD 9.1.15
+  * external CSI images upgraded to latest
+
 ## [v1.10.4] - 2023-05-25
 
 ### Changed

@@ -23,12 +23,12 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v1.1.0
+  pluginImage: quay.io/piraeusdatastore/piraeus-csi:v1.2.0
   csiAttacherImage: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
   csiLivenessProbeImage: registry.k8s.io/sig-storage/livenessprobe:v2.10.0
   csiNodeDriverRegistrarImage: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
   csiProvisionerImage: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
-  csiSnapshotterImage: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1
+  csiSnapshotterImage: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.2
   csiResizerImage: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
@@ -110,7 +110,7 @@ operator:
     resources: {}
     monitoringImage: quay.io/piraeusdatastore/drbd-reactor:v1.2.0
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.14
+    kernelModuleInjectionImage: quay.io/piraeusdatastore/drbd9-bionic:v9.1.15
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
