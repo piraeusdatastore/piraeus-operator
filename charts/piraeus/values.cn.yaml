@@ -61,7 +61,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.m.daocloud.io/piraeusdatastore/piraeus-operator:latest
+  image: quay.m.daocloud.io/piraeusdatastore/piraeus-operator:v1.10.5
   affinity: {}
   tolerations: []
   resources: {}
