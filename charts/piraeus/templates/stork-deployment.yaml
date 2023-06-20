@@ -274,7 +274,6 @@ spec:
       containers:
         - command:
             - /usr/local/bin/kube-scheduler
-            - --address=0.0.0.0
             {{- if semverCompare ">= 1.22" .Capabilities.KubeVersion.Version }}
             - --config=/etc/kubernetes/stork-config.yaml
             {{- else }}
