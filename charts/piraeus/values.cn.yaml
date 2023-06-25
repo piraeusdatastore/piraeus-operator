@@ -15,7 +15,7 @@ etcd:
 stork:
   enabled: false
   storkImage: docker.m.daocloud.io/openstorage/stork:2.8.2
-  schedulerImage: k8s-gcr.m.daocloud.io/kube-scheduler
+  schedulerImage: k8s.m.daocloud.io/kube-scheduler
   schedulerTag: ""
   replicas: 1
   storkResources: {} # resources requirements for the stork plugin containers
@@ -24,12 +24,12 @@ stork:
 csi:
   enabled: true
   pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v1.2.0
-  csiAttacherImage: k8s-gcr.m.daocloud.io/sig-storage/csi-attacher:v4.3.0
-  csiLivenessProbeImage: k8s-gcr.m.daocloud.io/sig-storage/livenessprobe:v2.10.0
-  csiNodeDriverRegistrarImage: k8s-gcr.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.8.0
-  csiProvisionerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-provisioner:v3.5.0
-  csiSnapshotterImage: k8s-gcr.m.daocloud.io/sig-storage/csi-snapshotter:v6.2.2
-  csiResizerImage: k8s-gcr.m.daocloud.io/sig-storage/csi-resizer:v1.8.0
+  csiAttacherImage: k8s.m.daocloud.io/sig-storage/csi-attacher:v4.3.0
+  csiLivenessProbeImage: k8s.m.daocloud.io/sig-storage/livenessprobe:v2.10.0
+  csiNodeDriverRegistrarImage: k8s.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.8.0
+  csiProvisionerImage: k8s.m.daocloud.io/sig-storage/csi-provisioner:v3.5.0
+  csiSnapshotterImage: k8s.m.daocloud.io/sig-storage/csi-snapshotter:v6.2.2
+  csiResizerImage: k8s.m.daocloud.io/sig-storage/csi-resizer:v1.8.0
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
