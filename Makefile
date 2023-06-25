@@ -39,7 +39,7 @@ helm-values:
 	cat ./charts/piraeus/values.yaml \
       | sed 's/docker.io/docker.m.daocloud.io/' \
       | sed 's/quay.io/quay.m.daocloud.io/' \
-      | sed 's/registry.k8s.io/k8s-gcr.m.daocloud.io/' \
+      | sed 's/registry.k8s.io/k8s.m.daocloud.io/' \
       | sed 's/k8s.gcr.io/k8s-gcr.m.daocloud.io/' \
       | sed 's/gcr.io/gcr.m.daocloud.io/' \
       | sed 's/ghcr.io/gcr.m.daocloud.io/' \
