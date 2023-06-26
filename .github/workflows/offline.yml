@@ -10,9 +10,9 @@ jobs:
   test:
     # https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
     # includes helm
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: verify that helm runs offline
         run: docker run --rm --volume $PWD:/work:ro --volume $(which helm):/usr/local/bin/helm --net=none alpine:latest helm template /work/charts/piraeus
       - name: verify all pull policies can be set
