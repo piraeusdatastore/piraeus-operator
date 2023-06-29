@@ -2633,6 +2633,11 @@ spec:
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
+              securedMetricsPort:
+                description: Port for scraping metrics protected by RBAC proxy
+                format: int32
+                nullable: true
+                type: integer
               serviceAccountName:
                 description: Name of the service account that runs leader elections
                   for linstor

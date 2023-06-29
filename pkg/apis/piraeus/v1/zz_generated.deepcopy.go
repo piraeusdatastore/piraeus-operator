@@ -249,6 +249,11 @@ func (in *LinstorControllerSpec) DeepCopyInto(out *LinstorControllerSpec) {
 		*out = new(shared.LinstorSSLConfig)
 		**out = **in
 	}
+	if in.SecuredMetricsPort != nil {
+		in, out := &in.SecuredMetricsPort, &out.SecuredMetricsPort
+		*out = new(int32)
+		**out = **in
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity

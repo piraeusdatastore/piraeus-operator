@@ -73,6 +73,11 @@ type LinstorControllerSpec struct {
 	// +optional
 	LinstorHttpsControllerSecret string `json:"linstorHttpsControllerSecret"`
 
+	// Port for scraping metrics protected by RBAC proxy
+	// +optional
+	// +nullable
+	SecuredMetricsPort *int32 `json:"securedMetricsPort"`
+
 	// Resource requirements for the LINSTOR controller pod
 	// +optional
 	// +nullable
