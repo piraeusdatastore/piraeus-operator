@@ -46,6 +46,10 @@ func MakePropertiesModification(current, expected map[string]string) *lclient.Ge
 		}
 	}
 
+	if len(expected) == 0 {
+		result.DeleteProps = append(result.DeleteProps, LastApplyProperty)
+	}
+
 	return result
 }
 
@@ -59,6 +63,10 @@ func UpdateLastApplyProperty(props map[string]string) map[string]string {
 			result[k] = v
 			allKeys = append(allKeys, k)
 		}
+	}
+
+	if len(allKeys) == 0 {
+		return nil
 	}
 
 	// Sort for consistent order

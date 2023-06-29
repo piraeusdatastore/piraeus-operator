@@ -19,11 +19,20 @@ func TestMakePropertiesModification(t *testing.T) {
 		result   *lclient.GenericPropsModify
 	}{
 		{
-			name: "empty",
+			name:   "empty",
+			result: nil,
+		},
+		{
+			name:    "keep-existing-if-empty",
+			current: map[string]string{"old": "v0"},
+			result:  nil,
+		},
+		{
+			name:    "keep-existing-on-delete",
+			current: map[string]string{"foo": "v1", "bar": "v2", linstorhelper.LastApplyProperty: "[\"foo\"]"},
 			result: &lclient.GenericPropsModify{
-				OverrideProps: map[string]string{
-					linstorhelper.LastApplyProperty: "[]",
-				},
+				OverrideProps: map[string]string{},
+				DeleteProps:   []string{"foo", linstorhelper.LastApplyProperty},
 			},
 		},
 		{
@@ -88,7 +97,7 @@ func TestUpdateLastApplyProperty(t *testing.T) {
 	}{
 		{
 			name:   "empty",
-			result: "[]",
+			result: "",
 		},
 		{
 			name: "some-vals",
