@@ -11,23 +11,34 @@
         - 'urn:alm:descriptor:io.kubernetes.conditions'
 - op: test
   path: /spec/customresourcedefinitions/owned/1/kind
-  value: LinstorSatelliteConfiguration
+  value: LinstorNodeConnection
 - op: add
   path: /spec/customresourcedefinitions/owned/1/statusDescriptors
   value:
     - path: conditions
-      displayName: Cluster Conditions
-      description: Conditions describe the current state of the LINSTOR Cluster
+      displayName: Node Connections Conditions
+      description: Conditions describe the current state of the LINSTOR Node Connections.
       x-descriptors:
         - 'urn:alm:descriptor:io.kubernetes.conditions'
 - op: test
   path: /spec/customresourcedefinitions/owned/2/kind
-  value: LinstorSatellite
+  value: LinstorSatelliteConfiguration
 - op: add
   path: /spec/customresourcedefinitions/owned/2/statusDescriptors
   value:
     - path: conditions
-      displayName: Cluster Conditions
+      displayName: Satellite Configuration Conditions
+      description: Conditions describe the current state of the LINSTOR Cluster
+      x-descriptors:
+        - 'urn:alm:descriptor:io.kubernetes.conditions'
+- op: test
+  path: /spec/customresourcedefinitions/owned/3/kind
+  value: LinstorSatellite
+- op: add
+  path: /spec/customresourcedefinitions/owned/3/statusDescriptors
+  value:
+    - path: conditions
+      displayName: Satellite Conditions
       description: Conditions describe the current state of the LINSTOR Cluster
       x-descriptors:
         - 'urn:alm:descriptor:io.kubernetes.conditions'

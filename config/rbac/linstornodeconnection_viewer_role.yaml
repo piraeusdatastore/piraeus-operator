@@ -1,0 +1,27 @@
+# permissions for end users to view linstornodeconnections.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: linstornodeconnection-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: piraeus-operator
+    app.kubernetes.io/part-of: piraeus-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: linstornodeconnection-viewer-role
+rules:
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstornodeconnections
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstornodeconnections/status
+  verbs:
+  - get

@@ -632,7 +632,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		return err
 	}
 
-	expectedProperties := utils.ResolveClusterProperties(lcluster.Spec.Properties...)
+	expectedProperties := utils.ResolveClusterProperties(vars.DefaultControllerProperties, lcluster.Spec.Properties...)
 	expectedProperties[linstorhelper.ManagedByProperty] = vars.OperatorName
 
 	modification := linstorhelper.MakePropertiesModification(current, expectedProperties)

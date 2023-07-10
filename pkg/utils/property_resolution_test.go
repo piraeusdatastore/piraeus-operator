@@ -100,7 +100,7 @@ func TestResolveClusterProperties(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := utils.ResolveClusterProperties(tcase.props...)
+			actual := utils.ResolveClusterProperties(vars.DefaultControllerProperties, tcase.props...)
 			assert.Equal(t, tcase.result, actual)
 		})
 	}

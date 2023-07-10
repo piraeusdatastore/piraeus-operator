@@ -30,6 +30,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-piraeus-io-v1-linstornodeconnection
+  failurePolicy: Fail
+  name: vlinstornodeconnection.kb.io
+  rules:
+  - apiGroups:
+    - piraeus.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - linstornodeconnections
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-piraeus-io-v1-linstorsatellite
   failurePolicy: Fail
   name: vlinstorsatellite.kb.io

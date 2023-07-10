@@ -38,4 +38,14 @@ resources:
   webhooks:
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: piraeus.io
+  kind: LinstorNodeConnection
+  path: github.com/piraeusdatastore/piraeus-operator/v2/api/v1
+  version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

@@ -5,7 +5,6 @@ import (
 
 	v1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils/fieldpath"
-	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
 func ResolveNodeProperties(node *corev1.Node, props ...v1.LinstorNodeProperty) (map[string]string, error) {
@@ -30,10 +29,10 @@ func ResolveNodeProperties(node *corev1.Node, props ...v1.LinstorNodeProperty) (
 	return result, nil
 }
 
-func ResolveClusterProperties(props ...v1.LinstorControllerProperty) map[string]string {
+func ResolveClusterProperties(defaults map[string]string, props ...v1.LinstorControllerProperty) map[string]string {
 	result := make(map[string]string)
 
-	for k, v := range vars.DefaultControllerProperties {
+	for k, v := range defaults {
 		result[k] = v
 	}
 

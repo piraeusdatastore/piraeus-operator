@@ -15,3 +15,7 @@ This resource controls the state of the LINSTOR Satellites, optionally applying 
 
 This resource controls the state of a single LINSTOR Satellite. This resource is not intended to be changed directly,
 instead it is created by the Piraeus Operator by merging all matching `LinstorSatelliteConfiguration` resources.
+
+### [`LinstorNodeConnection`](./linstornodeconnection.md)
+
+This resource controls the state of the LINSTOR® node connections.
