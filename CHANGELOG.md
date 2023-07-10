@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A crash caused by insufficient permissions on the LINSTOR Controller.
+
 ## [v1.10.5] - 2023-06-20
 
 ### Added
