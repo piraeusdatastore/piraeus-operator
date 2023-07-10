@@ -53,11 +53,16 @@ func main() {
 		{
 			Op:    utils.Test,
 			Path:  "/spec/customresourcedefinitions/owned/1/kind",
-			Value: "LinstorSatelliteConfiguration",
+			Value: "LinstorNodeConnection",
 		},
 		{
 			Op:    utils.Test,
 			Path:  "/spec/customresourcedefinitions/owned/2/kind",
+			Value: "LinstorSatelliteConfiguration",
+		},
+		{
+			Op:    utils.Test,
+			Path:  "/spec/customresourcedefinitions/owned/3/kind",
 			Value: "LinstorSatellite",
 		},
 	}

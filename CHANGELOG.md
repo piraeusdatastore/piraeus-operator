@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A new `LinstorNodeConnection` resource, used to configure the LINSTOR Node Connection feature in a Kubernetes way.
 - Allow image configuration to be customized by adding additional items to the config map. Items using a "greater" key
   take precedence when referencing the same images.
 - Add image configuration for CSI sidecars.

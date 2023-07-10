@@ -182,6 +182,32 @@ rules:
 - apiGroups:
   - piraeus.io
   resources:
+  - linstornodeconnections
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstornodeconnections/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstornodeconnections/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - piraeus.io
+  resources:
   - linstorsatelliteconfigurations
   verbs:
   - get

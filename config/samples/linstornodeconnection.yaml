@@ -1,0 +1,19 @@
+apiVersion: piraeus.io/v1
+kind: LinstorNodeConnection
+metadata:
+  name: cross-region-replication
+spec:
+  selector:
+    - matchLabels:
+        - key: example.com/storage
+          op: In
+          values:
+            - "yes"
+        - key: topology.kubernetes.io/region
+          op: NotSame
+  properties:
+    - name: DrbdOptions/Net/protocol
+      value: A
+  paths:
+    - name: wan
+      interface: wan-nic

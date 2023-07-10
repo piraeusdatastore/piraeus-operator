@@ -43,7 +43,10 @@
   value: LinstorCluster
 - op: test
   path: /spec/customresourcedefinitions/owned/1/kind
-  value: LinstorSatelliteConfiguration
+  value: LinstorNodeConnection
 - op: test
   path: /spec/customresourcedefinitions/owned/2/kind
+  value: LinstorSatelliteConfiguration
+- op: test
+  path: /spec/customresourcedefinitions/owned/3/kind
   value: LinstorSatellite

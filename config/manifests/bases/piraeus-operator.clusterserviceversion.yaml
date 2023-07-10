@@ -16,19 +16,25 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: LinstorCluster configures a LINSTOR storage cluster
-      displayName: LinstorCluster
+    - description: LinstorCluster is the Schema for the linstorclusters API
+      displayName: Linstor Cluster
       kind: LinstorCluster
       name: linstorclusters.piraeus.io
       version: v1
-    - description: LinstorSatelliteConfiguration configures a group of LINSTOR satellites.
-      displayName: LinstorSatelliteConfiguration
+    - description: LinstorNodeConnection is the Schema for the linstornodeconnections
+        API
+      displayName: Linstor Node Connection
+      kind: LinstorNodeConnection
+      name: linstornodeconnections.piraeus.io
+      version: v1
+    - description: LinstorSatelliteConfiguration is the Schema for the linstorsatelliteconfigurations
+        API
+      displayName: Linstor Satellite Configuration
       kind: LinstorSatelliteConfiguration
       name: linstorsatelliteconfigurations.piraeus.io
       version: v1
-    - description: |
-        LinstorSatellite is the configuration of a single satellite. Instead of changing it directly, use LinstorSatelliteConfiguration with appropriate selector.
-      displayName: LinstorSatellite
+    - description: LinstorSatellite is the Schema for the linstorsatellites API
+      displayName: Linstor Satellite
       kind: LinstorSatellite
       name: linstorsatellites.piraeus.io
       version: v1
