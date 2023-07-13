@@ -23,7 +23,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -74,28 +73,7 @@ func (r *LinstorNodeConnection) ValidateDelete() error {
 }
 
 func (r *LinstorNodeConnection) validate() field.ErrorList {
-	errs := ValidateControllerProperties(r.Spec.Properties, field.NewPath("spec", "properties"))
-	errs = append(errs, ValidateNodeConnectionPaths(r.Spec.Paths, field.NewPath("spec", "paths"))...)
-	errs = append(errs, ValidateNodeConnectionSelectors(r.Spec.Selector, field.NewPath("spec", "selector"))...)
-
-	return errs
-}
-
-func ValidateNodeConnectionPaths(paths []LinstorNodeConnectionPath, path *field.Path) field.ErrorList {
-	var result field.ErrorList
-
-	allNames := sets.New[string]()
-
-	for i := range paths {
-		p := &paths[i]
-		if allNames.Has(p.Name) {
-			result = append(result, field.Duplicate(path.Child(strconv.Itoa(i), "name"), p.Name))
-		}
-
-		allNames.Insert(p.Name)
-	}
-
-	return result
+	return ValidateNodeConnectionSelectors(r.Spec.Selector, field.NewPath("spec", "selector"))
 }
 
 func ValidateNodeConnectionSelectors(selector []SelectorTerm, path *field.Path) field.ErrorList {

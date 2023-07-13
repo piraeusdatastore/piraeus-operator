@@ -115,7 +115,6 @@ var (
 func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *field.Path) field.ErrorList {
 	var result field.ErrorList
 
-	spNames := sets.New[string]()
 	devNames := sets.New[string]()
 
 	for i := range curSPs {
@@ -128,14 +127,6 @@ func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *fiel
 			))
 		}
 
-		if spNames.Has(curSP.Name) {
-			result = append(result, field.Duplicate(
-				fieldPrefix.Child(strconv.Itoa(i), "name"),
-				curSP.Name,
-			))
-		}
-
-		spNames.Insert(curSP.Name)
 		var oldSP *LinstorStoragePool
 		for j := range oldSPs {
 			if oldSPs[j].Name == curSP.Name {

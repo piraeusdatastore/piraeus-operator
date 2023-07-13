@@ -75,7 +75,6 @@ func (r *LinstorCluster) ValidateDelete() error {
 func (r *LinstorCluster) validate(old *LinstorCluster) field.ErrorList {
 	errs := ValidateExternalController(r.Spec.ExternalController, field.NewPath("spec", "externalController"))
 	errs = append(errs, ValidateNodeSelector(r.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))...)
-	errs = append(errs, ValidateControllerProperties(r.Spec.Properties, field.NewPath("spec", "properties"))...)
 	for i := range r.Spec.Patches {
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
 	}

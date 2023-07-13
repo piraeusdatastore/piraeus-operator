@@ -3,7 +3,6 @@ package v1
 import (
 	"strconv"
 
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -46,33 +45,13 @@ type LinstorNodePropertyValueFrom struct {
 func ValidateNodeProperties(props []LinstorNodeProperty, path *field.Path) field.ErrorList {
 	var result field.ErrorList
 
-	allNames := sets.NewString()
-
 	for i := range props {
 		p := &props[i]
-		if allNames.Has(p.Name) {
-			result = append(result, field.Duplicate(path.Child(strconv.Itoa(i), "name"), p.Name))
-		}
 
 		valSet := p.Value != ""
 		fromSet := p.ValueFrom != nil
 		if valSet == fromSet {
 			result = append(result, field.Invalid(path.Child(strconv.Itoa(i)), p, "Expected exactly one of 'value' and 'valueFrom' to be set"))
-		}
-	}
-
-	return result
-}
-
-func ValidateControllerProperties(props []LinstorControllerProperty, path *field.Path) field.ErrorList {
-	var result field.ErrorList
-
-	allNames := sets.NewString()
-
-	for i := range props {
-		p := &props[i]
-		if allNames.Has(p.Name) {
-			result = append(result, field.Duplicate(path.Child(strconv.Itoa(i), "name"), p.Name))
 		}
 	}
 

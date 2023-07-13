@@ -34,14 +34,16 @@ type LinstorNodeConnectionSpec struct {
 	// +kubebuilder:validation:Optional
 	// +listType=map
 	// +listMapKey=name
-	// +patchMergeKey=name +patchStrategy=merge
+	// +patchMergeKey=name
+	// +patchStrategy=merge
 	Properties []LinstorControllerProperty `json:"properties,omitempty"`
 
 	// Paths configure the network path used when connecting two nodes.
 	// +kubebuilder:validation:Optional
 	// +listType=map
 	// +listMapKey=name
-	// +patchMergeKey=name +patchStrategy=merge
+	// +patchMergeKey=name
+	// +patchStrategy=merge
 	Paths []LinstorNodeConnectionPath `json:"paths,omitempty"`
 }
 
