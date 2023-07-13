@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Configure Monitoring for CSI Components if monitoring is enabled.
+
 ### Fixed
 
 - A crash caused by insufficient permissions on the LINSTOR Controller.
+- Invalid use of "HTTP" protocol specification for prometheus monitoring, use "http" instead.
 
 ## [v1.10.5] - 2023-06-20
 

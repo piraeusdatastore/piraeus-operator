@@ -31,7 +31,7 @@ func MonitorForService(service *corev1.Service) *monitoringv1.ServiceMonitor {
 		endpoints[i] = monitoringv1.Endpoint{
 			Port:     port.Name,
 			Interval: "30s",
-			Scheme:   string(corev1.URISchemeHTTP),
+			Scheme:   "http",
 		}
 	}
 

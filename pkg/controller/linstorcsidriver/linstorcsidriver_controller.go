@@ -27,6 +27,7 @@ import (
 	lapiconst "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/go-logr/logr"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -44,11 +45,15 @@ import (
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/pkg/apis/piraeus/v1"
 	mdutil "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/metadata/util"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/monitoring"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/k8s/reconcileutil"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 	lc "github.com/piraeusdatastore/piraeus-operator/pkg/linstor/client"
 	. "github.com/piraeusdatastore/piraeus-operator/pkg/logconsts"
 )
+
+// CreateMonitoring controls if the operator will create monitoring resources.
+var CreateMonitoring = true
 
 // Add creates a new LinstorCSIDriver Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -290,6 +295,11 @@ func (r *ReconcileLinstorCSIDriver) reconcileSpec(ctx context.Context, csiResour
 	}
 
 	err = r.reconcileCSIDriver(ctx, csiResource)
+	if err != nil {
+		return err
+	}
+
+	err = r.reconcileMonitoring(ctx, csiResource)
 	if err != nil {
 		return err
 	}
@@ -550,12 +560,51 @@ func (r *ReconcileLinstorCSIDriver) reconcileCSIDriver(ctx context.Context, csiR
 	return err
 }
 
+func (r *ReconcileLinstorCSIDriver) reconcileMonitoring(ctx context.Context, csiResource *piraeusv1.LinstorCSIDriver) error {
+	if !monitoring.Enabled(ctx, r.client, r.scheme) {
+		return nil
+	}
+
+	if CreateMonitoring {
+		csiControllerMonitor := &monitoringv1.PodMonitor{
+			ObjectMeta: getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole),
+			Spec: monitoringv1.PodMonitorSpec{
+				Selector: metav1.LabelSelector{
+					MatchLabels: getDefaultLabels(csiResource, kubeSpec.CSIControllerRole),
+				},
+				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+					{Port: "attacher"},
+					{Port: "provisioner"},
+					{Port: "snapshotter"},
+					{Port: "resizer"},
+				},
+			},
+		}
+
+		_, err := reconcileutil.CreateOrUpdateWithOwner(ctx, r.client, r.scheme, csiControllerMonitor, csiResource, reconcileutil.OnPatchErrorReturn)
+		if err != nil {
+			return fmt.Errorf("failed to create pod monitor for controller: %w", err)
+		}
+	} else {
+		err := reconcileutil.DeleteIfOwned(ctx, r.client, &monitoringv1.PodMonitor{ObjectMeta: getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)}, csiResource)
+		if err != nil {
+			return fmt.Errorf("failed to delete pod monitor for controller: %w", err)
+		}
+	}
+
+	return nil
+}
+
 var (
-	IsPrivileged                  = true
-	MountPropagationBidirectional = corev1.MountPropagationBidirectional
-	HostPathDirectoryOrCreate     = corev1.HostPathDirectoryOrCreate
-	HostPathDirectory             = corev1.HostPathDirectory
-	DefaultHealthPort             = 9808
+	IsPrivileged                        = true
+	MountPropagationBidirectional       = corev1.MountPropagationBidirectional
+	HostPathDirectoryOrCreate           = corev1.HostPathDirectoryOrCreate
+	HostPathDirectory                   = corev1.HostPathDirectory
+	AttacherMetricsPort           int32 = 9800
+	ProvisionerMetricsPort        int32 = 9801
+	SnapshotterMetricsPort        int32 = 9802
+	ResizerMetricsPort            int32 = 9803
+	DefaultHealthPort                   = 9808
 )
 
 func newCSINodeDaemonSet(csiResource *piraeusv1.LinstorCSIDriver) *appsv1.DaemonSet {
@@ -962,6 +1011,32 @@ func newCSIControllerDeployment(csiResource *piraeusv1.LinstorCSIDriver) *appsv1
 
 	if csiResource.Spec.LogLevel != "" {
 		linstorPlugin.Args = append(linstorPlugin.Args, fmt.Sprintf("--log-level=%s", csiResource.Spec.LogLevel))
+	}
+
+	if CreateMonitoring {
+		csiAttacher.Args = append(csiAttacher.Args, fmt.Sprintf("--http-endpoint=:%d", AttacherMetricsPort))
+		csiAttacher.Ports = append(csiAttacher.Ports, corev1.ContainerPort{
+			Name:          "attacher",
+			ContainerPort: AttacherMetricsPort,
+		})
+
+		csiProvisioner.Args = append(csiProvisioner.Args, fmt.Sprintf("--http-endpoint=:%d", ProvisionerMetricsPort))
+		csiProvisioner.Ports = append(csiProvisioner.Ports, corev1.ContainerPort{
+			Name:          "provisioner",
+			ContainerPort: ProvisionerMetricsPort,
+		})
+
+		csiSnapshotter.Args = append(csiSnapshotter.Args, fmt.Sprintf("--http-endpoint=:%d", SnapshotterMetricsPort))
+		csiSnapshotter.Ports = append(csiSnapshotter.Ports, corev1.ContainerPort{
+			Name:          "snapshotter",
+			ContainerPort: SnapshotterMetricsPort,
+		})
+
+		csiResizer.Args = append(csiResizer.Args, fmt.Sprintf("--http-endpoint=:%d", ResizerMetricsPort))
+		csiResizer.Ports = append(csiResizer.Ports, corev1.ContainerPort{
+			Name:          "resizer",
+			ContainerPort: ResizerMetricsPort,
+		})
 	}
 
 	meta := getObjectMeta(csiResource, ControllerDeployment, kubeSpec.CSIControllerRole)
