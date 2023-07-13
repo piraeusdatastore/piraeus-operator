@@ -32,6 +32,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/pkg/apis"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorcontroller"
+	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorcsidriver"
 	"github.com/piraeusdatastore/piraeus-operator/pkg/controller/linstorsatelliteset"
 	kubeSpec "github.com/piraeusdatastore/piraeus-operator/pkg/k8s/spec"
 )
@@ -71,6 +72,7 @@ func main() {
 
 	linstorcontroller.CreateMonitoring = createMonitoring
 	linstorsatelliteset.CreateMonitoring = createMonitoring
+	linstorcsidriver.CreateMonitoring = createMonitoring
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
