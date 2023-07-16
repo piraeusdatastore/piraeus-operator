@@ -158,6 +158,15 @@ The metrics collection can be secured using [kube-rbac-proxy](https://github.com
 * Take a look at this [example chart configuration](../examples/rbac-proxy-values.yaml) and [additional resources](../examples/rbac-proxy-resources.yaml)
 which must be configured in the cluster to make rbac-proxy working in your configuration.
 
+## Fixing target down problem in Prometheus when LINSTOR controller is deployed in HA mode and communications for collecting metrics are secured.
+
+If a LINSTOR controller has more than one replica, only one target will be up in Prometheus. This is because of the leader election mechanism for LINSTOR controllers. Once a leader is elected, other pods of LINSTOR controllers won't provide any metrics. To resolve this issue, follow the steps below:
+
+1. Replace the PodMonitor with ServiceMonitor.
+2. Set the `securedMetricsPort` in the LinstorController custom resource.
+
+You can refer to this [example service monitor](../examples/service-monitor-in-ha-mode.yaml) for guidance.
+
 ## Automatically set the passphrase for LINSTOR
 
 LINSTOR may need to store sensitive information in its database, for example for encrypted volumes using the LUKS layer,
