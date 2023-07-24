@@ -23,7 +23,7 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v1.2.0
+  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v1.2.2
   csiAttacherImage: k8s.m.daocloud.io/sig-storage/csi-attacher:v4.3.0
   csiLivenessProbeImage: k8s.m.daocloud.io/sig-storage/livenessprobe:v2.10.0
   csiNodeDriverRegistrarImage: k8s.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.8.0
