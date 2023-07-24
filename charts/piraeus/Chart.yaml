@@ -2,8 +2,8 @@ apiVersion: v2
 name: piraeus
 description: A Helm chart for Piraeus Operator
 type: application
-version: 1.10.5
-appVersion: 1.10.5
+version: 1.10.6
+appVersion: 1.10.6
 home: https://piraeus.io/
 dependencies:
   - name: "etcd"
