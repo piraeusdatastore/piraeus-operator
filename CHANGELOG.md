@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A crash caused by insufficient permissions on the LINSTOR Controller.
 - Invalid use of "HTTP" protocol specification for prometheus monitoring, use "http" instead.
 
+### Updated
+
+- Default images:
+  * LINSTOR CSI 1.2.2
+
 ## [v1.10.5] - 2023-06-20
 
 ### Added
