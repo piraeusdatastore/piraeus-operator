@@ -61,7 +61,7 @@ psp:
   unprivilegedRole: ""
 operator:
   replicas: 1 # <- number of replicas for the operator deployment
-  image: quay.m.daocloud.io/piraeusdatastore/piraeus-operator:latest
+  image: quay.m.daocloud.io/piraeusdatastore/piraeus-operator:v1.10.6
   affinity: {}
   tolerations: []
   resources: {}
@@ -116,8 +116,8 @@ operator:
     kernelModuleInjectionResources: {}
     kernelModuleInjectionExtraVolumeMounts: []
     additionalEnv:
-    - name: LB_SELINUX_AS
-      value: "modules_object_t"
+      - name: LB_SELINUX_AS
+        value: "modules_object_t"
     dnsPolicy: ""
     sidecars: []
     extraVolumes: []
