@@ -123,12 +123,12 @@ operator:
     extraVolumes: []
     customLabels: {}
     customAnnotations: {}
-haController:
+piraeus-ha-controller:
   enabled: false
-  image: quay.io/piraeusdatastore/piraeus-ha-controller:v0.3.0
+  nameOverride: "ha-controller"
+  image:
+    repository: quay.io/piraeusdatastore/piraeus-ha-controller
+    tag: "v1.1.4"
+  resources: {}
   affinity: {}
   tolerations: []
-  resources: {}
-  replicas: 1
-  customLabels: {}
-  customAnnotations: {}

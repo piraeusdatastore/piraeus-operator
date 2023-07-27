@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: download dependencies
+        run: |
+          helm repo add piraeus-charts https://piraeus.io/helm-charts/
+          helm dependency build charts/piraeus
       - name: verify that helm runs offline
         run: docker run --rm --volume $PWD:/work:ro --volume $(which helm):/usr/local/bin/helm --net=none alpine:latest helm template /work/charts/piraeus
       - name: verify all pull policies can be set

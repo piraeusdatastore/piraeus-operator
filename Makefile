@@ -100,11 +100,12 @@ release:
 deploy/piraeus:
 	rm -rf "$@"
 	mkdir -p "$@"
+	helm dependency build charts/piraeus
 	helm template -n default piraeus-op charts/piraeus --set stork.schedulerTag=v1.18.0 --set operator.controller.masterPassphrase=changemeplease --output-dir deploy >/dev/null
 	deploy/create-kustomization.bash
 
 list-images:
-	./list_images.sh
+	./list_images.sh | sort
 
 pull-images:
 	./list_images.sh | xargs -tI % docker pull %
@@ -116,7 +117,7 @@ save-images: pull-images
 	ls -lh ./piraeus_images.tgz
 
 list-images.cn:
-	./list_images.sh ./charts/piraeus/values.cn.yaml
+	./list_images.sh ./charts/piraeus/values.cn.yaml | sort
 
 pull-images.cn:
 	./list_images.sh ./charts/piraeus/values.cn.yaml | xargs -tI % docker pull %
