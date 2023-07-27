@@ -2,5 +2,8 @@ dependencies:
 - name: etcd
   repository: ""
   version: 0.7.5
-digest: sha256:bc7f1f320282a7cff3a18f7f988aedf3939eea28c4c6b4c260ce4c0b9ed4b788
-generated: "2022-02-24T16:57:17.935512621+01:00"
+- name: piraeus-ha-controller
+  repository: https://piraeus.io/helm-charts/
+  version: 1.1.4
+digest: sha256:0319069cc7ff906e99a2116f239f779e1e9f866a57b6380e304453ca6524c8b1
+generated: "2023-08-17T11:08:32.190236163+02:00"

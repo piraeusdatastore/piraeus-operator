@@ -28,6 +28,8 @@ jobs:
       SKIP: golangci-lint
     steps:
       - uses: actions/checkout@v3
+      - name: add helm repo
+        run: helm repo add piraeus-charts https://piraeus.io/helm-charts/
       - name: Setup Go environment
         uses: actions/setup-go@v4
         with:

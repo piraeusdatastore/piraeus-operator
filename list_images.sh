@@ -9,8 +9,10 @@ if ! yq -V > /dev/null; then
     exit 1
 fi
 
-# print etcd image
-cat "$values_file" | yq e '.etcd.image | (.repository, .tag)' | sed 'N;s/\n/:/'
+# print etcd and ha-controller image
+for i in etcd piraeus-ha-controller; do
+    cat "$values_file" | yq e ".$i.image | (.repository, .tag)" | sed 'N;s/\n/:/'
+done | sed 's/:$/:latest/'
 
 # print scheduler image
 sched_img=$( cat "$values_file" | yq e .stork.schedulerImage )
@@ -34,7 +36,6 @@ for i in .stork.storkImage \
          .operator.satelliteSet.satelliteImage \
          .operator.satelliteSet.monitoringImage \
          .operator.satelliteSet.kernelModuleInjectionImage \
-         .haController.image \
          ; do
     cat "$values_file" | yq e $i
-done | sort -u
+done | sort -u | sed 's/:$/:latest/'
