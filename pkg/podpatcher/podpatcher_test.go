@@ -98,4 +98,72 @@ func TestEqualImages(t *testing.T) {
 	}
 }
 
+func TestPodNeedsRestart(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name        string
+		pod         *corev1.Pod
+		expectation map[corev1.RestartPolicy]bool
+	}{
+		{
+			name: "restart-running",
+			pod: &corev1.Pod{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodRunning,
+				},
+			},
+			expectation: map[corev1.RestartPolicy]bool{
+				corev1.RestartPolicyAlways:    false,
+				corev1.RestartPolicyOnFailure: false,
+				corev1.RestartPolicyNever:     false,
+			},
+		},
+		{
+			name: "restart-failed",
+			pod: &corev1.Pod{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodFailed,
+				},
+			},
+			expectation: map[corev1.RestartPolicy]bool{
+				corev1.RestartPolicyAlways:    true,
+				corev1.RestartPolicyOnFailure: true,
+				corev1.RestartPolicyNever:     false,
+			},
+		},
+		{
+			name: "restart-success",
+			pod: &corev1.Pod{
+				Status: corev1.PodStatus{
+					Phase: corev1.PodSucceeded,
+				},
+			},
+			expectation: map[corev1.RestartPolicy]bool{
+				corev1.RestartPolicyAlways:    true,
+				corev1.RestartPolicyOnFailure: false,
+				corev1.RestartPolicyNever:     false,
+			},
+		},
+	}
+
+	for i := range testcases {
+		tcase := &testcases[i]
+		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
+			for p, e := range tcase.expectation {
+				policy := p
+				expected := e
+				t.Run(string(policy), func(t *testing.T) {
+					t.Parallel()
+
+					actual := podpatcher.PodNeedsRestart(tcase.pod, policy)
+					assert.Equal(t, expected, actual)
+				})
+			}
+		})
+	}
+}
+
 // NB: sadly, the fake client does not support "Apply" patches, so we can't test podpatcher.Patch easily
