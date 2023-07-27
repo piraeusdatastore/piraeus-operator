@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - A crash caused by insufficient permissions on the LINSTOR Controller.
+- Satellite will now restart if the Pods terminated for unexpected reasons.
 
 ## [v2.1.1] - 2023-05-24
 

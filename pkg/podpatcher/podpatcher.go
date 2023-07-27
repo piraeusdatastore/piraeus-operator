@@ -17,6 +17,8 @@ import (
 //   - We also recreate for image changes. Normally, these would be applied by kubelet eventually, but will cause a
 //     "restarted container" event, which many users will have alerts for. It also can't be nicely controlled by the
 //     operator. So we just have to make sure to detect any changes.
+//   - We additionally recreate the Pod if the old one is in a terminated state. This can happen if a node shuts down
+//     even with a restartPolicy: Always.
 func Patch(ctx context.Context, cl client.Client, pod client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	var oldPod corev1.Pod
 	err := cl.Get(ctx, types.NamespacedName{Name: pod.GetName(), Namespace: pod.GetNamespace()}, &oldPod)
@@ -42,7 +44,7 @@ func Patch(ctx context.Context, cl client.Client, pod client.Object, patch clien
 		return err
 	}
 
-	if EqualImages(&oldPod, &newPod) {
+	if !PodNeedsRestart(&oldPod, newPod.Spec.RestartPolicy) && EqualImages(&oldPod, &newPod) {
 		err := cl.Patch(ctx, pod, patch, opts...)
 		// IsInvalid gets returned if the patch fails to apply. In that case we want to continue with delete+recreate
 		// below.
@@ -51,8 +53,8 @@ func Patch(ctx context.Context, cl client.Client, pod client.Object, patch clien
 		}
 	}
 
-	// If we reached this point, either the images have changed between old and new pod, or some other unpatchable
-	// item needs changing. The solution is simple: delete the pod and try again.
+	// If we reached this point, either the images have changed between old and new pod, the old pod has failed for some
+	// reason or some other unpatchable item needs changing. The solution is simple: delete the pod and try again.
 	err = cl.Delete(ctx, &oldPod)
 	if err != nil {
 		return err
@@ -83,4 +85,15 @@ func EqualImages(a, b *corev1.Pod) bool {
 	}
 
 	return true
+}
+
+func PodNeedsRestart(pod *corev1.Pod, restartPolicy corev1.RestartPolicy) bool {
+	switch restartPolicy {
+	case corev1.RestartPolicyNever:
+		return false
+	case corev1.RestartPolicyOnFailure:
+		return pod.Status.Phase == corev1.PodFailed
+	default:
+		return pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodSucceeded
+	}
 }
