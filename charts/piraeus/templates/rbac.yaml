@@ -145,6 +145,7 @@ rules:
     verbs:
       - create
       - delete
+      - deletecollection
       - get
       - list
       - patch
@@ -184,6 +185,32 @@ rules:
       - piraeus.io
     resources:
       - linstorclusters/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - piraeus.io
+    resources:
+      - linstornodeconnections
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - piraeus.io
+    resources:
+      - linstornodeconnections/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - piraeus.io
+    resources:
+      - linstornodeconnections/status
     verbs:
       - get
       - patch

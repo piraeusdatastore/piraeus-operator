@@ -60,6 +60,9 @@ pushd config/default
 $KUSTOMIZE edit set image controller="$IMG:v2"
 popd
 
+$YQ ".version = \"$VERSION-dev\"" -i charts/piraeus/Chart.yaml
+$YQ ".appVersion = \"v2\"" -i charts/piraeus/Chart.yaml
+
 for FILE in ./README.md ./docs/tutorial/get-started.md ; do
 	sed -e "s/ref=v$VERSION/ref=v2/" -i "$FILE"
 done
