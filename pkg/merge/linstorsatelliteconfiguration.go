@@ -3,6 +3,9 @@ package merge
 import (
 	"sort"
 
+	corev1 "k8s.io/api/core/v1"
+	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
+
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 )
 
@@ -12,7 +15,7 @@ import (
 // * Concatenating all patches in the matching configs
 // * Merging all properties by name. A property defined in a "later" config overrides previous property definitions.
 // * Merging all storage pools by name. A storage pool defined in a "later" config overrides previous property definitions.
-func SatelliteConfigurations(nodeLabels map[string]string, configs ...piraeusv1.LinstorSatelliteConfiguration) *piraeusv1.LinstorSatelliteConfiguration {
+func SatelliteConfigurations(node *corev1.Node, configs ...piraeusv1.LinstorSatelliteConfiguration) *piraeusv1.LinstorSatelliteConfiguration {
 	result := &piraeusv1.LinstorSatelliteConfiguration{}
 
 	propsMap := make(map[string]*piraeusv1.LinstorNodeProperty)
@@ -21,8 +24,14 @@ func SatelliteConfigurations(nodeLabels map[string]string, configs ...piraeusv1.
 	for i := range configs {
 		cfg := &configs[i]
 
-		if !SubsetOf(cfg.Spec.NodeSelector, nodeLabels) {
+		if !SubsetOf(cfg.Spec.NodeSelector, node.ObjectMeta.Labels) {
 			continue
+		}
+
+		if cfg.Spec.NodeAffinity != nil {
+			if matches, _ := schedulingcorev1.MatchNodeSelectorTerms(node, cfg.Spec.NodeAffinity); !matches {
+				continue
+			}
 		}
 
 		for j := range cfg.Spec.Properties {

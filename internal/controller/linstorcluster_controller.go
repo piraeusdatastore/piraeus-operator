@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -145,6 +147,13 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 	err := r.Client.List(ctx, &satelliteNodes, client.MatchingLabels(lcluster.Spec.NodeSelector))
 	if err != nil {
 		return err
+	}
+
+	if lcluster.Spec.NodeAffinity != nil {
+		satelliteNodes.Items = slices.DeleteFunc(satelliteNodes.Items, func(node corev1.Node) bool {
+			matches, _ := schedulingcorev1.MatchNodeSelectorTerms(&node, lcluster.Spec.NodeAffinity)
+			return !matches
+		})
 	}
 
 	satelliteConfigs := piraeusiov1.LinstorSatelliteConfigurationList{}
@@ -299,8 +308,21 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		return resmap.New(), nil
 	}
 
-	var patches []kusttypes.Patch
 	resourceDirs := []string{"controller"}
+
+	patches, err := ClusterLinstorControllerNodeSelector(lcluster.Spec.NodeSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	if lcluster.Spec.NodeAffinity != nil {
+		p, err := ClusterLinstorControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
 
 	if lcluster.Spec.LinstorPassphraseSecret != "" {
 		p, err := ClusterLinstorPassphrasePatch(lcluster.Spec.LinstorPassphraseSecret)
@@ -390,12 +412,34 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 		return nil, err
 	}
 
+	p, err := ClusterCSIControllerNodeSelector(lcluster.Spec.NodeSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
+
 	endpointPatches, err := ClusterApiEndpointPatch(LinstorControllerUrl(lcluster))
 	if err != nil {
 		return nil, err
 	}
 
 	patches = append(patches, endpointPatches...)
+
+	if lcluster.Spec.NodeAffinity != nil {
+		nodePatches, err := ClusterCSINodeNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		controllerPatches, err := ClusterCSIControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, nodePatches...)
+		patches = append(patches, controllerPatches...)
+	}
 
 	if lcluster.Spec.ApiTLS != nil {
 		controllerSecret := lcluster.Spec.ApiTLS.GetCsiControllerSecretName()
@@ -442,6 +486,15 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 	patches, err := ClusterHAControllerNodeSelectorPatch(lcluster.Spec.NodeSelector)
 	if err != nil {
 		return nil, err
+	}
+
+	if lcluster.Spec.NodeAffinity != nil {
+		p, err := ClusterHAControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
 	}
 
 	return r.kustomize([]string{"ha-controller"}, lcluster, imgs, patches...)
@@ -499,7 +552,7 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 
 	patches := []utils.JsonPatch{renamePatch, repositoryPatch, clusterRefPatch}
 
-	cfg := merge.SatelliteConfigurations(node.ObjectMeta.Labels, configs...)
+	cfg := merge.SatelliteConfigurations(node, configs...)
 
 	if cfg.Spec.InternalTLS != nil {
 		patches = append(patches, utils.JsonPatch{

@@ -1,0 +1,15 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: linstor-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-controller
+    spec:
+      template:
+        spec:
+          nodeSelector: $NODE_SELECTOR

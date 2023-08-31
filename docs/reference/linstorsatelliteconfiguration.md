@@ -27,6 +27,33 @@ spec:
       value: "no"
 ```
 
+### `.spec.nodeAffinity`
+
+Selects which nodes the LinstorSatelliteConfiguration should apply to. If empty, the configuration applies to all nodes.
+
+When this is used together with `.spec.nodeSelector`, both need to match in order for the configuration to apply to a
+node.
+
+#### Example
+
+This example sets the `AutoplaceTarget` property to `no` on all non-worker nodes:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: disabled-nodes
+spec:
+  nodeAffinity:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+  properties:
+    - name: AutoplaceTarget
+      value: "no"
+```
+
 ### `.spec.properties`
 
 Sets the given properties on the LINSTOR Satellite level.
