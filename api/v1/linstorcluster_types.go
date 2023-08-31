@@ -18,6 +18,7 @@ package v1
 
 import (
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,6 +38,11 @@ type LinstorClusterSpec struct {
 	// See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// NodeAffinity selects the nodes on which LINSTOR Satellite will be deployed.
+	// See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +kubebuilder:validation:Optional
+	NodeAffinity *corev1.NodeSelector `json:"nodeAffinity,omitempty"`
 
 	// Properties to apply on the cluster level.
 	//

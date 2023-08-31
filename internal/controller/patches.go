@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
 
@@ -46,6 +47,42 @@ func ClusterLinstorInternalTLSCertManagerPatch(secretName string, issuer *cmmeta
 	)
 }
 
+func ClusterLinstorControllerNodeSelector(selector map[string]string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/linstor-controller-selector.yaml",
+		map[string]any{
+			"NODE_SELECTOR": selector,
+		})
+}
+
+func ClusterLinstorControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/linstor-controller-node-affinity.yaml",
+		map[string]any{
+			"NODE_AFFINITY": affinity,
+		})
+}
+
+func ClusterCSIControllerNodeSelector(selector map[string]string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/csi-controller-selector.yaml",
+		map[string]any{
+			"NODE_SELECTOR": selector,
+		})
+}
+
+func ClusterCSIControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/csi-controller-node-affinity.yaml",
+		map[string]any{
+			"NODE_AFFINITY": affinity,
+		})
+}
+
 func ClusterCSINodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
@@ -55,12 +92,30 @@ func ClusterCSINodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch,
 		})
 }
 
+func ClusterCSINodeNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/csi-node-node-affinity.yaml",
+		map[string]any{
+			"NODE_AFFINITY": affinity,
+		})
+}
+
 func ClusterHAControllerNodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/ha-controller-node-selector.yaml",
 		map[string]any{
 			"NODE_SELECTOR": selector,
+		})
+}
+
+func ClusterHAControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/ha-controller-node-affinity.yaml",
+		map[string]any{
+			"NODE_AFFINITY": affinity,
 		})
 }
 

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,6 +30,11 @@ type LinstorSatelliteConfigurationSpec struct {
 	// See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// NodeAffinity selects which LinstorSatellite resources this spec should be applied to.
+	// See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +kubebuilder:validation:Optional
+	NodeAffinity *corev1.NodeSelector `json:"nodeAffinity,omitempty"`
 
 	// Patches is a list of kustomize patches to apply.
 	//

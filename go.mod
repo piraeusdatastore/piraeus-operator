@@ -1,6 +1,6 @@
 module github.com/piraeusdatastore/piraeus-operator/v2
 
-go 1.20
+go 1.21
 
 require (
 	github.com/LINBIT/golinstor v0.49.0
@@ -14,9 +14,10 @@ require (
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/time v0.4.0
 	gonum.org/v1/gonum v0.14.0
-	k8s.io/api v0.28.3
-	k8s.io/apimachinery v0.28.3
-	k8s.io/client-go v0.28.3
+	k8s.io/api v0.28.4
+	k8s.io/apimachinery v0.28.4
+	k8s.io/client-go v0.28.4
+	k8s.io/component-helpers v0.28.4
 	sigs.k8s.io/controller-runtime v0.16.3
 	sigs.k8s.io/kustomize/api v0.15.0
 	sigs.k8s.io/kustomize/kyaml v0.15.0

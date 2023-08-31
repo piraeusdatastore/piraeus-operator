@@ -18,6 +18,9 @@ excluded by the selector will not be able to run any workload using a Piraeus vo
 
 If empty (the default), Piraeus will be deployed on all nodes in the cluster.
 
+When this is used together with `.spec.nodeAffinity`, both need to match in order for
+a node to run Piraeus.
+
 #### Example
 
 This example restricts Piraeus Datastore to nodes matching `example.com/storage: "yes"`:
@@ -31,6 +34,39 @@ spec:
   nodeSelector:
     example.com/storage: "yes"
 ```
+
+### `.spec.nodeAffinity`
+
+Selects on which nodes Piraeus Datastore should be deployed. Nodes that are
+excluded by the affinity will not be able to run any workload using a Piraeus volume.
+
+If empty (the default), Piraeus will be deployed on all nodes in the cluster.
+
+When this is used together with `.spec.nodeSelector`, both need to match in order for
+a node to run Piraeus.
+
+#### Example
+
+This example restricts Piraeus Datastore to nodes in zones `a` and `b`, but not on `control-plane` nodes:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  nodeAffinity:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: topology.kubernetes.io/zone
+            operator: In
+            values:
+              - a
+              - b
+          - key: node-role.kubernetes.io/control-plane
+            operator: DoesNotExist
+```
+
 
 ### `.spec.repository`
 

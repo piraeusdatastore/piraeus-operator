@@ -59,7 +59,10 @@ var _ = Describe("LinstorCluster controller", func() {
 		Describe("with cluster nodes present", func() {
 			BeforeEach(func(ctx context.Context) {
 				err := k8sClient.Create(ctx, &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-1a", Labels: map[string]string{"topology.kubernetes.io/zone": "a"}},
+					ObjectMeta: metav1.ObjectMeta{Name: "node-1a", Labels: map[string]string{
+						"topology.kubernetes.io/zone": "a",
+						"example.com/exclude":         "yes",
+					}},
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -240,6 +243,53 @@ var _ = Describe("LinstorCluster controller", func() {
 					Expect(controller).NotTo(BeNil())
 					return controller.Image
 				}, DefaultTimeout, DefaultCheckInterval).Should(HavePrefix("piraeus.io/test"))
+			})
+
+			It("should apply affinity set on the cluster resource", func(ctx context.Context) {
+				Eventually(func() bool {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+
+					return len(satellites.Items) == 3
+				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+
+				var cluster piraeusiov1.LinstorCluster
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
+				Expect(err).NotTo(HaveOccurred())
+
+				cluster.Spec.NodeAffinity = &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      "topology.kubernetes.io/zone",
+								Operator: corev1.NodeSelectorOpNotIn,
+								Values:   []string{"b"},
+							},
+							{
+								Key:      "example.com/exclude",
+								Operator: corev1.NodeSelectorOpDoesNotExist,
+							},
+						},
+					}},
+				}
+
+				err = k8sClient.Update(ctx, &cluster)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() []string {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+
+					var result []string
+					for i := range satellites.Items {
+						if satellites.Items[i].DeletionTimestamp == nil {
+							result = append(result, satellites.Items[i].Name)
+						}
+					}
+					return result
+				}, DefaultTimeout, DefaultCheckInterval).Should(ConsistOf("node-2a"))
 			})
 		})
 	})

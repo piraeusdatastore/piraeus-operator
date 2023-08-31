@@ -22,6 +22,7 @@ package v1
 
 import (
 	metav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -139,6 +140,11 @@ func (in *LinstorClusterSpec) DeepCopyInto(out *LinstorClusterSpec) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.NodeAffinity != nil {
+		in, out := &in.NodeAffinity, &out.NodeAffinity
+		*out = new(corev1.NodeSelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Properties != nil {
 		in, out := &in.Properties, &out.Properties
@@ -484,6 +490,11 @@ func (in *LinstorSatelliteConfigurationSpec) DeepCopyInto(out *LinstorSatelliteC
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.NodeAffinity != nil {
+		in, out := &in.NodeAffinity, &out.NodeAffinity
+		*out = new(corev1.NodeSelector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Patches != nil {
 		in, out := &in.Patches, &out.Patches

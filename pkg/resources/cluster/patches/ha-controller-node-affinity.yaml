@@ -1,0 +1,17 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: DaemonSet
+    name: ha-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: ha-controller
+    spec:
+      template:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution: $NODE_AFFINITY
