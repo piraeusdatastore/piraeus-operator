@@ -14,16 +14,16 @@ data:
     base: quay.io/piraeusdatastore
     # "components" is a mapping of image placeholders to actual image names with tag.
     # For example, the image name "linstor-controller" in the kustomize-resources will be replaced by:
-    #   quay.io/piraeusdatastore/piraeus-server:v1.22.0
+    #   quay.io/piraeusdatastore/piraeus-server:v1.24.2
     components:
       linstor-controller:
-        tag: v1.24.1
+        tag: v1.24.2
         image: piraeus-server
       linstor-satellite:
-        tag: v1.24.1
+        tag: v1.24.2
         image: piraeus-server
       linstor-csi:
-        tag: v1.2.2
+        tag: v1.2.3
         image: piraeus-csi
       drbd-reactor:
         tag: v1.2.0
