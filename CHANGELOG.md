@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Package ha-controller chart from upstream.
+- Default images:
+  * LINSTOR 1.24.2
+  * LINSTOR CSI 1.2.3
+  * DRBD 9.1.16
 
 ## [v1.10.6] - 2023-07-24
 
