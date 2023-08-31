@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: piraeus-op
 spec:
   imagePullSecret: ""
-  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v1.2.2"
+  linstorPluginImage: "quay.io/piraeusdatastore/piraeus-csi:v1.2.3"
   imagePullPolicy: "IfNotPresent"
   csiControllerServiceAccountName: csi-controller
   csiNodeServiceAccountName: csi-node
