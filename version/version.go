@@ -17,4 +17,4 @@ limitations under the License.
 
 package version
 
-var Version = "1.10.6"
+var Version = "1.10.7"
