@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -69,6 +70,12 @@ type LinstorSatelliteReconciler struct {
 	Kustomizer         *resources.Kustomizer
 	log                logr.Logger
 }
+
+const (
+	PrepareForRemovalAnnotation      = "linstor.linbit.com/prepare-for-removal"
+	PrepareForRemovalNodeAuxProp     = "Aux/PrepareForRemoval"
+	PrepareForRemovalResourceAuxProp = "Aux/CopiedOverFromNode"
+)
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites/status,verbs=get;update;patch
@@ -373,8 +380,193 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		} else {
 			conds.AddSuccess(conditions.Configured, "Pools configured")
 		}
+
+		err = r.reconcileNodeAnnotations(ctx, lc, lsatellite, node)
+		if err != nil {
+			conds.AddError(conditions.Configured, err)
+		}
 	} else {
 		conds.AddError(conditions.Available, fmt.Errorf("satellite not online"))
+	}
+
+	return nil
+}
+
+func (r *LinstorSatelliteReconciler) reconcileNodeAnnotations(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
+	lnode, err := lc.Nodes.Get(ctx, lsatellite.Name)
+	if err != nil {
+		return err
+	}
+
+	if node.Annotations[PrepareForRemovalAnnotation] == "true" && lnode.Props[PrepareForRemovalNodeAuxProp] != "true" {
+		err = r.prepareNodeForDraining(ctx, lc, lsatellite, node)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if node.Annotations[PrepareForRemovalAnnotation] != "true" && lnode.Props[PrepareForRemovalNodeAuxProp] == "true" {
+		err = r.undoNodeDrainingPreparation(ctx, lc, lsatellite, node)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return nil
+}
+
+// Prepares a node for draining, essentially making sure that the resources on that node are replicated elsewhere
+// to maintain data availability when the node is taken down. The annotated node is also no longer considered a
+// target for autoplacement.
+func (r *LinstorSatelliteReconciler) prepareNodeForDraining(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
+	r.log.Info("Preparing node for draining", "node", node.Name)
+
+	ress, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{Node: []string{lsatellite.Name}})
+	if err != nil && err != lclient.NotFoundError {
+		return err
+	}
+
+	for _, res := range ress {
+		r.log.Info("Create extra replica", "resource", res.Name, "node", res.NodeName)
+
+		err = lc.Resources.Autoplace(ctx, res.Name, lclient.AutoPlaceRequest{SelectFilter: lclient.AutoSelectFilter{AdditionalPlaceCount: 1}})
+		if err != nil {
+			return err
+		}
+
+		// If the autoplace API would return where the replica was placed, we could use that instead fetching all resources again
+		allReplicas, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+			Resource:    []string{res.Name},
+			StoragePool: []string{res.Props["StorPoolName"]},
+		})
+		if err != nil && err != lclient.NotFoundError {
+			return err
+		}
+
+		// Filter out all replicas not residing on the node which we are draining
+		var resourceSiblings = []lclient.ResourceWithVolumes{}
+		for i := range allReplicas {
+			if allReplicas[i].NodeName != lsatellite.Name {
+				resourceSiblings = append(resourceSiblings, allReplicas[i])
+			}
+		}
+
+		if len(resourceSiblings) == 0 {
+			break
+		}
+
+		// Sort resources by creation time (newest first)
+		sort.Slice(resourceSiblings, func(i, j int) bool {
+			return resourceSiblings[i].CreateTimestamp.After(resourceSiblings[j].CreateTimestamp.Time)
+		})
+
+		latestResource := resourceSiblings[0]
+
+		// Mark from which node this replica was spawned
+		err = lc.Resources.Modify(ctx, latestResource.Name, latestResource.NodeName, lclient.GenericPropsModify{
+			OverrideProps: map[string]string{
+				PrepareForRemovalResourceAuxProp: node.Name,
+			},
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// Add node properties to prevent new resources from being placed on the node and mark it for removal
+	err = lc.Nodes.Modify(ctx, lsatellite.Name, lclient.NodeModify{GenericPropsModify: lclient.GenericPropsModify{
+		OverrideProps: map[string]string{
+			"AutoplaceTarget":            "false",
+			PrepareForRemovalNodeAuxProp: "true",
+		},
+	}})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Reverses the preparation done by prepareNodeForDraining. It identifies which resource to delete. It either
+// chooses the most recent replica or the one on annotated node depending on which resource is currently in use.
+func (r *LinstorSatelliteReconciler) undoNodeDrainingPreparation(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
+	cached := true
+	r.log.Info("Undoing node draining preparation and deleting extra resources", "node", node.Name)
+	ress, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+		Cached: &cached,
+		Node:   []string{lsatellite.Name},
+	})
+	if err != nil {
+		return err
+	}
+
+	// We can ignore all Diskless storage pools. Figure out the names of all diskless pools
+	currentPools, err := lc.Nodes.GetStoragePools(ctx, lsatellite.Name, &lclient.ListOpts{Cached: &cached})
+	if err != nil {
+		return err
+	}
+	var disklessPools = []string{}
+	for i := range currentPools {
+		if currentPools[i].ProviderKind == lclient.DISKLESS {
+			disklessPools = append(disklessPools, currentPools[i].StoragePoolName)
+		}
+	}
+
+	for _, res := range ress {
+		// Skip Diskless pools
+		for _, pool := range disklessPools {
+			if pool == res.Props["StorPoolName"] {
+				continue
+			}
+		}
+
+		allReplicas, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+			Resource:    []string{res.Name},
+			StoragePool: []string{res.Props["StorPoolName"]},
+		})
+
+		if err != nil && err != lclient.NotFoundError {
+			return err
+		}
+
+		// Find the created replica. If it's currently in use, we will mark the original resource for deletion instead.
+		var resourceToDelete = &lclient.ResourceWithVolumes{}
+		for i := range allReplicas {
+			if allReplicas[i].Props[PrepareForRemovalResourceAuxProp] == node.Name {
+				if *allReplicas[i].State.InUse {
+					resourceToDelete = &res
+				} else {
+					*resourceToDelete = allReplicas[i]
+				}
+				break
+			}
+		}
+
+		if resourceToDelete == nil {
+			break
+		}
+
+		// Delete most recent resource
+		r.log.Info("Deleting resource", "resource", resourceToDelete.Name, "node", resourceToDelete.NodeName)
+		err = lc.Resources.Delete(ctx, resourceToDelete.Name, resourceToDelete.NodeName)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = lc.Nodes.Modify(ctx, lsatellite.Name, lclient.NodeModify{GenericPropsModify: lclient.GenericPropsModify{
+		DeleteProps: []string{
+			"AutoplaceTarget",
+			PrepareForRemovalNodeAuxProp,
+		},
+	}})
+
+	if err != nil {
+		return err
 	}
 
 	return nil
