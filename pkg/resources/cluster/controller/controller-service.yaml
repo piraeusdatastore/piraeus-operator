@@ -12,3 +12,4 @@ spec:
   ports:
     - port: 3370
       name: api
+      protocol: TCP
