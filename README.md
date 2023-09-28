@@ -1,5 +1,5 @@
 [![Release](https://img.shields.io/github/v/release/piraeusdatastore/piraeus-operator)](https://github.com/piraeusdatastore/piraeus-operator/releases)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.19%2B-success?logo=kubernetes&logoColor=lightgrey)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.20%2B-success?logo=kubernetes&logoColor=lightgrey)
 [![Build Status](https://github.com/piraeusdatastore/piraeus-operator/actions/workflows/build.yml/badge.svg)](https://quay.io/repository/piraeusdatastore/piraeus-operator?tag=latest&tab=tags)
 
 # Piraeus Operator
