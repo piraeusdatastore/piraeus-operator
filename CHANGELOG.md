@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Fixed service resources relying on default protocol version.
+
 ## [v2.2.0] - 2023-08-31
 
 ### Added
