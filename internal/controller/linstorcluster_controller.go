@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -29,7 +28,6 @@ import (
 	"golang.org/x/time/rate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	netwv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -43,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -90,7 +87,6 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=daemonsets;deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;clusterroles;rolebindings;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes;persistentvolumeclaims,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims/status,verbs=patch
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
@@ -213,7 +209,6 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 		&rbacv1.ClusterRole{},
 		&rbacv1.RoleBinding{},
 		&rbacv1.ClusterRoleBinding{},
-		&netwv1.NetworkPolicy{},
 		&certmanagerv1.Certificate{},
 	)
 	if err != nil {
@@ -457,7 +452,6 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 //
 // The resources here are shared by all LinstorSatellite instances. This is used for:
 // * A common ServiceAccount, with optional pull secret configured
-// * A NetworkPolicy to protect DRBD ports from unauthorized access.
 //
 // Applies the following changes over the base resources:
 // * Namespace
@@ -790,16 +784,6 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.Role{}).
 		Owns(&rbacv1.RoleBinding{}).
-		Owns(&netwv1.NetworkPolicy{}, builder.WithPredicates(predicate.Or(predicate.LabelChangedPredicate{}, predicate.Funcs{
-			// NetworkPolicy registers a change event when we just apply the same resource, so we have to filter out
-			// events that do not touch the spec.
-			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
-				oldO := updateEvent.ObjectOld.(*netwv1.NetworkPolicy)
-				newO := updateEvent.ObjectNew.(*netwv1.NetworkPolicy)
-
-				return !reflect.DeepEqual(oldO.Spec, newO.Spec)
-			},
-		}))).
 		Watches(
 			&source.Kind{Type: &corev1.Node{}}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
 			builder.WithPredicates(predicate.LabelChangedPredicate{}),

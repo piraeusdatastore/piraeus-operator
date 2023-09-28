@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed service resources relying on default protocol version.
+- Moved NetworkPolicy for DRBD out of default deployed resources.
 
 ## [v2.2.0] - 2023-08-31
 

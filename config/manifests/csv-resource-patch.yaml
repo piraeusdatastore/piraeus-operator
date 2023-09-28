@@ -20,9 +20,6 @@
   - group: apps
     kind: Deployment
     version: v1
-  - group: networking.k8s.io
-    kind: NetworkPolicy
-    version: v1
   - group: rbac.authorization.k8s.io
     kind: ClusterRole
     version: v1
