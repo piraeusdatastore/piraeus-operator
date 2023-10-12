@@ -34,10 +34,8 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/cert"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -91,10 +89,12 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       vars.GenCertLeaderElectionID,
-		Cache:                  cache.Options{DefaultNamespaces: map[string]cache.Config{namespace: {}}},
-		NewClient: func(config *rest.Config, options client.Options) (client.Client, error) {
-			return client.New(config, options)
-		},
+		Client: client.Options{Cache: &client.CacheOptions{
+			DisableFor: []client.Object{
+				&corev1.Secret{},
+				&v1.ValidatingWebhookConfiguration{},
+			},
+		}},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
