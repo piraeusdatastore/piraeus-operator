@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var linstorclusterlog = logf.Log.WithName("linstorcluster-resource")
@@ -42,44 +43,44 @@ func (r *LinstorCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &LinstorCluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorCluster) ValidateCreate() error {
+func (r *LinstorCluster) ValidateCreate() (admission.Warnings, error) {
 	linstorclusterlog.Info("validate create", "name", r.Name)
 
-	errs := r.validate(nil)
+	warnings, errs := r.validate(nil)
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorCluster"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorCluster"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorCluster) ValidateUpdate(old runtime.Object) error {
+func (r *LinstorCluster) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	linstorclusterlog.Info("validate update", "name", r.Name)
 
-	errs := r.validate(nil)
+	warnings, errs := r.validate(nil)
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorCluster"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorCluster"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorCluster) ValidateDelete() error {
+func (r *LinstorCluster) ValidateDelete() (admission.Warnings, error) {
 	linstorclusterlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
-func (r *LinstorCluster) validate(old *LinstorCluster) field.ErrorList {
+func (r *LinstorCluster) validate(old *LinstorCluster) (admission.Warnings, field.ErrorList) {
 	errs := ValidateExternalController(r.Spec.ExternalController, field.NewPath("spec", "externalController"))
 	errs = append(errs, ValidateNodeSelector(r.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))...)
 	for i := range r.Spec.Patches {
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
 	}
 
-	return errs
+	return nil, errs
 }
 
 func ValidateExternalController(ref *LinstorExternalControllerRef, path *field.Path) field.ErrorList {

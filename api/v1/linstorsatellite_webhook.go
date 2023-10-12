@@ -26,6 +26,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var linstorsatellitelog = logf.Log.WithName("linstorsatellite-resource")
@@ -41,37 +42,37 @@ func (r *LinstorSatellite) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &LinstorSatellite{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatellite) ValidateCreate() error {
+func (r *LinstorSatellite) ValidateCreate() (admission.Warnings, error) {
 	linstorsatellitelog.Info("validate create", "name", r.Name)
 
-	errs := r.validate(nil)
+	warnings, errs := r.validate(nil)
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatellite"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatellite"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatellite) ValidateUpdate(old runtime.Object) error {
+func (r *LinstorSatellite) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	linstorsatellitelog.Info("validate update", "name", r.Name)
 
-	errs := r.validate(old.(*LinstorSatellite))
+	warnings, errs := r.validate(old.(*LinstorSatellite))
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatellite"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatellite"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatellite) ValidateDelete() error {
+func (r *LinstorSatellite) ValidateDelete() (admission.Warnings, error) {
 	linstorsatellitelog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
-func (r *LinstorSatellite) validate(old *LinstorSatellite) field.ErrorList {
+func (r *LinstorSatellite) validate(old *LinstorSatellite) (admission.Warnings, field.ErrorList) {
 	var oldSPs []LinstorStoragePool
 	if old != nil {
 		oldSPs = old.Spec.StoragePools
@@ -84,5 +85,5 @@ func (r *LinstorSatellite) validate(old *LinstorSatellite) field.ErrorList {
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
 	}
 
-	return errs
+	return nil, errs
 }

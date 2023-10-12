@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var linstornodeconnectionlog = logf.Log.WithName("linstornodeconnection-resource")
@@ -42,38 +43,38 @@ func (r *LinstorNodeConnection) SetupWebhookWithManager(mgr ctrl.Manager) error 
 var _ webhook.Validator = &LinstorNodeConnection{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorNodeConnection) ValidateCreate() error {
+func (r *LinstorNodeConnection) ValidateCreate() (admission.Warnings, error) {
 	linstornodeconnectionlog.Info("validate create", "name", r.Name)
 
-	errs := r.validate()
+	warnings, errs := r.validate()
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorNodeConnection"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorNodeConnection"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorNodeConnection) ValidateUpdate(old runtime.Object) error {
+func (r *LinstorNodeConnection) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	linstornodeconnectionlog.Info("validate update", "name", r.Name)
 
-	errs := r.validate()
+	warnings, errs := r.validate()
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorNodeConnection"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorNodeConnection"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorNodeConnection) ValidateDelete() error {
+func (r *LinstorNodeConnection) ValidateDelete() (admission.Warnings, error) {
 	linstornodeconnectionlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
-func (r *LinstorNodeConnection) validate() field.ErrorList {
-	return ValidateNodeConnectionSelectors(r.Spec.Selector, field.NewPath("spec", "selector"))
+func (r *LinstorNodeConnection) validate() (admission.Warnings, field.ErrorList) {
+	return nil, ValidateNodeConnectionSelectors(r.Spec.Selector, field.NewPath("spec", "selector"))
 }
 
 func ValidateNodeConnectionSelectors(selector []SelectorTerm, path *field.Path) field.ErrorList {

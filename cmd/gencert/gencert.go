@@ -91,8 +91,8 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       vars.GenCertLeaderElectionID,
-		Namespace:              namespace,
-		NewClient: func(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
+		Cache:                  cache.Options{DefaultNamespaces: map[string]cache.Config{namespace: {}}},
+		NewClient: func(config *rest.Config, options client.Options) (client.Client, error) {
 			return client.New(config, options)
 		},
 	})

@@ -45,7 +45,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/resmap"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
@@ -785,15 +784,15 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		Owns(&rbacv1.Role{}).
 		Owns(&rbacv1.RoleBinding{}).
 		Watches(
-			&source.Kind{Type: &corev1.Node{}}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
+			&corev1.Node{}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
 			builder.WithPredicates(predicate.LabelChangedPredicate{}),
 		).
 		Watches(
-			&source.Kind{Type: &piraeusiov1.LinstorSatelliteConfiguration{}}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
+			&piraeusiov1.LinstorSatelliteConfiguration{}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{})),
 		).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
+			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 				return object.GetName() == r.ImageConfigMapName && object.GetNamespace() == r.Namespace
@@ -803,9 +802,9 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		Complete(r)
 }
 
-func (r *LinstorClusterReconciler) allClustersRequests(_ client.Object) []reconcile.Request {
+func (r *LinstorClusterReconciler) allClustersRequests(ctx context.Context, _ client.Object) []reconcile.Request {
 	clusters := piraeusiov1.LinstorClusterList{}
-	_ = r.Client.List(context.Background(), &clusters)
+	_ = r.Client.List(ctx, &clusters)
 	requests := make([]reconcile.Request, 0, len(clusters.Items))
 
 	for i := range clusters.Items {
