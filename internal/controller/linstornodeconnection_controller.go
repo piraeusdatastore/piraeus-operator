@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
@@ -184,18 +183,18 @@ func (r *LinstorNodeConnectionReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorNodeConnection{}).
 		Watches(
-			&source.Kind{Type: &corev1.Node{}}, handler.EnqueueRequestsFromMapFunc(r.allNodeConnectionsRequests),
+			&corev1.Node{}, handler.EnqueueRequestsFromMapFunc(r.allNodeConnectionsRequests),
 			builder.WithPredicates(predicate.LabelChangedPredicate{}),
 		).
 		Watches(
-			&source.Kind{Type: &piraeusiov1.LinstorSatellite{}}, handler.EnqueueRequestsFromMapFunc(r.allNodeConnectionsRequests),
+			&piraeusiov1.LinstorSatellite{}, handler.EnqueueRequestsFromMapFunc(r.allNodeConnectionsRequests),
 			builder.WithPredicates(predicate.LabelChangedPredicate{}),
 		).
 		Complete(r)
 }
 
 // We always reconcile all connections at once, so we only need to report one "fake" request here.
-func (r *LinstorNodeConnectionReconciler) allNodeConnectionsRequests(_ client.Object) []reconcile.Request {
+func (r *LinstorNodeConnectionReconciler) allNodeConnectionsRequests(_ context.Context, _ client.Object) []reconcile.Request {
 	return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: "all"}}}
 }
 

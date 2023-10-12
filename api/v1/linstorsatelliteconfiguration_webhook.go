@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var linstorsatelliteconfigurationlog = logf.Log.WithName("linstorsatelliteconfiguration-resource")
@@ -42,37 +43,37 @@ func (r *LinstorSatelliteConfiguration) SetupWebhookWithManager(mgr ctrl.Manager
 var _ webhook.Validator = &LinstorSatelliteConfiguration{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatelliteConfiguration) ValidateCreate() error {
+func (r *LinstorSatelliteConfiguration) ValidateCreate() (admission.Warnings, error) {
 	linstorsatelliteconfigurationlog.Info("validate create", "name", r.Name)
 
-	errs := r.validate(nil)
+	warnings, errs := r.validate(nil)
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatelliteConfiguration"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatelliteConfiguration"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatelliteConfiguration) ValidateUpdate(old runtime.Object) error {
+func (r *LinstorSatelliteConfiguration) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	linstorsatelliteconfigurationlog.Info("validate update", "name", r.Name)
 
-	errs := r.validate(old.(*LinstorSatelliteConfiguration))
+	warnings, errs := r.validate(old.(*LinstorSatelliteConfiguration))
 	if len(errs) != 0 {
-		return apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatelliteConfiguration"}, r.Name, errs)
+		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: GroupVersion.Group, Kind: "LinstorSatelliteConfiguration"}, r.Name, errs)
 	}
 
-	return nil
+	return warnings, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatelliteConfiguration) ValidateDelete() error {
+func (r *LinstorSatelliteConfiguration) ValidateDelete() (admission.Warnings, error) {
 	linstorsatelliteconfigurationlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
-func (r *LinstorSatelliteConfiguration) validate(old *LinstorSatelliteConfiguration) field.ErrorList {
+func (r *LinstorSatelliteConfiguration) validate(old *LinstorSatelliteConfiguration) (admission.Warnings, field.ErrorList) {
 	var oldSPs []LinstorStoragePool
 	if old != nil {
 		oldSPs = old.Spec.StoragePools
@@ -86,7 +87,7 @@ func (r *LinstorSatelliteConfiguration) validate(old *LinstorSatelliteConfigurat
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
 	}
 
-	return errs
+	return nil, errs
 }
 
 func ValidateNodeSelector(selector map[string]string, path *field.Path) field.ErrorList {

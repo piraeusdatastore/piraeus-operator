@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/resmap"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
@@ -568,13 +567,13 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 		Owns(&corev1.ConfigMap{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
 		Watches(
-			&source.Kind{Type: &corev1.Node{}},
-			handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			&corev1.Node{},
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: object.GetName()}}}
 			}),
 			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
+			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.allSatelliteRequests),
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
 				return object.GetName() == r.ImageConfigMapName && object.GetNamespace() == r.Namespace
@@ -584,9 +583,9 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 		Complete(r)
 }
 
-func (r *LinstorSatelliteReconciler) allSatelliteRequests(_ client.Object) []reconcile.Request {
+func (r *LinstorSatelliteReconciler) allSatelliteRequests(ctx context.Context, _ client.Object) []reconcile.Request {
 	satellites := piraeusiov1.LinstorSatelliteList{}
-	_ = r.Client.List(context.Background(), &satellites)
+	_ = r.Client.List(ctx, &satellites)
 	requests := make([]reconcile.Request, 0, len(satellites.Items))
 
 	for i := range satellites.Items {
