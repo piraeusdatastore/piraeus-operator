@@ -6,6 +6,10 @@ updates:
       - WanzenBug
     schedule:
       interval: "weekly"
+    groups:
+      gomod:
+        patterns:
+          - "*" # Include all go mod update in one PR
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
