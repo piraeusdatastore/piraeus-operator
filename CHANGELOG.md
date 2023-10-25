@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed service resources relying on default protocol version.
 - Moved NetworkPolicy for DRBD out of default deployed resources.
+- Updated images:
+  * LINSTOR 1.25.0
+  * DRBD Reactor 1.3.0
+  * Latest CSI sidecars
 
 ## [v2.2.0] - 2023-08-31
 
