@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a new option `.spec.internalTLS.tlsHandshakeDaemon` to enable deployment of `tlshd` alongside the LINSTOR
+  Satellite.
+
 ### Changed
 
 - Fixed service resources relying on default protocol version.

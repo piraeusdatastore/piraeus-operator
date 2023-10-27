@@ -34,6 +34,9 @@ data:
       drbd-shutdown-guard:
         tag: v1.0.0
         image: drbd-shutdown-guard
+      ktls-utils:
+        tag: v0.10
+        image: ktls-utils
       drbd-module-loader:
         tag: v9.2.5
         # The special "match" attribute is used to select an image based on the node's reported OS.

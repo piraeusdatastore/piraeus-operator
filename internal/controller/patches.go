@@ -145,6 +145,14 @@ func SatelliteLinstorInternalTLSCertManagerPatch(secretName string, issuer *cmme
 	)
 }
 
+func SatelliteLinstorHandshakeDaemonPatch() ([]kusttypes.Patch, error) {
+	return render(
+		satellite.Resources,
+		"patches/tlshd.yaml",
+		nil,
+	)
+}
+
 func SatelliteCommonNodePatch(nodeName string) ([]kusttypes.Patch, error) {
 	return render(
 		satellite.Resources,

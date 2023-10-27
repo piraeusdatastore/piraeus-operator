@@ -14,3 +14,14 @@ type TLSConfig struct {
 	//+kubebuilder:validation:Optional
 	CertManager *cmmetav1.ObjectReference `json:"certManager,omitempty"`
 }
+
+type TLSConfigWithHandshakeDaemon struct {
+	TLSConfig `json:",inline"`
+
+	// TLSHandshakeDaemon enables tlshd for establishing TLS sessions for use by DRBD.
+	//
+	// If enabled, adds a new sidecar to the LINSTOR Satellite that runs the tlshd handshake daemon.
+	// The daemon uses the TLS certificate and key to establish secure connections on behalf of DRBD.
+	//+kubebuilder:validation:Optional
+	TLSHandshakeDaemon bool `json:"tlsHandshakeDaemon,omitempty"`
+}
