@@ -87,7 +87,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				TypeMeta:   TypeMeta,
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 				Spec: piraeusiov1.LinstorSatelliteSpec{
-					InternalTLS: &piraeusiov1.TLSConfig{},
+					InternalTLS: &piraeusiov1.TLSConfigWithHandshakeDaemon{},
 				},
 			}, client.Apply, client.FieldOwner("test"))
 			Expect(err).NotTo(HaveOccurred())

@@ -54,7 +54,7 @@ type LinstorSatelliteConfigurationSpec struct {
 	// +kubebuilder:validation:Optional
 	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
 	// +nullable
-	InternalTLS *TLSConfig `json:"internalTLS,omitempty"`
+	InternalTLS *TLSConfigWithHandshakeDaemon `json:"internalTLS,omitempty"`
 }
 
 // LinstorSatelliteConfigurationStatus defines the observed state of LinstorSatelliteConfiguration

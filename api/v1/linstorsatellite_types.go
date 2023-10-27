@@ -54,7 +54,7 @@ type LinstorSatelliteSpec struct {
 	// +kubebuilder:validation:Optional
 	// + Without "nullable" the k8s API does not accept patches with 'internalTLS: {}', which seems to be a bug.
 	// +nullable
-	InternalTLS *TLSConfig `json:"internalTLS,omitempty"`
+	InternalTLS *TLSConfigWithHandshakeDaemon `json:"internalTLS,omitempty"`
 }
 
 // LinstorSatelliteStatus defines the observed state of LinstorSatellite

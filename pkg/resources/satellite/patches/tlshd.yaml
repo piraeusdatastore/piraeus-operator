@@ -1,0 +1,26 @@
+---
+- target:
+    version: v1
+    kind: Pod
+    name: satellite
+  patch: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: satellite
+    spec:
+      containers:
+        - name: ktls-utils
+          image: ktls-utils
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+              drop:
+                - ALL
+            privileged: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: internal-tls
+              mountPath: /etc/tlshd.d
+              readOnly: true

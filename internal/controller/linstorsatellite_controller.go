@@ -213,6 +213,15 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 
 			patches = append(patches, p...)
 		}
+
+		if lsatellite.Spec.InternalTLS.TLSHandshakeDaemon {
+			p, err := SatelliteLinstorHandshakeDaemonPatch()
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, p...)
+		}
 	}
 
 	var bindMountPaths []string

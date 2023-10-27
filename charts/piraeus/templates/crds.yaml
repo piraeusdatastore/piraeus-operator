@@ -561,6 +561,13 @@ spec:
                     description: SecretName references a secret holding the TLS key
                       and certificates.
                     type: string
+                  tlsHandshakeDaemon:
+                    description: "TLSHandshakeDaemon enables tlshd for establishing
+                      TLS sessions for use by DRBD. \n If enabled, adds a new sidecar
+                      to the LINSTOR Satellite that runs the tlshd handshake daemon.
+                      The daemon uses the TLS certificate and key to establish secure
+                      connections on behalf of DRBD."
+                    type: boolean
                 type: object
               nodeSelector:
                 additionalProperties:
@@ -909,6 +916,13 @@ spec:
                     description: SecretName references a secret holding the TLS key
                       and certificates.
                     type: string
+                  tlsHandshakeDaemon:
+                    description: "TLSHandshakeDaemon enables tlshd for establishing
+                      TLS sessions for use by DRBD. \n If enabled, adds a new sidecar
+                      to the LINSTOR Satellite that runs the tlshd handshake daemon.
+                      The daemon uses the TLS certificate and key to establish secure
+                      connections on behalf of DRBD."
+                    type: boolean
                 type: object
               patches:
                 description: "Patches is a list of kustomize patches to apply. \n

@@ -56,6 +56,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "SatelliteLinstorHandshakeDaemonPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.SatelliteLinstorHandshakeDaemonPatch()
+			},
+		},
+		{
 			name: "SatelliteCommonNodePatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.SatelliteCommonNodePatch("node")
