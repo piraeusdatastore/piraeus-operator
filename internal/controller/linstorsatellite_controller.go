@@ -446,6 +446,9 @@ func (r *LinstorSatelliteReconciler) evacuateNode(ctx context.Context, lc *linst
 
 	findMatchingEvacuatedResource := func(nodeRes lclient.ResourceWithVolumes) *lclient.ResourceWithVolumes {
 		for _, evacuatedRes := range evacuatedResources {
+			if utils.IsDisklessResource(evacuatedRes) {
+				continue
+			}
 			if nodeRes.Name == evacuatedRes.Name && evacuatedRes.Props[NodeEvacuationProp] == node.Name {
 				return &evacuatedRes
 			}
@@ -527,6 +530,9 @@ func (r *LinstorSatelliteReconciler) undoNodeEvacuation(ctx context.Context, lc 
 	})
 
 	for _, resource := range res {
+		if resource.State == nil || resource.State.InUse == nil {
+			continue
+		}
 		// If an evacuated resource is in use, it means we can delete the original resource.
 		// We also update the resource properties to remove the NodeEvacuationProp
 		// as we've just deleted the original resource it was pointing to.
