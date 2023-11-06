@@ -1,5 +1,19 @@
 Piraeus Operator installed.
 
+{{- $piraeusResources := .Capabilities.APIVersions.Has "piraeus.linbit.com/v1/LinstorController" }}
+{{- $linbitResources := .Capabilities.APIVersions.Has "linstor.linbit.com/v1/LinstorController" }}
+{{- if or $piraeusResources $linbitResources }}
+{{- fail `
+
+	Refusing to upgrade from v1 deployment!
+	=======================================
+
+	Please read the upgrade instructions at:
+
+		https://github.com/piraeusdatastore/piraeus-operator/blob/v2/docs/how-to/upgrade/index.md
+` }}
+{{- end }}
+
 {{- if not (.Capabilities.APIVersions.Has "piraeus.io/v1/LinstorCluster") }}
 It looks like the necessary CRDs for Piraeus Operator are still missing.
 
