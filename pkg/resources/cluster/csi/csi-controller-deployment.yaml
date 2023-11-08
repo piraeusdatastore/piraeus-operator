@@ -107,6 +107,7 @@ spec:
             - '--csi-address=$(ADDRESS)'
             - '--timeout=1m'
             - '--default-fstype=ext4'
+            - '--feature-gates=Topology=true'
             - '--leader-election=true'
             - '--leader-election-namespace=$(NAMESPACE)'
             - '--enable-capacity'
