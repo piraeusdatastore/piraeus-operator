@@ -81,6 +81,30 @@ webhooks:
     - linstorclusters
   sideEffects: None
 - admissionReviewVersions:
+    - v1
+  clientConfig:
+    service:
+      name: '{{ include "piraeus-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-piraeus-io-v1-linstornodeconnection
+    {{- if not .Values.tls.certManagerIssuerRef }}
+    caBundle: {{ $ca }}
+    {{- end }}
+  failurePolicy: {{ .Values.webhook.failurePolicy }}
+  timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+  name: vlinstornodeconnection.kb.io
+  rules:
+    - apiGroups:
+        - piraeus.io
+      apiVersions:
+        - v1
+      operations:
+        - CREATE
+        - UPDATE
+      resources:
+        - linstornodeconnections
+  sideEffects: None
+- admissionReviewVersions:
   - v1
   clientConfig:
     service:
