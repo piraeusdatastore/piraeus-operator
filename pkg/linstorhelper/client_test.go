@@ -192,9 +192,16 @@ func TestNewClientForCluster(t *testing.T) {
 				require.NoError(t, err)
 
 				// need to use go-cmp here, as that can handle the embedded x509.CertPool comparison.
-				diff := cmp.Diff(&linstorhelper.Client{Client: *expected}, actual, cmp.Exporter(func(r reflect.Type) bool {
-					return true
-				}))
+				diff := cmp.Diff(*expected, actual.Client,
+					// Compare all unexported fields, too
+					cmp.Exporter(func(r reflect.Type) bool {
+						return true
+					}),
+					// But ignore all logging
+					cmp.Comparer(func(a, b lapi.Logger) bool {
+						return true
+					}),
+				)
 				if diff != "" {
 					assert.Fail(t, diff)
 				}
