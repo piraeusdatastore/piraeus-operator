@@ -67,3 +67,8 @@ spec:
             memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: drbd.linbit.com/lost-quorum
+          effect: NoSchedule
+        - key: drbd.linbit.com/force-io-error
+          effect: NoSchedule

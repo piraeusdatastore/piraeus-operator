@@ -65,3 +65,8 @@ spec:
               memory: 32Mi
       serviceAccountName: gencert
       terminationGracePeriodSeconds: 10
+      tolerations:
+        - key: drbd.linbit.com/lost-quorum
+          effect: NoSchedule
+        - key: drbd.linbit.com/force-io-error
+          effect: NoSchedule

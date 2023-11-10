@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * LINSTOR 1.25.0
   * DRBD Reactor 1.3.0
   * Latest CSI sidecars
+- Add a default toleration for the HA Controller taints to the operator.
 
 ## [v2.2.0] - 2023-08-31
 
