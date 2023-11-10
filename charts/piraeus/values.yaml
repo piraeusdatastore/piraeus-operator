@@ -86,7 +86,11 @@ podSecurityContext: {}
 
 nodeSelector: { }
 
-tolerations: [ ]
+tolerations:
+  - key: drbd.linbit.com/lost-quorum
+    effect: NoSchedule
+  - key: drbd.linbit.com/force-io-error
+    effect: NoSchedule
 affinity: { }
 
 podDisruptionBudget:

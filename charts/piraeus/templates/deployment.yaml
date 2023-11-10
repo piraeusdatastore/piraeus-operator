@@ -92,6 +92,8 @@ spec:
         runAsNonRoot: true
       serviceAccountName: {{ include "piraeus-operator.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
       volumes:
       - name: cert
         secret:
