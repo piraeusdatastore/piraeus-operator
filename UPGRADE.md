@@ -5,7 +5,7 @@ volumes and volumes already in use by a pod will continue to work without interr
 
 # Upgrades from v1 to v2
 
-There currently is no documented upgrade path from Operator v1 to v2.
+Please follow the specialized [upgrade guides](./docs/how-to/upgrade/index.md).
 
 # Upgrade from v1.9 to v1.10
 
