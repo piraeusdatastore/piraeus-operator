@@ -2,23 +2,23 @@
 base: registry.k8s.io/sig-storage
 components:
   csi-attacher:
-    tag: v4.4.1
+    tag: v4.4.2
     image: csi-attacher
   csi-livenessprobe:
     tag: v2.11.0
     image: livenessprobe
   csi-provisioner:
-    tag: v3.6.1
+    tag: v3.6.2
     image: csi-provisioner
   csi-snapshotter:
-    tag: v6.3.1
+    tag: v6.3.2
     image: csi-snapshotter
   csi-resizer:
-    tag: v1.9.1
+    tag: v1.9.2
     image: csi-resizer
   csi-external-health-monitor-controller:
     tag: v0.10.0
     image: csi-external-health-monitor-controller
   csi-node-driver-registrar:
-    tag: v2.9.0
+    tag: v2.9.1
     image: csi-node-driver-registrar
