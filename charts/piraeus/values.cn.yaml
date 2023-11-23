@@ -23,13 +23,13 @@ stork:
   podsecuritycontext: {}
 csi:
   enabled: true
-  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v1.2.3
-  csiAttacherImage: k8s.m.daocloud.io/sig-storage/csi-attacher:v4.3.0
-  csiLivenessProbeImage: k8s.m.daocloud.io/sig-storage/livenessprobe:v2.10.0
-  csiNodeDriverRegistrarImage: k8s.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.8.0
-  csiProvisionerImage: k8s.m.daocloud.io/sig-storage/csi-provisioner:v3.5.0
-  csiSnapshotterImage: k8s.m.daocloud.io/sig-storage/csi-snapshotter:v6.2.2
-  csiResizerImage: k8s.m.daocloud.io/sig-storage/csi-resizer:v1.8.0
+  pluginImage: quay.m.daocloud.io/piraeusdatastore/piraeus-csi:v1.3.0
+  csiAttacherImage: k8s.m.daocloud.io/sig-storage/csi-attacher:v4.4.2
+  csiLivenessProbeImage: k8s.m.daocloud.io/sig-storage/livenessprobe:v2.11.0
+  csiNodeDriverRegistrarImage: k8s.m.daocloud.io/sig-storage/csi-node-driver-registrar:v2.9.1
+  csiProvisionerImage: k8s.m.daocloud.io/sig-storage/csi-provisioner:v3.6.2
+  csiSnapshotterImage: k8s.m.daocloud.io/sig-storage/csi-snapshotter:v6.3.2
+  csiResizerImage: k8s.m.daocloud.io/sig-storage/csi-resizer:v1.9.2
   csiAttacherWorkerThreads: 10
   csiProvisionerWorkerThreads: 10
   csiSnapshotterWorkerThreads: 10
@@ -75,7 +75,7 @@ operator:
   extraVolumes: []
   controller:
     enabled: true
-    controllerImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.24.2
+    controllerImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.25.1
     dbConnectionURL: ""
     luksSecret: ""
     dbCertSecret: ""
@@ -101,16 +101,16 @@ operator:
     customAnnotations: {}
   satelliteSet:
     enabled: true
-    satelliteImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.24.2
+    satelliteImage: quay.m.daocloud.io/piraeusdatastore/piraeus-server:v1.25.1
     storagePools: {}
     sslSecret: ""
     automaticStorageType: None
     affinity: {}
     tolerations: []
     resources: {}
-    monitoringImage: quay.m.daocloud.io/piraeusdatastore/drbd-reactor:v1.2.0
+    monitoringImage: quay.m.daocloud.io/piraeusdatastore/drbd-reactor:v1.4.0
     monitoringBindAddress: ""
-    kernelModuleInjectionImage: quay.m.daocloud.io/piraeusdatastore/drbd9-centos7:v9.1.16
+    kernelModuleInjectionImage: quay.m.daocloud.io/piraeusdatastore/drbd9-centos7:v9.1.17
     kernelModuleInjectionMode: Compile
     kernelModuleInjectionAdditionalSourceDirectory: ""
     kernelModuleInjectionResources: {}
