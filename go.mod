@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.30.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/time v0.4.0
+	golang.org/x/time v0.5.0
 	gonum.org/v1/gonum v0.14.0
 	k8s.io/api v0.28.4
 	k8s.io/apimachinery v0.28.4
