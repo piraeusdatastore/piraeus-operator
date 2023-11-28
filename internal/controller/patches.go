@@ -149,13 +149,21 @@ func ClusterApiEndpointPatch(url string) ([]kusttypes.Patch, error) {
 		})
 }
 
-func ClusterCSIApiTLSPatch(controllerSecret, nodeSecret string) ([]kusttypes.Patch, error) {
+func ClusterCSIControllerApiTLSPatch(controllerSecret string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
-		"patches/api-tls-csi.yaml",
+		"patches/api-tls-csi-controller.yaml",
 		map[string]any{
 			"LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME": controllerSecret,
-			"LINSTOR_CSI_NODE_API_TLS_SECRET_NAME":       nodeSecret,
+		})
+}
+
+func ClusterCSINodeApiTLSPatch(nodeSecret string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls-csi-node.yaml",
+		map[string]any{
+			"LINSTOR_CSI_NODE_API_TLS_SECRET_NAME": nodeSecret,
 		})
 }
 

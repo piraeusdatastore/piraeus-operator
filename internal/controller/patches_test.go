@@ -169,9 +169,15 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
-			name: "ClusterCSIApiTLSPatch",
+			name: "ClusterCSIControllerApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterCSIApiTLSPatch("controller", "node")
+				return controller.ClusterCSIControllerApiTLSPatch("controller")
+			},
+		},
+		{
+			name: "ClusterCSINodeApiTLSPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterCSINodeApiTLSPatch("node")
 			},
 		},
 		{
