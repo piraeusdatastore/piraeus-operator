@@ -189,6 +189,132 @@ spec:
           ipFamilyPolicy: SingleStack
 ```
 
+### `.spec.externalController`
+
+Configures the Operator to use an external controller instead of deploying one in the Cluster.
+
+#### Example
+
+This examples instructs the Operator to use the external LINSTOR Controller reachable at `http://linstor.example.com:3370`.
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  externalController:
+    url: http://linstor.example.com:3370
+```
+
+### `.spec.controller`
+
+Controls the LINSTOR Controller Deployment:
+* Setting `enabled: false` disables the controller deployment entirely. See also [`.spec.externalController`](#specexternalcontroller).
+* Setting a `podTemplate:` allows for simple modification of the LINSTOR Controller Deployment.
+
+#### Example
+
+This example configures a resource request of `memory: 1Gi` for the LINSTOR Controller Deployment:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  controller:
+    enabled: true
+    podTemplate:
+      spec:
+        containers:
+          - name: linstor-controller
+            resources:
+              requests:
+                memory: 1Gi
+```
+
+### `.spec.csiController`
+
+Controls the CSI Controller Deployment:
+* Setting `enabled: false` disables the deployment entirely.
+* Setting a `podTemplate:` allows for simple modification of the CSI Controller Deployment.
+
+#### Example
+
+This example configures a resource request of `cpu: 10m` for the CSI Controller Deployment:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  csiController:
+    enabled: true
+    podTemplate:
+      spec:
+        containers:
+          - name: linstor-csi
+            resources:
+              requests:
+                memory: 1Gi
+```
+
+### `.spec.csiNode`
+
+Controls the CSI Node DaemonSet:
+* Setting `enabled: false` disables the deployment entirely.
+* Setting a `podTemplate:` allows for simple modification of the CSI Node DaemonSet.
+
+#### Example
+
+This example configures a resource request of `cpu: 10m` for the CSI Node DaemonSet:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  csiNode:
+    enabled: true
+    podTemplate:
+      spec:
+        containers:
+          - name: linstor-csi
+            resources:
+              requests:
+                memory: 1Gi
+```
+
+### `.spec.highAvailabilityController`
+
+Controls the High Availability Controller DaemonSet:
+* Setting `enabled: false` disables the deployment entirely.
+* Setting a `podTemplate:` allows for simple modification of the CSI Node Deployment.
+
+#### Example
+
+This example configures a resource request of `cpu: 10m` for the CSI Node Deployment:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  highAvailabilityController:
+    enabled: true
+    podTemplate:
+      spec:
+        containers:
+          - name: ha-controller
+            resources:
+              requests:
+                memory: 1Gi
+```
+
 ### `.spec.internalTLS`
 
 Configures a TLS secret used by the LINSTOR Controller to:

@@ -77,6 +77,56 @@ spec:
                       state. Defaults to "linstor-csi-node-tls".
                     type: string
                 type: object
+              controller:
+                description: Controller controls the deployment of the LINSTOR Controller
+                  Deployment.
+                properties:
+                  enabled:
+                    default: true
+                    description: Enable the component.
+                    type: boolean
+                  podTemplate:
+                    description: "Template to apply to Pods of the component. \n The
+                      template is applied as a patch to the default deployment, so
+                      it can be \"sparse\", not listing any containers or volumes
+                      that should remain unchanged. See https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates"
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              csiController:
+                description: CSIController controls the deployment of the CSI Controller
+                  Deployment.
+                properties:
+                  enabled:
+                    default: true
+                    description: Enable the component.
+                    type: boolean
+                  podTemplate:
+                    description: "Template to apply to Pods of the component. \n The
+                      template is applied as a patch to the default deployment, so
+                      it can be \"sparse\", not listing any containers or volumes
+                      that should remain unchanged. See https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates"
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              csiNode:
+                description: CSINode controls the deployment of the CSI Node DaemonSet.
+                properties:
+                  enabled:
+                    default: true
+                    description: Enable the component.
+                    type: boolean
+                  podTemplate:
+                    description: "Template to apply to Pods of the component. \n The
+                      template is applied as a patch to the default deployment, so
+                      it can be \"sparse\", not listing any containers or volumes
+                      that should remain unchanged. See https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates"
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
               externalController:
                 description: ExternalController references an external controller.
                   When set, the Operator will skip deploying a LINSTOR Controller
@@ -88,6 +138,23 @@ spec:
                     type: string
                 required:
                 - url
+                type: object
+              highAvailabilityController:
+                description: HighAvailabilityController controls the deployment of
+                  the High Availability Controller DaemonSet.
+                properties:
+                  enabled:
+                    default: true
+                    description: Enable the component.
+                    type: boolean
+                  podTemplate:
+                    description: "Template to apply to Pods of the component. \n The
+                      template is applied as a patch to the default deployment, so
+                      it can be \"sparse\", not listing any containers or volumes
+                      that should remain unchanged. See https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates"
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
               internalTLS:
                 description: "InternalTLS secures the connection between LINSTOR Controller

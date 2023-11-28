@@ -314,7 +314,7 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 // * pull secret (if any)
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
-	if lcluster.Spec.ExternalController != nil {
+	if lcluster.Spec.ExternalController != nil || !lcluster.Spec.Controller.IsEnabled() {
 		return resmap.New(), nil
 	}
 
@@ -402,6 +402,15 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		}
 	}
 
+	if lcluster.Spec.Controller.GetTemplate() != nil {
+		p, err := ComponentPodTemplate("Deployment", "linstor-controller", lcluster.Spec.Controller.GetTemplate())
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
@@ -414,6 +423,10 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 // * pull secret (if any)
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	if !lcluster.Spec.CSIController.IsEnabled() {
+		return resmap.New(), nil
+	}
+
 	resourceDirs := []string{"csi-controller"}
 
 	patches, err := ClusterCSIControllerNodeSelector(lcluster.Spec.NodeSelector)
@@ -459,6 +472,15 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 		}
 	}
 
+	if lcluster.Spec.CSIController.GetTemplate() != nil {
+		p, err := ComponentPodTemplate("Deployment", "linstor-csi-controller", lcluster.Spec.CSIController.GetTemplate())
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
@@ -472,6 +494,10 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 // * restrict CSI driver daemon set to cluster's node selector
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	if !lcluster.Spec.CSINode.IsEnabled() {
+		return resmap.New(), nil
+	}
+
 	resourceDirs := []string{"csi-node"}
 
 	patches, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
@@ -517,6 +543,15 @@ func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusio
 		}
 	}
 
+	if lcluster.Spec.CSINode.GetTemplate() != nil {
+		p, err := ComponentPodTemplate("DaemonSet", "linstor-csi-node", lcluster.Spec.CSINode.GetTemplate())
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
@@ -530,6 +565,10 @@ func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusio
 // * restrict daemon set to cluster's node selector
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	if !lcluster.Spec.HighAvailabilityController.IsEnabled() {
+		return resmap.New(), nil
+	}
+
 	patches, err := ClusterHAControllerNodeSelectorPatch(lcluster.Spec.NodeSelector)
 	if err != nil {
 		return nil, err
@@ -537,6 +576,15 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 
 	if lcluster.Spec.NodeAffinity != nil {
 		p, err := ClusterHAControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	if lcluster.Spec.HighAvailabilityController.GetTemplate() != nil {
+		p, err := ComponentPodTemplate("DaemonSet", "ha-controller", lcluster.Spec.HighAvailabilityController.GetTemplate())
 		if err != nil {
 			return nil, err
 		}

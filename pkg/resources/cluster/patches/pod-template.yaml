@@ -1,0 +1,9 @@
+---
+- target: {}
+  patch: |
+    apiVersion: apps/v1
+    kind: $KIND
+    metadata:
+      name: $NAME
+    spec:
+      template: $TEMPLATE

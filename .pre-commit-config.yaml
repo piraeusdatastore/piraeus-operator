@@ -15,7 +15,10 @@ repos:
     rev: v1.0.2
     hooks:
       - id: gofumpt
+        types: [go]
+        exclude: ".*/zz_generated.*\\.go$"
       - id: golangci-lint
+        types: [go]
         args:
           - --new-from-rev=HEAD
   - repo: local

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"io/fs"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
+	"sigs.k8s.io/kustomize/kyaml/resid"
 	"sigs.k8s.io/yaml"
 
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/cluster"
@@ -253,6 +255,29 @@ func SatelliteHostPathVolumeEnvPatch(hostPaths []string) ([]kusttypes.Patch, err
 			"HOST_PATHS": strings.Join(hostPaths, ":"),
 		},
 	)
+}
+
+func ComponentPodTemplate(kind, name string, template json.RawMessage) ([]kusttypes.Patch, error) {
+	patches, err := render(
+		cluster.Resources,
+		"patches/pod-template.yaml",
+		map[string]any{
+			"KIND":     kind,
+			"NAME":     name,
+			"TEMPLATE": template,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range patches {
+		patches[i].Target = &kusttypes.Selector{
+			ResId: resid.NewResIdKindOnly(kind, name),
+		}
+	}
+
+	return patches, nil
 }
 
 func render(f fs.FS, fileName string, params map[string]any) ([]kusttypes.Patch, error) {
