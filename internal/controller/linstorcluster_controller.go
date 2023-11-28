@@ -239,7 +239,12 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		return nil, err
 	}
 
-	csiRes, err := r.kustomizeCsiResources(lcluster, imgs)
+	csiControllerRes, err := r.kustomizeCSIControllerResources(lcluster, imgs)
+	if err != nil {
+		return nil, err
+	}
+
+	csiNodeRes, err := r.kustomizeCSINodeResources(lcluster, imgs)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +282,12 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		return nil, err
 	}
 
-	err = resMap.AppendAll(csiRes)
+	err = resMap.AppendAll(csiControllerRes)
+	if err != nil {
+		return nil, err
+	}
+
+	err = resMap.AppendAll(csiNodeRes)
 	if err != nil {
 		return nil, err
 	}
@@ -402,22 +412,14 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 // * default labels
 // * default images
 // * pull secret (if any)
-// * restrict CSI driver daemon set to cluster's node selector
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
-	resourceDirs := []string{"csi"}
+func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	resourceDirs := []string{"csi-controller"}
 
-	patches, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
+	patches, err := ClusterCSIControllerNodeSelector(lcluster.Spec.NodeSelector)
 	if err != nil {
 		return nil, err
 	}
-
-	p, err := ClusterCSIControllerNodeSelector(lcluster.Spec.NodeSelector)
-	if err != nil {
-		return nil, err
-	}
-
-	patches = append(patches, p...)
 
 	endpointPatches, err := ClusterApiEndpointPatch(LinstorControllerUrl(lcluster))
 	if err != nil {
@@ -427,25 +429,18 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 	patches = append(patches, endpointPatches...)
 
 	if lcluster.Spec.NodeAffinity != nil {
-		nodePatches, err := ClusterCSINodeNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		p, err := ClusterCSIControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
 		if err != nil {
 			return nil, err
 		}
 
-		controllerPatches, err := ClusterCSIControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
-		if err != nil {
-			return nil, err
-		}
-
-		patches = append(patches, nodePatches...)
-		patches = append(patches, controllerPatches...)
+		patches = append(patches, p...)
 	}
 
 	if lcluster.Spec.ApiTLS != nil {
 		controllerSecret := lcluster.Spec.ApiTLS.GetCsiControllerSecretName()
-		nodeSecret := lcluster.Spec.ApiTLS.GetCsiNodeSecretName()
 
-		p, err := ClusterCSIApiTLSPatch(controllerSecret, nodeSecret)
+		p, err := ClusterCSIControllerApiTLSPatch(controllerSecret)
 		if err != nil {
 			return nil, err
 		}
@@ -453,20 +448,72 @@ func (r *LinstorClusterReconciler) kustomizeCsiResources(lcluster *piraeusiov1.L
 		patches = append(patches, p...)
 
 		if lcluster.Spec.ApiTLS.CertManager != nil {
-			resourceDirs = append(resourceDirs, "csi/cert-manager/csi-controller", "csi/cert-manager/csi-node")
+			resourceDirs = append(resourceDirs, "csi-controller/cert-manager")
 
-			controllerPatches, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-controller-tls", controllerSecret, lcluster.Spec.ApiTLS.CertManager)
+			p, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-controller-tls", controllerSecret, lcluster.Spec.ApiTLS.CertManager)
 			if err != nil {
 				return nil, err
 			}
 
-			nodePatches, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-node-tls", nodeSecret, lcluster.Spec.ApiTLS.CertManager)
+			patches = append(patches, p...)
+		}
+	}
+
+	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
+}
+
+// Create the CSI node agent resources.
+//
+// Applies the following changes over the base resources:
+// * Namespace
+// * default labels
+// * default images
+// * pull secret (if any)
+// * restrict CSI driver daemon set to cluster's node selector
+// * user defined patches
+func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	resourceDirs := []string{"csi-node"}
+
+	patches, err := ClusterCSINodeSelectorPatch(lcluster.Spec.NodeSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointPatches, err := ClusterApiEndpointPatch(LinstorControllerUrl(lcluster))
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, endpointPatches...)
+
+	if lcluster.Spec.NodeAffinity != nil {
+		p, err := ClusterCSINodeNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	if lcluster.Spec.ApiTLS != nil {
+		nodeSecret := lcluster.Spec.ApiTLS.GetCsiNodeSecretName()
+
+		p, err := ClusterCSINodeApiTLSPatch(nodeSecret)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+
+		if lcluster.Spec.ApiTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "csi-node/cert-manager")
+
+			p, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-node-tls", nodeSecret, lcluster.Spec.ApiTLS.CertManager)
 			if err != nil {
 				return nil, err
 			}
 
-			patches = append(patches, controllerPatches...)
-			patches = append(patches, nodePatches...)
+			patches = append(patches, p...)
 		}
 	}
 
