@@ -86,6 +86,22 @@ type LinstorClusterSpec struct {
 	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
 	// +nullable
 	ApiTLS *LinstorClusterApiTLS `json:"apiTLS,omitempty"`
+
+	// Controller controls the deployment of the LINSTOR Controller Deployment.
+	// +kubebuilder:validation:Optional
+	Controller *ComponentSpec `json:"controller,omitempty"`
+
+	// CSIController controls the deployment of the CSI Controller Deployment.
+	// +kubebuilder:validation:Optional
+	CSIController *ComponentSpec `json:"csiController,omitempty"`
+
+	// CSINode controls the deployment of the CSI Node DaemonSet.
+	// +kubebuilder:validation:Optional
+	CSINode *ComponentSpec `json:"csiNode,omitempty"`
+
+	// HighAvailabilityController controls the deployment of the High Availability Controller DaemonSet.
+	// +kubebuilder:validation:Optional
+	HighAvailabilityController *ComponentSpec `json:"highAvailabilityController,omitempty"`
 }
 
 type LinstorExternalControllerRef struct {

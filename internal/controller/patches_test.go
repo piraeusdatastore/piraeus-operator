@@ -1,6 +1,7 @@
 package controller_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -146,6 +147,12 @@ func TestPatches(t *testing.T) {
 			name: "SatelliteHostPathVolumeEnvPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.SatelliteHostPathVolumeEnvPatch([]string{"/path1", "/path2"})
+			},
+		},
+		{
+			name: "ComponentPodTemplate",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ComponentPodTemplate("DaemonSet", "linstor-csi-node", json.RawMessage(`{"spec": {"hostNetwork": true}}`))
 			},
 		},
 		{

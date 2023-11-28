@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add a new option `.spec.internalTLS.tlsHandshakeDaemon` to enable deployment of `tlshd` alongside the LINSTOR
   Satellite.
+- Shortcuts to configure specific components. Components can be disabled by setting `enabled: false`, and the deployed
+  workload can be influenced using the `podTemplate` value. Available components:
+  - `LinstorCluster.spec.controller`
+  - `LinstorCluster.spec.csiController`
+  - `LinstorCluster.spec.csiNode`
+  - `LinstorCluster.spec.highAvailabilityController`
 
 ### Changed
 
