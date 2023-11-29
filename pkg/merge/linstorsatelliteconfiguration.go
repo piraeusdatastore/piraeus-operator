@@ -1,12 +1,15 @@
 package merge
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 )
@@ -17,7 +20,7 @@ import (
 // * Concatenating all patches in the matching configs
 // * Merging all properties by name. A property defined in a "later" config overrides previous property definitions.
 // * Merging all storage pools by name. A storage pool defined in a "later" config overrides previous property definitions.
-func SatelliteConfigurations(node *corev1.Node, configs ...piraeusv1.LinstorSatelliteConfiguration) *piraeusv1.LinstorSatelliteConfiguration {
+func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...piraeusv1.LinstorSatelliteConfiguration) *piraeusv1.LinstorSatelliteConfiguration {
 	result := &piraeusv1.LinstorSatelliteConfiguration{}
 
 	propsMap := make(map[string]*piraeusv1.LinstorNodeProperty)
@@ -44,23 +47,11 @@ func SatelliteConfigurations(node *corev1.Node, configs ...piraeusv1.LinstorSate
 			storPoolMap[cfg.Spec.StoragePools[j].Name] = &cfg.Spec.StoragePools[j]
 		}
 
-		if len(cfg.Spec.PodTemplate) > 0 {
-			var u unstructured.Unstructured
-			_ = json.Unmarshal(cfg.Spec.PodTemplate, &u)
-			u.SetAPIVersion("v1")
-			u.SetKind("Pod")
-			u.SetName("satellite")
-
-			encoded, err := u.MarshalJSON()
-			if err == nil {
-				result.Spec.Patches = append(result.Spec.Patches, piraeusv1.Patch{
-					Target: &piraeusv1.Selector{
-						Kind: "Pod",
-						Name: "satellite",
-					},
-					Patch: string(encoded),
-				})
-			}
+		patch, err := ConvertTemplateToPatch(cfg.Spec.PodTemplate)
+		if err != nil {
+			log.FromContext(ctx, "config", cfg.Name).Error(err, "Failed to convert podTemplate to patch")
+		} else if patch != nil {
+			result.Spec.Patches = append(result.Spec.Patches, *patch)
 		}
 
 		result.Spec.Patches = append(result.Spec.Patches, cfg.Spec.Patches...)
@@ -87,6 +78,35 @@ func SatelliteConfigurations(node *corev1.Node, configs ...piraeusv1.LinstorSate
 	})
 
 	return result
+}
+
+func ConvertTemplateToPatch(podTemplate json.RawMessage) (*piraeusv1.Patch, error) {
+	if len(podTemplate) == 0 {
+		return nil, nil
+	}
+
+	var u unstructured.Unstructured
+	err := json.Unmarshal(podTemplate, &u)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert podTemplate to unstructured: %w", err)
+	}
+
+	u.SetAPIVersion("v1")
+	u.SetKind("Pod")
+	u.SetName("satellite")
+
+	encoded, err := u.MarshalJSON()
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode podTemplate: %w", err)
+	}
+
+	return &piraeusv1.Patch{
+		Target: &piraeusv1.Selector{
+			Kind: "Pod",
+			Name: "satellite",
+		},
+		Patch: string(encoded),
+	}, nil
 }
 
 // SubsetOf returns true if all key and values in sub also appear in super.

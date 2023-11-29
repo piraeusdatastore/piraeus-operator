@@ -1,6 +1,7 @@
 package merge_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -185,7 +186,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := merge.SatelliteConfigurations(&corev1.Node{ObjectMeta: metav1.ObjectMeta{
+			actual := merge.SatelliteConfigurations(context.Background(), &corev1.Node{ObjectMeta: metav1.ObjectMeta{
 				Name:   tcase.name,
 				Labels: tcase.labels,
 			}}, tcase.configs...)
