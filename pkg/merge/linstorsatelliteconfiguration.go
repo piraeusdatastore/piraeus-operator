@@ -86,7 +86,7 @@ func ConvertTemplateToPatch(podTemplate json.RawMessage) (*piraeusv1.Patch, erro
 	}
 
 	var u unstructured.Unstructured
-	err := json.Unmarshal(podTemplate, &u)
+	err := json.Unmarshal(podTemplate, &u.Object)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert podTemplate to unstructured: %w", err)
 	}
