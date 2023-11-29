@@ -266,7 +266,7 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 	})
 
 	for i := range satelliteNodes {
-		satRes, err := r.kustomizeLinstorSatellite(lcluster, &satelliteNodes[i], configs, imgs)
+		satRes, err := r.kustomizeLinstorSatellite(ctx, lcluster, &satelliteNodes[i], configs, imgs)
 		if err != nil {
 			return nil, err
 		}
@@ -618,7 +618,7 @@ func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeu
 // * Set the cluster reference to the owning LinstorCluster
 // * Apply the result of merging all LinstorSatelliteConfigurations to the LinstorSatellite
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusiov1.LinstorCluster, node *corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration, imgs []kusttypes.Image) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, node *corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	renamePatch := utils.JsonPatch{
 		Op:    utils.Replace,
 		Path:  "/metadata/name",
@@ -647,7 +647,7 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(lcluster *piraeusio
 
 	patches := []utils.JsonPatch{renamePatch, repositoryPatch, clusterRefPatch}
 
-	cfg := merge.SatelliteConfigurations(node, configs...)
+	cfg := merge.SatelliteConfigurations(ctx, node, configs...)
 
 	if cfg.Spec.InternalTLS != nil {
 		patches = append(patches, utils.JsonPatch{
