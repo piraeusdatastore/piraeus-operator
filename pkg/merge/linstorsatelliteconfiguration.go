@@ -1,9 +1,11 @@
 package merge
 
 import (
+	"encoding/json"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
@@ -40,6 +42,25 @@ func SatelliteConfigurations(node *corev1.Node, configs ...piraeusv1.LinstorSate
 
 		for j := range cfg.Spec.StoragePools {
 			storPoolMap[cfg.Spec.StoragePools[j].Name] = &cfg.Spec.StoragePools[j]
+		}
+
+		if len(cfg.Spec.PodTemplate) > 0 {
+			var u unstructured.Unstructured
+			_ = json.Unmarshal(cfg.Spec.PodTemplate, &u)
+			u.SetAPIVersion("v1")
+			u.SetKind("Pod")
+			u.SetName("satellite")
+
+			encoded, err := u.MarshalJSON()
+			if err == nil {
+				result.Spec.Patches = append(result.Spec.Patches, piraeusv1.Patch{
+					Target: &piraeusv1.Selector{
+						Kind: "Pod",
+						Name: "satellite",
+					},
+					Patch: string(encoded),
+				})
+			}
 		}
 
 		result.Spec.Patches = append(result.Spec.Patches, cfg.Spec.Patches...)

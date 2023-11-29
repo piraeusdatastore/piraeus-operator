@@ -82,6 +82,7 @@ func (r *LinstorSatelliteConfiguration) validate(old *LinstorSatelliteConfigurat
 	errs := ValidateStoragePools(r.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))
 	errs = append(errs, ValidateNodeSelector(r.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))...)
 	errs = append(errs, ValidateNodeProperties(r.Spec.Properties, field.NewPath("spec", "properties"))...)
+	errs = append(errs, ValidatePodTemplate(r.Spec.PodTemplate, field.NewPath("spec", "podTemplate"))...)
 
 	for i := range r.Spec.Patches {
 		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
