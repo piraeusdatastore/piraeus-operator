@@ -2,6 +2,7 @@ package merge_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -96,6 +97,11 @@ var (
 			},
 		},
 	}
+	Config5 = piraeusv1.LinstorSatelliteConfiguration{
+		Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+			PodTemplate: json.RawMessage(`{"spec": {"hostNetwork": true}}`),
+		},
+	}
 )
 
 func TestMergeSatelliteConfigurations(t *testing.T) {
@@ -176,6 +182,18 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 					Patches:      Config4.Spec.Patches,
 					StoragePools: Config4.Spec.StoragePools,
 					Properties:   Config4.Spec.Properties,
+				},
+			},
+		},
+		{
+			name:    "patch-convert",
+			configs: []piraeusv1.LinstorSatelliteConfiguration{Config5},
+			result: &piraeusv1.LinstorSatelliteConfiguration{
+				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+					Patches: []piraeusv1.Patch{{
+						Target: &piraeusv1.Selector{Name: "satellite", Kind: "Pod"},
+						Patch:  "{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"name\":\"satellite\"},\"spec\":{\"hostNetwork\":true}}\n",
+					}},
 				},
 			},
 		},
