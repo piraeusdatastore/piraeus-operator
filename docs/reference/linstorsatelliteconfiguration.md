@@ -208,6 +208,33 @@ spec:
       name: piraeus-root
 ```
 
+### `.spec.podTemplate`
+
+Configures the Pod used to run the LINSTOR Satellite.
+
+The template is applied as a patch (see [`.spec.patches`](#specpatches)) to the default resources, so it can be
+"sparse".
+
+#### Example
+
+This example configures a resource request of `cpu: 100m` on the satellite, and also enables host networking.
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: resource-and-host-network
+spec:
+  podTemplate:
+    spec:
+      hostNetwork: true
+      containers:
+        - name: linstor-satellite
+          resources:
+            requests:
+              cpu: 100m
+```
+
 ### `.spec.patches`
 
 The given patches will be applied to all resources controlled by the operator. The patches are

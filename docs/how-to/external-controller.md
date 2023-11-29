@@ -40,17 +40,9 @@ kind: LinstorSatelliteConfiguration
 metadata:
   name: host-network
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          hostNetwork: true
+  podTemplate:
+    spec:
+      hostNetwork: true
 ```
 
 ## Verifying the Configuration

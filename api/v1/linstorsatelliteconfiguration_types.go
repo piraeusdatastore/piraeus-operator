@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"encoding/json"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -61,6 +63,18 @@ type LinstorSatelliteConfigurationSpec struct {
 	// + See LinstorSatelliteSpec.InternalTLS for why nullable is needed.
 	// +nullable
 	InternalTLS *TLSConfigWithHandshakeDaemon `json:"internalTLS,omitempty"`
+
+	// Template to apply to Satellite Pods.
+	//
+	// The template is applied as a patch to the default resource, so it can be "sparse", not listing any
+	// containers or volumes that should remain unchanged.
+	// See https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +structType=atomic
+	PodTemplate json.RawMessage `json:"podTemplate,omitempty"`
 }
 
 // LinstorSatelliteConfigurationStatus defines the observed state of LinstorSatelliteConfiguration

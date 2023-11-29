@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `LinstorCluster.spec.csiController`
   - `LinstorCluster.spec.csiNode`
   - `LinstorCluster.spec.highAvailabilityController`
+- Shortcut to modify the pod of a satellite by adding a `LinstorSatelliteConfiguration.spec.podTemplate`, which is
+  a shortcut for creating a `.spec.patches` patch.
 
 ### Changed
 

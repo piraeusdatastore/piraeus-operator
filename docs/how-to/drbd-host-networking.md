@@ -26,17 +26,9 @@ kind: LinstorSatelliteConfiguration
 metadata:
   name: host-network
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          hostNetwork: true
+  podTemplate:
+    spec:
+      hostNetwork: true
 ```
 
 After the Satellite Pods are recreated, they will use the host network. Any existing DRBD resources are reconfigured

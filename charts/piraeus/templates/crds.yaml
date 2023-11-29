@@ -859,6 +859,14 @@ spec:
                       type: object
                   type: object
                 type: array
+              podTemplate:
+                description: "Template to apply to Satellite Pods. \n The template
+                  is applied as a patch to the default resource, so it can be \"sparse\",
+                  not listing any containers or volumes that should remain unchanged.
+                  See https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates"
+                type: object
+                x-kubernetes-map-type: atomic
+                x-kubernetes-preserve-unknown-fields: true
               properties:
                 description: Properties is a list of properties to set on the node.
                 items:
