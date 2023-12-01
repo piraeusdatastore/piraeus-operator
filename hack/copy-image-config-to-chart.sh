@@ -18,3 +18,10 @@ cat <<EOF >> charts/piraeus/templates/config.yaml
   0_sig_storage_images.yaml: |
 EOF
 sed 's/^/    /' config/manager/0_sig_storage_images.yaml >> charts/piraeus/templates/config.yaml
+
+cat <<EOF >> charts/piraeus/templates/config.yaml
+  {{- range \$idx, \$value := .Values.imageConfigOverride }}
+  {{ add \$idx 1 }}_helm_override.yaml: |
+    {{- \$value | toYaml | nindent 4 }}
+  {{- end }}
+EOF

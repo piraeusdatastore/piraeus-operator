@@ -89,3 +89,7 @@ data:
       csi-node-driver-registrar:
         tag: v2.9.1
         image: csi-node-driver-registrar
+  {{- range $idx, $value := .Values.imageConfigOverride }}
+  {{ add $idx 1 }}_helm_override.yaml: |
+    {{- $value | toYaml | nindent 4 }}
+  {{- end }}
