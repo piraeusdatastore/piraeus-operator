@@ -97,3 +97,12 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 1
   # maxUnavailable: 1
+
+imageConfigOverride: []
+  # - base: example.com/piraeus
+  #   components:
+  #     linstor-csi:
+  #       image: linstor-csi
+  #       tag: my-custom-tag
+  #   Results in the image example.com/piraeus/linstor-csi:my-custom-tag being used.
+  #   See templates/config.yaml for available components.
