@@ -30,7 +30,8 @@ spec:
           endPort: 9000
     - from:
         - namespaceSelector:
-            matchLabels: {}
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
       ports:
         - protocol: TCP
           port: prometheus

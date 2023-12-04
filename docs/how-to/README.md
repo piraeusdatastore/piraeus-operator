@@ -8,6 +8,12 @@ These guides show you how to configure a specific aspect or achieve a specific t
 * [How to Configure TLS for the LINSTOR API](./api-tls.md)
 * [How to Configure the DRBD Module Loader](./drbd-loader.md)
 * [How to Use an Existing LINSTOR Cluster](./external-controller.md)
+* [How to Deploy a NetworkPolicy for Piraeus Datastore](./network-policy.md)
+
+## Deployment of Optional Components
+
+* [How to Deploy the LINSTOR Affinity Controller](./linstor-affinity-controller.md)
+* [How to Deploy Monitoring with Prometheus Operator](./monitoring.md)
 
 ## Distribution Specific Deployment
 
