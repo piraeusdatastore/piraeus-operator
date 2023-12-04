@@ -8,7 +8,7 @@ require (
 	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-cmp v0.6.0
-	github.com/onsi/ginkgo/v2 v2.13.1
+	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
