@@ -25,7 +25,7 @@ to fix issues or new software versions until a stable upgrade path to v2 is avai
 To deploy Piraeus Operator v2 from this repository, simply run:
 
 ```
-$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2"
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.3.0"
 # Verify the operator is running:
 $ kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.io/component=piraeus-operator
 pod/piraeus-operator-controller-manager-dd898f48c-bhbtv condition met
