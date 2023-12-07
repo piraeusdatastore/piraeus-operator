@@ -18,4 +18,4 @@ data:
   prometheus.toml: |
     [[prometheus]]
     enums = true
-    address = "[::]:9942"
+    address = ":9942"
