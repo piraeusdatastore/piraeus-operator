@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.21'
       - uses: golangci/golangci-lint-action@v3
@@ -27,9 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go environment
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       - name: Run pre-commit checks on changes files
         uses: pre-commit/action@v3.0.0
