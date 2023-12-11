@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/LINBIT/golinstor v0.49.0
-	github.com/cert-manager/cert-manager v1.13.2
+	github.com/cert-manager/cert-manager v1.13.3
 	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-cmp v0.6.0
@@ -19,8 +19,8 @@ require (
 	k8s.io/client-go v0.28.4
 	k8s.io/component-helpers v0.28.4
 	sigs.k8s.io/controller-runtime v0.16.3
-	sigs.k8s.io/kustomize/api v0.15.0
-	sigs.k8s.io/kustomize/kyaml v0.15.0
+	sigs.k8s.io/kustomize/api v0.16.0
+	sigs.k8s.io/kustomize/kyaml v0.16.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
