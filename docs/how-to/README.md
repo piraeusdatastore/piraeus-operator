@@ -24,3 +24,4 @@ These guides show you how to configure a specific aspect or achieve a specific t
 ## Configuration
 
 * [How to Use the Host Network for DRBD Replication](./drbd-host-networking.md)
+* [How to Use Transport Layer Security for DRBD Replication](./drbd-tls.md)
