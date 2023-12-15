@@ -15,11 +15,13 @@ This is the second step when migrating Piraeus Operator from version 1 (v1) to v
 ## Run the Data Collection Script
 
 To collect the necessary information for the migration, run the script provided at
-`docs/how-to/upgrade/collect-operator-v1-information.sh`. First, clone this repository:
+`docs/how-to/upgrade/collect-operator-v1-information.sh`. You can run the script either from a checked out repository,
+or directly from GitHub:
 
 ```
-$ git clone -b v2 https://github.com/piraeusdatastore/piraeus-operator.git
-$ cd piraeus-operator
+$ curl --proto '=https' --tlsv1.2 -sSf \
+  https://raw.githubusercontent.com/piraeusdatastore/piraeus-operator/v2/docs/how-to/upgrade/collect-operator-v1-information.sh \
+  | bash -s
 ```
 
 The script will ask you if you want to keep modifications made with the deployed Piraeus Operator.
@@ -27,10 +29,9 @@ For each modification, the script will show you the proposed change to the deplo
 confirmation.
 
 In addition, it will also inform you about values that cannot automatically be migrated, along with recommended
-actions should you need to keep the modification.
+actions should you need to keep the modification. The output looks like this:
 
 ```
-$ docs/how-to/upgrade/collect-operator-v1-information.sh
 Using kubectl context: kubernetes-admin@kubernetes
 Found LinstorControllers: ["piraeus-cs"]
 Found LinstorSatelliteSets: ["piraeus-ns"]
