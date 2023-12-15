@@ -54,7 +54,7 @@ and RBAC resources. In addition, also clean up the Custom Resource Definitions:
 
 ```
 $ helm uninstall piraeus-op
-$ kubectl delete crds linstorcontrollers.piraeus.linbit.com linstorsatellitesets.piraeus.linbit.com linstorcontrollers.piraeus.linbit.com
+$ kubectl delete crds linstorcsidrivers.piraeus.linbit.com linstorsatellitesets.piraeus.linbit.com linstorcontrollers.piraeus.linbit.com
 ```
 
 ## Optional: Remove additional Piraeus Components
