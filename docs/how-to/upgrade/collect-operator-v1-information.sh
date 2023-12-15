@@ -7,8 +7,10 @@ if [ -n "$V" ]; then
 fi
 
 # Change to the root of the repository
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-cd "$SCRIPT_DIR/../../.."
+if [ -n "${BASH_SOURCE[0]}" ]; then
+	SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+	cd "$SCRIPT_DIR/../../.."
+fi
 
 # Print the provided error message and exit with exit-code set to 1
 die() {
@@ -63,17 +65,17 @@ diff_patch() {
 	cp -a "$KUSTOMIZATION" "$KUSTOMIZATION.tmp"
 	cat > "$KUSTOMIZATION.tmp/kustomization.yaml"
 
-	if [ -n "$OPERATOR_RESOURCE" ]; then
+	if [ -n "$OPERATOR_SOURCE" ] && [ -n "$OPERATOR_RESOURCE" ]; then
 		# The patch we got only adds a "spec.patches" entry on the resulting resource: Instead of displaying the additional
 		# entry, we show the result of applying this added patch to the Operator resources
 		mkdir "$KUSTOMIZATION.tmp/old" "$KUSTOMIZATION.tmp/new"
 		# Create new kustomizations, using only the .spec.patches and apply them to the raw Operator resources
 		jq -r '.patches[].patch' "$KUSTOMIZATION/kustomization.yaml" \
 		  | jq '.[] | select(.path == "/spec/patches/-") | .value' \
-		  | jq --slurp --arg RESOURCES "../../../$OPERATOR_RESOURCE" '{"resources": [$RESOURCES], "patches": .}' > "$KUSTOMIZATION.tmp/old/kustomization.yaml"
+		  | jq --slurp --arg RESOURCES "../../../$OPERATOR_SOURCE/$OPERATOR_RESOURCE" '{"resources": [$RESOURCES], "patches": .}' > "$KUSTOMIZATION.tmp/old/kustomization.yaml"
 		jq -r '.patches[].patch' "$KUSTOMIZATION.tmp/kustomization.yaml" \
 		  | jq '.[] | select(.path == "/spec/patches/-") | .value' \
-		  | jq --slurp --arg RESOURCES "../../../$OPERATOR_RESOURCE" '{"resources": [$RESOURCES], "patches": .}' > "$KUSTOMIZATION.tmp/new/kustomization.yaml"
+		  | jq --slurp --arg RESOURCES "../../../$OPERATOR_SOURCE/$OPERATOR_RESOURCE" '{"resources": [$RESOURCES], "patches": .}' > "$KUSTOMIZATION.tmp/new/kustomization.yaml"
 		# Render the result of comparing the kustomizations on the Operator resources
 		diff --unified --label "Default resource" --label "Updated resource" --show-function-line='^kind:' <(kubectl kustomize "$KUSTOMIZATION.tmp/old") <(kubectl kustomize "$KUSTOMIZATION.tmp/new") || true
 	else
@@ -96,7 +98,7 @@ confirm_patch() {
 	fi
 
 	while true; do
-		read -rp "Apply the patch ($YN)? " CHOICE || true
+		read -rp "Apply the patch ($YN)? " CHOICE < "$READ_FROM" || true
 		case "${CHOICE:-$2}" in
 			y|Y )
 				mv "$1.tmp/kustomization.yaml" "$1/kustomization.yaml"
@@ -113,6 +115,30 @@ confirm_patch() {
 	rm -rf "$1.tmp"
 }
 
+# Fetch the sources for the operator so diffing shows useful results
+get_sources() {
+	if [ -d pkg/resources/cluster/controller ] && [ -d pkg/resources/cluster/csi-controller ] && [ -d pkg/resources/cluster/csi-node ] && [ -d pkg/resources/satellite/pod ]; then
+		echo "."
+		return
+	fi
+
+	if ! command -v curl >/dev/null ; then
+		echo "Could not find optional tool \"curl\", cannot show rich diffs." >&2
+		return
+	fi
+
+	if ! command -v tar >/dev/null ; then
+		echo "Could not find optional tool \"tar\", cannot show rich diffs." >&2
+		return
+	fi
+
+	if curl -fsSL https://github.com/piraeusdatastore/piraeus-operator/archive/refs/heads/v2.tar.gz | tar -xzC "$1" 2>/dev/null ; then
+		echo "$1/piraeus-operator-2"
+	else
+		echo "Could not download operator sources, not showing rich diffs." >&2
+	fi
+}
+
 ### Step 1: Sanity checks
 
 if ! command -v kubectl >/dev/null ; then
@@ -123,10 +149,6 @@ if ! command -v jq >/dev/null ; then
 	die Could not find required tool \"jq\"
 fi
 
-if [ ! -d pkg/resources/cluster/controller ] || [ ! -d pkg/resources/cluster/csi-controller ] || [ ! -d pkg/resources/cluster/csi-node ] || [ ! -d pkg/resources/satellite/pod ]; then
-	die Not running from root of Piraeus Operator checkout
-fi
-
 echo "Using kubectl context: $(kubectl config current-context)"
 
 TEMPDIR="$(mktemp -d .v1-information.XXXXXX)"
@@ -134,6 +156,12 @@ if [ -n "$KEEP_TMP" ]; then
 	echo "TEMPDIR: $TEMPDIR"
 else
 	trap 'rm -rf "$TEMPDIR"' EXIT
+fi
+
+OPERATOR_SOURCE="${OPERATOR_SOURCE:-$(get_sources "$TEMPDIR")}"
+READ_FROM=/dev/stdin
+if [ ! -t 0 ] && [ -e /dev/tty ]; then
+	READ_FROM=/dev/tty
 fi
 
 mkdir -p "$TEMPDIR/linstorcluster" "$TEMPDIR/linstorsatelliteconfiguration"
