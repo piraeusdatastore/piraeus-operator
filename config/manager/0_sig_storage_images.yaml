@@ -11,7 +11,7 @@ components:
     tag: v3.6.2
     image: csi-provisioner
   csi-snapshotter:
-    tag: v6.3.2
+    tag: v6.3.3
     image: csi-snapshotter
   csi-resizer:
     tag: v1.9.2
