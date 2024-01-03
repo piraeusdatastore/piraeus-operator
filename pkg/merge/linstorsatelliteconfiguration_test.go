@@ -191,8 +191,8 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 			result: &piraeusv1.LinstorSatelliteConfiguration{
 				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 					Patches: []piraeusv1.Patch{{
-						Target: &piraeusv1.Selector{Name: "satellite", Kind: "Pod"},
-						Patch:  "{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"name\":\"satellite\"},\"spec\":{\"hostNetwork\":true}}\n",
+						Target: &piraeusv1.Selector{Group: "apps", Version: "v1", Name: "linstor-satellite", Kind: "DaemonSet"},
+						Patch:  "{\"apiVersion\":\"apps/v1\",\"kind\":\"DaemonSet\",\"metadata\":{\"name\":\"linstor-satellite\"},\"spec\":{\"template\":{\"spec\":{\"hostNetwork\":true}}}}",
 					}},
 				},
 			},
