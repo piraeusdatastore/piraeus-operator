@@ -47,10 +47,11 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg           *rest.Config
-	k8sClient     client.Client
-	testEnv       *envtest.Environment
-	cancelManager context.CancelFunc
+	cfg            *rest.Config
+	k8sClient      client.Client
+	testEnv        *envtest.Environment
+	cancelManager  context.CancelFunc
+	warningHandler WarningHandler
 )
 
 func TestAPIs(t *testing.T) {
@@ -86,7 +87,8 @@ var _ = BeforeSuite(func(_ context.Context) {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	cfg.WarningHandler = &warningHandler
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
@@ -150,3 +152,27 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+type Warning struct {
+	code  int
+	agent string
+	text  string
+}
+
+type WarningHandler []Warning
+
+func (w *WarningHandler) HandleWarningHeader(code int, agent string, text string) {
+	if code == 0 {
+		return
+	}
+
+	*w = append(*w, Warning{
+		code:  code,
+		agent: agent,
+		text:  text,
+	})
+}
+
+func (w *WarningHandler) Clear() {
+	*w = (*w)[:0]
+}

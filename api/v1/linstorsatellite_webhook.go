@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	"strconv"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -78,12 +79,29 @@ func (r *LinstorSatellite) validate(old *LinstorSatellite) (admission.Warnings, 
 		oldSPs = old.Spec.StoragePools
 	}
 
+	var warnings admission.Warnings
+
 	errs := ValidateExternalController(r.Spec.ClusterRef.ExternalController, field.NewPath("spec", "clusterRef", "externalController"))
 	errs = append(errs, ValidateStoragePools(r.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))...)
 	errs = append(errs, ValidateNodeProperties(r.Spec.Properties, field.NewPath("spec", "properties"))...)
 	for i := range r.Spec.Patches {
-		errs = append(errs, r.Spec.Patches[i].validate(field.NewPath("spec", "patches", strconv.Itoa(i)))...)
+		path := field.NewPath("spec", "patches", strconv.Itoa(i))
+		errs = append(errs, r.Spec.Patches[i].validate(path)...)
+		warnings = append(warnings, WarnOnBareSatellitePodPatch(&r.Spec.Patches[i], path)...)
 	}
 
-	return nil, errs
+	return warnings, errs
+}
+
+func WarnOnBareSatellitePodPatch(patch *Patch, path *field.Path) admission.Warnings {
+	target := patch.GetTarget()
+	if target == nil {
+		return nil
+	}
+
+	if target.Kind == "Pod" && target.Name == "satellite" {
+		return admission.Warnings{fmt.Sprintf("Patch %s is targeting Pod 'satellite': consider targeting the DaemonSet 'linstor-satellite' instead", path)}
+	}
+
+	return nil
 }

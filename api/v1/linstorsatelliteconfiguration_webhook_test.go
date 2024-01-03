@@ -27,10 +27,10 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 			Patches: []piraeusv1.Patch{
 				{
 					Target: &piraeusv1.Selector{
-						Name: "satellite",
-						Kind: "Pod",
+						Name: "linstor-satellite",
+						Kind: "DaemonSet",
 					},
-					Patch: "apiVersion: v1\nkind: Pod\nmetadata:\n  name: satellite\n  annotations:\n    k8s.v1.cni.cncf.io/networks: eth1",
+					Patch: "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: linstor-satellite\n  annotations:\n    k8s.v1.cni.cncf.io/networks: eth1",
 				},
 			},
 			StoragePools: []piraeusv1.LinstorStoragePool{
@@ -162,5 +162,22 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(1))
 		Expect(statusErr.ErrStatus.Details.Causes[0].Field).To(Equal("spec.patches.1.target"))
+	})
+
+	It("should warn on using bare pod patches", func(ctx context.Context) {
+		warningHandler.Clear()
+		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "bare-pod-patches"},
+			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+				Patches: []piraeusv1.Patch{{
+					Patch: "apiVersion: v1\nkind: Pod\nmetadata:\n  name: satellite\nspec:\n  hostNetwork: true",
+				}},
+			},
+		}
+		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(warningHandler).To(HaveLen(1))
+		Expect(warningHandler[0].text).To(ContainSubstring("consider targeting the DaemonSet 'linstor-satellite'"))
 	})
 })
