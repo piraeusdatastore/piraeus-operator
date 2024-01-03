@@ -1,21 +1,24 @@
 ---
 - target:
+    group: apps
     version: v1
-    kind: Pod
-    name: satellite
+    kind: DaemonSet
+    name: linstor-satellite
   patch: |
-    apiVersion: v1
-    kind: Pod
+    apiVersion: apps/v1
+    kind: DaemonSet
     metadata:
-      name: satellite
+      name: linstor-satellite
     spec:
-      volumes:
-        - name: $VOLUME_NAME
-          hostPath:
-            path: $HOST_PATH
-            type: DirectoryOrCreate
-      containers:
-        - name: linstor-satellite
-          volumeMounts:
+      template:
+        spec:
+          volumes:
             - name: $VOLUME_NAME
-              mountPath: $HOST_PATH
+              hostPath:
+                path: $HOST_PATH
+                type: DirectoryOrCreate
+          containers:
+            - name: linstor-satellite
+              volumeMounts:
+                - name: $VOLUME_NAME
+                  mountPath: $HOST_PATH

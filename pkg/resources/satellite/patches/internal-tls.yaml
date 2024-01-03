@@ -1,28 +1,31 @@
 ---
 - target:
+    group: apps
     version: v1
-    kind: Pod
-    name: satellite
+    kind: DaemonSet
+    name: linstor-satellite
   patch: |
-    apiVersion: v1
-    kind: Pod
+    apiVersion: apps/v1
+    kind: DaemonSet
     metadata:
-      name: satellite
+      name: linstor-satellite
     spec:
-      volumes:
-        - name: internal-tls
-          secret:
-            secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
-        - name: java-internal-tls
-          emptyDir: { }
-      containers:
-        - name: linstor-satellite
-          volumeMounts:
+      template:
+        spec:
+          volumes:
             - name: internal-tls
-              mountPath: /etc/linstor/ssl-pem
-              readOnly: true
+              secret:
+                secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
             - name: java-internal-tls
-              mountPath: /etc/linstor/ssl
+              emptyDir: { }
+          containers:
+            - name: linstor-satellite
+              volumeMounts:
+                - name: internal-tls
+                  mountPath: /etc/linstor/ssl-pem
+                  readOnly: true
+                - name: java-internal-tls
+                  mountPath: /etc/linstor/ssl
 - target:
     version: v1
     kind: ConfigMap

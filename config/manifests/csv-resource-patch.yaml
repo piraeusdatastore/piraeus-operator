@@ -6,9 +6,6 @@
     kind: ConfigMap
     version: v1
   - group: ""
-    kind: Pod
-    version: v1
-  - group: ""
     kind: Service
     version: v1
   - group: ""

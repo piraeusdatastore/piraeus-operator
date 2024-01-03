@@ -28,6 +28,7 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
 	"golang.org/x/time/rate"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -74,6 +75,7 @@ type LinstorSatelliteReconciler struct {
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods;configmaps;secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 
@@ -170,6 +172,7 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 	}
 
 	err = utils.PruneResources(ctx, r.Client, lsatellite, r.Namespace, resMap,
+		&appsv1.DaemonSet{},
 		&corev1.Pod{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -183,7 +186,7 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 }
 
 func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) (resmap.ResMap, error) {
-	resourceDirs := []string{"pod"}
+	resourceDirs := []string{"satellite"}
 
 	patches, err := SatelliteCommonNodePatch(lsatellite.Name)
 	if err != nil {
@@ -204,7 +207,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		patches = append(patches, p...)
 
 		if lsatellite.Spec.InternalTLS.CertManager != nil {
-			resourceDirs = append(resourceDirs, "pod/cert-manager")
+			resourceDirs = append(resourceDirs, "satellite/cert-manager")
 
 			p, err := SatelliteLinstorInternalTLSCertManagerPatch(secretName, lsatellite.Spec.InternalTLS.CertManager)
 			if err != nil {
@@ -274,10 +277,11 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 
 	k := &kusttypes.Kustomization{
 		Namespace:    r.Namespace,
-		Labels:       r.kustomLabels(lsatellite.Spec.ClusterRef.Name),
+		Labels:       r.kustomLabels(lsatellite.UID, lsatellite.Spec.ClusterRef.Name),
 		Resources:    resourceDirs,
 		Images:       imgs,
 		Replacements: SatelliteNameReplacements,
+		NameSuffix:   fmt.Sprintf(".%s", lsatellite.Name),
 		Patches:      append(patches, utils.MakeKustPatches(lsatellite.Spec.Patches...)...),
 	}
 
@@ -301,13 +305,20 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		return err
 	}
 
-	pod := &corev1.Pod{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: lsatellite.Name, Namespace: r.Namespace}, pod)
+	var pods corev1.PodList
+	err = r.Client.List(ctx, &pods, client.MatchingLabels{vars.SatelliteNodeLabel: string(lsatellite.UID)})
 	if err != nil {
 		conds.AddError(conditions.Available, err)
 		conds.AddUnknown(conditions.Configured, "Missing Pod")
 		return err
 	}
+
+	if len(pods.Items) != 1 {
+		conds.AddError(conditions.Available, fmt.Errorf("expected one Pod, got %d", len(pods.Items)))
+		conds.AddUnknown(conditions.Configured, "Missing Pod")
+		return nil
+	}
+	pod := &pods.Items[0]
 
 	if len(pod.Status.PodIPs) == 0 {
 		conds.AddError(conditions.Available, fmt.Errorf("missing IP address on pod"))
@@ -362,7 +373,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 	}
 
 	lnode, err := lc.CreateOrUpdateNode(ctx, lclient.Node{
-		Name:          pod.Name,
+		Name:          pod.Spec.NodeName,
 		Type:          linstor.ValNodeTypeStlt,
 		Props:         props,
 		NetInterfaces: netIfs,
@@ -540,12 +551,13 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 	return nil
 }
 
-func (r *LinstorSatelliteReconciler) kustomLabels(instance string) []kusttypes.Label {
+func (r *LinstorSatelliteReconciler) kustomLabels(uuid types.UID, instance string) []kusttypes.Label {
 	return []kusttypes.Label{
 		{
 			Pairs: map[string]string{
 				"app.kubernetes.io/name":     vars.ProjectName,
 				"app.kubernetes.io/instance": instance,
+				vars.SatelliteNodeLabel:      string(uuid),
 			},
 			IncludeSelectors: true,
 			IncludeTemplates: true,
@@ -572,7 +584,7 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorSatellite{}).
-		Owns(&corev1.Pod{}).
+		Owns(&appsv1.DaemonSet{}).
 		Owns(&corev1.ConfigMap{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
 		Watches(
@@ -610,22 +622,11 @@ func (r *LinstorSatelliteReconciler) allSatelliteRequests(ctx context.Context, _
 var SatelliteNameReplacements = []kusttypes.ReplacementField{
 	{Replacement: kusttypes.Replacement{
 		Source: &kusttypes.SourceSelector{
-			ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite"),
+			ResId: resid.NewResId(resid.NewGvk("apps", "v1", "DaemonSet"), "linstor-satellite"),
 			// Selects the name of the node we expected to be running on.
-			FieldPath: "spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.0.matchFields.0.values.0",
+			FieldPath: "spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.0.matchFields.0.values.0",
 		},
 		Targets: []*kusttypes.TargetSelector{
-			{
-				// Sets the name of the pod to the name of the node it is running on.
-				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("", "v1", "Pod"), "satellite")},
-				FieldPaths: []string{"metadata.name"},
-			},
-			{
-				// Prefixes all config maps with "<nodename>-"
-				Select:     &kusttypes.Selector{ResId: resid.NewResIdKindOnly("ConfigMap", "")},
-				FieldPaths: []string{"metadata.name"},
-				Options:    &kusttypes.FieldOptions{Delimiter: "-", Index: -1},
-			},
 			{
 				// Sets the name of certificate to "<node-name>-tls"
 				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls")},

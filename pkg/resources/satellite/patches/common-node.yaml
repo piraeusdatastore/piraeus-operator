@@ -1,20 +1,23 @@
 ---
 - target:
+    group: apps
     version: v1
-    kind: Pod
-    name: satellite
+    kind: DaemonSet
+    name: linstor-satellite
   patch: |
-    apiVersion: v1
-    kind: Pod
+    apiVersion: apps/v1
+    kind: DaemonSet
     metadata:
-      name: satellite
+      name: linstor-satellite
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchFields:
-                  - key: metadata.name
-                    operator: In
-                    values:
-                      - $NODE_NAME
+      template:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchFields:
+                      - key: metadata.name
+                        operator: In
+                        values:
+                          - $NODE_NAME

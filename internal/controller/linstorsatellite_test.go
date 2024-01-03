@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +21,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 	TypeMeta := metav1.TypeMeta{Kind: "LinstorSatellite", APIVersion: piraeusiov1.GroupVersion.String()}
 
 	Context("When creating LinstorSatellite resources", func() {
+		var satellite *piraeusiov1.LinstorSatellite
 		BeforeEach(func(ctx context.Context) {
 			err := k8sClient.Create(ctx, &corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
@@ -33,12 +35,13 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			err = k8sClient.Create(ctx, &piraeusiov1.LinstorSatellite{
+			satellite = &piraeusiov1.LinstorSatellite{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 				Spec: piraeusiov1.LinstorSatelliteSpec{
 					ClusterRef: piraeusiov1.ClusterReference{Name: "example"},
 				},
-			})
+			}
+			err = k8sClient.Create(ctx, satellite)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -74,12 +77,12 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 
 			Expect(satellite.Finalizers).To(ContainElement(vars.SatelliteFinalizer))
 
-			var pod corev1.Pod
-			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &pod)
+			var ds appsv1.DaemonSet
+			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(pod.Spec.InitContainers).To(HaveLen(2))
-			Expect(pod.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
-			Expect(pod.Spec.InitContainers[1].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd-shutdown-guard:"))
+			Expect(ds.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+			Expect(ds.Spec.Template.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
+			Expect(ds.Spec.Template.Spec.InitContainers[1].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd-shutdown-guard:"))
 		})
 
 		It("should create pod with TLS secret", func(ctx context.Context) {
@@ -93,10 +96,10 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
-				var pod corev1.Pod
-				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &pod)
+				var ds appsv1.DaemonSet
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(pod.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
+				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 		})
 
@@ -113,11 +116,11 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
-				var pod corev1.Pod
-				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &pod)
+				var ds appsv1.DaemonSet
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(pod.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
-				container := GetContainer(pod.Spec.Containers, "ktls-utils")
+				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
+				container := GetContainer(ds.Spec.Template.Spec.Containers, "ktls-utils")
 				g.Expect(container).NotTo(BeNil())
 				g.Expect(container.VolumeMounts).To(ContainElement(HaveField("Name", "internal-tls")))
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
@@ -139,10 +142,10 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
-				var pod corev1.Pod
-				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &pod)
+				var ds appsv1.DaemonSet
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(pod.Spec.Volumes).To(ContainElement(HaveField("HostPath.Path", "/var/lib/linstor-pools/pool1")))
+				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("HostPath.Path", "/var/lib/linstor-pools/pool1")))
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 		})
 
