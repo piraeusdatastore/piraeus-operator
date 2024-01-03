@@ -137,4 +137,30 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
 	})
+
+	It("should reject patches without target", func(ctx context.Context) {
+		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "bare-pod-patches"},
+			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+				Patches: []piraeusv1.Patch{
+					{
+						// This patch is fine, target information from strategic merge patch
+						Patch: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: reactor-config\n",
+					},
+					{
+						// This patch is not: no target information
+						Patch: "- op: add\n  path: /metadata/labels/foo\n  value: bar",
+					},
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).To(HaveOccurred())
+		statusErr := err.(*errors.StatusError)
+		Expect(statusErr).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(1))
+		Expect(statusErr.ErrStatus.Details.Causes[0].Field).To(Equal("spec.patches.1.target"))
+	})
 })
