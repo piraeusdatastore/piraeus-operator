@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -80,30 +79,39 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 	return result
 }
 
+type satellitePatch struct {
+	ApiVersion string `json:"apiVersion"`
+	Kind       string `json:"kind"`
+	Metadata   struct {
+		Name string `json:"name"`
+	} `json:"metadata"`
+	Spec struct {
+		Template json.RawMessage `json:"template"`
+	} `json:"spec"`
+}
+
 func ConvertTemplateToPatch(podTemplate json.RawMessage) (*piraeusv1.Patch, error) {
 	if len(podTemplate) == 0 {
 		return nil, nil
 	}
 
-	var u unstructured.Unstructured
-	err := json.Unmarshal(podTemplate, &u.Object)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert podTemplate to unstructured: %w", err)
-	}
+	var satPatch satellitePatch
+	satPatch.ApiVersion = "apps/v1"
+	satPatch.Kind = "DaemonSet"
+	satPatch.Metadata.Name = "linstor-satellite"
+	satPatch.Spec.Template = podTemplate
 
-	u.SetAPIVersion("v1")
-	u.SetKind("Pod")
-	u.SetName("satellite")
-
-	encoded, err := u.MarshalJSON()
+	encoded, err := json.Marshal(&satPatch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode podTemplate: %w", err)
 	}
 
 	return &piraeusv1.Patch{
 		Target: &piraeusv1.Selector{
-			Kind: "Pod",
-			Name: "satellite",
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "DaemonSet",
+			Name:    "linstor-satellite",
 		},
 		Patch: string(encoded),
 	}, nil
