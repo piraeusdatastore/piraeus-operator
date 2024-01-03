@@ -53,7 +53,6 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
-	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/podpatcher"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/satellite"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
@@ -161,11 +160,7 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 			return err
 		}
 
-		if u.GetKind() == "Pod" {
-			err = podpatcher.Patch(ctx, r.Client, u, client.Apply, client.ForceOwnership, client.FieldOwner(vars.FieldOwner))
-		} else {
-			err = r.Client.Patch(ctx, u, client.Apply, client.ForceOwnership, client.FieldOwner(vars.FieldOwner))
-		}
+		err = r.Client.Patch(ctx, u, client.Apply, client.ForceOwnership, client.FieldOwner(vars.FieldOwner))
 		if err != nil {
 			return err
 		}
