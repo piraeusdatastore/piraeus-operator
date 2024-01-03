@@ -92,8 +92,8 @@ var _ = Describe("LinstorCluster webhook", func() {
 			ObjectMeta: metav1.ObjectMeta{Name: "invalid-labels"},
 			Spec: piraeusv1.LinstorClusterSpec{
 				Patches: []piraeusv1.Patch{
-					{Patch: "# just some random yaml, not a partial k8s resource\nroses: red\nviolets: blue\n"},
-					{Patch: "not even any structure at all\njust some random text"},
+					{Target: &piraeusv1.Selector{}, Patch: "# just some random yaml, not a partial k8s resource\nroses: red\nviolets: blue\n"},
+					{Target: &piraeusv1.Selector{}, Patch: "not even any structure at all\njust some random text"},
 				},
 			},
 		}

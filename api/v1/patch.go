@@ -49,6 +49,25 @@ type Selector struct {
 	LabelSelector string `json:"labelSelector,omitempty" yaml:"labelSelector,omitempty"`
 }
 
+func (p *Patch) GetTarget() *Selector {
+	if p.Target != nil {
+		return p.Target
+	}
+
+	res, err := strategicMergePatchFromBytes([]byte(p.Patch))
+	if err != nil {
+		return nil
+	}
+
+	return &Selector{
+		Name:      res.GetName(),
+		Namespace: res.GetNamespace(),
+		Group:     res.GetGvk().Group,
+		Version:   res.GetGvk().Version,
+		Kind:      res.GetKind(),
+	}
+}
+
 func (p *Patch) validate(path *field.Path) field.ErrorList {
 	var result field.ErrorList
 
@@ -56,6 +75,10 @@ func (p *Patch) validate(path *field.Path) field.ErrorList {
 	_, jsErr := jsonPatchFromBytes([]byte(p.Patch))
 	if smErr != nil && jsErr != nil {
 		result = append(result, field.Invalid(path.Child("patch"), p.Patch, fmt.Sprintf("Failed to parse patch as either Strategic Merge Patch (%s) or JSON Patch (%s)", smErr, jsErr)))
+	}
+
+	if p.GetTarget() == nil {
+		result = append(result, field.Required(path.Child("target"), "Patch does not have a target and is not a valid Strategic Merge Patch"))
 	}
 
 	return result
