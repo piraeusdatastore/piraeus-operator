@@ -10,10 +10,10 @@ running the following `kubectl` command:
 $ kubectl get pods '-ocustom-columns=NAME:.metadata.name,COMPONENT:.metadata.labels.app\.kubernetes\.io/component'
 NAME                                                   COMPONENT
 ha-controller-vd82w                                    ha-controller
-k8s-10.test                                            linstor-satellite
 linstor-controller-6c8f8dc47-cm8hr                     linstor-controller
 linstor-csi-controller-59b9968b86-ftl76                linstor-csi-controller
 linstor-csi-node-hcmk9                                 linstor-csi-node
+linstor-satellite-k8s-10.test-66687                    linstor-satellite
 piraeus-operator-controller-manager-6dcfcb4568-6jntp   piraeus-operator
 piraeus-operator-gencert-59449cb449-nzg6z              piraeus-operator-gencert
 ```
@@ -55,9 +55,10 @@ It provides an external API used by LINSTOR CSI and Piraeus Operator to change t
 The LINSTOR Satellite service runs on each node. It acts as the local configuration agent for LINSTOR managed storage.
 It is stateless and receives all the information it needs from the LINSTOR Controller.
 
-Satellites are started as plain Pods, managed by the Piraeus Operator. Using plain Pods, we can guarantee a stable
-hostname for the Pod on every node, which is requirement of LINSTOR. It also enables having per-node configuration
-and customization of the Satellite Pods.
+Satellites are started as DaemonSets, managed by the Piraeus Operator. We deploy one DaemonSet per node, this enables
+having per-node configuration and customization of the Satellite Pods. This also means that unless
+[`host-networking](../how-to/drbd-host-networking.md) is used, the DRBD connection names will use the Pod hostnames
+instead of the node name.
 
 # `linstor-csi-controller`
 

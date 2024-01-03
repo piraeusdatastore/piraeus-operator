@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- Use DaemonSet to manage Satellite resources instead of bare Pods. This enables better integration with
+  common administrative tasks such as node draining.
+
 ### Changed
 
 - Change default monitoring address for DRBD Reactor to support systems with IPv6 completely disabled.

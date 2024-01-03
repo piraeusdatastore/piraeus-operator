@@ -12,6 +12,7 @@ const (
 	FieldOwner              = Domain + "/operator"
 	ApplyAnnotation         = Domain + "/last-applied"
 	ManagedByLabel          = Domain + "/managed-by"
+	SatelliteNodeLabel      = Domain + "/linstor-satellite"
 	SatelliteFinalizer      = Domain + "/satellite-protection"
 	GenCertLeaderElectionID = OperatorName + "-gencert"
 )
