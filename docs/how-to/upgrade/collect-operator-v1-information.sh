@@ -117,7 +117,7 @@ confirm_patch() {
 
 # Fetch the sources for the operator so diffing shows useful results
 get_sources() {
-	if [ -d pkg/resources/cluster/controller ] && [ -d pkg/resources/cluster/csi-controller ] && [ -d pkg/resources/cluster/csi-node ] && [ -d pkg/resources/satellite/pod ]; then
+	if [ -d pkg/resources/cluster/controller ] && [ -d pkg/resources/cluster/csi-controller ] && [ -d pkg/resources/cluster/csi-node ] && [ -d pkg/resources/satellite/satellite ]; then
 		echo "."
 		return
 	fi
@@ -444,50 +444,50 @@ for IDX in $(seq 0 "$(jq '.items | length - 1' "$TEMPDIR/linstorsatellitesets.js
 	if [ "$(jq_item -c '.spec.additionalEnv')" != '[{"name":"LB_SELINUX_AS","value":"modules_object_t"}]' ]; then
 		echo "Found additional environment variables passed to LINSTOR Satellite"
 		jq_item '.spec.additionalEnv' \
-			| format_patch Pod satellite '{"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "satellite"}, "spec": {"containers": [{"name": "linstor-satellite", "env": .}]}}' \
+			| format_patch DaemonSet linstor-satellite '{"apiVersion": "apps/v1", "kind": "DaemonSet", "metadata": {"name": "linstor-satellite"}, "spec": {"template": {"spec": {"containers": [{"name": "linstor-satellite", "env": .}]}}}}' \
 			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/patches/-", "value": .}]' \
 			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
-			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/pod
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/satellite
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" y
 	fi
 
 	if [ "$(jq_item '.spec.dnsPolicy | length')" -gt 0 ]; then
 		echo "Found custom DNS policy for LINSTOR Satellite Pod"
 		jq_item '.spec.dnsPolicy' \
-			| format_patch Pod satellite '{"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "satellite"}, "spec": {"dnsPolicy": .}}' \
+			| format_patch DaemonSet linstor-satellite '{"apiVersion": "apps/v1", "kind": "DaemonSet", "metadata": {"name": "linstor-satellite"}, "spec": {"template": {"spec": {"dnsPolicy": .}}}}' \
 			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/patches/-", "value": .}]' \
 			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
-			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/pod
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/satellite
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" n
 	fi
 
 	if [ "$(jq_item '.spec.extraVolumes | length')" -gt 0 ]; then
 		echo "Found additional volumes for LINSTOR Satellite Pod"
 		jq_item '.spec.extraVolumes' \
-			| format_patch Pod satellite '{"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "satellite"}, "spec": {"volumes": .}}' \
+			| format_patch DaemonSet linstor-satellite '{"apiVersion": "apps/v1", "kind": "DaemonSet", "metadata": {"name": "linstor-satellite"}, "spec": {"template": {"spec": {"volumes": .}}}}' \
 			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/patches/-", "value": .}]' \
 			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
-			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/pod
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/satellite
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" n
 	fi
 
 	if [ "$(jq_item '.spec.mountDrbdResourceDirectoriesFromHost')" == "true" ]; then
 		echo "Found DRBD config mount for LINSTOR Satellite Pod"
 		jq -n '{}' \
-			| format_patch Pod satellite '{"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "satellite"}, "spec": {"volumes": [{"name": "etc-drbd-conf", "hostPath": {"path": "/etc/drbd.conf", "type": "File"}}, {"name": "etc-drbd-d", "hostPath": {"path": "/etc/drbd.d", "type": "Directory"}}], "containers": [{"name": "linstor-satellite", "volumeMounts": [{"name": "etc-drbd-conf", "mountPath": "/etc/drbd.conf", "readOnly": true}, {"name": "etc-drbd-d", "mountPath": "/etc/drbd.d", "readOnly": true}]}]}}' \
+			| format_patch DaemonSet linstor-satellite '{"apiVersion": "apps/v1", "kind": "DaemonSet", "metadata": {"name": "linstor-satellite"}, "spec": {"template": {"spec": {"volumes": [{"name": "etc-drbd-conf", "hostPath": {"path": "/etc/drbd.conf", "type": "File"}}, {"name": "etc-drbd-d", "hostPath": {"path": "/etc/drbd.d", "type": "Directory"}}], "containers": [{"name": "linstor-satellite", "volumeMounts": [{"name": "etc-drbd-conf", "mountPath": "/etc/drbd.conf", "readOnly": true}, {"name": "etc-drbd-d", "mountPath": "/etc/drbd.d", "readOnly": true}]}]}}}}' \
 			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/patches/-", "value": .}]' \
 			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
-			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/pod
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/satellite
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" n
 	fi
 
 	if [ "$(jq_item '.spec.sidecars | length')" -gt 0 ]; then
 		echo "Found additional containers for LINSTOR Satellite Pod"
 		jq_item '.spec.sidecars' \
-			| format_patch Pod satellite '{"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "satellite"}, "spec": {"containers": .}}' \
+			| format_patch DaemonSet linstor-satellite '{"apiVersion": "apps/v1", "kind": "DaemonSet", "metadata": {"name": "linstor-satellite"}, "spec": {"template": {"spec": {"containers": .}}}}' \
 			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/patches/-", "value": .}]' \
 			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
-			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/pod
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/satellite
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" n
 	fi
 
@@ -503,10 +503,10 @@ for IDX in $(seq 0 "$(jq '.items | length - 1' "$TEMPDIR/linstorsatellitesets.js
 	if [ "$(jq_item '.spec.tolerations | length')" -gt 0 ]; then
 		echo "Found custom tolerations for LINSTOR Satellite Pod"
 		jq_item '.spec.tolerations' \
-			| format_patch Pod satellite '{"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "satellite"}, "spec": {"tolerations": .}}' \
+			| format_patch DaemonSet linstor-satellite '{"apiVersion": "apps/v1", "kind": "DaemonSet", "metadata": {"name": "linstor-satellite"}, "spec": {"template": {"spec": {"tolerations": .}}}}' \
 			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/patches/-", "value": .}]' \
 			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
-			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/pod
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration" pkg/resources/satellite/satellite
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" n
 	fi
 
