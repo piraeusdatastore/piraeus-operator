@@ -149,6 +149,35 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 		})
 
+		It("should convert bare pod patches to daemonset patches", func(ctx context.Context) {
+			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+				TypeMeta:   TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				Spec: piraeusiov1.LinstorSatelliteSpec{
+					Patches: []piraeusiov1.Patch{
+						{
+							Target: &piraeusiov1.Selector{Kind: "Pod", Name: "satellite"},
+							Patch:  `[{"op":"add","path":"/metadata/annotations/test1","value":"val1"}]`,
+						},
+						{
+							Patch: `{"apiVersion":"v1","kind":"Pod","metadata":{"name":"satellite","labels":{"example.com/foo":"bar"}},"spec":{"hostNetwork":true,"containers":[{"name":"drbd-reactor","$patch":"delete"}]}}`,
+						},
+					},
+				},
+			}, client.Apply, client.FieldOwner("test"))
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func(g Gomega) {
+				var ds appsv1.DaemonSet
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ds.Spec.Template.Annotations).To(HaveKeyWithValue("test1", "val1"))
+				g.Expect(ds.Spec.Template.Labels).To(HaveKeyWithValue("example.com/foo", "bar"))
+				g.Expect(ds.Spec.Template.Spec.HostNetwork).To(BeTrue())
+				g.Expect(ds.Spec.Template.Spec.Containers).NotTo(ContainElement(HaveField("Name", "drbd-reactor")))
+			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		})
+
 		Context("with additional finalizer", func() {
 			BeforeEach(func(ctx context.Context) {
 				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
