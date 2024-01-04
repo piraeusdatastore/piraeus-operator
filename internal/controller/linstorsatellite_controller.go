@@ -50,6 +50,7 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/resid"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/barepodpatch"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
@@ -270,6 +271,11 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		patches = append(patches, p...)
 	}
 
+	userPatches, err := barepodpatch.ConvertBarePodPatch(lsatellite.Spec.Patches...)
+	if err != nil {
+		return nil, err
+	}
+
 	k := &kusttypes.Kustomization{
 		Namespace:    r.Namespace,
 		Labels:       r.kustomLabels(lsatellite.UID, lsatellite.Spec.ClusterRef.Name),
@@ -277,7 +283,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		Images:       imgs,
 		Replacements: SatelliteNameReplacements,
 		NameSuffix:   fmt.Sprintf(".%s", lsatellite.Name),
-		Patches:      append(patches, utils.MakeKustPatches(lsatellite.Spec.Patches...)...),
+		Patches:      append(patches, utils.MakeKustPatches(userPatches...)...),
 	}
 
 	return r.Kustomizer.Kustomize(k)

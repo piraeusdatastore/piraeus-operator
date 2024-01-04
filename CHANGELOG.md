@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking
 
 - Use DaemonSet to manage Satellite resources instead of bare Pods. This enables better integration with
-  common administrative tasks such as node draining.
+  common administrative tasks such as node draining. This change should be transparent for users, any patches
+  applied on the satellite Pods are internally converted to work on the new DaemonSet instead.
 
 ### Changed
 
