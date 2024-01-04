@@ -53,40 +53,32 @@ kind: LinstorSatelliteConfiguration
 metadata:
   name: talos-loader-override
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          initContainers:
-            - name: drbd-shutdown-guard
-              $patch: delete
-            - name: drbd-module-loader
-              $patch: delete
-          volumes:
-            - name: run-systemd-system
-              $patch: delete
-            - name: run-drbd-shutdown-guard
-              $patch: delete
-            - name: systemd-bus-socket
-              $patch: delete
-            - name: lib-modules
-              $patch: delete
-            - name: usr-src
-              $patch: delete
-            - name: etc-lvm-backup
-              hostPath:
-                path: /var/etc/lvm/backup
-                type: DirectoryOrCreate
-            - name: etc-lvm-archive
-              hostPath:
-                path: /var/etc/lvm/archive
-                type: DirectoryOrCreate
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-shutdown-guard
+          $patch: delete
+        - name: drbd-module-loader
+          $patch: delete
+      volumes:
+        - name: run-systemd-system
+          $patch: delete
+        - name: run-drbd-shutdown-guard
+          $patch: delete
+        - name: systemd-bus-socket
+          $patch: delete
+        - name: lib-modules
+          $patch: delete
+        - name: usr-src
+          $patch: delete
+        - name: etc-lvm-backup
+          hostPath:
+            path: /var/etc/lvm/backup
+            type: DirectoryOrCreate
+        - name: etc-lvm-archive
+          hostPath:
+            path: /var/etc/lvm/archive
+            type: DirectoryOrCreate
 ```
 
 Explanation:

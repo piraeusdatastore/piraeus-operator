@@ -28,48 +28,39 @@ To change the DRBD Module Loader, so that it uses the header files included in t
 following `LinstorSatelliteConfiguration`:
 
 ```yaml
----
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
 metadata:
   name: openshift-loader-override
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          volumes:
-          - name: usr-src
-            emptyDir: {}
-            hostPath:
-              $patch: delete
-          initContainers:
-          - name: kernel-header-copy
-            image: quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:1328c4e7944b6d8eda40a8f789471a1aec63abda75ac1199ce098b965ec16709
-            args:
-              - cp
-              - -avt
-              - /container/usr/src
-              - /usr/src/kernels
-            volumeMounts:
+  podTemplate:
+    spec:
+      volumes:
+        - name: usr-src
+          emptyDir: { }
+          hostPath:
+            $patch: delete
+      initContainers:
+        - name: kernel-header-copy
+          image: quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:1328c4e7944b6d8eda40a8f789471a1aec63abda75ac1199ce098b965ec16709
+          args:
+            - cp
+            - -avt
+            - /container/usr/src
+            - /usr/src/kernels
+          volumeMounts:
             - name: usr-src
               mountPath: /container/usr/src
-            securityContext:
-              privileged: true
-          - name: drbd-module-loader
-            securityContext:
-              privileged: true
+          securityContext:
+            privileged: true
+        - name: drbd-module-loader
+          securityContext:
+            privileged: true
 ```
 
 **NOTE**: Replace the `image` of the `kernel-header-copy` container with the image returned by `oc adm release info`.
 
-After the automatic restart of the LINSTOR® Satellite Pods, DRBD will be build from source, using the correct header
+After the automatic restart of the LINSTOR® Satellite Pods, DRBD will be built from source, using the correct header
 files.
 
 ## OpenShift Update Considerations

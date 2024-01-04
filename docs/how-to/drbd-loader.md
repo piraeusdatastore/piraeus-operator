@@ -33,19 +33,11 @@ kind: LinstorSatelliteConfiguration
 metadata:
   name: no-loader
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          initContainers:
-          - name: drbd-module-loader
-            $patch: delete
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-module-loader
+          $patch: delete
 ```
 
 ## Select a Different DRBD Loader Version
@@ -62,19 +54,11 @@ kind: LinstorSatelliteConfiguration
 metadata:
   name: custom-drbd-module-loader-image
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          initContainers:
-          - name: drbd-module-loader
-            image: example.com/drbd-loader:v9
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-module-loader
+          image: example.com/drbd-loader:v9
 ```
 
 Piraeus maintains the following images:
@@ -105,19 +89,11 @@ kind: LinstorSatelliteConfiguration
 metadata:
   name: no-drbd-module-loader
 spec:
-  patches:
-    - target:
-        kind: Pod
-        name: satellite
-      patch: |
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: satellite
-        spec:
-          initContainers:
-          - name: drbd-module-loader
-            env:
+  podTemplate:
+    spec:
+      initContainers:
+        - name: drbd-module-loader
+          env:
             - name: LB_HOW
               value: deps_only
 ```
