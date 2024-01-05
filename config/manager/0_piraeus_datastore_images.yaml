@@ -20,7 +20,7 @@ components:
     tag: v1.4.0
     image: drbd-reactor
   ha-controller:
-    tag: v1.1.4
+    tag: v1.2.0
     image: piraeus-ha-controller
   drbd-shutdown-guard:
     tag: v1.0.0
