@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change default monitoring address for DRBD Reactor to support systems with IPv6 completely disabled.
 - Updated images:
   * DRBD 9.2.7
+  * High Availability Controller 1.2.0
   * Latest CSI sidecars
 
 ## [v2.3.0] - 2023-12-05
