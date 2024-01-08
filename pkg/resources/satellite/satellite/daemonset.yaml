@@ -25,6 +25,8 @@ spec:
           env:
             - name: LB_FAIL_IF_USERMODE_HELPER_NOT_DISABLED
               value: "yes"
+            - name: LB_DRBD_MIN_LOADED_VERSION
+              value: "9"
             - name: LB_SELINUX_AS
               value: "modules_object_t"
           securityContext:
