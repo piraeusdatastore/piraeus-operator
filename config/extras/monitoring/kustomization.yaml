@@ -5,11 +5,12 @@ resources:
   - linstor-satellite-monitor.yaml
   - alerts.yaml
 
+namespace: piraeus-datastore
+
 generatorOptions:
   disableNameSuffixHash: true
 configMapGenerator:
   - name: piraeus-datastore-dashboard
-    namespace: prometheus
     options:
       labels:
         grafana_dashboard: "1"
