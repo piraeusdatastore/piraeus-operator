@@ -629,14 +629,8 @@ var SatelliteNameReplacements = []kusttypes.ReplacementField{
 		},
 		Targets: []*kusttypes.TargetSelector{
 			{
-				// Sets the name of certificate to "<node-name>-tls"
-				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls")},
-				FieldPaths: []string{"metadata.name"},
-				Options:    &kusttypes.FieldOptions{Delimiter: "-", Index: -1},
-			},
-			{
 				// Sets the domain name of the issued certificate to "<node-name>"
-				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "tls")},
+				Select:     &kusttypes.Selector{ResId: resid.NewResId(resid.NewGvk("cert-manager.io", "v1", "Certificate"), "linstor-satellite")},
 				FieldPaths: []string{"spec.dnsNames.0"},
 			},
 		},
