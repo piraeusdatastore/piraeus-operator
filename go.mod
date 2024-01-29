@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/LINBIT/golinstor v0.49.0
 	github.com/cert-manager/cert-manager v1.13.3
-	github.com/evanphx/json-patch v5.8.1+incompatible
+	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo/v2 v2.15.0
