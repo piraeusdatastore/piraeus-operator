@@ -84,3 +84,23 @@ webhooks:
     resources:
     - linstorsatelliteconfigurations
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-storage-k8s-io-v1-storageclass
+  failurePolicy: Fail
+  name: vstorageclass.kb.io
+  rules:
+  - apiGroups:
+    - storage.k8s.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storageclasses
+  sideEffects: None
