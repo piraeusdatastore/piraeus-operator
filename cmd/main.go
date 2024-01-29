@@ -22,6 +22,7 @@ import (
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"golang.org/x/time/rate"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -39,6 +40,7 @@ import (
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
+	piraeuswebhook "github.com/piraeusdatastore/piraeus-operator/v2/internal/webhook"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
 )
@@ -154,6 +156,14 @@ func main() {
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
+
+	if err = ctrl.NewWebhookManagedBy(mgr).
+		For(&storagev1.StorageClass{}).
+		WithValidator(&piraeuswebhook.StorageClass{}).
+		Complete(); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "StorageClass")
+		os.Exit(1)
+	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
