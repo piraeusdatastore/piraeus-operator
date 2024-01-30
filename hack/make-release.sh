@@ -40,7 +40,7 @@ $KUSTOMIZE edit set image controller="$IMG:v$VERSION"
 popd
 
 # replace deployment instructions in docs
-for FILE in ./README.md ./docs/tutorial/get-started.md ; do
+for FILE in ./README.md ./docs/tutorial/get-started.md ./UPGRADE.md ; do
 	sed -e "s/ref=v[0-9\.]\+/ref=v$VERSION/" -i "$FILE"
 done
 
