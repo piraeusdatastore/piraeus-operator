@@ -3,6 +3,43 @@
 During the upgrade process, provisioning of volumes and attach/detach operations might not work. Existing
 volumes and volumes already in use by a pod will continue to work without interruption.
 
+To upgrade, apply the resource of the latest release. Use the same method that was used to create the initial deployment
+(`kubectl` vs `helm`). There is no need to change existing `LinstorCluster`, `LinstorSatelliteConfiguration` or
+`LinstorNodeConnection` resources.
+
+To upgrade to the latest release using `kubectl`, run the following commands:
+
+```
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.3.0"
+$ kubectl wait pod --for=condition=Ready -n piraeus-datastore --all
+```
+
+# Upgrades from v2.3 to v2.4
+
+Generally, no special steps required.
+
+LINSTOR Satellites are now managed via DaemonSet resources. Any patch targeting a `satellite` Pod resources is
+automatically converted to the equivalent DaemonSet resource patch. In the Pod list, you will see these Pods using
+a new `linstor-satellite` prefix.
+
+# Upgrades from v2.2 to v2.3
+
+Removed the `NetworkPolicy` resource from default deployment. It can be reapplied as a
+[separate step](./docs/how-to/network-policy.md).
+
+# Upgrades from v2.1 to v2.2
+
+Removed the dependency on cert-manager for the initial deployment. To clean up an existing `Certificate` resource,
+run the following commands:
+
+```
+$ kubectl delete certificate -n piraeus-datastore piraeus-operator-serving-cert
+```
+
+# Upgrades from v2.0 to v2.1
+
+No special steps required.
+
 # Upgrades from v1 to v2
 
 Please follow the specialized [upgrade guides](./docs/how-to/upgrade/index.md).
