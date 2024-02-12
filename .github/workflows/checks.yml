@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-      - uses: golangci/golangci-lint-action@v3
+      - uses: golangci/golangci-lint-action@v4
         with:
           args: --timeout=3m
 
@@ -32,4 +32,4 @@ jobs:
           go-version: '1.21'
       - uses: actions/setup-python@v5
       - name: Run pre-commit checks on changes files
-        uses: pre-commit/action@v3.0.0
+        uses: pre-commit/action@v3.0.1
