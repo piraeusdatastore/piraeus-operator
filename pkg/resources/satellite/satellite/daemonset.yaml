@@ -69,6 +69,10 @@ spec:
           env:
             - name: JAVA_OPTS
               value: -Djdk.tls.acknowledgeCloseNotify=true
+            - name: LB_FORCE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           securityContext:
             readOnlyRootFilesystem: true
             privileged: true
