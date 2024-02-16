@@ -56,9 +56,23 @@ The LINSTOR Satellite service runs on each node. It acts as the local configurat
 It is stateless and receives all the information it needs from the LINSTOR Controller.
 
 Satellites are started as DaemonSets, managed by the Piraeus Operator. We deploy one DaemonSet per node, this enables
-having per-node configuration and customization of the Satellite Pods. This also means that unless
-[`host-networking](../how-to/drbd-host-networking.md) is used, the DRBD connection names will use the Pod hostnames
-instead of the node name.
+having per-node configuration and customization of the Satellite Pods.
+
+Satellites interact with the host operating system directly and are deployed as privileged containers. Integration
+with the host operating system also leads to two noteworthy interactions with [Linux namespaces]:
+
+* Any DRBD® device will inherit the network namespace of the Satellite Pods. Unless the Satellites are using
+  host networking, DRBD will not be able to replicate data without a running Satellite Pod. See the
+  [host networking guide] for more information.
+* The Satellite process is spawned in a separate UTS namespace: this allows us to keep control of the hostname reported
+  to DRBD tools, even when the Pod is using a generated name from the DaemonSet. Thus, DRBD connections will always use
+  the Kubernetes node name.
+
+  The use of separate UTS namespace should be completely transparent to users: running `kubectl exec ...` on a satellite
+  Pod will drop you into this namespace, enabling you to run `drbdadm` commands as expected.
+
+[Linux namespaces]: https://man7.org/linux/man-pages/man7/namespaces.7.html
+[host networking guide]: ../how-to/drbd-host-networking.md
 
 # `linstor-csi-controller`
 
