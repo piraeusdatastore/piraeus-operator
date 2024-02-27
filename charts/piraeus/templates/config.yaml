@@ -54,12 +54,18 @@ data:
             image: drbd9-almalinux8
           - osImage: AlmaLinux 9
             image: drbd9-almalinux9
+          - osImage: Rocky Linux 8
+            image: drbd9-almalinux8
+          - osImage: Rocky Linux 9
+            image: drbd9-almalinux9
           - osImage: Ubuntu 18\.04
             image: drbd9-bionic
           - osImage: Ubuntu 20\.04
             image: drbd9-focal
           - osImage: Ubuntu 22\.04
             image: drbd9-jammy
+          - osImage: Debian GNU/Linux 12
+            image: drbd9-bookworm
           - osImage: Debian GNU/Linux 11
             image: drbd9-bullseye
           - osImage: Debian GNU/Linux 10

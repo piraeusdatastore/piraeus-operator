@@ -71,7 +71,9 @@ Piraeus maintains the following images:
 | `quay.io/piraeusdatastore/drbd9-jammy`      | Ubuntu 22.04                       |
 | `quay.io/piraeusdatastore/drbd9-focal`      | Ubuntu 20.04                       |
 | `quay.io/piraeusdatastore/drbd9-bionic`     | Ubuntu 18.04                       |
-| `quay.io/piraeusdatastore/drbd9-flatcar`    | Flatcar Container Linux            |
+| `quay.io/piraeusdatastore/drbd9-bookworm`   | Debian 12                          |
+| `quay.io/piraeusdatastore/drbd9-bullseye`   | Debian 11                          |
+| `quay.io/piraeusdatastore/drbd9-buster`     | Debian 10                          |
 
 You can create a loader image for your own distribution using the [Piraeus sources](https://github.com/piraeusdatastore/piraeus/tree/master/dockerfiles/drbd-driver-loader)
 as reference.
