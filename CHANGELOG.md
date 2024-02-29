@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+###
+- Default images:
+  * LINSTOR 1.26.2
+  * LINSTOR CSI 1.4.0
+  * DRBD 9.1.19
+  * Latest CSI sidecars
+
 ## [v1.10.8] - 2023-11-23
+
+### Changed
 
 - Default images:
   * LINSTOR 1.25.1
