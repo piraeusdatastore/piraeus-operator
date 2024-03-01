@@ -50,7 +50,10 @@ endif
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/piraeusdatastore/piraeus-operator:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.28
+ENVTEST_K8S_VERSION = 1.29
+# ENVTEST_K8S_COMPAT_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary for
+# checking compatibility with older kubernetes versions.
+ENVTEST_K8S_COMPAT_VERSION = 1.20
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -111,6 +114,10 @@ vet: ## Run go vet against code.
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+
+.PHONY: compat-test
+compat-test: manifests generate fmt vet envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_COMPAT_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
 
 ##@ Build
 

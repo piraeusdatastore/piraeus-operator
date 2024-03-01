@@ -87,3 +87,4 @@
       ports:
         - port: 3371
           name: secure-api
+          protocol: TCP

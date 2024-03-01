@@ -92,7 +92,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				Spec: piraeusiov1.LinstorSatelliteSpec{
 					InternalTLS: &piraeusiov1.TLSConfigWithHandshakeDaemon{},
 				},
-			}, client.Apply, client.FieldOwner("test"))
+			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
@@ -112,7 +112,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						TLSHandshakeDaemon: true,
 					},
 				},
-			}, client.Apply, client.FieldOwner("test"))
+			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
@@ -138,7 +138,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						},
 					},
 				},
-			}, client.Apply, client.FieldOwner("test"))
+			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
@@ -164,7 +164,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						},
 					},
 				},
-			}, client.Apply, client.FieldOwner("test"))
+			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func(g Gomega) {
@@ -183,7 +183,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
 					TypeMeta:   TypeMeta,
 					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName, Finalizers: []string{"piraeus.io/test"}},
-				}, client.Apply, client.FieldOwner("test"))
+				}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -191,7 +191,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
 					TypeMeta:   TypeMeta,
 					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-				}, client.Apply, client.FieldOwner("test"))
+				}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
