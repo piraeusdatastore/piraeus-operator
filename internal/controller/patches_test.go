@@ -10,6 +10,7 @@ import (
 	kusttypes "sigs.k8s.io/kustomize/api/types"
 
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )
 
 func TestPatches(t *testing.T) {
@@ -170,6 +171,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ClusterCSIDriverSeLinuxPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterCSIDriverSeLinuxPatch(&utils.APIVersion{Major: 1, Minor: 24})
+			},
+		},
+		{
 			name: "ClusterApiEndpointPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterApiEndpointPatch("https://example.com:8888")
@@ -201,8 +208,9 @@ func TestPatches(t *testing.T) {
 		testcase := &testcases[i]
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := testcase.call()
+			patches, err := testcase.call()
 			assert.NoError(t, err)
+			assert.NotEmpty(t, patches)
 		})
 	}
 }

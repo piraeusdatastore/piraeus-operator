@@ -72,6 +72,7 @@ type LinstorClusterReconciler struct {
 	ImageConfigMapName string
 	LinstorApiLimiter  *rate.Limiter
 	Kustomizer         *resources.Kustomizer
+	APIVersion         *utils.APIVersion
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorclusters,verbs=get;list;watch;create;update;patch;delete
@@ -439,7 +440,12 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 		return nil, err
 	}
 
-	patches = append(patches, endpointPatches...)
+	selinuxPatches, err := ClusterCSIDriverSeLinuxPatch(r.APIVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, append(endpointPatches, selinuxPatches...)...)
 
 	if lcluster.Spec.NodeAffinity != nil {
 		p, err := ClusterCSIControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
@@ -918,6 +924,8 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 	if opts.RateLimiter == nil {
 		opts.RateLimiter = DefaultRateLimiter()
 	}
+
+	r.APIVersion = utils.NewAPIVersionFromConfigWithFallback(mgr.GetConfig(), &vars.FallbackAPIVersion)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorCluster{}).
