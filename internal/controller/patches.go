@@ -142,6 +142,18 @@ func ClusterApiTLSCertManagerPatch(secretName string, issuer *cmmetav1.ObjectRef
 		})
 }
 
+func ClusterCSIDriverSeLinuxPatch(apiVersion *utils.APIVersion) ([]kusttypes.Patch, error) {
+	if apiVersion.Compare(&utils.APIVersion{Major: 1, Minor: 25}) >= 0 {
+		return nil, nil
+	}
+
+	return render(
+		cluster.Resources,
+		"patches/csi-driver-no-selinux.yaml",
+		nil,
+	)
+}
+
 func ClusterApiEndpointPatch(url string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
