@@ -6,7 +6,7 @@ Before continuing, make sure you've read the [README](./README.md)
 
 This is a (probably incomplete) list of software used to develop the operator:
 
-* [`golang >= v1.18`](https://golang.org/) ...the operator is written in it...
+* [`golang >= v1.21`](https://golang.org/) ...the operator is written in it...
 * [`operator-sdk`](https://sdk.operatorframework.io/) Provides all the plumbing and project structure
 * [`pre-commit`](https://pre-commit.com/) Used to ensure all files are formatted, generated code is up to date and more
 * [`gofumpt`](https://github.com/mvdan/gofumpt) Used for code formatting
@@ -51,7 +51,7 @@ Use `make test` to run our test suite. It will download the required control pla
 controller tests.
 
 For basic unit testing use the basic go test framework. If something you want to test relies on the Kubernetes API,
-check out the test suite for the [`controllers`](./controllers/suite_test.go)
+check out the test suite for the [`controllers`](./internal/controller/suite_test.go)
 
 As of right now, there is no recommended way to end-to-end test the operator. It probably involves some
 virtual machines running a basic kubernetes cluster.
@@ -62,3 +62,12 @@ On every pull request, we run a set of tests, specified in `.github/workflows`. 
 * `go test`
 * `golandci-lint`
 * `pre-commit run`
+
+## Commits
+
+This repository enforces [Developer Certificate of Origin](https://developercertificate.org/) for every commit. Every
+commit needs a `Signed-off-by` line. You can add them by passing the `-s` flag to `git commit`:
+
+```
+$ git commit -s -m 'This is my commit message'
+```
