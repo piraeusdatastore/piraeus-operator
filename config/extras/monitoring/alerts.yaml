@@ -7,6 +7,13 @@ spec:
   groups:
     - name: linstor.rules
       rules:
+        - alert: linstorControllerOffline
+          annotations:
+            description: |
+              LINSTOR Controller is not reachable.
+          expr: up{job="linstor-controller"} == 0
+          labels:
+            severity: critical
         - alert: linstorSatelliteErrorRate
           annotations:
             description: |
@@ -47,24 +54,31 @@ spec:
             severity: warn
     - name: drbd.rules
       rules:
+        - alert: drbdReactorOffline
+          annotations:
+            description: |
+              DRBD Reactor on "{{ $labels.node }}" is not reachable.
+          expr: up{job="piraeus-datastore/linstor-satellite"} == 0
+          labels:
+            severity: critical
         - alert: drbdConnectionNotConnected
           annotations:
             description: |
-              DRBD Resource "{{ $labels.name }}" on "{{ $labels.pod }}" is not connected to "{{ $labels.conn_name }}": {{ $labels.drbd_connection_state }}.
+              DRBD Resource "{{ $labels.name }}" on "{{ $labels.node }}" is not connected to "{{ $labels.conn_name }}": {{ $labels.drbd_connection_state }}.
           expr: drbd_connection_state{drbd_connection_state!="Connected"} > 0
           labels:
             severity: warn
         - alert: drbdDeviceNotUpToDate
           annotations:
             description: |
-              DRBD device "{{ $labels.name }}" on "{{ $labels.pod }}" has unexpected device state "{{ $labels.drbd_device_state }}".
+              DRBD device "{{ $labels.name }}" on "{{ $labels.node }}" has unexpected device state "{{ $labels.drbd_device_state }}".
           expr: drbd_device_state{drbd_device_state!~"UpToDate|Diskless"} > 0
           labels:
             severity: warn
         - alert: drbdDeviceUnintentionalDiskless
           annotations:
             description: |
-              DRBD device "{{ $labels.name }}" on "{{ $labels.pod }}" is unintenionally diskless.
+              DRBD device "{{ $labels.name }}" on "{{ $labels.node }}" is unintenionally diskless.
               This usually indicates IO errors reported on the backing device. Check the kernel log.
           expr: drbd_device_unintentionaldiskless > 0
           labels:
@@ -72,7 +86,7 @@ spec:
         - alert: drbdDeviceWithoutQuorum
           annotations:
             description: |
-              DRBD device "{{ $labels.name }}" on "{{ $labels.pod }}" has no quorum.
+              DRBD device "{{ $labels.name }}" on "{{ $labels.node }}" has no quorum.
               This usually indicates connectivity issues.
           expr: drbd_device_quorum == 0
           labels:
@@ -80,7 +94,7 @@ spec:
         - alert: drbdResourceSuspended
           annotations:
             description: |
-              DRBD resource "{{ $labels.name }}" on "{{ $labels.pod }}" has been suspended for 1m.
+              DRBD resource "{{ $labels.name }}" on "{{ $labels.node }}" has been suspended for 1m.
           for: 1m
           expr: drbd_resource_suspended > 0
           labels:
@@ -88,7 +102,7 @@ spec:
         - alert: drbdResourceResyncWithoutProgress
           annotations:
             description: |
-              DRBD resource "{{ $labels.name }}" on "{{ $labels.pod }}" has been in Inconsistent without resync progress for 5 minutes.
+              DRBD resource "{{ $labels.name }}" on "{{ $labels.node }}" has been in Inconsistent without resync progress for 5 minutes.
               This may indicate there is no connection to UpToDate data, or a stuck resync.
           expr: drbd_device_state{drbd_device_state="Inconsistent"} and delta(drbd_peerdevice_outofsync_bytes[5m]) >= 0
           labels:
