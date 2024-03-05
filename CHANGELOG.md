@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Rocky Linux 8 & 9
 - Report `seLinuxMount` capability for the CSI Driver, speeding up volume mounts with SELinux
   relabelling enabled.
+- Alerts for offline LINSTOR Controller and Satellites.
+
+### Changed
+
+- Use node label instead of pod name for Prometheus alerting descriptions.
 
 ## [v2.4.0] - 2024-01-30
 
