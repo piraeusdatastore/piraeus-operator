@@ -1,6 +1,6 @@
 # How to Load DRBD on Flatcar Container Linux
 
-This guide shows you how to set up the DRBD® Module Loaderwhen using [Flatcar Container Linux](https://www.flatcar.org).
+This guide shows you how to set up the DRBD® Module Loader when using [Flatcar Container Linux](https://www.flatcar.org).
 
 To complete this guide, you should be familiar with:
 
