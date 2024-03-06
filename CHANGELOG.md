@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Use node label instead of pod name for Prometheus alerting descriptions.
+- Updated images:
+  * LINSTOR 1.26.2
+  * DRBD 9.2.8
 
 ## [v2.4.0] - 2024-01-30
 
