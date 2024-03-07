@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -674,6 +675,15 @@ func newDeploymentForResource(controllerResource *piraeusv1.LinstorController) *
 		{Name: controllerResource.Name, Port: int32(port)},
 	}
 
+	if controllerResource.Spec.SecuredMetricsPort != nil {
+		metricsPort := corev1.EndpointPort{
+			Name: "metrics", Port: *controllerResource.Spec.SecuredMetricsPort}
+		servicePorts = append(servicePorts, metricsPort)
+		sort.SliceStable(servicePorts, func(i, j int) bool {
+			return servicePorts[i].Port < servicePorts[j].Port
+		})
+	}
+
 	servicePortsJSON, err := json.Marshal(servicePorts)
 	if err != nil {
 		panic(err)
@@ -962,18 +972,33 @@ func newServiceForResource(controllerResource *piraeusv1.LinstorController) *cor
 		port = lc.DefaultHTTPSPort
 	}
 
+	ports := []corev1.ServicePort{
+		{
+			Name:       controllerResource.Name,
+			Port:       int32(port),
+			Protocol:   "TCP",
+			TargetPort: intstr.FromInt(port),
+		},
+	}
+
+	if controllerResource.Spec.SecuredMetricsPort != nil {
+		metricsPort := corev1.ServicePort{
+			Name:       "metrics",
+			Port:       *controllerResource.Spec.SecuredMetricsPort,
+			Protocol:   "TCP",
+			TargetPort: intstr.FromInt(int(*controllerResource.Spec.SecuredMetricsPort)),
+		}
+		ports = append(ports, metricsPort)
+		sort.SliceStable(ports, func(i, j int) bool {
+			return ports[i].Port < ports[j].Port
+		})
+	}
+
 	return &corev1.Service{
 		ObjectMeta: getObjectMeta(controllerResource, "%s"),
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "",
-			Ports: []corev1.ServicePort{
-				{
-					Name:       controllerResource.Name,
-					Port:       int32(port),
-					Protocol:   "TCP",
-					TargetPort: intstr.FromInt(port),
-				},
-			},
+			Ports: ports,
 			Type: corev1.ServiceTypeClusterIP,
 		},
 	}

@@ -1,0 +1,26 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: linstor-controller
+  namespace: monitoring
+  labels:
+    prometheus: main
+spec:
+  endpoints:
+  - port: metrics
+    scheme: https
+    path: /metrics
+    bearerTokenSecret:
+      name: "prometheus-token"
+      key: "token"
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: linstor
+      app.kubernetes.io/managed-by: piraeus-operator
+      app.kubernetes.io/name: piraeus-controller
+  namespaceSelector:
+    matchNames:
+    - piraeus
