@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: piraeus-operator
-          image: quay.io/piraeusdatastore/piraeus-operator:latest
+          image: quay.io/piraeusdatastore/piraeus-operator:v1.10.9
           imagePullPolicy: "IfNotPresent"
           args:
             - "--create-backups=true"
