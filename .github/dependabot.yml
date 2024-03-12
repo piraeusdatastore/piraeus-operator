@@ -6,6 +6,8 @@ updates:
       - WanzenBug
     schedule:
       interval: "weekly"
+    allow:
+      - dependency-type: all # Also include indirect dependencies
     groups:
       gomod:
         patterns:
