@@ -107,3 +107,10 @@ spec:
           expr: drbd_device_state{drbd_device_state="Inconsistent"} and delta(drbd_peerdevice_outofsync_bytes[5m]) >= 0
           labels:
             severity: warn
+        - alert: drbdResourceWithNoUpToDateReplicas
+          annotations:
+            description: |
+              DRBD resource "{{ $labels.name }}" has no UpToDate replicas.
+          expr: sum by (name) (drbd_device_state{drbd_device_state="UpToDate"}) == 0
+          labels:
+            severity: critical
