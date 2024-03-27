@@ -529,6 +529,16 @@ for IDX in $(seq 0 "$(jq '.items | length - 1' "$TEMPDIR/linstorsatellitesets.js
 			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration"
 		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" y
 	fi
+
+	if [ "$(jq_item '.spec.storagePools.zfsPools | length')" -gt 0 ]; then
+		echo "Found ZFS storage pool"
+		jq_item '.spec.storagePools.zfsPools[]' \
+			| jq '{"name": .name, "\(if .thin then "zfsThinPool" else "zfsPool" end)": {"zPool": .zPool}}' \
+			| format_patch LinstorSatelliteConfiguration "$NAME" '[{"op": "add", "path": "/spec/storagePools/-", "value": .}]' \
+			| append_patch "$TEMPDIR/linstorsatelliteconfiguration" \
+			| diff_patch "$TEMPDIR/linstorsatelliteconfiguration"
+		confirm_patch "$TEMPDIR/linstorsatelliteconfiguration" y
+	fi
 done
 
 print_row() {
@@ -580,7 +590,6 @@ for IDX in $(seq 0 "$(jq '.items | length - 1' "$TEMPDIR/linstorsatellitesets.js
 	[ "$(jq_item '.spec.affinity?.nodeAffinity?.preferredDuringSchedulingIgnoredDuringExecution | length')" -eq 0 ] || print_row LinstorSatelliteSet .spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution "Use LinstorSatelliteConfiguration.spec.nodeAffinity" "$(jq_item -c '.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')"
 	[ "$(jq_item '.spec.affinity?.podAffinity | length')" -eq 0 ] || print_row LinstorSatelliteSet .spec.affinity.podAffinity "Use LinstorSatelliteConfiguration.spec.nodeAffinity" "$(jq_item -c '.spec.affinity.podAffinity')"
 	[ "$(jq_item '.spec.affinity?.podAntiAffinity | length')" -eq 0 ] || print_row LinstorSatelliteSet .spec.affinity.podAntiAffinity "Use LinstorSatelliteConfiguration.spec.nodeAffinity" "$(jq_item -c '.spec.affinity.podAntiAffinity')"
-	[ "$(jq_item '.spec.storagePools.zfsPools | length')" -eq 0 ] || print_row LinstorSatelliteSet .spec.storagePools.zfsPools "Manually configure ZFS pools" "$(jq_item -c '.spec.storagePools.zfsPools')"
 	[ "$(jq_item -r '.spec.automaticStorageType')" == "None" ] || print_row LinstorSatelliteSet .spec.automaticStorageType "Use LinstorSatelliteConfiguration.spec.storagePools" "$(jq_item -r '.spec.automaticStorageType')"
 	[ "$(jq_item -r '.spec.controllerEndpoint')" == "$EXPECTED_CONTROLLER_ENDPOINT" ] || print_row LinstorSatelliteSet .spec.controllerEndpoint "Set LinstorCluster.spec.externalController" "$(jq_item -r '.spec.controllerEndpoint')"
 	[ -z "$(jq_item -r '.spec.drbdRepoCred')" ] || print_row LinstorSatelliteSet .spec.drbdRepoCred "Use pull secret to deploy the operator" "$(jq_item -r '.spec.drbdRepoCred')"

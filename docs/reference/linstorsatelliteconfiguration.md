@@ -109,20 +109,27 @@ the matching key. Available types are:
   Defaults to using the `/var/lib/linstor-pools/<storage pool name>` directory.
 * `fileThinPool`: Configures a file system based storage pool. Behaves the same as `filePool`, except the files will
   be thinly allocated on file systems that support sparse files.
+* `zfsPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Defaults to using the storage
+  pool name as name for the zpool. Can be overriden by setting `zPool`.
+* `zfsThinPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Behaves the same as
+  `zfsPool`, except the contained zVol will be created using sparse reservation.
 
 Optionally, you can configure LINSTOR to automatically create the backing pools. `source.hostDevices` takes a list
 of raw block devices, which LINSTOR will prepare as the chosen backing pool.
 
 #### Example
 
-This example configures three LINSTOR Storage Pools on all satellites:
+This example configures these LINSTOR Storage Pools on all satellites:
 * A LVM Pool named `vg1`. It will use the VG `vg1`, which needs to exist on the nodes already.
 * A LVM Thin Pool named `vg1-thin`. It will use the thin pool `vg1/thin`, which also needs to exist on the nodes.
 * A LVM Pool named `vg2-from-raw-devices`. It will use the VG `vg2`, which will be created on demand from the raw
   devices `/dev/sdb` and `/dev/sdc` if it does not exist already.
 * A File System Pool named `fs1`. It will use the `/var/lib/linstor-pools/fs1` directory on the host, creating the
   directory if necessary.
-* A File System Pool namef `fs2`, using sparse files. It will use the custom `/mnt/data` directory on the host.
+* A File System Pool named `fs2`, using sparse files. It will use the custom `/mnt/data` directory on the host.
+* A ZFS Pool named `zfs1`. It will use ZPool `zfs1`, which needs to exist on the nodes already.
+* A ZFS Thin Pool named `zfs2`. It will use ZPool `zfs-thin2`, which will be created on demand from the raw device
+  `/dev/sdd`.
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -149,6 +156,14 @@ spec:
     - name: fs2
       fileThinPool:
         directory: /mnt/data
+    - name: zfs1
+      zfsPool: {}
+    - name: zfs2
+      zfsThinPool:
+        zPool: zfs-thin2
+      source:
+        hostDevices:
+        - /dev/sdd
 ```
 
 ### `.spec.internalTLS`

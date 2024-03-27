@@ -104,6 +104,9 @@ spec:
               name: tmp
             - mountPath: /run/lock
               name: run-lock
+            - mountPath: /run/udev
+              name: run-udev
+              readOnly: true
         - name: drbd-reactor
           image: drbd-reactor
           ports:
@@ -160,6 +163,10 @@ spec:
           hostPath:
             path: /run/dbus/system_bus_socket
             type: Socket
+        - name: run-udev
+          hostPath:
+            path: /run/udev
+            type: Directory
         - name: var-log-linstor-satellite
           hostPath:
             path: /var/log/linstor-satellite

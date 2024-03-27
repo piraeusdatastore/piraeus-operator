@@ -114,6 +114,6 @@ var _ = Describe("LinstorSatellite webhook", func() {
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
 		Expect(statusErr.ErrStatus.Details.Causes[0].Field).To(Equal("spec.storagePools.0"))
-		Expect(statusErr.ErrStatus.Details.Causes[1].Field).To(Equal("spec.storagePools.1.lvm"))
+		Expect(statusErr.ErrStatus.Details.Causes[1].Field).To(Equal("spec.storagePools.1.lvmPool"))
 	})
 })

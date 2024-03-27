@@ -38,6 +38,12 @@ type LinstorStoragePool struct {
 	// Configures a file system based storage pool, allocating a sparse file per volume.
 	// +kubebuilder:validation:Optional
 	FileThinPool *LinstorStoragePoolFile `json:"fileThinPool,omitempty"`
+	// Configures a ZFS system based storage pool, allocating zvols from the given zpool.
+	// +kubebuilder:validation:Optional
+	ZfsPool *LinstorStoragePoolZfs `json:"zfsPool,omitempty"`
+	// Configures a ZFS system based storage pool, allocating sparse zvols from the given zpool.
+	// +kubebuilder:validation:Optional
+	ZfsThinPool *LinstorStoragePoolZfs `json:"zfsThinPool,omitempty"`
 
 	Source *LinstorStoragePoolSource `json:"source,omitempty"`
 }
@@ -52,6 +58,10 @@ func (p *LinstorStoragePool) ProviderKind() lclient.ProviderKind {
 		return lclient.FILE
 	case p.FileThinPool != nil:
 		return lclient.FILE_THIN
+	case p.ZfsPool != nil:
+		return lclient.ZFS
+	case p.ZfsThinPool != nil:
+		return lclient.ZFS_THIN
 	}
 
 	return ""
@@ -81,6 +91,16 @@ func (p *LinstorStoragePool) PoolName() string {
 		return p.FilePool.DirectoryOrDefault(p.Name)
 	case p.FileThinPool != nil:
 		return p.FileThinPool.DirectoryOrDefault(p.Name)
+	case p.ZfsPool != nil:
+		if p.ZfsPool.ZPool == "" {
+			return p.Name
+		}
+		return p.ZfsPool.ZPool
+	case p.ZfsThinPool != nil:
+		if p.ZfsThinPool.ZPool == "" {
+			return p.Name
+		}
+		return p.ZfsThinPool.ZPool
 	}
 	return ""
 }
@@ -98,6 +118,11 @@ type LinstorStoragePoolLvmThin struct {
 type LinstorStoragePoolFile struct {
 	// Directory is the path to the host directory used to store volume data.
 	Directory string `json:"directory,omitempty"`
+}
+
+type LinstorStoragePoolZfs struct {
+	// ZPool is the name of the ZFS zpool.
+	ZPool string `json:"zPool,omitempty"`
 }
 
 type LinstorStoragePoolSource struct {
@@ -137,25 +162,35 @@ func ValidateStoragePools(curSPs, oldSPs []LinstorStoragePool, fieldPrefix *fiel
 
 		numPoolTypes := 0
 		if curSP.LvmThinPool != nil {
-			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "lvmThin"))...)
-			result = append(result, curSP.LvmThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvmThin"))...)
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "lvmThinPool"))...)
+			result = append(result, curSP.LvmThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvmThinPool"))...)
 		}
 
 		if curSP.LvmPool != nil {
-			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "lvm"))...)
-			result = append(result, curSP.LvmPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvm"))...)
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "lvmPool"))...)
+			result = append(result, curSP.LvmPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "lvmPool"))...)
 		}
 
 		if curSP.FilePool != nil {
-			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "file"))...)
-			result = append(result, curSP.FilePool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "file"), curSP.Name, false)...)
-			result = append(result, validateNoSource(curSP.Source, fieldPrefix.Child(strconv.Itoa(i)), "file")...)
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "filePool"))...)
+			result = append(result, curSP.FilePool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "filePool"), curSP.Name, false)...)
+			result = append(result, validateNoSource(curSP.Source, fieldPrefix.Child(strconv.Itoa(i)), "filePool")...)
 		}
 
 		if curSP.FileThinPool != nil {
-			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "fileThin"))...)
-			result = append(result, curSP.FileThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "fileThin"), curSP.Name, true)...)
-			result = append(result, validateNoSource(curSP.Source, fieldPrefix.Child(strconv.Itoa(i)), "fileThin")...)
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "fileThinPool"))...)
+			result = append(result, curSP.FileThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i), "fileThinPool"), curSP.Name, true)...)
+			result = append(result, validateNoSource(curSP.Source, fieldPrefix.Child(strconv.Itoa(i)), "fileThinPool")...)
+		}
+
+		if curSP.ZfsPool != nil {
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "zfsPool"))...)
+			result = append(result, curSP.ZfsPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i)), "zfsPool", false)...)
+		}
+
+		if curSP.ZfsThinPool != nil {
+			result = append(result, validateStoragePoolType(&numPoolTypes, fieldPrefix.Child(strconv.Itoa(i), "zfsThinPool"))...)
+			result = append(result, curSP.ZfsThinPool.Validate(oldSP, fieldPrefix.Child(strconv.Itoa(i)), "zfsThinPool", true)...)
 		}
 
 		if numPoolTypes == 0 {
@@ -299,6 +334,20 @@ func (l *LinstorStoragePoolFile) DirectoryOrDefault(name string) string {
 	}
 
 	return l.Directory
+}
+
+func (l *LinstorStoragePoolZfs) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path, name string, thin bool) field.ErrorList {
+	var result field.ErrorList
+
+	if oldSP != nil {
+		if thin && oldSP.ZfsThinPool == nil {
+			result = append(result, field.Forbidden(fieldPrefix, "Cannot change storage pool type"))
+		} else if !thin && oldSP.ZfsPool == nil {
+			result = append(result, field.Forbidden(fieldPrefix, "Cannot change storage pool type"))
+		}
+	}
+
+	return result
 }
 
 func (s *LinstorStoragePoolSource) Validate(oldSP *LinstorStoragePool, knownDevices sets.Set[string], fieldPrefix *field.Path) field.ErrorList {
