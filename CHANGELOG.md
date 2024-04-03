@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for managing ZFS Storage Pools using `LinstorSatelliteConfiguration`.
 
+### Changed
+
+- Updated images:
+  * LINSTOR 1.27.0
+  * LINSTOR CSI 1.5.0
+  * High Availability Controller 1.2.1
+  * Latest CSI sidecars
+
 ## [v2.4.1] - 2024-03-06
 
 ### Added
