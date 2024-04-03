@@ -21,6 +21,7 @@ These guides show you how to configure a specific aspect or achieve a specific t
 * [How to Load DRBD on OpenShift](./openshift.md)
 * [How to Load DRBD on Talos Linux](./talos.md)
 * [How to Load DRBD on Flatcar Container Linux](./flatcar.md)
+* [How to Load DRBD with SecureBoot Enabled](./secure-boot.md)
 * [How to Configure Piraeus Datastore on MicroK8s](./microk8s.md)
 * [How to Configure Piraeus Datastore on k0s](./k0s.md)
 
