@@ -24,10 +24,10 @@ import (
 	"time"
 
 	linstor "github.com/LINBIT/golinstor"
-	lclient "github.com/LINBIT/golinstor/client"
+	lapi "github.com/LINBIT/golinstor/client"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/logr"
-	"golang.org/x/time/rate"
+	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -66,7 +66,7 @@ type LinstorSatelliteReconciler struct {
 	Scheme             *runtime.Scheme
 	Namespace          string
 	ImageConfigMapName string
-	LinstorApiLimiter  *rate.Limiter
+	LinstorClientOpts  []lapi.Option
 	Kustomizer         *resources.Kustomizer
 	log                logr.Logger
 }
@@ -297,8 +297,10 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		lsatellite.Spec.ClusterRef.Name,
 		lsatellite.Spec.ClusterRef.ClientSecretName,
 		lsatellite.Spec.ClusterRef.ExternalController,
-		linstorhelper.Logr(log.FromContext(ctx)),
-		lclient.Limiter(r.LinstorApiLimiter),
+		append(
+			slices.Clone(r.LinstorClientOpts),
+			linstorhelper.Logr(log.FromContext(ctx)),
+		)...,
 	)
 	if err != nil || lc == nil {
 		conds.AddError(conditions.Available, err)
@@ -342,7 +344,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		return err
 	}
 
-	var netIfs []lclient.NetInterface
+	var netIfs []lapi.NetInterface
 	for _, podIP := range pod.Status.PodIPs {
 		ip := net.ParseIP(podIP.IP)
 
@@ -365,7 +367,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 			port = linstor.DfltStltPortSsl
 		}
 
-		netIfs = append(netIfs, lclient.NetInterface{
+		netIfs = append(netIfs, lapi.NetInterface{
 			Name:                    name,
 			Address:                 ip,
 			SatellitePort:           int32(port),
@@ -373,7 +375,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		})
 	}
 
-	lnode, err := lc.CreateOrUpdateNode(ctx, lclient.Node{
+	lnode, err := lc.CreateOrUpdateNode(ctx, lapi.Node{
 		Name:          pod.Spec.NodeName,
 		Type:          linstor.ValNodeTypeStlt,
 		Props:         props,
@@ -405,7 +407,7 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 	cached := true
 	expectedPools := make(map[string]struct{})
 
-	currentPools, err := lc.Nodes.GetStoragePools(ctx, lsatellite.Name, &lclient.ListOpts{Cached: &cached})
+	currentPools, err := lc.Nodes.GetStoragePools(ctx, lsatellite.Name, &lapi.ListOpts{Cached: &cached})
 	if err != nil {
 		return err
 	}
@@ -422,7 +424,7 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 		expectedProperties[linstorhelper.ManagedByProperty] = vars.OperatorName
 		expectedProperties[linstor.NamespcStorageDriver+"/"+linstor.KeyStorPoolName] = pool.PoolName()
 
-		var existingPool *lclient.StoragePool
+		var existingPool *lapi.StoragePool
 		for j := range currentPools {
 			if currentPools[j].StoragePoolName == pool.Name {
 				existingPool = &currentPools[j]
@@ -430,11 +432,11 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 		}
 
 		if existingPool == nil && pool.Source != nil && len(pool.Source.HostDevices) > 0 {
-			err := lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lclient.PhysicalStorageCreate{
+			err := lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lapi.PhysicalStorageCreate{
 				ProviderKind: pool.ProviderKind(),
 				PoolName:     pool.PoolName(),
 				DevicePaths:  pool.Source.HostDevices,
-				WithStoragePool: lclient.PhysicalStorageStoragePoolCreate{
+				WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
 					Name:  pool.Name,
 					Props: linstorhelper.UpdateLastApplyProperty(expectedProperties),
 				},
@@ -443,14 +445,14 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 				r.log.Error(err, "failed to create device pool", "pool", pool)
 			}
 
-			p, err := lc.Nodes.GetStoragePool(ctx, lsatellite.Name, pool.Name, &lclient.ListOpts{Cached: &cached})
+			p, err := lc.Nodes.GetStoragePool(ctx, lsatellite.Name, pool.Name, &lapi.ListOpts{Cached: &cached})
 			if err == nil {
 				existingPool = &p
 			}
 		}
 
 		if existingPool == nil {
-			err := lc.Nodes.CreateStoragePool(ctx, lsatellite.Name, lclient.StoragePool{
+			err := lc.Nodes.CreateStoragePool(ctx, lsatellite.Name, lapi.StoragePool{
 				StoragePoolName: pool.Name,
 				ProviderKind:    pool.ProviderKind(),
 				Props:           linstorhelper.UpdateLastApplyProperty(expectedProperties),
@@ -459,7 +461,7 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 				return err
 			}
 
-			p, err := lc.Nodes.GetStoragePool(ctx, lsatellite.Name, pool.Name, &lclient.ListOpts{Cached: &cached})
+			p, err := lc.Nodes.GetStoragePool(ctx, lsatellite.Name, pool.Name, &lapi.ListOpts{Cached: &cached})
 			if err != nil {
 				return err
 			}
@@ -506,8 +508,10 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		lsatellite.Spec.ClusterRef.Name,
 		lsatellite.Spec.ClusterRef.ClientSecretName,
 		lsatellite.Spec.ClusterRef.ExternalController,
-		linstorhelper.Logr(log.FromContext(ctx)),
-		lclient.Limiter(r.LinstorApiLimiter),
+		append(
+			slices.Clone(r.LinstorClientOpts),
+			linstorhelper.Logr(log.FromContext(ctx)),
+		)...,
 	)
 	if err != nil {
 		return err
@@ -520,12 +524,12 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 	}
 
 	err = lc.Nodes.Evacuate(ctx, lsatellite.Name)
-	if err != nil && err != lclient.NotFoundError {
+	if err != nil && err != lapi.NotFoundError {
 		return err
 	}
 
-	ress, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{Node: []string{lsatellite.Name}})
-	if err != nil && err != lclient.NotFoundError {
+	ress, err := lc.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{lsatellite.Name}})
+	if err != nil && err != lapi.NotFoundError {
 		return err
 	}
 
@@ -539,7 +543,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 	}
 
 	err = lc.Nodes.Delete(ctx, lsatellite.Name)
-	if err != nil && err != lclient.NotFoundError {
+	if err != nil && err != lapi.NotFoundError {
 		return err
 	}
 

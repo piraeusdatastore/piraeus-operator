@@ -8,8 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
+	lapicache "github.com/LINBIT/golinstor/cache"
 	lapi "github.com/LINBIT/golinstor/client"
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,6 +25,33 @@ import (
 // Client is a LINSTOR client with convenience functions.
 type Client struct {
 	lapi.Client
+}
+
+var (
+	// nodeCaches stores the node cache for clients, mapping base url to cache instance.
+	nodeCaches sync.Map
+	// rateLimiters stores the rate limiter for clients, mapping base url to rate limiter instance.
+	rateLimiters sync.Map
+)
+
+// PerClusterNodeCache creates a node cache for each distinct cluster.
+//
+// Client(s) pointing to the same URL will share a cache.
+func PerClusterNodeCache(timeout time.Duration) lapi.Option {
+	return func(c *lapi.Client) error {
+		cache, _ := nodeCaches.LoadOrStore(c.BaseURL(), &lapicache.NodeCache{Timeout: timeout})
+		return lapicache.WithCaches(cache.(*lapicache.NodeCache))(c)
+	}
+}
+
+// PerClusterRateLimiter creates a rate limiter for each distinct cluster.
+//
+// Client(s) pointing to the same URL will share a rate limiter.
+func PerClusterRateLimiter(r rate.Limit, b int) lapi.Option {
+	return func(c *lapi.Client) error {
+		limiter, _ := rateLimiters.LoadOrStore(c.BaseURL(), rate.NewLimiter(r, b))
+		return lapi.Limiter(limiter.(*rate.Limiter))(c)
+	}
 }
 
 // NewClientForCluster returns a LINSTOR client for a LINSTOR Controller managed by the operator.
@@ -79,7 +110,10 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 		}))
 	}
 
-	options = append(options, lapi.BaseURL(clientUrl), lapi.UserAgent(vars.OperatorName+"/"+vars.Version))
+	options = append(options,
+		lapi.BaseURL(clientUrl),
+		lapi.UserAgent(vars.OperatorName+"/"+vars.Version),
+	)
 
 	c, err := lapi.NewClient(options...)
 	if err != nil {

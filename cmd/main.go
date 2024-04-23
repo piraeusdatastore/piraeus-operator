@@ -19,7 +19,9 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
+	lapi "github.com/LINBIT/golinstor/client"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"golang.org/x/time/rate"
 	storagev1 "k8s.io/api/storage/v1"
@@ -41,6 +43,7 @@ import (
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 	piraeuswebhook "github.com/piraeusdatastore/piraeus-operator/v2/internal/webhook"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
 )
@@ -66,6 +69,7 @@ func main() {
 	var pullSecret string
 	var imageConfigMapName string
 	var linstorApiQps float64
+	var nodeCacheDuration time.Duration
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -75,6 +79,7 @@ func main() {
 	flag.StringVar(&pullSecret, "pull-secret", os.Getenv("PULL_SECRET"), "The pull secret to use for all containers")
 	flag.StringVar(&imageConfigMapName, "image-config-map-name", os.Getenv("IMAGE_CONFIG_MAP_NAME"), "Config map holding default images to use")
 	flag.Float64Var(&linstorApiQps, "linstor-api-qps", 100.0, "Limit requests to the LINSTOR API to this many queries per second")
+	flag.DurationVar(&nodeCacheDuration, "linstor-node-cache-duration", 1*time.Minute, "Duration for which the results of node and storage pool related API responses should be cached.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -91,7 +96,10 @@ func main() {
 		namespace = string(raw)
 	}
 
-	linstorLimiter := rate.NewLimiter(rate.Limit(linstorApiQps), 1)
+	linstorOpts := []lapi.Option{
+		linstorhelper.PerClusterRateLimiter(rate.Limit(linstorApiQps), 1),
+		linstorhelper.PerClusterNodeCache(nodeCacheDuration),
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -115,7 +123,7 @@ func main() {
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
 		PullSecret:         pullSecret,
-		LinstorApiLimiter:  linstorLimiter,
+		LinstorClientOpts:  linstorOpts,
 	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorCluster")
 		os.Exit(1)
@@ -125,7 +133,7 @@ func main() {
 		Scheme:             mgr.GetScheme(),
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
-		LinstorApiLimiter:  linstorLimiter,
+		LinstorClientOpts:  linstorOpts,
 	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)
@@ -146,7 +154,7 @@ func main() {
 		Client:            mgr.GetClient(),
 		Scheme:            mgr.GetScheme(),
 		Namespace:         namespace,
-		LinstorApiLimiter: linstorLimiter,
+		LinstorClientOpts: linstorOpts,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorNodeConnection")
 		os.Exit(1)
