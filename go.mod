@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.2
 
 require (
-	github.com/LINBIT/golinstor v0.51.0
+	github.com/LINBIT/golinstor v0.52.0
 	github.com/cert-manager/cert-manager v1.14.4
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.1

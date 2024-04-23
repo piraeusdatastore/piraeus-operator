@@ -26,7 +26,6 @@ import (
 	lapi "github.com/LINBIT/golinstor/client"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
-	"golang.org/x/time/rate"
 	"gonum.org/v1/gonum/stat/combin"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -53,7 +52,7 @@ type LinstorNodeConnectionReconciler struct {
 	client.Client
 	Scheme            *runtime.Scheme
 	Namespace         string
-	LinstorApiLimiter *rate.Limiter
+	LinstorClientOpts []lapi.Option
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstornodeconnections,verbs=get;list;watch;create;update;patch;delete
@@ -129,8 +128,10 @@ func (r *LinstorNodeConnectionReconciler) reconcileAll(ctx context.Context, conn
 			view.ClusterRef.Name,
 			view.ClusterRef.ClientSecretName,
 			view.ClusterRef.ExternalController,
-			linstorhelper.Logr(log.FromContext(ctx)),
-			lapi.Limiter(r.LinstorApiLimiter),
+			append(
+				slices.Clone(r.LinstorClientOpts),
+				linstorhelper.Logr(log.FromContext(ctx)),
+			)...,
 		)
 		if err != nil {
 			return err
