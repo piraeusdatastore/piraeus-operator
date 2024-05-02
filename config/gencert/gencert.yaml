@@ -64,6 +64,7 @@ spec:
               cpu: 5m
               memory: 32Mi
       serviceAccountName: gencert
+      priorityClassName: system-cluster-critical
       terminationGracePeriodSeconds: 10
       tolerations:
         - key: drbd.linbit.com/lost-quorum

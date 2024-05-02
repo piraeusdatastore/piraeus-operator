@@ -15,6 +15,7 @@ spec:
         app.kubernetes.io/component: ha-controller
     spec:
       serviceAccountName: ha-controller
+      priorityClassName: system-cluster-critical
       containers:
         - name: ha-controller
           args:

@@ -71,6 +71,7 @@ spec:
             memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+      priorityClassName: system-cluster-critical
       tolerations:
         - key: drbd.linbit.com/lost-quorum
           effect: NoSchedule

@@ -102,6 +102,7 @@ spec:
               name: tmp
       enableServiceLinks: false
       serviceAccountName: linstor-controller
+      priorityClassName: system-node-critical
       volumes:
         - name: etc-linstor
           configMap:
