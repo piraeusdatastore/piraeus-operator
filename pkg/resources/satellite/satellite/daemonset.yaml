@@ -19,6 +19,7 @@ spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
       serviceAccountName: satellite
+      priorityClassName: system-node-critical
       initContainers:
         - name: drbd-module-loader
           image: drbd-module-loader

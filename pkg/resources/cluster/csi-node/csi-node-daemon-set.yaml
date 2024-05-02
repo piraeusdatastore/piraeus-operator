@@ -19,6 +19,7 @@ spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
       serviceAccountName: linstor-csi-node
+      priorityClassName: system-node-critical
       initContainers:
         - name: linstor-wait-node-online
           image: linstor-csi

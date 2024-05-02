@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Default PriorityClasses for all components
+
 ## [v2.5.0] - 2024-04-03
 
 ### Added

@@ -18,6 +18,7 @@ spec:
     spec:
       enableServiceLinks: false
       serviceAccountName: linstor-csi-controller
+      priorityClassName: system-node-critical
       initContainers:
         - name: linstor-wait-api-online
           image: linstor-csi
