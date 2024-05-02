@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Default PriorityClasses for all components
 
+### Changed
+
+- New DRBD loader detection for:
+  * Ubuntu Noble Numbat (24.04)
+- Updated images:
+  * LINSTOR 1.27.1
+  * LINSTOR CSI 1.6.0
+  * DRBD 9.2.9
+
 ## [v2.5.0] - 2024-04-03
 
 ### Added
