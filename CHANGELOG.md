@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to specify custom CA certificate resources for TLS configuration.
+
 ## [v2.5.1] - 2024-05-02
 
 ### Added

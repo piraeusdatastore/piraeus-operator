@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
 
+	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )
@@ -29,7 +30,7 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterLinstorInternalTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterLinstorInternalTLSPatch("secret")
+				return controller.ClusterLinstorInternalTLSPatch("secret", nil)
 			},
 		},
 		{
@@ -117,7 +118,7 @@ func TestPatches(t *testing.T) {
 		{
 			name: "SatelliteLinstorInternalTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.SatelliteLinstorInternalTLSPatch("secret")
+				return controller.SatelliteLinstorInternalTLSPatch("secret", nil)
 			},
 		},
 		{
@@ -159,7 +160,7 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterApiTLSPatch("apiSecret", "clientSecret")
+				return controller.ClusterApiTLSPatch("apiSecret", "clientSecret", nil)
 			},
 		},
 		{
@@ -185,13 +186,20 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterCSIControllerApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterCSIControllerApiTLSPatch("controller")
+				return controller.ClusterCSIControllerApiTLSPatch("controller", &piraeusiov1.CAReference{
+					Name: "trust-root",
+					Kind: "Secret",
+				})
 			},
 		},
 		{
 			name: "ClusterCSINodeApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterCSINodeApiTLSPatch("node")
+				return controller.ClusterCSINodeApiTLSPatch("node", &piraeusiov1.CAReference{
+					Name: "trust-root",
+					Kind: "ConfigMap",
+					Key:  "tls.crt",
+				})
 			},
 		},
 		{

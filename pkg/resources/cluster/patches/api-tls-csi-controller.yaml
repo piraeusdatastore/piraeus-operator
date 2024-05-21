@@ -16,10 +16,7 @@
           - name: linstor-wait-api-online
             env:
               - name: LS_ROOT_CA
-                valueFrom:
-                  secretKeyRef:
-                    name: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
-                    key: ca.crt
+                valueFrom: $LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE
               - name: LS_USER_CERTIFICATE
                 valueFrom:
                   secretKeyRef:
@@ -34,10 +31,7 @@
           - name: linstor-csi
             env:
               - name: LS_ROOT_CA
-                valueFrom:
-                  secretKeyRef:
-                    name: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
-                    key: ca.crt
+                valueFrom: $LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE
               - name: LS_USER_CERTIFICATE
                 valueFrom:
                   secretKeyRef:

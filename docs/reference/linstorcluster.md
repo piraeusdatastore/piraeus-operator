@@ -329,6 +329,9 @@ Setting a `secretName` is optional, it will default to `linstor-controller-inter
 Optional, a reference to a [cert-manager `Issuer`](https://cert-manager.io/docs/concepts/issuer/) can be provided
 to let the operator create the required secret.
 
+If the referenced secret does not contain a `ca.crt` certificate of a certificate authority, a `caReference` pointing
+to a secondary `Secret` or `ConfigMap` resource can be configured.
+
 #### Example
 
 This example creates a manually provisioned TLS secret and references it in the
@@ -358,7 +361,8 @@ spec:
 #### Example
 
 This example sets up automatic creation of the LINSTOR Controller TLS secret using a
-cert-manager issuer named `piraeus-root`.
+cert-manager issuer named `piraeus-root`. The certificates will be validated against the certificate in the `trust-root`
+ConfigMap.
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -370,6 +374,10 @@ spec:
     certManager:
       kind: Issuer
       name: piraeus-root
+    caReference:
+      name: trust-root
+      kind: ConfigMap
+      key: root.crt
 ```
 
 ### `.spec.apiTLS`
@@ -388,6 +396,9 @@ Configures the TLS secrets used to secure the LINSTOR API. There are four differ
 
 Optional, a reference to a [cert-manager `Issuer`](https://cert-manager.io/docs/concepts/issuer/) can be provided
 to let the operator create the required secrets.
+
+If the referenced secret does not contain a `ca.crt` certificate of a certificate authority, a `caReference` pointing
+to a secondary `Secret` or `ConfigMap` resource can be configured.
 
 #### Example
 
@@ -431,7 +442,8 @@ spec:
 #### Example
 
 This example sets up automatic creation of the LINSTOR API and LINSTOR Client TLS secret using a
-cert-manager issuer named `piraeus-root`.
+cert-manager issuer named `piraeus-root`. The certificates will be validated against the certificate in the `trust-root`
+Secret.
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -443,6 +455,10 @@ spec:
     certManager:
       kind: Issuer
       name: piraeus-root
+    caReference:
+      name: trust-root
+      kind: Secret
+      key: root.crt
 ```
 
 ## `.status`

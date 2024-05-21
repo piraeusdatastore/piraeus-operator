@@ -127,6 +127,7 @@ func (r *LinstorNodeConnectionReconciler) reconcileAll(ctx context.Context, conn
 			r.Namespace,
 			view.ClusterRef.Name,
 			view.ClusterRef.ClientSecretName,
+			view.ClusterRef.CAReference,
 			view.ClusterRef.ExternalController,
 			append(
 				slices.Clone(r.LinstorClientOpts),

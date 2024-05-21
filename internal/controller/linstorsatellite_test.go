@@ -99,7 +99,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				var ds appsv1.DaemonSet
 				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
+				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", ExampleNodeName+"-tls")))))
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 		})
 
@@ -119,7 +119,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				var ds appsv1.DaemonSet
 				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", ExampleNodeName+"-tls")))
+				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", ExampleNodeName+"-tls")))))
 				container := GetContainer(ds.Spec.Template.Spec.Containers, "ktls-utils")
 				g.Expect(container).NotTo(BeNil())
 				g.Expect(container.VolumeMounts).To(ContainElement(HaveField("Name", "internal-tls")))

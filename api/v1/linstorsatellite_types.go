@@ -73,6 +73,11 @@ type ClusterReference struct {
 	// ClientSecretName references the secret used by the operator to validate the https endpoint.
 	ClientSecretName string `json:"clientSecretName,omitempty"`
 
+	// CAReference configures the CA certificate to use when validating TLS certificates.
+	// If not set, the TLS secret is expected to contain a "ca.crt" containing the CA certificate.
+	//+kubebuilder:validation:Optional
+	CAReference *CAReference `json:"caReference,omitempty"`
+
 	// ExternalController references an external controller.
 	// When set, the Operator uses the external cluster to register satellites.
 	// +kubebuilder:validation:Optional

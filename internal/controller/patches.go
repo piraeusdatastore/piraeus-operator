@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/resid"
 	"sigs.k8s.io/yaml"
 
+	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/cluster"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/satellite"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
@@ -28,12 +29,13 @@ func ClusterLinstorPassphrasePatch(secretName string) ([]kusttypes.Patch, error)
 	)
 }
 
-func ClusterLinstorInternalTLSPatch(secretName string) ([]kusttypes.Patch, error) {
+func ClusterLinstorInternalTLSPatch(secretName string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/internal-tls.yaml",
 		map[string]any{
-			"LINSTOR_INTERNAL_TLS_SECRET_NAME": secretName,
+			"LINSTOR_INTERNAL_TLS_SECRET_NAME":   secretName,
+			"LINSTOR_INTERNAL_TLS_CA_PROJECTION": caRef.ToVolumeProjection(secretName),
 		},
 	)
 }
@@ -121,13 +123,15 @@ func ClusterHAControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kust
 		})
 }
 
-func ClusterApiTLSPatch(apiSecretName, clientSecretName string) ([]kusttypes.Patch, error) {
+func ClusterApiTLSPatch(apiSecretName, clientSecretName string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/api-tls.yaml",
 		map[string]any{
-			"LINSTOR_API_TLS_SECRET_NAME":        apiSecretName,
-			"LINSTOR_API_TLS_CLIENT_SECRET_NAME": clientSecretName,
+			"LINSTOR_API_TLS_SECRET_NAME":          apiSecretName,
+			"LINSTOR_API_TLS_CA_PROJECTION":        caRef.ToVolumeProjection(apiSecretName),
+			"LINSTOR_API_TLS_CLIENT_SECRET_NAME":   clientSecretName,
+			"LINSTOR_API_TLS_CLIENT_CA_PROJECTION": caRef.ToVolumeProjection(clientSecretName),
 		})
 }
 
@@ -163,21 +167,23 @@ func ClusterApiEndpointPatch(url string) ([]kusttypes.Patch, error) {
 		})
 }
 
-func ClusterCSIControllerApiTLSPatch(controllerSecret string) ([]kusttypes.Patch, error) {
+func ClusterCSIControllerApiTLSPatch(controllerSecret string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/api-tls-csi-controller.yaml",
 		map[string]any{
 			"LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME": controllerSecret,
+			"LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE":   caRef.ToEnvVarSource(controllerSecret),
 		})
 }
 
-func ClusterCSINodeApiTLSPatch(nodeSecret string) ([]kusttypes.Patch, error) {
+func ClusterCSINodeApiTLSPatch(nodeSecret string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/api-tls-csi-node.yaml",
 		map[string]any{
 			"LINSTOR_CSI_NODE_API_TLS_SECRET_NAME": nodeSecret,
+			"LINSTOR_CSI_NODE_API_TLS_CA_SOURCE":   caRef.ToEnvVarSource(nodeSecret),
 		})
 }
 
@@ -201,12 +207,13 @@ func PullSecretPatch(secretName string) ([]kusttypes.Patch, error) {
 		})
 }
 
-func SatelliteLinstorInternalTLSPatch(secretName string) ([]kusttypes.Patch, error) {
+func SatelliteLinstorInternalTLSPatch(secretName string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		satellite.Resources,
 		"patches/internal-tls.yaml",
 		map[string]any{
-			"LINSTOR_INTERNAL_TLS_SECRET_NAME": secretName,
+			"LINSTOR_INTERNAL_TLS_SECRET_NAME":   secretName,
+			"LINSTOR_INTERNAL_TLS_CA_PROJECTION": caRef.ToVolumeProjection(secretName),
 		},
 	)
 }

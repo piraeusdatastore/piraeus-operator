@@ -52,6 +52,35 @@ spec:
                       ApiSecretName references a secret holding the TLS key and certificate used to protect the API.
                       Defaults to "linstor-api-tls".
                     type: string
+                  caReference:
+                    description: |-
+                      CAReference configures the CA certificate to use when validating TLS certificates.
+                      If not set, the TLS secret is expected to contain a "ca.crt" containing the CA certificate.
+                    properties:
+                      key:
+                        default: ca.crt
+                        description: |-
+                          Key to select in the resource.
+                          Defaults to ca.crt if not specified.
+                        type: string
+                      kind:
+                        default: Secret
+                        description: Kind of the resource containing the CA Certificate,
+                          either a ConfigMap or Secret.
+                        enum:
+                        - ConfigMap
+                        - Secret
+                        type: string
+                      name:
+                        description: Name of the resource containing the CA Certificate.
+                        type: string
+                      optional:
+                        description: Optional specifies whether the resource and its
+                          key must exist.
+                        type: boolean
+                    required:
+                    - name
+                    type: object
                   certManager:
                     description: |-
                       CertManager references a cert-manager Issuer or ClusterIssuer.
@@ -187,6 +216,35 @@ spec:
                   when the Satellite is configured to for secure connections using `LinstorSatellite.spec.internalTLS`.
                 nullable: true
                 properties:
+                  caReference:
+                    description: |-
+                      CAReference configures the CA certificate to use when validating TLS certificates.
+                      If not set, the TLS secret is expected to contain a "ca.crt" containing the CA certificate.
+                    properties:
+                      key:
+                        default: ca.crt
+                        description: |-
+                          Key to select in the resource.
+                          Defaults to ca.crt if not specified.
+                        type: string
+                      kind:
+                        default: Secret
+                        description: Kind of the resource containing the CA Certificate,
+                          either a ConfigMap or Secret.
+                        enum:
+                        - ConfigMap
+                        - Secret
+                        type: string
+                      name:
+                        description: Name of the resource containing the CA Certificate.
+                        type: string
+                      optional:
+                        description: Optional specifies whether the resource and its
+                          key must exist.
+                        type: boolean
+                    required:
+                    - name
+                    type: object
                   certManager:
                     description: |-
                       CertManager references a cert-manager Issuer or ClusterIssuer.

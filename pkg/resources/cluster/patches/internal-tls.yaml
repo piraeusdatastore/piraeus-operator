@@ -14,8 +14,11 @@
         spec:
           volumes:
           - name: internal-tls
-            secret:
-              secretName: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+            projected:
+              sources:
+              - secret:
+                  name: $LINSTOR_INTERNAL_TLS_SECRET_NAME
+              - $LINSTOR_INTERNAL_TLS_CA_PROJECTION
           - name: java-internal-tls
             emptyDir: {}
           initContainers:

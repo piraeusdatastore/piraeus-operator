@@ -20,9 +20,6 @@
                   readOnly: true
                 - name: java-api-tls
                   mountPath: /etc/linstor/https
-                - name: client-tls
-                  mountPath: /etc/linstor/client
-                  readOnly: true
           containers:
             - name: linstor-controller
               volumeMounts:
@@ -42,11 +39,17 @@
             - name: java-api-tls
               emptyDir: { }
             - name: api-tls
-              secret:
-                secretName: $LINSTOR_API_TLS_SECRET_NAME
+              projected:
+                sources:
+                - secret:
+                    name: $LINSTOR_API_TLS_SECRET_NAME
+                - $LINSTOR_API_TLS_CA_PROJECTION
             - name: client-tls
-              secret:
-                secretName: $LINSTOR_API_TLS_CLIENT_SECRET_NAME
+              projected:
+                sources:
+                - secret:
+                    name: $LINSTOR_API_TLS_CLIENT_SECRET_NAME
+                - $LINSTOR_API_TLS_CLIENT_CA_PROJECTION
 - target:
     version: v1
     kind: ConfigMap
