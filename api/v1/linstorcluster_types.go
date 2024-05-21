@@ -136,6 +136,11 @@ type LinstorClusterApiTLS struct {
 	// *SecretName using the issuer configured here.
 	//+kubebuilder:validation:Optional
 	CertManager *cmmetav1.ObjectReference `json:"certManager,omitempty"`
+
+	// CAReference configures the CA certificate to use when validating TLS certificates.
+	// If not set, the TLS secret is expected to contain a "ca.crt" containing the CA certificate.
+	//+kubebuilder:validation:Optional
+	CAReference *CAReference `json:"caReference,omitempty"`
 }
 
 func (l *LinstorClusterApiTLS) GetApiSecretName() string {

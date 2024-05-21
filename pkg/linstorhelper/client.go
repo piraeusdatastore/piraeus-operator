@@ -15,6 +15,7 @@ import (
 	lapi "github.com/LINBIT/golinstor/client"
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -55,7 +56,7 @@ func PerClusterRateLimiter(r rate.Limit, b int) lapi.Option {
 }
 
 // NewClientForCluster returns a LINSTOR client for a LINSTOR Controller managed by the operator.
-func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clusterName, clientSecretName string, externalCluster *piraeusv1.LinstorExternalControllerRef, options ...lapi.Option) (*Client, error) {
+func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clusterName, clientSecretName string, caRef *piraeusv1.CAReference, externalCluster *piraeusv1.LinstorExternalControllerRef, options ...lapi.Option) (*Client, error) {
 	var clientUrl *url.URL
 	if externalCluster != nil {
 		u, err := url.Parse(externalCluster.URL)
@@ -98,7 +99,12 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 			return nil, err
 		}
 
-		tlsConfig, err := secretToTlsConfig(&secret)
+		caRoot, err := caReferenceToCert(ctx, caRef, namespace, cl)
+		if err != nil {
+			return nil, err
+		}
+
+		tlsConfig, err := secretToTlsConfig(&secret, caRoot)
 		if err != nil {
 			return nil, err
 		}
@@ -146,14 +152,16 @@ func extractSchemeAndPort(svc *corev1.Service) (string, int32, bool) {
 	return scheme, port, found
 }
 
-func secretToTlsConfig(secret *corev1.Secret) (*tls.Config, error) {
+func secretToTlsConfig(secret *corev1.Secret, caRoot []byte) (*tls.Config, error) {
 	if secret.Type != corev1.SecretTypeTLS {
 		return nil, fmt.Errorf("secret '%s/%s' of type '%s', expected '%s'", secret.Namespace, secret.Name, secret.Type, corev1.SecretTypeTLS)
 	}
 
-	caRoot := secret.Data["ca.crt"]
-	key := secret.Data[corev1.TLSPrivateKeyKey]
+	if caRoot == nil {
+		caRoot = secret.Data["ca.crt"]
+	}
 
+	key := secret.Data[corev1.TLSPrivateKeyKey]
 	cert := secret.Data[corev1.TLSCertKey]
 
 	caPool := x509.NewCertPool()
@@ -171,6 +179,41 @@ func secretToTlsConfig(secret *corev1.Secret) (*tls.Config, error) {
 		RootCAs:      caPool,
 		Certificates: []tls.Certificate{keyPair},
 	}, nil
+}
+
+func caReferenceToCert(ctx context.Context, caRef *piraeusv1.CAReference, namespace string, cl client.Client) ([]byte, error) {
+	if caRef == nil {
+		return nil, nil
+	}
+
+	switch caRef.Kind {
+	case "Secret":
+		var secret corev1.Secret
+		err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: caRef.Name}, &secret)
+		if err != nil {
+			if errors.IsNotFound(err) && caRef.Optional != nil && *caRef.Optional {
+				return nil, nil
+			}
+
+			return nil, err
+		}
+
+		return secret.Data[caRef.Key], nil
+	case "ConfigMap":
+		var cm corev1.ConfigMap
+		err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: caRef.Name}, &cm)
+		if err != nil {
+			if errors.IsNotFound(err) && caRef.Optional != nil && *caRef.Optional {
+				return nil, nil
+			}
+
+			return nil, err
+		}
+
+		return []byte(cm.Data[caRef.Key]), nil
+	default:
+		panic("unsupported CA reference kind")
+	}
 }
 
 // CreateOrUpdateNode ensures a node in LINSTOR matches the given node object.

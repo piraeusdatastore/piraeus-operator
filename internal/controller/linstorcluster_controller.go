@@ -349,7 +349,7 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 			secretName = "linstor-controller-internal-tls"
 		}
 
-		p, err := ClusterLinstorInternalTLSPatch(secretName)
+		p, err := ClusterLinstorInternalTLSPatch(secretName, lcluster.Spec.InternalTLS.CAReference)
 		if err != nil {
 			return nil, err
 		}
@@ -371,7 +371,7 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		apiSecretName := lcluster.Spec.ApiTLS.GetApiSecretName()
 		clientSecretName := lcluster.Spec.ApiTLS.GetClientSecretName()
 
-		p, err := ClusterApiTLSPatch(apiSecretName, clientSecretName)
+		p, err := ClusterApiTLSPatch(apiSecretName, clientSecretName, lcluster.Spec.ApiTLS.CAReference)
 		if err != nil {
 			return nil, err
 		}
@@ -458,7 +458,7 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 	if lcluster.Spec.ApiTLS != nil {
 		controllerSecret := lcluster.Spec.ApiTLS.GetCsiControllerSecretName()
 
-		p, err := ClusterCSIControllerApiTLSPatch(controllerSecret)
+		p, err := ClusterCSIControllerApiTLSPatch(controllerSecret, lcluster.Spec.ApiTLS.CAReference)
 		if err != nil {
 			return nil, err
 		}
@@ -529,7 +529,7 @@ func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusio
 	if lcluster.Spec.ApiTLS != nil {
 		nodeSecret := lcluster.Spec.ApiTLS.GetCsiNodeSecretName()
 
-		p, err := ClusterCSINodeApiTLSPatch(nodeSecret)
+		p, err := ClusterCSINodeApiTLSPatch(nodeSecret, lcluster.Spec.ApiTLS.CAReference)
 		if err != nil {
 			return nil, err
 		}
@@ -636,9 +636,11 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 		Value: lcluster.Spec.Repository,
 	}
 
-	clientSecret := ""
+	var clientSecret string
+	var caReference *piraeusiov1.CAReference
 	if lcluster.Spec.ApiTLS != nil {
 		clientSecret = lcluster.Spec.ApiTLS.GetClientSecretName()
+		caReference = lcluster.Spec.ApiTLS.CAReference
 	}
 	clusterRefPatch := utils.JsonPatch{
 		Op:   utils.Replace,
@@ -647,6 +649,7 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 			Name:               lcluster.Name,
 			ClientSecretName:   clientSecret,
 			ExternalController: lcluster.Spec.ExternalController,
+			CAReference:        caReference,
 		},
 	}
 
@@ -740,8 +743,10 @@ func (r *LinstorClusterReconciler) kustomLabels(lcluster *piraeusiov1.LinstorClu
 }
 
 func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, conds conditions.Conditions) error {
-	clientSecret := ""
+	var caRef *piraeusiov1.CAReference
+	var clientSecret string
 	if lcluster.Spec.ApiTLS != nil {
+		caRef = lcluster.Spec.ApiTLS.CAReference
 		clientSecret = lcluster.Spec.ApiTLS.GetClientSecretName()
 	}
 
@@ -751,6 +756,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		r.Namespace,
 		lcluster.Name,
 		clientSecret,
+		caRef,
 		lcluster.Spec.ExternalController,
 		append(
 			slices.Clone(r.LinstorClientOpts),

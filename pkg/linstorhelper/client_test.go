@@ -182,7 +182,7 @@ func TestNewClientForCluster(t *testing.T) {
 			t.Parallel()
 
 			k8scl := fake.NewClientBuilder().WithObjects(testcase.existingObjs...).WithScheme(testScheme).Build()
-			actual, err := linstorhelper.NewClientForCluster(context.Background(), k8scl, "test", "test-cluster", testcase.existingSecret, testcase.externalRef)
+			actual, err := linstorhelper.NewClientForCluster(context.Background(), k8scl, "test", "test-cluster", testcase.existingSecret, nil, testcase.externalRef)
 			assert.NoError(t, err)
 
 			if testcase.expectedNoClient {

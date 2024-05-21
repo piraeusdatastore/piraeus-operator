@@ -195,7 +195,7 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 			secretName = lsatellite.Name + "-tls"
 		}
 
-		p, err := SatelliteLinstorInternalTLSPatch(secretName)
+		p, err := SatelliteLinstorInternalTLSPatch(secretName, lsatellite.Spec.InternalTLS.CAReference)
 		if err != nil {
 			return nil, err
 		}
@@ -296,6 +296,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		r.Namespace,
 		lsatellite.Spec.ClusterRef.Name,
 		lsatellite.Spec.ClusterRef.ClientSecretName,
+		lsatellite.Spec.ClusterRef.CAReference,
 		lsatellite.Spec.ClusterRef.ExternalController,
 		append(
 			slices.Clone(r.LinstorClientOpts),
@@ -507,6 +508,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		r.Namespace,
 		lsatellite.Spec.ClusterRef.Name,
 		lsatellite.Spec.ClusterRef.ClientSecretName,
+		lsatellite.Spec.ClusterRef.CAReference,
 		lsatellite.Spec.ClusterRef.ExternalController,
 		append(
 			slices.Clone(r.LinstorClientOpts),

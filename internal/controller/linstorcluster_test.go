@@ -312,7 +312,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			var controllerDeployment appsv1.Deployment
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
 			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-controller-internal-tls")))
+			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-controller-internal-tls")))))
 		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 	})
 
@@ -378,8 +378,8 @@ var _ = Describe("LinstorCluster controller", func() {
 			var controllerDeployment appsv1.Deployment
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
 			g.Expect(err).NotTo(HaveOccurred())
-			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-api-tls")))
-			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Secret.SecretName", "my-client-tls")))
+			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-api-tls")))))
+			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-client-tls")))))
 		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 
 		csiEnvCheck := func(g Gomega, container *corev1.Container, secretName string) {
