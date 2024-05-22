@@ -379,7 +379,7 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		patches = append(patches, p...)
 
 		if lcluster.Spec.ApiTLS.CertManager != nil {
-			resourceDirs = append(resourceDirs, "controller/cert-manager/api", "client-cert")
+			resourceDirs = append(resourceDirs, "controller/cert-manager/api", "controller/cert-manager/api-client")
 
 			serviceNames := []string{
 				fmt.Sprintf("linstor-controller.%s.svc", r.Namespace),

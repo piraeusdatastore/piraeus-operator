@@ -8,5 +8,7 @@ spec:
     name: FILLME
   secretName: linstor-csi-controller-tls
   commonName: linstor-csi-controller
+  dnsNames:
+  - linstor-csi-controller
   usages:
     - "client auth"
