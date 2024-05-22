@@ -8,5 +8,7 @@ spec:
     name: FILLME
   secretName: linstor-client-tls
   commonName: linstor-client
+  dnsNames:
+  - linstor-client
   usages:
     - "client auth"
