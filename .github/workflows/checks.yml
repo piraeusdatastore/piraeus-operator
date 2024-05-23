@@ -31,6 +31,12 @@ jobs:
         with:
           go-version: '1.22'
       - uses: actions/setup-python@v5
+      - name: Cache envtest assets
+        uses: actions/cache@v4
+        with:
+          key: envtest-base
+          path: |
+            bin/k8s
       - name: Run pre-commit checks on changes files
         uses: pre-commit/action@v3.0.1
   compat-tests:
@@ -40,6 +46,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+      - name: Cache envtest assets
+        uses: actions/cache@v4
+        with:
+          key: envtest-compat
+          path: |
+            bin/k8s
       - name: Run compat test
         run: |
           make compat-test

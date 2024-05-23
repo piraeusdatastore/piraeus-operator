@@ -117,7 +117,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: compat-test
 compat-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_COMPAT_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use --use-deprecated-gcs $(ENVTEST_K8S_COMPAT_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
 
 ##@ Build
 
