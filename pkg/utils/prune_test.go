@@ -19,6 +19,16 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )
 
+func MustResource(resmap map[string]any) *resource.Resource {
+	factory := provider.NewDefaultDepProvider().GetResourceFactory()
+	res, err := factory.FromMap(resmap)
+	if err != nil {
+		panic(err)
+	}
+
+	return res
+}
+
 var (
 	Owner = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -65,15 +75,15 @@ var (
 		},
 	}
 
-	factory   = provider.NewDefaultDepProvider().GetResourceFactory()
-	AppliedS1 = factory.FromMap(map[string]interface{}{
+	AppliedS1 = MustResource(map[string]interface{}{
 		"apiVersion": "v1",
 		"kind":       "ServiceAccount",
 		"metadata": map[string]interface{}{
 			"name": "sa1",
 		},
 	})
-	AppliedS2 = factory.FromMap(map[string]interface{}{
+
+	AppliedS2 = MustResource(map[string]interface{}{
 		"apiVersion": "v1",
 		"kind":       "ServiceAccount",
 		"metadata": map[string]interface{}{
