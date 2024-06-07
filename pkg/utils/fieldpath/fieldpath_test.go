@@ -20,16 +20,18 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/exp/slices"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestExtractFieldPathAsString(t *testing.T) {
+func TestExtractFieldPath(t *testing.T) {
 	cases := []struct {
 		name                    string
 		fieldPath               string
 		obj                     interface{}
-		expectedValue           string
+		expectedValues          []string
+		expectedKeys            []string
 		expectedMessageFragment string
 	}{
 		{
@@ -46,7 +48,7 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Namespace: "object-namespace",
 				},
 			},
-			expectedValue: "object-namespace",
+			expectedValues: []string{"object-namespace"},
 		},
 		{
 			name:      "ok - name",
@@ -56,7 +58,7 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Name: "object-name",
 				},
 			},
-			expectedValue: "object-name",
+			expectedValues: []string{"object-name"},
 		},
 		{
 			name:      "ok - labels",
@@ -66,7 +68,8 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Labels: map[string]string{"key": "value"},
 				},
 			},
-			expectedValue: "key=\"value\"",
+			expectedKeys:   []string{"key"},
+			expectedValues: []string{"value"},
 		},
 		{
 			name:      "ok - labels bslash n",
@@ -76,7 +79,8 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Labels: map[string]string{"key": "value\n"},
 				},
 			},
-			expectedValue: "key=\"value\\n\"",
+			expectedKeys:   []string{"key"},
+			expectedValues: []string{"value\n"},
 		},
 		{
 			name:      "ok - annotations",
@@ -86,7 +90,8 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Annotations: map[string]string{"builder": "john-doe"},
 				},
 			},
-			expectedValue: "builder=\"john-doe\"",
+			expectedKeys:   []string{"builder"},
+			expectedValues: []string{"john-doe"},
 		},
 		{
 			name:      "ok - annotation",
@@ -96,7 +101,7 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Annotations: map[string]string{"spec.pod.beta.kubernetes.io/statefulset-index": "1"},
 				},
 			},
-			expectedValue: "1",
+			expectedValues: []string{"1"},
 		},
 		{
 			name:      "ok - annotation",
@@ -106,7 +111,7 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					Annotations: map[string]string{"Www.k8s.io/test": "1"},
 				},
 			},
-			expectedValue: "1",
+			expectedValues: []string{"1"},
 		},
 		{
 			name:      "ok - uid",
@@ -116,7 +121,7 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					UID: "b70b3269-858e-12a8-9cf2-1232a194038a",
 				},
 			},
-			expectedValue: "b70b3269-858e-12a8-9cf2-1232a194038a",
+			expectedValues: []string{"b70b3269-858e-12a8-9cf2-1232a194038a"},
 		},
 		{
 			name:      "ok - label",
@@ -128,7 +133,63 @@ func TestExtractFieldPathAsString(t *testing.T) {
 					},
 				},
 			},
-			expectedValue: "label value",
+			expectedValues: []string{"label value"},
+		},
+		{
+			name:      "ok - non-existant",
+			fieldPath: "metadata.annotations['something-else']",
+			obj: &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"something": "value",
+					},
+				},
+			},
+		},
+		{
+			name:      "ok - multivalue",
+			fieldPath: "metadata.labels['example.com/*']",
+			obj: &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"something":       "label value",
+						"example.com/foo": "foobar",
+						"example.com/baz": "bazbar",
+					},
+				},
+			},
+			expectedKeys:   []string{"baz", "foo"},
+			expectedValues: []string{"bazbar", "foobar"},
+		},
+		{
+			name:      "ok - multivalue - empty value",
+			fieldPath: "metadata.labels['example.com/*']",
+			obj: &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"something":       "label value",
+						"example.com/foo": "",
+						"example.com/baz": "bazbar",
+					},
+				},
+			},
+			expectedKeys:   []string{"baz", "foo"},
+			expectedValues: []string{"bazbar", ""},
+		},
+		{
+			name:      "ok - multivalue - non-nil keys on no match",
+			fieldPath: "metadata.labels['sub.example.com/*']",
+			obj: &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"something":       "label value",
+						"example.com/foo": "",
+						"example.com/baz": "bazbar",
+					},
+				},
+			},
+			expectedKeys:   []string{},
+			expectedValues: []string{},
 		},
 		{
 			name:      "invalid expression",
@@ -169,7 +230,7 @@ func TestExtractFieldPathAsString(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		actual, err := ExtractFieldPathAsString(tc.obj, tc.fieldPath)
+		actual, matched, err := ExtractFieldPath(tc.obj, tc.fieldPath)
 		if err != nil {
 			if tc.expectedMessageFragment != "" {
 				if !strings.Contains(err.Error(), tc.expectedMessageFragment) {
@@ -180,8 +241,18 @@ func TestExtractFieldPathAsString(t *testing.T) {
 			}
 		} else if tc.expectedMessageFragment != "" {
 			t.Errorf("%v: expected error: %v", tc.name, tc.expectedMessageFragment)
-		} else if e := tc.expectedValue; e != "" && e != actual {
-			t.Errorf("%v: unexpected result; got %q, expected %q", tc.name, actual, e)
+		}
+
+		if !slices.Equal(matched, tc.expectedKeys) {
+			t.Errorf("%v: unexpected keys; got %q, expected %q", tc.name, matched, tc.expectedKeys)
+		}
+
+		if tc.expectedKeys != nil && matched == nil {
+			t.Errorf("%v: expected non-nil keys; got nil", tc.name)
+		}
+
+		if !slices.Equal(actual, tc.expectedValues) {
+			t.Errorf("%v: unexpected result; got %q, expected %q", tc.name, actual, tc.expectedValues)
 		}
 	}
 }

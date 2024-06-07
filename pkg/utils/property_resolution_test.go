@@ -17,8 +17,11 @@ func TestResolveNodeProperties(t *testing.T) {
 	fakeNode := &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"label1": "labelval1",
-				"label2": "labelval2",
+				"label1":                                "labelval1",
+				"label2":                                "labelval2",
+				"node-role.kubernetes.io/control-plane": "cp",
+				"node-role.kubernetes.io/worker":        "w",
+				"node-role.kubernetes.io/test":          "",
 			},
 			Annotations: map[string]string{
 				"annotation1": "annotationval1",
@@ -57,6 +60,12 @@ func TestResolveNodeProperties(t *testing.T) {
 				NodeFieldRef: "metadata.annotations['annotation2']",
 			},
 		},
+		piraeusiov1.LinstorNodeProperty{
+			Name: "role/$1",
+			ValueFrom: &piraeusiov1.LinstorNodePropertyValueFrom{
+				NodeFieldRef: "metadata.labels['node-role.kubernetes.io/*']",
+			},
+		},
 	)
 
 	assert.NoError(t, err)
@@ -65,6 +74,9 @@ func TestResolveNodeProperties(t *testing.T) {
 		"prop2":                     "labelval1",
 		"non-existing-non-optional": "",
 		"prop3":                     "annotationval2",
+		"role/control-plane":        "cp",
+		"role/worker":               "w",
+		"role/test":                 "",
 	}, result)
 }
 

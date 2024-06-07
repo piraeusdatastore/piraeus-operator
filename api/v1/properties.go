@@ -1,9 +1,14 @@
 package v1
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils/fieldpath"
 )
 
 type LinstorControllerProperty struct {
@@ -52,6 +57,17 @@ func ValidateNodeProperties(props []LinstorNodeProperty, path *field.Path) field
 		fromSet := p.ValueFrom != nil
 		if valSet == fromSet {
 			result = append(result, field.Invalid(path.Child(strconv.Itoa(i)), p, "Expected exactly one of 'value' and 'valueFrom' to be set"))
+		}
+
+		if fromSet {
+			_, keys, err := fieldpath.ExtractFieldPath(&corev1.Node{}, p.ValueFrom.NodeFieldRef)
+			if err != nil {
+				result = append(result, field.Invalid(path.Child(strconv.Itoa(i), "valueFrom", "nodeFieldRef"), p.ValueFrom.NodeFieldRef, fmt.Sprintf("Invalid reference format: %s", err)))
+			}
+
+			if keys != nil && !strings.Contains(p.Name, "$1") {
+				result = append(result, field.Invalid(path.Child(strconv.Itoa(i), "name"), p.Name, "Wildcard property requires replacement target `$1` in name"))
+			}
 		}
 	}
 
