@@ -62,6 +62,10 @@ The property value can either be set directly using `value`, or inherited from t
 `valueFrom`. Metadata fields are specified using the same syntax as the [Downward API](https://kubernetes.io/docs/concepts/workloads/pods/downward-api)
 for Pods.
 
+A special case is using `valueFrom` with a reference path ending in a `*` character. This copies all keys and values
+that match the given pattern. The property name must contain the special `$1` string, which gets replaced by the part of
+the key matching the `*` character.
+
 In addition, setting `optional` to true means the property is only applied if the value is not empty. This is useful
 in case the property value should be inherited from the node's metadata
 
@@ -74,6 +78,8 @@ This examples sets three Properties on every satellite:
 * `AutoplaceTarget` (if set to `no`, will exclude the node from LINSTOR's Autoplacer) takes the value from the
   `piraeus.io/autoplace` annotation of the Kubernetes Node. If a node has no `piraeus.io/autoplace` annotation, the
   property will not be set.
+* `Aux/role/$1` copies all "node-role.kubernetes.io/*" label keys and values. For example, a worker node with the
+  `node-role.kubernetes.io/worker: "true"` label will have the `Aux/role/worker` set to `"true"`.
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -91,6 +97,9 @@ spec:
       valueFrom:
         nodeFieldRef: metadata.annotations['piraeus.io/autoplace']
       optional: yes
+    - name: Aux/role/$1
+      valueFrom:
+        nodeFieldRef: metadata.labels['node-role.kubernetes.io/*']
 ```
 
 ### `.spec.storagePools`

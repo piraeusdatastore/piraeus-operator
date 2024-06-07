@@ -180,4 +180,31 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(warningHandler).To(HaveLen(1))
 		Expect(warningHandler[0].text).To(ContainSubstring("consider targeting the DaemonSet 'linstor-satellite'"))
 	})
+
+	It("should reject wildcard properties without replacement target", func(ctx context.Context) {
+		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "wildcard-properties"},
+			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+				Properties: []piraeusv1.LinstorNodeProperty{
+					{
+						Name:      "missing-target-name",
+						ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.annotations['example.com/*']"},
+					},
+					{
+						Name:      "invalid-reference",
+						ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "something random"},
+					},
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).To(HaveOccurred())
+		statusErr := err.(*errors.StatusError)
+		Expect(statusErr).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
+		Expect(statusErr.ErrStatus.Details.Causes[0].Field).To(Equal("spec.properties.0.name"))
+		Expect(statusErr.ErrStatus.Details.Causes[1].Field).To(Equal("spec.properties.1.valueFrom.nodeFieldRef"))
+	})
 })

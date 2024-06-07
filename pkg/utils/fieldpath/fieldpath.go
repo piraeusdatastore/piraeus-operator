@@ -20,66 +20,103 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
-// FormatMap formats map[string]string to a string.
-func FormatMap(m map[string]string) (fmtStr string) {
-	// output with keys in sorted order to provide stable output
-	keys := sets.NewString()
-	for key := range m {
-		keys.Insert(key)
-	}
-	for _, key := range keys.List() {
-		fmtStr += fmt.Sprintf("%v=%q\n", key, m[key])
-	}
-	fmtStr = strings.TrimSuffix(fmtStr, "\n")
-
-	return
-}
-
-// ExtractFieldPathAsString extracts the field from the given object
-// and returns it as a string.  The object must be a pointer to an
-// API type.
-func ExtractFieldPathAsString(obj interface{}, fieldPath string) (string, error) {
+// ExtractFieldPath extracts the field(s) from the given object
+// and returns the value as string, along with the expanded value of any
+// wildcard values.
+//
+// If a wildcard path was given, keys is not nil.
+func ExtractFieldPath(obj interface{}, fieldPath string) ([]string, []string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
 
 	if path, subscript, ok := SplitMaybeSubscriptedPath(fieldPath); ok {
 		switch path {
 		case "metadata.annotations":
+			if strings.HasSuffix(subscript, "*") {
+				keys, vals := mapToSlices(filterPrefix(accessor.GetAnnotations(), subscript[:len(subscript)-1]))
+				return vals, keys, nil
+			}
+
 			if errs := validation.IsQualifiedName(strings.ToLower(subscript)); len(errs) != 0 {
-				return "", fmt.Errorf("invalid key subscript in %s: %s", fieldPath, strings.Join(errs, ";"))
+				return nil, nil, fmt.Errorf("invalid key subscript in %s: %s", fieldPath, strings.Join(errs, ";"))
 			}
-			return accessor.GetAnnotations()[subscript], nil
+
+			val, ok := accessor.GetAnnotations()[subscript]
+			if ok {
+				return []string{val}, nil, nil
+			}
+
+			return nil, nil, nil
 		case "metadata.labels":
-			if errs := validation.IsQualifiedName(subscript); len(errs) != 0 {
-				return "", fmt.Errorf("invalid key subscript in %s: %s", fieldPath, strings.Join(errs, ";"))
+			if strings.HasSuffix(subscript, "*") {
+				keys, vals := mapToSlices(filterPrefix(accessor.GetLabels(), subscript[:len(subscript)-1]))
+				return vals, keys, nil
 			}
-			return accessor.GetLabels()[subscript], nil
+
+			if errs := validation.IsQualifiedName(subscript); len(errs) != 0 {
+				return nil, nil, fmt.Errorf("invalid key subscript in %s: %s", fieldPath, strings.Join(errs, ";"))
+			}
+
+			val, ok := accessor.GetLabels()[subscript]
+			if ok {
+				return []string{val}, nil, nil
+			}
+
+			return nil, nil, nil
 		default:
-			return "", fmt.Errorf("fieldPath %q does not support subscript", fieldPath)
+			return nil, nil, fmt.Errorf("fieldPath %q does not support subscript", fieldPath)
 		}
 	}
 
 	switch fieldPath {
 	case "metadata.annotations":
-		return FormatMap(accessor.GetAnnotations()), nil
+		keys, values := mapToSlices(accessor.GetAnnotations())
+		return values, keys, nil
 	case "metadata.labels":
-		return FormatMap(accessor.GetLabels()), nil
+		keys, values := mapToSlices(accessor.GetLabels())
+		return values, keys, nil
 	case "metadata.name":
-		return accessor.GetName(), nil
+		return []string{accessor.GetName()}, nil, nil
 	case "metadata.namespace":
-		return accessor.GetNamespace(), nil
+		return []string{accessor.GetNamespace()}, nil, nil
 	case "metadata.uid":
-		return string(accessor.GetUID()), nil
+		return []string{string(accessor.GetUID())}, nil, nil
 	}
 
-	return "", fmt.Errorf("unsupported fieldPath: %v", fieldPath)
+	return nil, nil, fmt.Errorf("unsupported fieldPath: %v", fieldPath)
+}
+
+// filterPrefix returns all key-values where the key has the prefix.
+// The new key will be the rest of the key.
+func filterPrefix(m map[string]string, prefix string) map[string]string {
+	result := map[string]string{}
+	for k, v := range m {
+		if strings.HasPrefix(k, prefix) {
+			result[k[len(prefix):]] = v
+		}
+	}
+
+	return result
+}
+
+func mapToSlices(m map[string]string) ([]string, []string) {
+	keys := maps.Keys(m)
+	slices.Sort(keys)
+
+	values := make([]string, 0, len(keys))
+	for _, key := range keys {
+		values = append(values, m[key])
+	}
+
+	return keys, values
 }
 
 // SplitMaybeSubscriptedPath checks whether the specified fieldPath is

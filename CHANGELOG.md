@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support wildcard patterns when referencing property values from node labels and annotations.
+
 ## [v2.5.2] - 2024-07-17
 
 ### Added

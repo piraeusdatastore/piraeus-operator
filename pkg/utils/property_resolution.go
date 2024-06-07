@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"fmt"
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 
 	v1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
@@ -15,13 +18,24 @@ func ResolveNodeProperties(node *corev1.Node, props ...v1.LinstorNodeProperty) (
 		case props[i].Value != "":
 			result[k] = props[i].Value
 		case props[i].ValueFrom != nil && props[i].ValueFrom.NodeFieldRef != "":
-			val, err := fieldpath.ExtractFieldPathAsString(node, props[i].ValueFrom.NodeFieldRef)
+			vals, keys, err := fieldpath.ExtractFieldPath(node, props[i].ValueFrom.NodeFieldRef)
 			if err != nil {
 				return nil, err
 			}
 
-			if !props[i].Optional || val != "" {
-				result[k] = val
+			if keys != nil && !strings.Contains(k, "$1") {
+				return nil, fmt.Errorf("property name '%s' does not contain placeholder '$1'", k)
+			}
+
+			if keys != nil {
+				for i, key := range keys {
+					newK := strings.ReplaceAll(k, "$1", key)
+					result[newK] = vals[i]
+				}
+			} else if len(vals) > 0 {
+				result[k] = vals[0]
+			} else if !props[i].Optional {
+				result[k] = ""
 			}
 		}
 	}
