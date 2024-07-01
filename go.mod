@@ -5,14 +5,14 @@ go 1.22.0
 toolchain go1.22.2
 
 require (
-	github.com/LINBIT/golinstor v0.52.1
-	github.com/cert-manager/cert-manager v1.15.0
+	github.com/LINBIT/golinstor v0.52.2
+	github.com/cert-manager/cert-manager v1.15.1
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
-	github.com/piraeusdatastore/linstor-csi v1.6.2
+	github.com/piraeusdatastore/linstor-csi v1.6.3
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/time v0.5.0
@@ -65,7 +65,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.54.0 // indirect
+	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
