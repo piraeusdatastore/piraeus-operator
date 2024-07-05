@@ -42,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -941,7 +942,7 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Service{}).
-		Owns(&corev1.ServiceAccount{}).
+		Owns(&corev1.ServiceAccount{}, builder.WithPredicates(OnlyExistencePredicate)).
 		Owns(&rbacv1.ClusterRole{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.Role{}).
@@ -963,6 +964,13 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		).
 		WithOptions(opts).
 		Complete(r)
+}
+
+var OnlyExistencePredicate = predicate.Funcs{
+	CreateFunc:  func(e event.CreateEvent) bool { return true },
+	DeleteFunc:  func(e event.TypedDeleteEvent[client.Object]) bool { return true },
+	UpdateFunc:  func(e event.UpdateEvent) bool { return false },
+	GenericFunc: func(e event.TypedGenericEvent[client.Object]) bool { return false },
 }
 
 func (r *LinstorClusterReconciler) allClustersRequests(ctx context.Context, _ client.Object) []reconcile.Request {
