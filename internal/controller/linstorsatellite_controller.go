@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"strings"
 	"time"
 
@@ -70,6 +72,11 @@ type LinstorSatelliteReconciler struct {
 	Kustomizer         *resources.Kustomizer
 	log                logr.Logger
 }
+
+const (
+	NodeEvacuationTaint = "piraeus.io/evacuate"
+	NodeEvacuationProp  = "Aux/EvacuatedFromNode"
+)
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites/status,verbs=get;update;patch
@@ -397,8 +404,194 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		} else {
 			conds.AddSuccess(conditions.Configured, "Pools configured")
 		}
+
+		err = r.reconcileNodeEvacuation(ctx, lc, lsatellite, node, conds)
+		if err != nil {
+			conds.AddError(conditions.Configured, err)
+		}
 	} else {
 		conds.AddError(conditions.Available, fmt.Errorf("satellite not online"))
+	}
+
+	return nil
+}
+
+func (r *LinstorSatelliteReconciler) isMarkedForEvacuation(node *corev1.Node) bool {
+	for _, taint := range node.Spec.Taints {
+		if taint.Key == NodeEvacuationTaint {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *LinstorSatelliteReconciler) reconcileNodeEvacuation(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node, conds conditions.Conditions) error {
+	if r.isMarkedForEvacuation(node) {
+		return r.evacuateNode(ctx, lc, lsatellite, node, conds)
+	} else {
+		return r.undoNodeEvacuation(ctx, lc, lsatellite, node)
+	}
+}
+
+// evacuateNode prepares a node for deletion, essentially making sure that the resources which reside
+// on the node are replicated elsewhere to maintain data availability when the node is taken down.
+// The node is also no longer considered a target for autoplacement after the taint is applied.
+func (r *LinstorSatelliteReconciler) evacuateNode(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node, conds conditions.Conditions) error {
+	isNodeFullyEvacuated := true
+
+	// Add node properties to prevent new resources from being placed on the node.
+	err := lc.Nodes.Modify(ctx, lsatellite.Name, lclient.NodeModify{GenericPropsModify: lclient.GenericPropsModify{
+		OverrideProps: map[string]string{
+			"AutoplaceTarget": "false",
+		},
+	}})
+
+	if err != nil {
+		return err
+	}
+
+	nodeResources, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+		Node: []string{node.Name},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	//get all resources that contain NodeEvacuation property
+	evacuatedResources, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+		Prop: []string{NodeEvacuationProp},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	findMatchingEvacuatedResource := func(nodeRes lclient.ResourceWithVolumes) *lclient.ResourceWithVolumes {
+		for _, evacuatedRes := range evacuatedResources {
+			if utils.IsDisklessResource(evacuatedRes) {
+				continue
+			}
+			if nodeRes.Name == evacuatedRes.Name && evacuatedRes.Props[NodeEvacuationProp] == node.Name {
+				return &evacuatedRes
+			}
+		}
+		return nil
+	}
+
+	for _, res := range nodeResources {
+		if utils.IsDisklessResource(res) {
+			continue
+		}
+
+		matchingEvacRes := findMatchingEvacuatedResource(res)
+		if matchingEvacRes != nil {
+			_, isEvacuatedFromOtherNode := res.Props[NodeEvacuationProp]
+			if isEvacuatedFromOtherNode && utils.IsUpToDateResource(res) {
+				err = lc.Resources.Modify(ctx, matchingEvacRes.Name, matchingEvacRes.NodeName, lclient.GenericPropsModify{
+					OverrideProps: map[string]string{
+						NodeEvacuationProp: res.Props[NodeEvacuationProp],
+					},
+				})
+				if err != nil {
+					return err
+				}
+				err = lc.Resources.Delete(ctx, res.Name, res.NodeName)
+				if err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
+		isNodeFullyEvacuated = false
+
+		err = lc.Resources.Autoplace(ctx, res.Name, lclient.AutoPlaceRequest{SelectFilter: lclient.AutoSelectFilter{
+			AdditionalPlaceCount: 1,
+		}})
+
+		if err != nil {
+			return err
+		}
+
+		allReplicas, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+			Resource: []string{res.Name},
+		})
+
+		if err != nil && err != lclient.NotFoundError {
+			return err
+		}
+
+		for _, replica := range allReplicas {
+			if replica.CreateTimestamp.After(res.CreateTimestamp.Time) {
+				// Add a property to the new replica to indicate that it's a replacement for the original resource.
+				err = lc.Resources.Modify(ctx, replica.Name, replica.NodeName, lclient.GenericPropsModify{
+					OverrideProps: map[string]string{
+						NodeEvacuationProp: node.Name,
+					},
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if isNodeFullyEvacuated {
+		conds.AddSuccess("EvacuationCompleted", "evacuation complete")
+	}
+
+	return nil
+}
+
+// undoNodeEvacuation reverses the preparation done by evacuateNode. In cases where the new replica is in use,
+// the original resource is deleted instead. The node is also considered a target for autoplacement again.
+// ToDo: We should remove the EvacuationCompleted status after the undo process is complete
+func (r *LinstorSatelliteReconciler) undoNodeEvacuation(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
+	res, err := lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+		Prop: []string{NodeEvacuationProp},
+	})
+
+	for _, resource := range res {
+		if resource.State == nil || resource.State.InUse == nil {
+			continue
+		}
+		// If an evacuated resource is in use, it means we can delete the original resource.
+		// We also update the resource properties to remove the NodeEvacuationProp
+		// as we've just deleted the original resource it was pointing to.
+		if *resource.State.InUse {
+			err = lc.Resources.Delete(ctx, resource.Name, resource.Props[NodeEvacuationProp])
+			if err != nil && err != lclient.NotFoundError {
+				return err
+			}
+
+			err = lc.Resources.Modify(ctx, resource.Name, resource.NodeName, lclient.GenericPropsModify{
+				DeleteProps: []string{
+					NodeEvacuationProp,
+				},
+			})
+			continue
+		}
+
+		// We need to make sure we don't delete the TieBreaker resource as it will
+		// disable the auto-quorum feature for the resource definition.
+		if resource.Props[NodeEvacuationProp] == node.Name && !utils.IsTieBreakerResource(resource) {
+			err = lc.Resources.Delete(ctx, resource.Name, resource.NodeName)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	err = lc.Nodes.Modify(ctx, lsatellite.Name, lclient.NodeModify{GenericPropsModify: lclient.GenericPropsModify{
+		DeleteProps: []string{
+			"AutoplaceTarget",
+		},
+	}})
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -544,6 +737,20 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		return fmt.Errorf("remaining resources: %s", strings.Join(resNames, ", "))
 	}
 
+	ress, err = lc.Resources.GetResourceView(ctx, &lclient.ListOpts{
+		Prop: []string{NodeEvacuationProp},
+	})
+
+	for _, resource := range ress {
+		if resource.Props[NodeEvacuationProp] == lsatellite.Name {
+			err = lc.Resources.Modify(ctx, resource.Name, resource.NodeName, lclient.GenericPropsModify{
+				DeleteProps: []string{
+					NodeEvacuationProp,
+				},
+			})
+		}
+	}
+
 	err = lc.Nodes.Delete(ctx, lsatellite.Name)
 	if err != nil && err != lapi.NotFoundError {
 		return err
@@ -575,6 +782,20 @@ func (r *LinstorSatelliteReconciler) kustomLabels(uuid types.UID, instance strin
 	}
 }
 
+// taintsChangedPredicate is used to detect changes in Node's taints
+func taintsChangedPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldNode, ok1 := e.ObjectOld.(*corev1.Node)
+			newNode, ok2 := e.ObjectNew.(*corev1.Node)
+			if ok1 && ok2 {
+				return !reflect.DeepEqual(oldNode.Spec.Taints, newNode.Spec.Taints)
+			}
+			return false
+		},
+	}
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	kustomizer, err := resources.NewKustomizer(&satellite.Resources, krusty.MakeDefaultOptions())
@@ -599,7 +820,12 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: object.GetName()}}}
 			}),
-			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+			builder.WithPredicates(
+				predicate.Or(predicate.GenerationChangedPredicate{},
+					predicate.LabelChangedPredicate{},
+					predicate.AnnotationChangedPredicate{},
+					taintsChangedPredicate(),
+				))).
 		Watches(
 			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.allSatelliteRequests),

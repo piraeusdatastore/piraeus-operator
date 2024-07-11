@@ -1,5 +1,13 @@
 #!/bin/sh -e
 
 echo ' {{ if .Values.installCRDs }}'
-find ./config/crd/bases -type f | sort | xargs --no-run-if-empty cat
+
+# Find and sort the files
+files=$(find ./config/crd/bases -type f | sort)
+
+# Check if files are empty
+if [ -n "$files" ]; then
+    cat $files
+fi
+
 echo '{{ end }}'
