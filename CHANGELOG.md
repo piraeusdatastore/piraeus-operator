@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Option to specify custom CA certificate resources for TLS configuration.
 - Ensure all Certificate resources have `dnsNames` set.
 
+### Changed
+
+- Updated images:
+  * LINSTOR 1.28.0
+  * LINSTOR CSI 1.6.3
+  * DRBD 9.2.10
+  * DRBD Reactor 1.4.1
+  * kTLS-utils 0.11
+  * Latest CSI sidecars
+
 ### Fixed
 
 - The operator will no longer restart reconciliation on every change to `ServiceAccount` resources.
