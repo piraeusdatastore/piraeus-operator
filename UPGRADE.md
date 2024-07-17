@@ -10,7 +10,7 @@ To upgrade, apply the resource of the latest release. Use the same method that w
 To upgrade to the latest release using `kubectl`, run the following commands:
 
 ```
-$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.5.1"
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.5.2"
 $ kubectl wait pod --for=condition=Ready -n piraeus-datastore --all
 ```
 

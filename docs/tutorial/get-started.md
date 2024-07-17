@@ -15,7 +15,7 @@ All resources needed to run Piraeus Operator are included in a single Kustomizat
 Install Piraeus Operator by running:
 
 ```bash
-$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.5.1"
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.5.2"
 namespace/piraeus-datastore configured
 ...
 ```
