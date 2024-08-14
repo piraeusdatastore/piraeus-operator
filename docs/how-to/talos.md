@@ -14,13 +14,12 @@ By default, the DRBD Module Loader will try to find the necessary header files t
 
 Ensure Talos has the correct `drbd` [system extension](https://github.com/siderolabs/extensions) loaded for the running Kernel.
 
-This can be achieved by updating the machine config:
+This is done by building a install image from the [talos factory](https://factory.talos.dev) with drbd included
+
+You will also need to update the machine config to set the following kernel paramaiters:
 
 ```yaml
 machine:
-  install:
-    extensions:
-      - image: ghcr.io/siderolabs/drbd:9.2.0-v1.3.6
   kernel:
     modules:
       - name: drbd
@@ -28,7 +27,6 @@ machine:
           - usermode_helper=disabled
       - name: drbd_transport_tcp
 ```
-**NOTE**: Replace `v1.3.6` with the Talos version running.
 
 Validate `drbd` module is loaded:
 ```shell
