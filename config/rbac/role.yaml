@@ -10,6 +10,7 @@ rules:
   - configmaps
   - events
   - persistentvolumes
+  - pods
   - secrets
   - serviceaccounts
   - services
@@ -20,28 +21,6 @@ rules:
   - list
   - patch
   - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - pods
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
   - watch
 - apiGroups:
   - ""
@@ -63,14 +42,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - pods
-  verbs:
-  - delete
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods/eviction
   verbs:
   - create
@@ -78,18 +49,6 @@ rules:
   - apiextensions.k8s.io
   resources:
   - customresourcedefinitions
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - daemonsets
   verbs:
   - create
   - delete
@@ -157,73 +116,7 @@ rules:
   - piraeus.io
   resources:
   - linstorclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - piraeus.io
-  resources:
-  - linstorclusters/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - piraeus.io
-  resources:
-  - linstorclusters/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - piraeus.io
-  resources:
   - linstornodeconnections
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - piraeus.io
-  resources:
-  - linstornodeconnections/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - piraeus.io
-  resources:
-  - linstornodeconnections/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - piraeus.io
-  resources:
-  - linstorsatelliteconfigurations
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - piraeus.io
-  resources:
-  - linstorsatelliteconfigurations/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - piraeus.io
-  resources:
   - linstorsatellites
   verbs:
   - create
@@ -236,17 +129,30 @@ rules:
 - apiGroups:
   - piraeus.io
   resources:
+  - linstorclusters/finalizers
+  - linstornodeconnections/finalizers
   - linstorsatellites/finalizers
   verbs:
   - update
 - apiGroups:
   - piraeus.io
   resources:
+  - linstorclusters/status
+  - linstornodeconnections/status
+  - linstorsatelliteconfigurations/status
   - linstorsatellites/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - piraeus.io
+  resources:
+  - linstorsatelliteconfigurations
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -301,6 +207,7 @@ rules:
   - storage.k8s.io
   resources:
   - csidrivers
+  - csistoragecapacities
   verbs:
   - create
   - delete
@@ -317,18 +224,6 @@ rules:
   - get
   - list
   - patch
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - csistoragecapacities
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - storage.k8s.io

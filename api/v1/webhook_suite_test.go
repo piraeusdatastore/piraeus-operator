@@ -88,7 +88,7 @@ var _ = BeforeSuite(func(_ context.Context) {
 	//+kubebuilder:scaffold:scheme
 
 	cfg.WarningHandler = &warningHandler
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme, WarningHandler: client.WarningHandlerOptions{SuppressWarnings: true}})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 

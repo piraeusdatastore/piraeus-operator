@@ -930,7 +930,7 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 	r.Kustomizer = kustomizer
 
 	if opts.RateLimiter == nil {
-		opts.RateLimiter = DefaultRateLimiter()
+		opts.RateLimiter = DefaultRateLimiter[reconcile.Request]()
 	}
 
 	r.APIVersion = utils.NewAPIVersionFromConfigWithFallback(mgr.GetConfig(), &vars.FallbackAPIVersion)
@@ -953,7 +953,7 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		).
 		Watches(
 			&piraeusiov1.LinstorSatelliteConfiguration{}, handler.EnqueueRequestsFromMapFunc(r.allClustersRequests),
-			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{})),
+			builder.WithPredicates(predicate.Or[client.Object](predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{})),
 		).
 		Watches(
 			&corev1.ConfigMap{},

@@ -584,7 +584,7 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 	r.Kustomizer = kustomizer
 
 	if opts.RateLimiter == nil {
-		opts.RateLimiter = DefaultRateLimiter()
+		opts.RateLimiter = DefaultRateLimiter[reconcile.Request]()
 	}
 
 	r.log = mgr.GetLogger().WithName("LinstorSatelliteReconciler")
@@ -592,14 +592,14 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorSatellite{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&corev1.ConfigMap{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
-		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
+		Owns(&corev1.ConfigMap{}, builder.WithPredicates(predicate.Or[client.Object](predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
+		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.Or[client.Object](predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}))).
 		Watches(
 			&corev1.Node{},
 			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, object client.Object) []reconcile.Request {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: object.GetName()}}}
 			}),
-			builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+			builder.WithPredicates(predicate.Or[client.Object](predicate.GenerationChangedPredicate{}, predicate.LabelChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
 		Watches(
 			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.allSatelliteRequests),
