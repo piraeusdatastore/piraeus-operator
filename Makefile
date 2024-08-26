@@ -116,7 +116,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: compat-test
-compat-test: manifests generate fmt vet envtest ## Run tests.
+compat-test: manifests generate fmt vet envtest-compat ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use --use-deprecated-gcs $(ENVTEST_K8S_COMPAT_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
 
 ##@ Build
@@ -174,6 +174,7 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+ENVTEST_COMPAT ?= $(LOCALBIN)/setup-envtest-compat
 YQ ?= $(LOCALBIN)/yq
 
 ## Tool Versions
@@ -207,7 +208,12 @@ $(YQ): $(LOCALBIN)
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	test -s $@ || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: envtest-compat
+envtest-compat: $(ENVTEST_COMPAT) ## Download envtest-setup locally if necessary.
+$(ENVTEST_COMPAT): $(LOCALBIN)
+	test -s $@ || GOBIN=$(LOCALBIN) go install -installsuffix -compat sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.17
 
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
