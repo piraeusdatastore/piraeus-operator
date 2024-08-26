@@ -26,7 +26,6 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -38,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 
@@ -119,9 +119,9 @@ var _ = BeforeSuite(func() {
 
 	// Increase the requeue rate limit to make tests faster and more stable
 	opts := crtController.Options{
-		RateLimiter: workqueue.NewMaxOfRateLimiter(
-			workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1*time.Second),
-			&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+		RateLimiter: workqueue.NewTypedWithMaxWaitRateLimiter(
+			workqueue.DefaultTypedControllerRateLimiter[reconcile.Request](),
+			1*time.Second,
 		),
 	}
 
