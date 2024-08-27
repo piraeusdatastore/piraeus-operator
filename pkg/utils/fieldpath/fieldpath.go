@@ -30,6 +30,7 @@ import (
 // and returns the value as string, along with the expanded value of any
 // wildcard values.
 //
+// Multiple keys and values are guaranteed to be sorted in key order.
 // If a wildcard path was given, keys is not nil.
 func ExtractFieldPath(obj interface{}, fieldPath string) ([]string, []string, error) {
 	accessor, err := meta.Accessor(obj)
