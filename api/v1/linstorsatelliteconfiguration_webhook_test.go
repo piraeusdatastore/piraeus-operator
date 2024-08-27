@@ -181,19 +181,27 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(warningHandler[0].text).To(ContainSubstring("consider targeting the DaemonSet 'linstor-satellite'"))
 	})
 
-	It("should reject wildcard properties without replacement target", func(ctx context.Context) {
+	It("should reject invalid property sources", func(ctx context.Context) {
 		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
 			TypeMeta:   typeMeta,
 			ObjectMeta: metav1.ObjectMeta{Name: "wildcard-properties"},
 			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 				Properties: []piraeusv1.LinstorNodeProperty{
 					{
-						Name:      "missing-target-name",
+						Name:      "use-of-wildcard-value-from",
 						ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.annotations['example.com/*']"},
 					},
 					{
 						Name:      "invalid-reference",
 						ValueFrom: &piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "something random"},
+					},
+					{
+						Name:       "no-wild-card-in-expand-from",
+						ExpandFrom: &piraeusv1.LinstorNodePropertyExpandFrom{LinstorNodePropertyValueFrom: piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.annotations['example.com/foo']"}},
+					},
+					{
+						Name:       "both-name-template-and-delimiter",
+						ExpandFrom: &piraeusv1.LinstorNodePropertyExpandFrom{LinstorNodePropertyValueFrom: piraeusv1.LinstorNodePropertyValueFrom{NodeFieldRef: "metadata.annotations['example.com/*']"}, NameTemplate: "$1", Delimiter: ","},
 					},
 				},
 			},
@@ -203,8 +211,10 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		statusErr := err.(*errors.StatusError)
 		Expect(statusErr).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
-		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
-		Expect(statusErr.ErrStatus.Details.Causes[0].Field).To(Equal("spec.properties.0.name"))
+		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(4))
+		Expect(statusErr.ErrStatus.Details.Causes[0].Field).To(Equal("spec.properties.0.valueFrom.nodeFieldRef"))
 		Expect(statusErr.ErrStatus.Details.Causes[1].Field).To(Equal("spec.properties.1.valueFrom.nodeFieldRef"))
+		Expect(statusErr.ErrStatus.Details.Causes[2].Field).To(Equal("spec.properties.2.expandFrom.nodeFieldRef"))
+		Expect(statusErr.ErrStatus.Details.Causes[3].Field).To(Equal("spec.properties.3.expandFrom"))
 	})
 })

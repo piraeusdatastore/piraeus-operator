@@ -993,6 +993,38 @@ spec:
                 description: Properties is a list of properties to set on the node.
                 items:
                   properties:
+                    expandFrom:
+                      description: |-
+                        ExpandFrom can reference multiple resource fields at once.
+                        It either sets the property to an aggregate value based on matched resource fields, or expands to multiple
+                        properties.
+                      properties:
+                        delimiter:
+                          description: Delimiter used to join multiple key and value
+                            pairs together.
+                          type: string
+                        nameTemplate:
+                          description: |-
+                            NameTemplate defines how the property key is expanded.
+                            If set, the template is appended to the defined property name, creating multiple properties instead of one
+                            aggregate.
+                            * $1 is replaced with the matched key.
+                            * $2 is replaced with the matched value.
+                          type: string
+                        nodeFieldRef:
+                          description: Select a field of the node. Supports `metadata.name`,
+                            `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`.
+                          minLength: 1
+                          type: string
+                        valueTemplate:
+                          description: |-
+                            ValueTemplate defines how the property value is expanded.
+                            * $1 is replaced with the matched key.
+                            * $2 is replaced with the matched value.
+                          type: string
+                      required:
+                      - nodeFieldRef
+                      type: object
                     name:
                       description: Name of the property to set.
                       minLength: 1
@@ -1069,6 +1101,38 @@ spec:
                       description: Properties to set on the storage pool.
                       items:
                         properties:
+                          expandFrom:
+                            description: |-
+                              ExpandFrom can reference multiple resource fields at once.
+                              It either sets the property to an aggregate value based on matched resource fields, or expands to multiple
+                              properties.
+                            properties:
+                              delimiter:
+                                description: Delimiter used to join multiple key and
+                                  value pairs together.
+                                type: string
+                              nameTemplate:
+                                description: |-
+                                  NameTemplate defines how the property key is expanded.
+                                  If set, the template is appended to the defined property name, creating multiple properties instead of one
+                                  aggregate.
+                                  * $1 is replaced with the matched key.
+                                  * $2 is replaced with the matched value.
+                                type: string
+                              nodeFieldRef:
+                                description: Select a field of the node. Supports
+                                  `metadata.name`, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`.
+                                minLength: 1
+                                type: string
+                              valueTemplate:
+                                description: |-
+                                  ValueTemplate defines how the property value is expanded.
+                                  * $1 is replaced with the matched key.
+                                  * $2 is replaced with the matched value.
+                                type: string
+                            required:
+                            - nodeFieldRef
+                            type: object
                           name:
                             description: Name of the property to set.
                             minLength: 1
@@ -1418,6 +1482,38 @@ spec:
                 description: Properties is a list of properties to set on the node.
                 items:
                   properties:
+                    expandFrom:
+                      description: |-
+                        ExpandFrom can reference multiple resource fields at once.
+                        It either sets the property to an aggregate value based on matched resource fields, or expands to multiple
+                        properties.
+                      properties:
+                        delimiter:
+                          description: Delimiter used to join multiple key and value
+                            pairs together.
+                          type: string
+                        nameTemplate:
+                          description: |-
+                            NameTemplate defines how the property key is expanded.
+                            If set, the template is appended to the defined property name, creating multiple properties instead of one
+                            aggregate.
+                            * $1 is replaced with the matched key.
+                            * $2 is replaced with the matched value.
+                          type: string
+                        nodeFieldRef:
+                          description: Select a field of the node. Supports `metadata.name`,
+                            `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`.
+                          minLength: 1
+                          type: string
+                        valueTemplate:
+                          description: |-
+                            ValueTemplate defines how the property value is expanded.
+                            * $1 is replaced with the matched key.
+                            * $2 is replaced with the matched value.
+                          type: string
+                      required:
+                      - nodeFieldRef
+                      type: object
                     name:
                       description: Name of the property to set.
                       minLength: 1
@@ -1497,6 +1593,38 @@ spec:
                       description: Properties to set on the storage pool.
                       items:
                         properties:
+                          expandFrom:
+                            description: |-
+                              ExpandFrom can reference multiple resource fields at once.
+                              It either sets the property to an aggregate value based on matched resource fields, or expands to multiple
+                              properties.
+                            properties:
+                              delimiter:
+                                description: Delimiter used to join multiple key and
+                                  value pairs together.
+                                type: string
+                              nameTemplate:
+                                description: |-
+                                  NameTemplate defines how the property key is expanded.
+                                  If set, the template is appended to the defined property name, creating multiple properties instead of one
+                                  aggregate.
+                                  * $1 is replaced with the matched key.
+                                  * $2 is replaced with the matched value.
+                                type: string
+                              nodeFieldRef:
+                                description: Select a field of the node. Supports
+                                  `metadata.name`, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`.
+                                minLength: 1
+                                type: string
+                              valueTemplate:
+                                description: |-
+                                  ValueTemplate defines how the property value is expanded.
+                                  * $1 is replaced with the matched key.
+                                  * $2 is replaced with the matched value.
+                                type: string
+                            required:
+                            - nodeFieldRef
+                            type: object
                           name:
                             description: Name of the property to set.
                             minLength: 1

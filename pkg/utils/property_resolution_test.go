@@ -61,22 +61,47 @@ func TestResolveNodeProperties(t *testing.T) {
 			},
 		},
 		piraeusiov1.LinstorNodeProperty{
-			Name: "role/$1",
-			ValueFrom: &piraeusiov1.LinstorNodePropertyValueFrom{
-				NodeFieldRef: "metadata.labels['node-role.kubernetes.io/*']",
+			Name: "role/",
+			ExpandFrom: &piraeusiov1.LinstorNodePropertyExpandFrom{
+				LinstorNodePropertyValueFrom: piraeusiov1.LinstorNodePropertyValueFrom{
+					NodeFieldRef: "metadata.labels['node-role.kubernetes.io/*']",
+				},
+				NameTemplate:  "$1",
+				ValueTemplate: "$2",
+			},
+		},
+		piraeusiov1.LinstorNodeProperty{
+			Name: "joined-role",
+			ExpandFrom: &piraeusiov1.LinstorNodePropertyExpandFrom{
+				LinstorNodePropertyValueFrom: piraeusiov1.LinstorNodePropertyValueFrom{
+					NodeFieldRef: "metadata.labels['node-role.kubernetes.io/*']",
+				},
+				ValueTemplate: "$1=$2",
+				Delimiter:     ",",
+			},
+		},
+		piraeusiov1.LinstorNodeProperty{
+			Name: "joined-role-without-delimiter",
+			ExpandFrom: &piraeusiov1.LinstorNodePropertyExpandFrom{
+				LinstorNodePropertyValueFrom: piraeusiov1.LinstorNodePropertyValueFrom{
+					NodeFieldRef: "metadata.labels['node-role.kubernetes.io/*']",
+				},
+				ValueTemplate: "$1",
 			},
 		},
 	)
 
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{
-		"prop1":                     "direct-val",
-		"prop2":                     "labelval1",
-		"non-existing-non-optional": "",
-		"prop3":                     "annotationval2",
-		"role/control-plane":        "cp",
-		"role/worker":               "w",
-		"role/test":                 "",
+		"prop1":                         "direct-val",
+		"prop2":                         "labelval1",
+		"non-existing-non-optional":     "",
+		"prop3":                         "annotationval2",
+		"role/control-plane":            "cp",
+		"role/worker":                   "w",
+		"role/test":                     "",
+		"joined-role":                   "control-plane=cp,test=,worker=w",
+		"joined-role-without-delimiter": "control-planetestworker",
 	}, result)
 }
 
