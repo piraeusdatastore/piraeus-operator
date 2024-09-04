@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support wildcard patterns when referencing property values from node labels and annotations.
 
+### Changed
+
+- Updated images:
+  * LINSTOR 1.29.0
+  * DRBD 9.2.11
+  * Latest CSI Sidecars
+
 ## [v2.5.2] - 2024-07-17
 
 ### Added
