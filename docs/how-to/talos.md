@@ -16,7 +16,7 @@ Ensure Talos has the correct `drbd` [system extension](https://github.com/sidero
 
 This is done by building a install image from the [talos factory](https://factory.talos.dev) with drbd included
 
-You will also need to update the machine config to set the following kernel paramaiters:
+You will also need to update the machine config to set the following kernel module parameters:
 
 ```yaml
 machine:
