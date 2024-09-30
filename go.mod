@@ -1,9 +1,6 @@
 module github.com/piraeusdatastore/piraeus-operator/v2
 
 go 1.22.0
-
-toolchain go1.22.2
-
 require (
 	github.com/LINBIT/golinstor v0.52.2
 	github.com/cert-manager/cert-manager v1.15.3
@@ -23,7 +20,7 @@ require (
 	k8s.io/component-helpers v0.31.1
 	sigs.k8s.io/controller-runtime v0.19.0
 	sigs.k8s.io/kustomize/api v0.17.3
-	sigs.k8s.io/kustomize/kyaml v0.17.2
+	sigs.k8s.io/kustomize/kyaml v0.18.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -73,7 +70,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
-	go.starlark.net v0.0.0-20230925163745-10651d5192ab // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
