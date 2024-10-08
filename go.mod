@@ -1,6 +1,7 @@
 module github.com/piraeusdatastore/piraeus-operator/v2
 
-go 1.22.0
+go 1.22.7
+
 toolchain go1.22.8
 
 require (
@@ -21,7 +22,7 @@ require (
 	k8s.io/client-go v0.31.1
 	k8s.io/component-helpers v0.31.1
 	sigs.k8s.io/controller-runtime v0.19.0
-	sigs.k8s.io/kustomize/api v0.17.3
+	sigs.k8s.io/kustomize/api v0.17.4-0.20240923205205-d32eacf034de
 	sigs.k8s.io/kustomize/kyaml v0.18.0
 	sigs.k8s.io/yaml v1.4.0
 )
