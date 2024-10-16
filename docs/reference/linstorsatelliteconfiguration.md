@@ -146,13 +146,17 @@ the matching key. Available types are:
 Optionally, you can configure LINSTOR to automatically create the backing pools. `source.hostDevices` takes a list
 of raw block devices, which LINSTOR will prepare as the chosen backing pool.
 
+All storage pools also can also be configured with `properties`. Properties are set on the Storage Pool level. The
+configuration values have the same form as [Satellite Properties](#specproperties).
+
 #### Example
 
 This example configures these LINSTOR Storage Pools on all satellites:
 * A LVM Pool named `vg1`. It will use the VG `vg1`, which needs to exist on the nodes already.
 * A LVM Thin Pool named `vg1-thin`. It will use the thin pool `vg1/thin`, which also needs to exist on the nodes.
 * A LVM Pool named `vg2-from-raw-devices`. It will use the VG `vg2`, which will be created on demand from the raw
-  devices `/dev/sdb` and `/dev/sdc` if it does not exist already.
+  devices `/dev/sdb` and `/dev/sdc` if it does not exist already. In addition, it sets the `StorDriver/LvcreateOptions`
+  property to `-i 2`, which causes every created LV to be striped across 2 PVs.
 * A File System Pool named `fs1`. It will use the `/var/lib/linstor-pools/fs1` directory on the host, creating the
   directory if necessary.
 * A File System Pool named `fs2`, using sparse files. It will use the custom `/mnt/data` directory on the host.
@@ -180,6 +184,9 @@ spec:
         hostDevices:
           - /dev/sdb
           - /dev/sdc
+      properties:
+        - name: StorDriver/LvcreateOptions
+          value: '-i 2'
     - name: fs1
       filePool: {}
     - name: fs2
