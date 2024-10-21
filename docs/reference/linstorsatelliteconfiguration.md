@@ -259,6 +259,31 @@ spec:
       name: piraeus-root
 ```
 
+### `.spec.ipFamilies`
+
+Configures the IP Family (IPv4 or IPv6) to use to connect to the LINSTOR Satellite.
+
+If unset, the LINSTOR Controller will attempt to reach the LINSTOR Satellite via all recognized addresses in the
+Satellite Pods' Status.
+If set, the LINSTOR Controller will only attempt to reach the LINSTOR Satellite via all addresses matching the listed
+IP Families.
+
+Valid values are `IPv4` and `IPv6`.
+
+#### Example
+
+This example configures the LINSTOR Controller to only use IPv4, even in a dual stack cluster.
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: ipv4-only
+spec:
+  ipFamilies:
+  - IPv4
+```
+
 ### `.spec.podTemplate`
 
 Configures the Pod used to run the LINSTOR Satellite.

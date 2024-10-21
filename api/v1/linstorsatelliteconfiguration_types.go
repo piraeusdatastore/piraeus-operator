@@ -64,6 +64,13 @@ type LinstorSatelliteConfigurationSpec struct {
 	// +nullable
 	InternalTLS *TLSConfigWithHandshakeDaemon `json:"internalTLS,omitempty"`
 
+	// IPFamilies configures the IP Family (IPv4 or IPv6) to use to connect to the LINSTOR Satellite.
+	//
+	// If set, the control traffic between LINSTOR Controller and Satellite will use only the given IP Family.
+	// If not set, the Operator will configure all families found in the Satellites Pods' Status.
+	// +kubebuilder:validation:Optional
+	IPFamilies []IPFamily `json:"ipFamilies,omitempty"`
+
 	// Template to apply to Satellite Pods.
 	//
 	// The template is applied as a patch to the default resource, so it can be "sparse", not listing any

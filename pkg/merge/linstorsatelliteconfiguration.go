@@ -58,6 +58,10 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 		if cfg.Spec.InternalTLS != nil {
 			result.Spec.InternalTLS = cfg.Spec.InternalTLS
 		}
+
+		if cfg.Spec.IPFamilies != nil {
+			result.Spec.IPFamilies = cfg.Spec.IPFamilies
+		}
 	}
 
 	for _, v := range propsMap {

@@ -55,6 +55,13 @@ type LinstorSatelliteSpec struct {
 	// + Without "nullable" the k8s API does not accept patches with 'internalTLS: {}', which seems to be a bug.
 	// +nullable
 	InternalTLS *TLSConfigWithHandshakeDaemon `json:"internalTLS,omitempty"`
+
+	// IPFamilies configures the IP Family (IPv4 or IPv6) to use to connect to the LINSTOR Satellite.
+	//
+	// If set, the control traffic between LINSTOR Controller and Satellite will use only the given IP Family.
+	// If not set, the Operator will configure all families found in the Satellites Pods' Status.
+	// +kubebuilder:validation:Optional
+	IPFamilies []IPFamily `json:"ipFamilies,omitempty"`
 }
 
 // LinstorSatelliteStatus defines the observed state of LinstorSatellite
