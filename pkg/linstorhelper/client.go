@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,8 +12,10 @@ import (
 	"sync"
 	"time"
 
+	linstor "github.com/LINBIT/golinstor"
 	lapicache "github.com/LINBIT/golinstor/cache"
 	lapi "github.com/LINBIT/golinstor/client"
+	"golang.org/x/exp/slices"
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -218,6 +221,13 @@ func caReferenceToCert(ctx context.Context, caRef *piraeusv1.CAReference, namesp
 
 // CreateOrUpdateNode ensures a node in LINSTOR matches the given node object.
 func (c *Client) CreateOrUpdateNode(ctx context.Context, node lapi.Node) (*lapi.Node, error) {
+	props, err := appliedInterfaceAnnotation(&node)
+	if err != nil {
+		return nil, err
+	}
+
+	node.Props[NodeInterfaceProperty] = props
+
 	existingNode, err := c.Nodes.Get(ctx, node.Name)
 	if err != nil {
 		// For 404
@@ -254,6 +264,26 @@ func (c *Client) CreateOrUpdateNode(ctx context.Context, node lapi.Node) (*lapi.
 		}
 	}
 
+	managedNics := managedInterfaces(&existingNode)
+	for _, existingNic := range existingNode.NetInterfaces {
+		if !slices.Contains(managedNics, existingNic.Name) {
+			// Not managed by Operator
+			continue
+		}
+
+		if slices.ContainsFunc(node.NetInterfaces, func(netInterface lapi.NetInterface) bool {
+			return netInterface.Name == existingNic.Name
+		}) {
+			// Interface should exist, do not delete
+			continue
+		}
+
+		err := c.Nodes.DeleteNetinterface(ctx, node.Name, existingNic.Name)
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete network interface %s: %w", existingNic.Name, err)
+		}
+	}
+
 	return &existingNode, nil
 }
 
@@ -275,4 +305,44 @@ func (c *Client) ensureWantedInterface(ctx context.Context, node lapi.Node, want
 
 	// Interface was not found, creating it now
 	return c.Nodes.CreateNetInterface(ctx, node.Name, wanted)
+}
+
+func appliedInterfaceAnnotation(node *lapi.Node) (string, error) {
+	result := make([]string, 0, len(node.NetInterfaces))
+
+	for _, iface := range node.NetInterfaces {
+		result = append(result, iface.Name)
+	}
+
+	slices.Sort(result)
+	b, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode node interfaces: %w", err)
+	}
+
+	return string(b), nil
+}
+
+var (
+	// defaultManagedInterfaces is the interface names used by the Operator, used if no current node property is found.
+	// Operator v1 used "default"
+	// Operator v2 uses "default-ipv4" and "default-ipv6"
+	defaultManagedInterfaces = []string{"default", "default-ipv4", "default-ipv6"}
+
+	NodeInterfaceProperty = linstor.NamespcAuxiliary + "/" + vars.NodeInterfaceAnnotation
+)
+
+func managedInterfaces(node *lapi.Node) []string {
+	val, ok := node.Props[NodeInterfaceProperty]
+	if !ok {
+		return defaultManagedInterfaces
+	}
+
+	var result []string
+	err := json.Unmarshal([]byte(val), &result)
+	if err != nil {
+		return defaultManagedInterfaces
+	}
+
+	return result
 }

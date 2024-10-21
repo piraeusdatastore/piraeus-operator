@@ -9,14 +9,18 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
 	"testing"
 
+	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/google/go-cmp/cmp"
+	"github.com/piraeusdatastore/linstor-csi/pkg/client/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -246,4 +250,133 @@ func testTlsConfig(t *testing.T) (*tls.Config, map[string][]byte) {
 			"tls.key": pemKey,
 			"tls.crt": pemCert,
 		}
+}
+
+func TestCreateOrUpdateNode(t *testing.T) {
+	t.Parallel()
+
+	sampleNode := lapi.Node{
+		Name: "node1",
+		Props: map[string]string{
+			"ExampleProp1":                      "val1",
+			linstorhelper.LastApplyProperty:     `["` + linstorhelper.NodeInterfaceProperty + `","ExampleProp1"]`,
+			linstorhelper.NodeInterfaceProperty: `["default-ipv4"]`,
+		},
+		NetInterfaces: []lapi.NetInterface{{
+			Name:          "default-ipv4",
+			Address:       net.IPv4(127, 0, 0, 1),
+			SatellitePort: linstor.DfltStltPortPlain,
+		}},
+	}
+
+	testcases := []struct {
+		name       string
+		node       lapi.Node
+		setupCalls func(t *testing.T) lapi.NodeProvider
+	}{
+		{
+			name: "new-node",
+			node: sampleNode,
+			setupCalls: func(t *testing.T) lapi.NodeProvider {
+				m := mocks.NewNodeProvider(t)
+				m.On("Get", mock.Anything, "node1").Return(lapi.Node{}, lapi.NotFoundError).Once()
+				m.On("Create", mock.Anything, sampleNode).Return(nil)
+				m.On("Get", mock.Anything, "node1").Return(sampleNode, nil)
+				return m
+			},
+		},
+		{
+			name: "existing-node",
+			node: sampleNode,
+			setupCalls: func(t *testing.T) lapi.NodeProvider {
+				m := mocks.NewNodeProvider(t)
+				m.On("Get", mock.Anything, "node1").Return(sampleNode, nil)
+				return m
+			},
+		},
+		{
+			name: "existing-node-with-updated-props-and-interfaces",
+			node: lapi.Node{
+				Name: "node1",
+				Props: map[string]string{
+					"ExampleProp1": "val2",
+				},
+				NetInterfaces: []lapi.NetInterface{{
+					Name:                    "default-ipv6",
+					Address:                 net.IPv6loopback,
+					SatelliteEncryptionType: "SSL",
+					SatellitePort:           linstor.DfltStltPortSsl,
+				}},
+			},
+			setupCalls: func(t *testing.T) lapi.NodeProvider {
+				m := mocks.NewNodeProvider(t)
+				m.On("Get", mock.Anything, "node1").Return(sampleNode, nil)
+				m.On("Modify", mock.Anything, "node1", lapi.NodeModify{
+					GenericPropsModify: lapi.GenericPropsModify{
+						OverrideProps: map[string]string{
+							"ExampleProp1":                      "val2",
+							linstorhelper.NodeInterfaceProperty: `["default-ipv6"]`,
+						},
+					},
+				}).Return(nil)
+				m.On("CreateNetInterface", mock.Anything, "node1", lapi.NetInterface{
+					Name:                    "default-ipv6",
+					Address:                 net.IPv6loopback,
+					SatelliteEncryptionType: "SSL",
+					SatellitePort:           linstor.DfltStltPortSsl,
+				}).Return(nil)
+				m.On("DeleteNetinterface", mock.Anything, "node1", "default-ipv4").Return(nil)
+				return m
+			},
+		},
+		{
+			name: "existing-node-without-interface-props",
+			node: sampleNode,
+			setupCalls: func(t *testing.T) lapi.NodeProvider {
+				m := mocks.NewNodeProvider(t)
+				m.On("Get", mock.Anything, "node1").Return(lapi.Node{
+					Name:  "node1",
+					Props: nil,
+					NetInterfaces: []lapi.NetInterface{
+						{
+							Name:          "default-ipv4",
+							Address:       net.IPv4(127, 0, 0, 1),
+							SatellitePort: linstor.DfltStltPortPlain,
+						},
+						{
+							Name:                    "default-ipv6",
+							Address:                 net.IPv6loopback,
+							SatelliteEncryptionType: "SSL",
+							SatellitePort:           linstor.DfltStltPortSsl,
+						},
+					},
+				}, nil)
+				m.On("Modify", mock.Anything, "node1", lapi.NodeModify{
+					GenericPropsModify: lapi.GenericPropsModify{
+						OverrideProps: map[string]string{
+							"ExampleProp1":                      "val1",
+							linstorhelper.LastApplyProperty:     `["` + linstorhelper.NodeInterfaceProperty + `","ExampleProp1"]`,
+							linstorhelper.NodeInterfaceProperty: `["default-ipv4"]`,
+						},
+					},
+				}).Return(nil)
+				m.On("DeleteNetinterface", mock.Anything, "node1", "default-ipv6").Return(nil)
+				return m
+			},
+		},
+	}
+
+	for i := range testcases {
+		test := &testcases[i]
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			lc := linstorhelper.Client{Client: lapi.Client{
+				Nodes: test.setupCalls(t),
+			}}
+
+			_, err := lc.CreateOrUpdateNode(context.Background(), test.node)
+			assert.NoError(t, err)
+		})
+	}
 }

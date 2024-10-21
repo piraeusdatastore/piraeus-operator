@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Option to select IP Family to use for LINSTOR control traffic.
 
+### Changed
+
+- Reconciliation of a Satellites network interfaces now also deletes unneeded interfaces.
+
 ## [v2.6.0] - 2024-09-04
 
 ### Added

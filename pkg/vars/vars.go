@@ -17,6 +17,7 @@ var (
 const (
 	FieldOwner              = Domain + "/operator"
 	ApplyAnnotation         = Domain + "/last-applied"
+	NodeInterfaceAnnotation = Domain + "/configured-interfaces"
 	ManagedByLabel          = Domain + "/managed-by"
 	SatelliteNodeLabel      = Domain + "/linstor-satellite"
 	SatelliteFinalizer      = Domain + "/satellite-protection"
