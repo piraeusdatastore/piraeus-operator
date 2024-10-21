@@ -666,6 +666,14 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 		})
 	}
 
+	if cfg.Spec.IPFamilies != nil {
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/spec/ipFamilies",
+			Value: cfg.Spec.IPFamilies,
+		})
+	}
+
 	for j := range cfg.Spec.Properties {
 		patches = append(patches, utils.JsonPatch{
 			Op:    utils.Add,

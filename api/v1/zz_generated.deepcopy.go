@@ -614,6 +614,11 @@ func (in *LinstorSatelliteConfigurationSpec) DeepCopyInto(out *LinstorSatelliteC
 		*out = new(TLSConfigWithHandshakeDaemon)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.IPFamilies != nil {
+		in, out := &in.IPFamilies, &out.IPFamilies
+		*out = make([]IPFamily, len(*in))
+		copy(*out, *in)
+	}
 	if in.PodTemplate != nil {
 		in, out := &in.PodTemplate, &out.PodTemplate
 		*out = make(json.RawMessage, len(*in))
@@ -714,6 +719,11 @@ func (in *LinstorSatelliteSpec) DeepCopyInto(out *LinstorSatelliteSpec) {
 		in, out := &in.InternalTLS, &out.InternalTLS
 		*out = new(TLSConfigWithHandshakeDaemon)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.IPFamilies != nil {
+		in, out := &in.IPFamilies, &out.IPFamilies
+		*out = make([]IPFamily, len(*in))
+		copy(*out, *in)
 	}
 }
 

@@ -349,16 +349,23 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 	for _, podIP := range pod.Status.PodIPs {
 		ip := net.ParseIP(podIP.IP)
 
+		var family piraeusiov1.IPFamily
 		var name string
 		switch {
 		case ip.To4() != nil:
 			name = "default-ipv4"
+			family = piraeusiov1.IPFamily(corev1.IPv4Protocol)
 		case ip.To16() != nil:
 			name = "default-ipv6"
+			family = piraeusiov1.IPFamily(corev1.IPv6Protocol)
 		default:
 			conds.AddError(conditions.Available, fmt.Errorf("unrecognized address format: %s", ip.String()))
 			conds.AddUnknown(conditions.Configured, "Node registration not up to date")
 			return nil
+		}
+
+		if len(lsatellite.Spec.IPFamilies) > 0 && !slices.Contains(lsatellite.Spec.IPFamilies, family) {
+			continue
 		}
 
 		encryptType := linstor.ValNetcomTypePlain
