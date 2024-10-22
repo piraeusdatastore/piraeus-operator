@@ -43,6 +43,7 @@ import (
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 	piraeuswebhook "github.com/piraeusdatastore/piraeus-operator/v2/internal/webhook"
+	webhookv1 "github.com/piraeusdatastore/piraeus-operator/v2/internal/webhook/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
@@ -138,18 +139,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)
 	}
-	if err = (&piraeusiov1.LinstorCluster{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorCluster")
-		os.Exit(1)
-	}
-	if err = (&piraeusiov1.LinstorSatellite{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatellite")
-		os.Exit(1)
-	}
-	if err = (&piraeusiov1.LinstorSatelliteConfiguration{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatelliteConfiguration")
-		os.Exit(1)
-	}
 	if err = (&controller.LinstorNodeConnectionReconciler{
 		Client:            mgr.GetClient(),
 		Scheme:            mgr.GetScheme(),
@@ -159,7 +148,19 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorNodeConnection")
 		os.Exit(1)
 	}
-	if err = (&piraeusiov1.LinstorNodeConnection{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = webhookv1.SetupLinstorClusterWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorCluster")
+		os.Exit(1)
+	}
+	if err = webhookv1.SetupLinstorSatelliteWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatellite")
+		os.Exit(1)
+	}
+	if err = webhookv1.SetupLinstorSatelliteConfigurationWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorSatelliteConfiguration")
+		os.Exit(1)
+	}
+	if err = webhookv1.SetupLinstorNodeConnectionWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "LinstorNodeConnection")
 		os.Exit(1)
 	}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/kustomize/api/hasher"
 	kustresource "sigs.k8s.io/kustomize/api/resource"
 	"sigs.k8s.io/yaml"
@@ -54,7 +53,7 @@ func (p *Patch) GetTarget() *Selector {
 		return p.Target
 	}
 
-	res, err := strategicMergePatchFromBytes([]byte(p.Patch))
+	res, err := p.GetStrategicMergePatch()
 	if err != nil {
 		return nil
 	}
@@ -68,25 +67,9 @@ func (p *Patch) GetTarget() *Selector {
 	}
 }
 
-func (p *Patch) validate(path *field.Path) field.ErrorList {
-	var result field.ErrorList
-
-	_, smErr := strategicMergePatchFromBytes([]byte(p.Patch))
-	_, jsErr := jsonPatchFromBytes([]byte(p.Patch))
-	if smErr != nil && jsErr != nil {
-		result = append(result, field.Invalid(path.Child("patch"), p.Patch, fmt.Sprintf("Failed to parse patch as either Strategic Merge Patch (%s) or JSON Patch (%s)", smErr, jsErr)))
-	}
-
-	if p.GetTarget() == nil {
-		result = append(result, field.Required(path.Child("target"), "Patch does not have a target and is not a valid Strategic Merge Patch"))
-	}
-
-	return result
-}
-
-func strategicMergePatchFromBytes(in []byte) (*kustresource.Resource, error) {
+func (p *Patch) GetStrategicMergePatch() (*kustresource.Resource, error) {
 	factory := kustresource.NewFactory(&hasher.Hasher{})
-	ress, err := factory.SliceFromBytes(in)
+	ress, err := factory.SliceFromBytes([]byte(p.Patch))
 	if err != nil {
 		return nil, err
 	}
@@ -98,21 +81,20 @@ func strategicMergePatchFromBytes(in []byte) (*kustresource.Resource, error) {
 	return ress[0], nil
 }
 
-// jsonPatchFromBytes loads a Json 6902 patch from a bytes input.
+// GetJsonPatch loads a JSON 6902 patch.
 // Taken from sigs.k8s.io/kustomize/api@v0.12.1/internal/builtins/PatchTransformer.go
-func jsonPatchFromBytes(in []byte) (jsonpatch.Patch, error) {
-	ops := string(in)
-	if ops == "" {
+func (p *Patch) GetJsonPatch() (jsonpatch.Patch, error) {
+	if p.Patch == "" {
 		return nil, fmt.Errorf("empty json patch operations")
 	}
 
-	if ops[0] != '[' {
-		jsonOps, err := yaml.YAMLToJSON(in)
+	if p.Patch[0] != '[' {
+		jsonOps, err := yaml.YAMLToJSON([]byte(p.Patch))
 		if err != nil {
 			return nil, err
 		}
-		ops = string(jsonOps)
+		p.Patch = string(jsonOps)
 	}
 
-	return jsonpatch.DecodePatch([]byte(ops))
+	return jsonpatch.DecodePatch([]byte(p.Patch))
 }

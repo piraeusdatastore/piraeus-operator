@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
+	v1 "github.com/piraeusdatastore/piraeus-operator/v2/internal/webhook/v1"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -65,10 +66,10 @@ var _ = BeforeSuite(func(_ context.Context) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: false,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
 	}
 
@@ -106,16 +107,16 @@ var _ = BeforeSuite(func(_ context.Context) {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&piraeusv1.LinstorCluster{}).SetupWebhookWithManager(mgr)
+	err = v1.SetupLinstorClusterWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&piraeusv1.LinstorSatellite{}).SetupWebhookWithManager(mgr)
+	err = v1.SetupLinstorSatelliteWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&piraeusv1.LinstorSatelliteConfiguration{}).SetupWebhookWithManager(mgr)
+	err = v1.SetupLinstorSatelliteConfigurationWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&piraeusv1.LinstorNodeConnection{}).SetupWebhookWithManager(mgr)
+	err = v1.SetupLinstorNodeConnectionWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
