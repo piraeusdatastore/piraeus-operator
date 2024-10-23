@@ -1,0 +1,5 @@
+api/v1/zz_generated.deepcopy.go linguist-generated
+config/crd/bases/* linguist-generated
+config/manifests/csv-resource-patch.yaml linguist-generated
+charts/piraeus/templates/config.yaml linguist-generated
+charts/piraeus/templates/crds.yaml linguist-generated
