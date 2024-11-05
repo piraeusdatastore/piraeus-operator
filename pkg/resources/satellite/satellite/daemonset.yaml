@@ -20,6 +20,7 @@ spec:
       enableServiceLinks: false
       serviceAccountName: satellite
       priorityClassName: system-node-critical
+      hostIPC: true
       initContainers:
         - name: drbd-module-loader
           image: drbd-module-loader
@@ -62,6 +63,36 @@ spec:
               name: run-drbd-shutdown-guard
             - mountPath: /run/dbus/system_bus_socket
               name: systemd-bus-socket
+        - name: setup-lvm-configuration
+          image: linstor-satellite
+          command:
+          - sh
+          - -exc
+          - |
+            if [ -e /host/etc/lvm/lvm.conf ]; then
+              # Looks like the host has LVM configured:
+              # * disable monitoring via dmeventd
+              # * do not look at DRBD devices
+              lvmconfig --type current --mergedconfig --config 'activation { monitoring = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf
+            else
+              # Most likely, no LVM installed, which also means no udev rules
+              # * disable udev sync and rules
+              # * do not look at udev for device lists
+              # * disable monitoring via dmeventd
+              # * do not look at DRBD devices
+              lvmconfig --type current --mergedconfig --config 'activation { udev_sync = 0 udev_rules = 0 monitoring = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] obtain_device_list_from_udev = 0}' > /etc/lvm/lvm.conf
+            fi
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - mountPath: /host/etc/lvm
+              name: etc-lvm
+              readOnly: true
+            - mountPath: /etc/lvm
+              name: container-etc-lvm
+            - mountPath: /run/udev
+              name: run-udev
       containers:
         - name: linstor-satellite
           image: linstor-satellite
@@ -95,6 +126,8 @@ spec:
               name: var-lib-drbd
             - mountPath: /var/lib/linstor.d
               name: var-lib-linstor-d
+            - mountPath: /etc/lvm
+              name: container-etc-lvm
             - mountPath: /etc/lvm/archive
               name: etc-lvm-archive
             - mountPath: /etc/lvm/backup
@@ -103,8 +136,10 @@ spec:
               name: run
             - mountPath: /tmp
               name: tmp
-            - mountPath: /run/lock
-              name: run-lock
+            - mountPath: /run/lock/lvm
+              name: run-lock-lvm
+            - mountPath: /run/lvm
+              name: run-lvm
             - mountPath: /run/udev
               name: run-udev
               readOnly: true
@@ -140,6 +175,10 @@ spec:
           hostPath:
             path: /etc/lvm/archive
             type: DirectoryOrCreate
+        - name: etc-lvm
+          hostPath:
+            path: /etc/lvm
+            type: DirectoryOrCreate
         - name: etc-lvm-backup
           hostPath:
             path: /etc/lvm/backup
@@ -164,6 +203,14 @@ spec:
           hostPath:
             path: /run/dbus/system_bus_socket
             type: Socket
+        - name: run-lock-lvm
+          hostPath:
+            path: /run/lock/lvm
+            type: DirectoryOrCreate
+        - name: run-lvm
+          hostPath:
+            path: /run/lvm
+            type: DirectoryOrCreate
         - name: run-udev
           hostPath:
             path: /run/udev
@@ -180,9 +227,9 @@ spec:
           configMap:
             name: reactor-config
             defaultMode: 0440
-        - name: tmp
+        - name: container-etc-lvm
           emptyDir: { }
-        - name: run-lock
+        - name: tmp
           emptyDir: { }
         - name: run
           emptyDir: { }

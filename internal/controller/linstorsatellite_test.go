@@ -80,9 +80,10 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			var ds appsv1.DaemonSet
 			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ds.Spec.Template.Spec.InitContainers).To(HaveLen(2))
+			Expect(ds.Spec.Template.Spec.InitContainers).To(HaveLen(3))
 			Expect(ds.Spec.Template.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
 			Expect(ds.Spec.Template.Spec.InitContainers[1].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd-shutdown-guard:"))
+			Expect(ds.Spec.Template.Spec.InitContainers[2].Image).To(ContainSubstring("quay.io/piraeusdatastore/piraeus-server:"))
 		})
 
 		It("should create pod with TLS secret", func(ctx context.Context) {
