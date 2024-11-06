@@ -45,7 +45,7 @@ data:
         # here. If one matches, that specific image name will be used instead of the fallback image.
         image: drbd9-noble # Fallback image: chose a recent kernel, which can hopefully compile whatever config is actually in use
         match:
-          - osImage: Red Hat Enterprise Linux 7\.
+          - osImage: Red Hat Enterprise Linux Server 7\.
             image: drbd9-centos7
           - osImage: Red Hat Enterprise Linux 8\.
             image: drbd9-almalinux8
