@@ -8,20 +8,20 @@ base: quay.io/piraeusdatastore
 #   quay.io/piraeusdatastore/piraeus-server:v1.24.2
 components:
   linstor-controller:
-    tag: v1.29.1
+    tag: v1.29.2
     image: piraeus-server
   linstor-satellite:
     # Pin with digest to ensure we pull the version with downgraded thin-send-recv
-    tag: v1.29.1
+    tag: v1.29.2
     image: piraeus-server
   linstor-csi:
-    tag: v1.6.3
+    tag: v1.6.4
     image: piraeus-csi
   drbd-reactor:
-    tag: v1.4.1
+    tag: v1.5.0
     image: drbd-reactor
   ha-controller:
-    tag: v1.2.1
+    tag: v1.2.2
     image: piraeus-ha-controller
   drbd-shutdown-guard:
     tag: v1.0.0

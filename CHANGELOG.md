@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Reconciliation of a Satellites network interfaces now also deletes unneeded interfaces.
+- Satellites use hosts LVM locks and udev rules if available.
+- Updated images:
+  * LINSTOR 1.29.2
+  * LINSTOR CSI 1.6.4
+  * DRBD Reactor 1.5.0
+  * LINSTOR HA Controller 1.2.2
 
 ## [v2.6.0] - 2024-09-04
 
