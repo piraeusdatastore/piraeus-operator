@@ -10,9 +10,24 @@ To upgrade, apply the resource of the latest release. Use the same method that w
 To upgrade to the latest release using `kubectl`, run the following commands:
 
 ```
-$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.6.0"
+$ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-operator//config/default?ref=v2.7.0"
 $ kubectl wait pod --for=condition=Ready -n piraeus-datastore --all
 ```
+
+# Upgrades from v2.6 to v2.7
+
+Generally, no special steps required.
+
+LINSTOR Satellites now try to automatically detect the LVM configuration on the host. Any patch targeting the Satellites
+/etc/lvm/lvm.conf file may need to be adapted.
+
+# Upgrades from v2.5 to v2.6
+
+No special steps required.
+
+# Upgrades from v2.4 to v2.5
+
+No special steps required.
 
 # Upgrades from v2.3 to v2.4
 

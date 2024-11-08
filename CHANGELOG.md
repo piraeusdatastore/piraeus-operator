@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.7.0] - 2024-11-11
 
 ### Added
 
@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Reconciliation of a Satellites network interfaces now also deletes unneeded interfaces.
-- Satellites use hosts LVM locks and udev rules if available.
+- Satellites try to detect the LVM configuration on the host, reusing locks and udev rules if available.
 - Updated images:
   * LINSTOR 1.29.2
   * LINSTOR CSI 1.6.4
@@ -905,4 +905,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v2.5.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.5.0...v2.5.1
 [v2.5.2]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.5.1...v2.5.2
 [v2.6.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.5.2...v2.6.0
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.6.0...HEAD
+[v2.7.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.6.0...v2.7.0
