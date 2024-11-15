@@ -75,7 +75,7 @@ created by appending an image identifier and tag.
 
 If empty (the default), Piraeus will use `quay.io/piraeusdatastore`.
 
-The current list of default images is available [here](../../config/manager/0_piraeus_datastore_images.yaml).
+The current list of default images is available [here](https://github.com/piraeus/config/manager/0_piraeus_datastore_images.yaml).
 
 #### Example
 
@@ -148,7 +148,7 @@ spec:
 The given patches will be applied to all resources controlled by the operator. The patches are
 forwarded to `kustomize` internally, and take the [same format](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/).
 
-The unpatched resources are available in the [subdirectories of the `pkg/resources` directory](../../pkg/resources).
+The unpatched resources are available in the [subdirectories of the `pkg/resources` directory](https://github.com/piraeusdatastore/piraeus-operator/tree/v2/pkg/resources/cluster).
 
 #### Warning
 

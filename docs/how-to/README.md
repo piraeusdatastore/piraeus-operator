@@ -1,35 +1,96 @@
 # How To
 
-These guides show you how to configure a specific aspect or achieve a specific task with Piraeus Operator.
+These guides show you how to configure a specific aspect or achieve a specific task with Piraeus Datastore.
 
-## Deployment
+## Advanced Deployments
+<div class="cards grid" markdown>
 
-* [How to Configure TLS Between LINSTOR Controller and LINSTOR Satellite](./internal-tls.md)
-* [How to Configure TLS for the LINSTOR API](./api-tls.md)
-* [How to Configure the DRBD Module Loader](./drbd-loader.md)
-* [How to Use an Existing LINSTOR Cluster](./external-controller.md)
-* [How to Deploy a NetworkPolicy for Piraeus Datastore](./network-policy.md)
-* [How to Use Piraeus Datastore with an HTTP Proxy](./http-proxy.md)
+*   Use Piraeus Datastore with an Existing LINSTOR Cluster
 
-## Deployment of Optional Components
+    [:octicons-arrow-right-24: Guide](./external-controller.md)
 
-* [How to Deploy the LINSTOR Affinity Controller](./linstor-affinity-controller.md)
-* [How to Deploy Monitoring with Prometheus Operator](./monitoring.md)
+*   Configure the DRBD Module Loader
 
-## Distribution Specific Deployment
+    [:octicons-arrow-right-24: Guide](./drbd-loader.md)
 
-* [How to Load DRBD on OpenShift](./openshift.md)
-* [How to Load DRBD on Talos Linux](./talos.md)
-* [How to Load DRBD on Flatcar Container Linux](./flatcar.md)
-* [How to Load DRBD with SecureBoot Enabled](./secure-boot.md)
-* [How to Configure Piraeus Datastore on MicroK8s](./microk8s.md)
-* [How to Configure Piraeus Datastore on k0s](./k0s.md)
+</div>
 
-## Configuration
+## Securing Components
+<div class="cards grid" markdown>
 
-* [How to Use the Host Network for DRBD Replication](./drbd-host-networking.md)
-* [How to Use Transport Layer Security for DRBD Replication](./drbd-tls.md)
+*   Configure TLS Between LINSTOR Controller and LINSTOR Satellite
 
-## Maintenance
+    [:octicons-arrow-right-24: Guide](./internal-tls.md)
 
-* [How to Restore a LINSTOR Database Backup](./restore-linstor-db.md)
+*   Configure TLS for the LINSTOR API
+
+    [:octicons-arrow-right-24: Guide](./api-tls.md)
+
+*   Configure TLS for DRBD Replication
+
+    [:octicons-arrow-right-24: Guide](./drbd-tls.md)
+
+*   Load DRBD with SecureBoot Enabled
+
+    [:octicons-arrow-right-24: Guide](./secure-boot.md)
+
+</div>
+
+## Kubernetes Distributions
+<div class="cards grid" markdown>
+
+*   Deploy Piraeus Datastore on OpenShift
+
+    [:octicons-arrow-right-24: Guide](./openshift.md)
+
+*   Deploy Piraeus Datastore on Talos Linux
+
+    [:octicons-arrow-right-24: Guide](./talos.md)
+
+*   Deploy Piraeus Datastore on Flatcar Container Linux
+
+    [:octicons-arrow-right-24: Guide](./flatcar.md)
+
+*   Deploy Piraeus Datastore on MicroK8s
+
+    [:octicons-arrow-right-24: Guide](./microk8s.md)
+
+*   Deploy Piraeus Datastore on k0s
+
+    [:octicons-arrow-right-24: Guide](./k0s.md)
+
+</div>
+
+## Networking
+<div class="cards grid" markdown>
+
+*   Deploy Piraeus Datastore behind an HTTP Proxy
+
+    [:octicons-arrow-right-24: Guide](./http-proxy.md)
+
+*   Deploy a NetworkPolicy for Piraeus Datastore
+
+    [:octicons-arrow-right-24: Guide](./network-policy.md)
+
+*   Use the Host Network for DRBD Replication
+
+    [:octicons-arrow-right-24: Guide](./drbd-host-networking.md)
+
+</div>
+
+## Maintenance Tasks
+<div class="cards grid" markdown>
+
+*   Monitor Piraeus Datastore with Prometheus Operator
+
+    [:octicons-arrow-right-24: Guide](./monitoring.md)
+
+*   Keep Persistent Volume Affinity Updated with LINSTOR Affinity Controller
+
+    [:octicons-arrow-right-24: Guide](./linstor-affinity-controller.md)
+
+*   Restore a LINSTOR Database Backup
+
+    [:octicons-arrow-right-24: Guide](./restore-linstor-db.md)
+
+</div>

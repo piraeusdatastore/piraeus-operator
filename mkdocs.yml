@@ -1,0 +1,146 @@
+site_name: Piraeus Datastore
+site_url: https://piraeus.io/docs/
+site_author: The Piraeus Maintainers
+site_description: >-
+  An easy-to-use cloud native datastore for Kubernetes. 100% open source, run anywhere.
+
+repo_name: piraeusdatastore/piraeus-operator
+repo_url: https://github.com/piraeusdatastore/piraeus-operator
+edit_uri: edit/v2/docs
+
+copyright: Copyright &copy; 2024 The Piraeus Maintainers
+
+nav:
+  - Home: README.md
+  - Tutorials:
+    - Tutorials: tutorial/README.md
+    - Getting Started: tutorial/get-started.md
+    - Creating Replicated Volumes: tutorial/replicated-volumes.md
+    - Creating Snapshots: tutorial/snapshots.md
+  - How-To Guides:
+    - How-To Guides: how-to/README.md
+    - Advanced Deployments:
+      - Use Piraeus Datastore with an Existing LINSTOR Cluster: how-to/external-controller.md
+      - Configure the DRBD Module Loader: how-to/drbd-loader.md
+    - Securing Components:
+      - Configure TLS Between LINSTOR Controller and LINSTOR Satellite: how-to/internal-tls.md
+      - Configure TLS for the LINSTOR API: how-to/api-tls.md
+      - Configure TLS for DRBD Replication: how-to/drbd-tls.md
+      - Load DRBD with SecureBoot Enabled: how-to/secure-boot.md
+    - Kubernetes Distributions:
+      - Openshift: how-to/openshift.md
+      - Talos Linux: how-to/talos.md
+      - Flatcar Container Linux: how-to/flatcar.md
+      - Microk8s: how-to/microk8s.md
+      - k0s: how-to/k0s.md
+    - Networking:
+      - Deploy Piraeus Datastore behind an HTTP Proxy: how-to/http-proxy.md
+      - Deploy a NetworkPolicy for Piraeus Datastore: how-to/network-policy.md
+      - Use the Host Network for DRBD Replication: how-to/drbd-host-networking.md
+    - Maintenance Tasks:
+      - Monitor Piraeus Datastore with Prometheus Operator: how-to/monitoring.md
+      - Keep Persistent Volume Affinity Updated with LINSTOR Affinity Controller: how-to/linstor-affinity-controller.md
+      - Restore a LINSTOR Database Backup: how-to/restore-linstor-db.md
+  - Upgrades:
+    - Upgrades: how-to/upgrade/index.md
+    - Upgrading from v2 to v2: how-to/upgrade/UPGRADE.md
+    - Upgrading from v1 to v2:
+      - Migrating the LINSTOR Database: how-to/upgrade/1-migrate-database.md
+      - Collect Information: how-to/upgrade/2-collect-information.md
+      - Remove Operator v1: how-to/upgrade/3-remove-operator-v1.md
+      - Install Operator v2: how-to/upgrade/4-install-operator-v2.md
+  - Understanding Piraeus:
+    - Understanding Piraeus: explanation/README.md
+    - Piraeus Components: explanation/components.md
+  - Reference:
+    - Reference: reference/README.md
+    - LinstorCluster: reference/linstorcluster.md
+    - LinstorSatelliteConfiguration: reference/linstorsatelliteconfiguration.md
+    - LinstorNodeConnection: reference/linstornodeconnection.md
+    - LinstorSatellite: reference/linstorsatellite.md
+theme:
+  custom_dir: docs/overrides
+  name: material
+  features:
+  # - content.action.edit
+  - content.code.annotate
+  - content.code.copy
+  # - content.code.select
+  # - content.footnote.tooltips
+  # - content.tabs.link
+  - content.tooltips
+  # - header.autohide
+  # - navigation.expand
+  - navigation.footer
+  - navigation.indexes
+  # - navigation.instant
+  # - navigation.instant.prefetch
+  # - navigation.instant.progress
+  # - navigation.prune
+  - navigation.sections
+  - navigation.tabs
+  # - navigation.tabs.sticky
+  - navigation.top
+  - navigation.tracking
+  - search.highlight
+  - search.share
+  - search.suggest
+  - toc.follow
+  # - toc.integrate
+  palette:
+  - media: "(prefers-color-scheme)"
+    toggle:
+      icon: material/link
+      name: Switch to light mode
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: orange
+    accent: orange
+    toggle:
+      icon: material/toggle-switch
+      name: Switch to dark mode
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: indigo
+    accent: orange
+    toggle:
+      icon: material/toggle-switch-off
+      name: Switch to system preference
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: assets/favicon.png
+  icon:
+    logo: piraeus
+
+markdown_extensions:
+- admonition
+- pymdownx.details
+- pymdownx.superfences
+- attr_list
+- md_in_html
+- pymdownx.emoji:
+    emoji_index: !!python/name:material.extensions.emoji.twemoji
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    options:
+      custom_icons:
+      - overrides/.icons
+
+plugins:
+- search:
+# Enable multi-versioning to show the docs at different releases
+- mike:
+# Make nice "cards" for link previews
+- social:
+
+extra:
+  version:
+    default: stable
+    alias: true
+    provider: mike
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/piraeusdatastore/
+  - icon: fontawesome/brands/slack
+    link: https://piraeus-datastore.slack.com/
+  homepage: https://piraeus.io

@@ -1,3 +1,7 @@
+---
+toc_depth: 1
+---
+
 # `LinstorSatelliteConfiguration`
 
 This resource controls the state of one or more LINSTOR® satellites.
@@ -316,7 +320,7 @@ spec:
 The given patches will be applied to all resources controlled by the operator. The patches are
 forwarded to `kustomize` internally, and take the [same format](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/).
 
-The unpatched resources are available in the [subdirectories of the `pkg/resources/satellite` directory](../../pkg/resources/satellite).
+The unpatched resources are available in the [subdirectories of the `pkg/resources/satellite` directory](https://github.com/piraeusdatastore/piraeus-operator/tree/v2/pkg/resources/satellite).
 
 #### Warning
 
