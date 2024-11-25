@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated images:
+  * DRBD 9.2.12
+  * DRBD Reactor 1.6.0
+
 ## [v2.7.0] - 2024-11-11
 
 ### Added
