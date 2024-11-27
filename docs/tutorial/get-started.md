@@ -4,10 +4,10 @@ Learn about the ways to get started with Piraeus Datastore by deploying Piraeus 
 
 ## Prerequisites
 
-* [Install the Linux kernel headers on the hosts](./install-kernel-headers.md).
+* [Install the Linux kernel headers on the hosts](../how-to/install-kernel-headers.md).
 * [Install `kubectl` version `>= 1.22`](https://kubernetes.io/docs/tasks/tools/)
 
-## 1: Install Piraeus Operator
+## Install Piraeus Operator
 
 In this tutorial we will be using `kubectl` with the built-in `kustomize` feature to deploy Piraeus Operator.
 All resources needed to run Piraeus Operator are included in a single Kustomization.
@@ -28,7 +28,7 @@ $ kubectl wait pod --for=condition=Ready -n piraeus-datastore -l app.kubernetes.
 pod/piraeus-operator-controller-manager-dd898f48c-bhbtv condition met
 ```
 
-## 2: Deploy Piraeus Datastore
+## Deploy Piraeus Datastore
 
 Now, we will deploy Piraeus Datastore using a new resource managed by Piraeus Operator. We create a `LinstorCluster`,
 which creates all the necessary resources (Deployments, Pods, and so on...) for our Datastore:
@@ -71,7 +71,7 @@ $ kubectl -n piraeus-datastore exec deploy/linstor-controller -- linstor node li
 +-------------------------------------------------------------------+
 ```
 
-## 3: Configuring Storage
+## Configuring Storage
 
 We have not yet configured any storage location for our volumes. This can be accomplished by creating a new
 `LinstorSatelliteConfiguration` resource. We will create a storage pool of type `fileThinPool` on each node.
@@ -121,7 +121,7 @@ $ kubectl -n piraeus-datastore exec deploy/linstor-controller -- linstor storage
 +---------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
-## 4: Using Piraeus Datastore
+## Using Piraeus Datastore
 
 We now have successfully deployed and configured Piraeus Datastore, and are ready to create our first
 [`PersistentVolume`](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) in Kubernetes.

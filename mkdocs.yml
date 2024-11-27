@@ -22,6 +22,7 @@ nav:
     - Advanced Deployments:
       - Use Piraeus Datastore with an Existing LINSTOR Cluster: how-to/external-controller.md
       - Configure the DRBD Module Loader: how-to/drbd-loader.md
+      - Install Kernel Headers to build DRBD: how-to/install-kernel-headers.md
     - Securing Components:
       - Configure TLS Between LINSTOR Controller and LINSTOR Satellite: how-to/internal-tls.md
       - Configure TLS for the LINSTOR API: how-to/api-tls.md
