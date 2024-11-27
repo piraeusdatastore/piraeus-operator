@@ -261,7 +261,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - New CRDs to control storage cluster: `LinstorCluster` and `LinstorSatelliteConfiguration`.
-- [Tutorials](./docs/tutorial) on how to get started.
+- [Tutorials](./tutorial/README.md) on how to get started.
 - Automatic selection of loader images based on operating system of node.
 - Customization of single nodes or groups of nodes.
 - Possibility to run DRBD replication using the container network.
@@ -397,7 +397,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking
 
 * If you have SSL configured, then the certificates must be regenerated in PEM format.
-  Learn more in the [upgrade guide](./UPGRADE.md#upgrade-from-v10-to-head).
+  Learn more in the [upgrade guide](./how-to/upgrade/UPGRADE.md#upgrade-from-v10-to-v11).
 
 ## [v1.7.1] - 2022-01-18
 
@@ -411,7 +411,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The new default log level is INFO (was DEBUG previously, which was often too verbose).
 - Override the kernel source directory used when compiling DRBD (defaults to /usr/src). See
   [
-  `operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory`](./doc/helm-values.adoc#operatorsatellitesetkernelmoduleinjectionadditionalsourcedirectory)
+  `operator.satelliteSet.kernelModuleInjectionAdditionalSourceDirectory`](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.7.1/doc/helm-values.adoc#operatorsatellitesetkernelmoduleinjectionadditionalsourcedirectory)
 - etcd-chart: add option to set priorityClassName.
 
 ### Fixed
@@ -426,7 +426,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pv-hostpath`: automatically determine on which nodes PVs should be created if no override is given.
 - Automatically add labels on Kubernetes Nodes to LINSTOR satellites as Auxiliary Properties. This enables using
   Kubernetes labels for volume scheduling, for example using `replicasOnSame: topology.kubernetes.io/zone`.
-- Support LINSTORs `k8s` backend by adding the necessary RBAC resources and [documentation](./doc/k8s-backend.md).
+- Support LINSTORs `k8s` backend by adding the necessary RBAC resources and [documentation](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.7.0/doc/k8s-backend.md).
 - Automatically create a LINSTOR passphrase when none is configured.
 - Automatic eviction and deletion of offline satellites if the Kubernetes node object was also deleted.
 
@@ -447,7 +447,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow CSI to work with distributions that use a kubelet working directory other than `/var/lib/kubelet`. See
-  the [`csi.kubeletPath`](./doc/helm-values.adoc#csikubeletpath) option.
+  the [`csi.kubeletPath`](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.6.0/doc/helm-values.adoc#csikubeletpath) option.
 - Enable [Storage Capacity Tacking]. This enables Kubernetes to base Pod scheduling decisions on remaining storage
   capacity. The feature is in beta and enabled by default starting with Kubernetes 1.21.
 
@@ -527,7 +527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* New guide on host preparation [here.](./doc/host-setup.md)
+* New guide on host preparation [here.](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.3.1/doc/host-setup.md)
 
 ### Changed
 
@@ -544,7 +544,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * New component: `haController` will deploy the [Piraeus High Availability Controller].
   More information is available in
-  the [optional components page](./doc/optional-components.md#high-availability-controller)
+  the [optional components page](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.3.0/doc/optional-components.md#high-availability-controller)
 * Enable strict checking of DRBD parameter to disable usermode helper in container environments.
 * Override the image used in "chown" jobs in the `pv-hostpath` chart by using `--set chownerImage=<my-image>`.
 
@@ -570,7 +570,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * `storagePools` can now also set up devices similar to `automaticStorageType`, but with more fine grained control.
-  See the [updated storage guide](./doc/storage.md#preparing-physical-devices)
+  See the [updated storage guide](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.2.0/doc/storage.md#preparing-physical-devices)
 * New Helm options to disable creation of LinstorController and LinstorSatelliteSet resource
   `operator.controller.enabled` and `operator.satelliteSet.enabled`.
 * New Helm option to override the generated controller endpoint: `controllerEndpoint`
@@ -605,20 +605,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * The LINSTOR controller image given in `operator.controller.controllerImage` has to have
   its entrypoint set to [`k8s-await-election v0.2.0`](https://github.com/LINBIT/k8s-await-election/)
-  or newer. Learn more in the [upgrade guide](./UPGRADE.md#upgrade-from-v10-to-head).
+  or newer. Learn more in the [upgrade guide](./how-to/upgrade/UPGRADE.md#upgrade-from-v10-to-v11).
 
 ### Added
 
 * LINSTOR controller can be started with multiple replicas. See [
-  `operator.controller.replicas`](./doc/helm-values.adoc#operatorcontrollerreplicas).
+  `operator.controller.replicas`](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.1.0/doc/helm-values.adoc#operatorcontrollerreplicas).
   NOTE: This requires support from the container. You need `piraeus-server:v1.8.0` or newer.
 * The `pv-hostpath` helper chart automatically sets up permissions for non-root etcd containers.
 * Disable securityContext enforcement by setting `global.setSecurityContext=false`.
 * Add cluster roles to work with OpenShift's SCC system.
 * Control volume placement and accessibility by using CSIs Topology feature. Controlled by setting
-  [`csi.enableTopology`](./doc/helm-values.adoc#csienabletopology).
+  [`csi.enableTopology`](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.1.0/doc/helm-values.adoc#csienabletopology).
 * All pods use a dedicated service account to allow for fine-grained permission control.
-* The new [helm section `psp.*`](./doc/helm-values.adoc#psp) can automatically configure the ServiceAccount
+* The new [helm section `psp.*`](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.1.0/doc/helm-values.adoc#psp) can automatically configure the ServiceAccount
   of all components to use the appropriate [PSP](https://kubernetes.io/docs/concepts/policy/pod-security-policy/) roles.
 
 ### Changed
@@ -666,7 +666,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       controller
     * `csi-controller` => set `csi.controllerReplicas` to the desired count for the linstor CSI controller
     * `operator` => set `operator.replicas` to have multiple replicas of the operator running
-* Reference docs for all helm settings. [Link](./doc/helm-values.adoc)
+* Reference docs for all helm settings. [Link](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.0.0/doc/helm-values.adoc)
 * `stork.schedulerTag` can override the automatically chosen tag for the `kube-scheduler` image.
   Previously, the tag always matched the kubernetes release.
 
@@ -723,7 +723,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * `statefulset.replicaCount` -> `replicas`
     * `persistence.enabled` -> `persistentVolume.enabled`
     * `persistence.size` -> `persistentVolume.storage`
-    * `àuth.rbac` was removed: use [tls certificates](./doc/security.md#authentication-with-etcd-using-certificates)
+    * `àuth.rbac` was removed: use [tls certificates](https://github.com/piraeusdatastore/piraeus-operator/tree/v0.5.0/doc/security.md#authentication-with-etcd-using-certificates)
     * `auth.peer.useAutoTLS` was removed
     * `envVarsConfigMap` was removed
     * When using etcd with TLS enabled:
@@ -741,7 +741,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Moved storage documentation to the [storage guide](./doc/storage.md)
+* Moved storage documentation to the [storage guide](https://github.com/piraeusdatastore/piraeus-operator/tree/v0.4.1/doc/storage.md)
 * Helm: update default images
 
 ## [v0.4.0] - 2020-06-05
@@ -756,7 +756,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when installing via Helm.
 * Authentication with etcd using TLS client certificates.
 * Secured connection between linstor-client and controller (HTTPS). More in
-  the [security guide](./doc/security.md#configuring-secure-communications-for-the-linstor-api)
+  the [security guide](https://github.com/piraeusdatastore/piraeus-operator/tree/v0.4.0/doc/security.md#configuring-secure-communications-for-the-linstor-api)
 * Linstor controller endpoint can now be customized for all resources. If not specified, the old default values will be
   filled in.
 

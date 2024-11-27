@@ -40,7 +40,7 @@ a new `linstor-satellite` prefix.
 # Upgrades from v2.2 to v2.3
 
 Removed the `NetworkPolicy` resource from default deployment. It can be reapplied as a
-[separate step](./docs/how-to/network-policy.md).
+[separate step](../network-policy.md).
 
 # Upgrades from v2.1 to v2.2
 
@@ -57,7 +57,7 @@ No special steps required.
 
 # Upgrades from v1 to v2
 
-Please follow the specialized [upgrade guides](./docs/how-to/upgrade/index.md).
+Please follow the specialized [upgrade guides](./index.md).
 
 # Upgrade from v1.9 to v1.10
 
@@ -69,7 +69,7 @@ $ kubectl replace -f ./charts/piraeus/crds
 
 # Upgrade from v1.8 to v1.9
 
-If you want to protect metrics endpoints, take a look on [guide on enabling rbac-proxy sidecars](doc/security.md).
+If you want to protect metrics endpoints, take a look on [guide on enabling rbac-proxy sidecars](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.9.0/doc/security.md).
 
 We've also disabled the `haController` component in our chart. The replacement is available from
 [artifacthub.io](https://artifacthub.io/packages/helm/piraeus-charts/piraeus-ha-controller), containing much needed
@@ -86,7 +86,7 @@ $ kubectl replace -f ./charts/piraeus/crds
 ```
 
 In case if you have SSL enabled installation, you need to regenerate your certificates in PEM format.
-Read the [guide on securing the deployment](doc/security.md) and repeat the described steps.
+Read the [guide on securing the deployment](https://github.com/piraeusdatastore/piraeus-operator/tree/v1.8.0/doc/security.md) and repeat the described steps.
 
 # Upgrade from v1.6 to v1.7
 

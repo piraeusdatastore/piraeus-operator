@@ -75,7 +75,7 @@ created by appending an image identifier and tag.
 
 If empty (the default), Piraeus will use `quay.io/piraeusdatastore`.
 
-The current list of default images is available [here](https://github.com/piraeus/config/manager/0_piraeus_datastore_images.yaml).
+The current list of default images is available [here](https://github.com/piraeusdatastore/piraeus-operator/tree/v2/config/manager/0_piraeus_datastore_images.yaml).
 
 #### Example
 
