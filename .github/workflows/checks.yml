@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       # These hooks will run separately in github actions
-      SKIP: golangci-lint
+      SKIP: golangci-lint,check-docs
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go environment

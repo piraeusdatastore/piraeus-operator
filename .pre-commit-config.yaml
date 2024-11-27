@@ -42,3 +42,8 @@ repos:
         language: system
         pass_filenames: false
         entry: make sync-chart
+      - id: check-docs
+        name: check docs builds
+        language: system
+        pass_filenames: false
+        entry: mkdocs build -s
