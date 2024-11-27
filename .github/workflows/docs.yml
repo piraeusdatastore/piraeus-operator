@@ -1,0 +1,58 @@
+name: docs
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+      - v2
+  pull_request:
+jobs:
+  check-docs:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.x
+    - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+    - uses: actions/cache@v4
+      with:
+        key: mkdocs-material-${{ env.cache_id }}
+        path: .cache
+        restore-keys: |
+          mkdocs-material-
+    - run: pip install mkdocs-material[imaging] mike
+    - run: mkdocs build -s
+
+  deploy-docs:
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: '0'
+    - name: Configure Git Credentials
+      run: |
+        git config user.name github-actions[bot]
+        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.x
+    - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+    - uses: actions/cache@v4
+      with:
+        key: mkdocs-material-${{ env.cache_id }}
+        path: .cache
+        restore-keys: |
+          mkdocs-material-
+    - run: pip install mkdocs-material[imaging] mike
+    - name: Deploy latest docs
+      if: ${{ github.ref_type == 'branch' }}
+      run: mike deploy -u -p v2 latest
+    - name: Deploy release docs
+      if: ${{ github.ref_type == 'tag' }}
+      run: mike deploy -u -p ${{ github.ref_name }} stable
