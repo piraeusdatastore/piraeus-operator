@@ -1,7 +1,3 @@
----
-toc_depth: 1
----
-
 # `LinstorSatelliteConfiguration`
 
 This resource controls the state of one or more LINSTOR® satellites.
@@ -357,7 +353,7 @@ spec:
 
 Reports the actual state of the cluster.
 
-## `.status.conditions`
+### `.status.conditions`
 
 The Operator reports the current state of the Satellite Configuration through a set of conditions. Conditions are
 identified by their `type`.

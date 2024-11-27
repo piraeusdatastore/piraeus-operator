@@ -465,7 +465,7 @@ spec:
 
 Reports the actual state of the cluster.
 
-## `.status.conditions`
+### `.status.conditions`
 
 The Operator reports the current state of the Cluster through a set of conditions. Conditions are identified by their
 `type`.

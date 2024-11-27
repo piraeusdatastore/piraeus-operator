@@ -44,7 +44,7 @@ Holds patches to apply to the Kubernetes resources. Inherited from matching
 
 Reports the actual state of the satellite.
 
-## `.status.conditions`
+### `.status.conditions`
 
 The Operator reports the current state of the LINSTOR Satellite through a set of conditions. Conditions are
 identified by their `type`.
