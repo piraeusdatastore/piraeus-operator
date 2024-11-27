@@ -58,6 +58,7 @@ nav:
     - LinstorSatelliteConfiguration: reference/linstorsatelliteconfiguration.md
     - LinstorNodeConnection: reference/linstornodeconnection.md
     - LinstorSatellite: reference/linstorsatellite.md
+  - Changelog: CHANGELOG.md
 theme:
   custom_dir: docs/overrides
   name: material

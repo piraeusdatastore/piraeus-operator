@@ -31,8 +31,8 @@ if ! git diff-index --quiet HEAD -- ; then
 fi
 
 # replace changelog header "Unreleased" with version and replace link target
-sed "s/^## \[Unreleased\]/## [v$VERSION] - $(date +%Y-%m-%d)/" -i ./CHANGELOG.md
-sed "s#^\[Unreleased\]: \(.*\)HEAD\$#[v$VERSION]: \\1v$VERSION#" -i ./CHANGELOG.md
+sed "s/^## \[Unreleased\]/## [v$VERSION] - $(date +%Y-%m-%d)/" -i ./docs/CHANGELOG.md
+sed "s#^\[Unreleased\]: \(.*\)HEAD\$#[v$VERSION]: \\1v$VERSION#" -i ./docs/CHANGELOG.md
 
 # Set image version for kustomize
 pushd config/default
@@ -40,7 +40,7 @@ $KUSTOMIZE edit set image controller="$IMG:v$VERSION"
 popd
 
 # replace deployment instructions in docs
-for FILE in ./README.md ./docs/tutorial/get-started.md ./UPGRADE.md ; do
+for FILE in ./README.md ./docs/tutorial/get-started.md ./docs/how-to/upgrade/UPGRADE.md ; do
 	sed -e "s/ref=v[0-9\.]\+/ref=v$VERSION/" -i "$FILE"
 done
 
@@ -56,8 +56,8 @@ $YQ ".appVersion = \"v$VERSION\"" -i charts/piraeus/Chart.yaml
 git commit -aevm "Release v$VERSION" --signoff
 
 # add "Unreleased" section at top + create comparison link against current master
-sed "s/^## \[v$VERSION\]/## [Unreleased]\n\n## [v$VERSION]/" -i CHANGELOG.md
-echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$VERSION...HEAD" >> CHANGELOG.md
+sed "s/^## \[v$VERSION\]/## [Unreleased]\n\n## [v$VERSION]/" -i ./docs/CHANGELOG.md
+echo "[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v$VERSION...HEAD" >> ./docs/CHANGELOG.md
 
 # Reset image version for kustomize
 pushd config/default
