@@ -84,3 +84,7 @@ tags
 # OLM Bundle
 /bundle.Dockerfile
 /bundle
+
+# mkdocs files
+/.cache
+/site
