@@ -838,14 +838,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Helm: Update dependent image versions
 * Docker: Change base image to Debian Buster
 
-## [v0.1.3] - 2020-02-24
+## v0.1.3 - 2020-02-24
 
 ### Added
 
 * Support for kernel module injection based on shipped modules - necessary for
   CoreOS support.
 
-## [v0.1.2.1] - 2020-02-21
+## v0.1.2.1 - 2020-02-21
 
 ### Added
 
@@ -861,7 +861,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Satellite images as it was previously the case. Hence, the readiness probe
   is changed to use `curl` instead of `linstor` client command.
 
-## [v0.1.0] - 2020-01-27
+## v0.1.0 - 2020-01-27
 
 ### Added
 
