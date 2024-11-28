@@ -1,1 +1,1 @@
-docs/how-to/upgrade/UPGRADE.md
+docs/upgrade/README.md

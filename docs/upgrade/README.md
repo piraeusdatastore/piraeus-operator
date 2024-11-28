@@ -40,7 +40,7 @@ a new `linstor-satellite` prefix.
 # Upgrades from v2.2 to v2.3
 
 Removed the `NetworkPolicy` resource from default deployment. It can be reapplied as a
-[separate step](../network-policy.md).
+[separate step](../how-to/network-policy.md).
 
 # Upgrades from v2.1 to v2.2
 
@@ -57,7 +57,7 @@ No special steps required.
 
 # Upgrades from v1 to v2
 
-Please follow the specialized [upgrade guides](./index.md).
+Please follow the specialized [upgrade guides](./migration/README.md).
 
 # Upgrade from v1.9 to v1.10
 

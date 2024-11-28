@@ -397,7 +397,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking
 
 * If you have SSL configured, then the certificates must be regenerated in PEM format.
-  Learn more in the [upgrade guide](./how-to/upgrade/UPGRADE.md#upgrade-from-v10-to-v11).
+  Learn more in the [upgrade guide](./upgrade/README.md#upgrade-from-v10-to-v11).
 
 ## [v1.7.1] - 2022-01-18
 
@@ -605,7 +605,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * The LINSTOR controller image given in `operator.controller.controllerImage` has to have
   its entrypoint set to [`k8s-await-election v0.2.0`](https://github.com/LINBIT/k8s-await-election/)
-  or newer. Learn more in the [upgrade guide](./how-to/upgrade/UPGRADE.md#upgrade-from-v10-to-v11).
+  or newer. Learn more in the [upgrade guide](./upgrade/README.md#upgrade-from-v10-to-v11).
 
 ### Added
 

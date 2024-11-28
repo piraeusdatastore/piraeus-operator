@@ -38,7 +38,7 @@ This guide assumes:
 * The resources `LinstorController`, `LinstorSatelliteSet` and `LinstorCSIDriver` have been replaced by
   [`LinstorCluster`](../../reference/linstorcluster.md) and
   [`LinstorSatelliteConfgiuration`](../../reference/linstorsatelliteconfiguration.md).
-* The default deployment runs the LINSTOR Satellite in the [container network](../drbd-host-networking.md).
+* The default deployment runs the LINSTOR Satellite in the [container network](../../how-to/drbd-host-networking.md).
   The migration script will propose changing to the host network.
 
 ### Operational Changes

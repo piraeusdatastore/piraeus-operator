@@ -43,13 +43,13 @@ nav:
       - Keep Persistent Volume Affinity Updated with LINSTOR Affinity Controller: how-to/linstor-affinity-controller.md
       - Restore a LINSTOR Database Backup: how-to/restore-linstor-db.md
   - Upgrades:
-    - Upgrades: how-to/upgrade/index.md
-    - Upgrading from v2 to v2: how-to/upgrade/UPGRADE.md
+    - Upgrades: upgrade/README.md
     - Upgrading from v1 to v2:
-      - Migrating the LINSTOR Database: how-to/upgrade/1-migrate-database.md
-      - Collect Information: how-to/upgrade/2-collect-information.md
-      - Remove Operator v1: how-to/upgrade/3-remove-operator-v1.md
-      - Install Operator v2: how-to/upgrade/4-install-operator-v2.md
+      - Upgrading from v1 to v2: upgrade/migration/README.md
+      - Migrating the LINSTOR Database: upgrade/migration/1-migrate-database.md
+      - Collect Information: upgrade/migration/2-collect-information.md
+      - Remove Operator v1: upgrade/migration/3-remove-operator-v1.md
+      - Install Operator v2: upgrade/migration/4-install-operator-v2.md
   - Understanding Piraeus:
     - Understanding Piraeus: explanation/README.md
     - Piraeus Components: explanation/components.md

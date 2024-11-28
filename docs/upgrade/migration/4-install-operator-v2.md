@@ -5,7 +5,7 @@ After removing the Piraeus Operator v1 deployment, you can install Piraeus Opera
 You can either use the `kubectl` method to deploy Piraeus Operator, or alternatively deploy the Operator using Helm.
 
 This is the last step when migrating Piraeus Operator from version 1 (v1) to version 2 (v2).
-[Click here to get back to the overview](./index.md).
+[Click here to get back to the overview](./README.md).
 
 ## Prerequisites
 

@@ -4,7 +4,7 @@ This document guides you through the process of migrating an existing LINSTOR® 
 backend.
 
 This is the optional first step when migrating Piraeus Operator from version 1 (v1) to version 2 (v2).
-[Click here to get back to the overview](./index.md).
+[Click here to get back to the overview](./README.md).
 
 ## Prerequisites
 

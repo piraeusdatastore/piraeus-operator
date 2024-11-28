@@ -4,7 +4,7 @@ Before performing the upgrade and removing the old deployment, collect informati
 This ensures the upgraded deployment will have a compatible configuration.
 
 This is the second step when migrating Piraeus Operator from version 1 (v1) to version 2 (v2).
-[Click here to get back to the overview](./index.md).
+[Click here to get back to the overview](./README.md).
 
 ## Prerequisites
 
@@ -15,12 +15,12 @@ This is the second step when migrating Piraeus Operator from version 1 (v1) to v
 ## Run the Data Collection Script
 
 To collect the necessary information for the migration, run the script provided at
-`docs/how-to/upgrade/collect-operator-v1-information.sh`. You can run the script either from a checked out repository,
+`docs/upgrade/migration/collect-operator-v1-information.sh`. You can run the script either from a checked out repository,
 or directly from GitHub:
 
 ```
 $ curl --proto '=https' --tlsv1.2 -sSf \
-  https://raw.githubusercontent.com/piraeusdatastore/piraeus-operator/v2/docs/how-to/upgrade/collect-operator-v1-information.sh \
+  https://raw.githubusercontent.com/piraeusdatastore/piraeus-operator/v2/docs/upgrade/migration/collect-operator-v1-information.sh \
   | bash -s
 ```
 

@@ -6,7 +6,7 @@ After this step no new volumes can be created and no existing volume can be atta
 new deployment is rolled out.
 
 This is the third step when migrating Piraeus Operator from version 1 (v1) to version 2 (v2).
-[Click here to get back to the overview](./index.md).
+[Click here to get back to the overview](./README.md).
 
 ## Prerequisites
 

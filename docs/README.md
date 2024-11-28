@@ -36,7 +36,7 @@ developers have become accustomed to.
 
     Read how to upgrade a Piraeus Datastore deployment
 
-    [:octicons-arrow-right-24: Upgrades](./how-to/upgrade/index.md)
+    [:octicons-arrow-right-24: Upgrades](./upgrade/README.md)
 
 -   :material-school:{ .lg .middle } __Understanding Piraeus Datastore__
 
