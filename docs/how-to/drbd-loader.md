@@ -68,6 +68,7 @@ Piraeus maintains the following images:
 | `quay.io/piraeusdatastore/drbd9-almalinux9` | RedHat Enterprise Linux 9 rebuilds |
 | `quay.io/piraeusdatastore/drbd9-almalinux8` | RedHat Enterprise Linux 8 rebuilds |
 | `quay.io/piraeusdatastore/drbd9-centos7`    | RedHat Enterprise Linux 7 rebuilds |
+| `quay.io/piraeusdatastore/drbd9-noble`      | Ubuntu 24.04                       |
 | `quay.io/piraeusdatastore/drbd9-jammy`      | Ubuntu 22.04                       |
 | `quay.io/piraeusdatastore/drbd9-focal`      | Ubuntu 20.04                       |
 | `quay.io/piraeusdatastore/drbd9-bionic`     | Ubuntu 18.04                       |
