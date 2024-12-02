@@ -45,32 +45,26 @@ EOF
 
 ## Documentation
 
-### [Tutorials](./docs/tutorial)
+### [Tutorials](https://piraeus.io/docs/stable/tutorial/)
 
 Tutorials help you get started with Piraeus Operator.
 
-### [How-To Guides](./docs/how-to)
+### [How-To Guides](https://piraeus.io/docs/stable/how-to/)
 
 How-To Guides show you how to configure a specific aspect or achieve a specific task with Piraeus Operator.
 
-### [API Reference](./docs/reference)
+### [API Reference](https://piraeus.io/docs/stable/reference/)
 
 The API Reference for the Piraeus Operator. Contains documentation of the LINSTOR related resources that the user can
 modify or observe.
 
-### [Understanding Piraeus Datastore](./docs/explanation)
+### [Understanding Piraeus Datastore](https://piraeus.io/docs/stable/explanation/)
 
 These documents explain how Piraeus Datastore works, and why it works the way it does.
 
-## Missing features
+### [Upgrades](https://piraeus.io/docs/stable/upgrade/)
 
-These are features that are currently present in Operator v1, and not yet available in this version of Operator v2:
-
-* Backup of LINSTOR database before upgrades
-
-## Upgrading
-
-Please see the dedicated [UPGRADE document](./UPGRADE.md)
+Details on the upgrade procedure for Piraeus Datastore.
 
 ## Contributing
 
