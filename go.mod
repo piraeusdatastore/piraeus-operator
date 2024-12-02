@@ -21,7 +21,7 @@ require (
 	k8s.io/apimachinery v0.31.3
 	k8s.io/client-go v0.31.3
 	k8s.io/component-helpers v0.31.3
-	sigs.k8s.io/controller-runtime v0.19.2
+	sigs.k8s.io/controller-runtime v0.19.3
 	sigs.k8s.io/kustomize/api v0.18.0
 	sigs.k8s.io/kustomize/kyaml v0.18.1
 	sigs.k8s.io/yaml v1.4.0
@@ -36,7 +36,6 @@ require (
 	github.com/donovanhide/eventsource v0.0.0-20210830082556-c59027999da0 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
@@ -47,7 +46,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
+	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
@@ -95,7 +94,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
-	sigs.k8s.io/gateway-api v1.2.0 // indirect
+	sigs.k8s.io/gateway-api v1.2.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
