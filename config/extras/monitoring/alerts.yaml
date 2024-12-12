@@ -58,7 +58,7 @@ spec:
           annotations:
             description: |
               DRBD Reactor on "{{ $labels.node }}" is not reachable.
-          expr: up{job="piraeus-datastore/linstor-satellite"} == 0
+          expr: up{job=".*/linstor-satellite"} == 0
           labels:
             severity: critical
         - alert: drbdConnectionNotConnected
