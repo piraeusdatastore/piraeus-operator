@@ -33,9 +33,9 @@ spec:
         - alert: linstorSatelliteNotOnline
           annotations:
             description: |
-              LINSTOR Satellite "{{ $labels.hostname }}" is not ONLINE.
+              LINSTOR Satellite "{{ $labels.node }}" is not ONLINE.
               Check that the Satellite is running and reachable from the LINSTOR Controller.
-          expr: linstor_node_state{nodetype="SATELLITE"} != 2
+          expr: linstor_node_state{nodetype="SATELLITE"} != 2 and on (node) up{job=~".*/linstor-satellite"}
           labels:
             severity: critical
         - alert: linstorStoragePoolErrors
