@@ -236,6 +236,8 @@ func testTlsConfig(t *testing.T) (*tls.Config, map[string][]byte) {
 	caCert, err := x509.ParseCertificate(rawCert)
 	require.NoError(t, err)
 
+	cert.Leaf = caCert
+
 	caPool := x509.NewCertPool()
 	caPool.AddCert(caCert)
 
