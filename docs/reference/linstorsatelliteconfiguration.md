@@ -21,7 +21,7 @@ metadata:
   name: disabled-nodes
 spec:
   nodeSelector:
-    piraeus.io/autplace: "no"
+    piraeus.io/autoplace: "no"
   properties:
     - name: AutoplaceTarget
       value: "no"
