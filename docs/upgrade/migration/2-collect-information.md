@@ -20,7 +20,7 @@ or directly from GitHub:
 
 ```
 $ curl --proto '=https' --tlsv1.2 -sSf \
-  https://raw.githubusercontent.com/piraeusdatastore/piraeus-operator/v2/docs/upgrade/migration/collect-operator-v1-information.sh \
+  https://piraeus.io/docs/v2/how-to/upgrade/collect-operator-v1-information.sh \
   | bash -s
 ```
 
