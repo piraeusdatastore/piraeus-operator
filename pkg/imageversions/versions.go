@@ -13,7 +13,6 @@ type Configs []*Config
 
 // Config represents a default image mapping used by the operator.
 type Config struct {
-	source     string
 	Base       string                     `yaml:"base"`
 	Components map[string]ComponentConfig `yaml:"components"`
 }

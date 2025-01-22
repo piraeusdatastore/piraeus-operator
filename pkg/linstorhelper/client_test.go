@@ -18,6 +18,7 @@ import (
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/piraeusdatastore/linstor-csi/pkg/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -186,7 +187,12 @@ func TestNewClientForCluster(t *testing.T) {
 			t.Parallel()
 
 			k8scl := fake.NewClientBuilder().WithObjects(testcase.existingObjs...).WithScheme(testScheme).Build()
-			actual, err := linstorhelper.NewClientForCluster(context.Background(), k8scl, "test", "test-cluster", testcase.existingSecret, nil, testcase.externalRef)
+			actual, err := linstorhelper.NewClientForCluster(context.Background(), k8scl, "test", &piraeusv1.ClusterReference{
+				Name:               "test-cluster",
+				ClientSecretName:   testcase.existingSecret,
+				CAReference:        nil,
+				ExternalController: testcase.externalRef,
+			})
 			assert.NoError(t, err)
 
 			if testcase.expectedNoClient {
@@ -202,9 +208,7 @@ func TestNewClientForCluster(t *testing.T) {
 						return true
 					}),
 					// But ignore all logging
-					cmp.Comparer(func(a, b lapi.Logger) bool {
-						return true
-					}),
+					cmpopts.IgnoreFields(lapi.Client{}, "log"),
 				)
 				if diff != "" {
 					assert.Fail(t, diff)

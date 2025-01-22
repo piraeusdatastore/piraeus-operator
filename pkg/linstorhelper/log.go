@@ -13,10 +13,6 @@ type logrAdapter struct {
 
 var _ lapi.LeveledLogger = &logrAdapter{}
 
-func Logr(l logr.Logger) lapi.Option {
-	return lapi.Log(&logrAdapter{Logger: l})
-}
-
 func (l *logrAdapter) Errorf(s string, i ...interface{}) {
 	l.Logger.Error(fmt.Errorf(s, i...), "error occurred")
 }

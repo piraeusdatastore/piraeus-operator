@@ -125,14 +125,8 @@ func (r *LinstorNodeConnectionReconciler) reconcileAll(ctx context.Context, conn
 			ctx,
 			r.Client,
 			r.Namespace,
-			view.ClusterRef.Name,
-			view.ClusterRef.ClientSecretName,
-			view.ClusterRef.CAReference,
-			view.ClusterRef.ExternalController,
-			append(
-				slices.Clone(r.LinstorClientOpts),
-				linstorhelper.Logr(log.FromContext(ctx)),
-			)...,
+			&view.ClusterRef,
+			r.LinstorClientOpts...,
 		)
 		if err != nil {
 			return err

@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
@@ -59,10 +60,16 @@ func PerClusterRateLimiter(r rate.Limit, b int) lapi.Option {
 }
 
 // NewClientForCluster returns a LINSTOR client for a LINSTOR Controller managed by the operator.
-func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clusterName, clientSecretName string, caRef *piraeusv1.CAReference, externalCluster *piraeusv1.LinstorExternalControllerRef, options ...lapi.Option) (*Client, error) {
+func NewClientForCluster(ctx context.Context, cl client.Client, namespace string, ref *piraeusv1.ClusterReference, options ...lapi.Option) (*Client, error) {
+	// Defensive copy: there might be multiple goroutines calling this in parallel, using the same "options" slice.
+	// In theory this could lead to one goroutine overwriting the append()-ed options of another because they point
+	// at the same "base" slice. To prevent this, make a copy of options so we do not trample over appended elements
+	// of other goroutines.
+	options = slices.Clone(options)
+
 	var clientUrl *url.URL
-	if externalCluster != nil {
-		u, err := url.Parse(externalCluster.URL)
+	if ref.ExternalController != nil {
+		u, err := url.Parse(ref.ExternalController.URL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse external controller URL: %w", err)
 		}
@@ -71,7 +78,7 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 	} else {
 		services := corev1.ServiceList{}
 		err := cl.List(ctx, &services, client.InNamespace(namespace), client.MatchingLabels{
-			"app.kubernetes.io/instance":  clusterName,
+			"app.kubernetes.io/instance":  ref.Name,
 			"app.kubernetes.io/component": "linstor-controller",
 		})
 		if err != nil {
@@ -95,14 +102,14 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 		}
 	}
 
-	if clientSecretName != "" {
+	if ref.ClientSecretName != "" {
 		var secret corev1.Secret
-		err := cl.Get(ctx, types.NamespacedName{Name: clientSecretName, Namespace: namespace}, &secret)
+		err := cl.Get(ctx, types.NamespacedName{Name: ref.ClientSecretName, Namespace: namespace}, &secret)
 		if err != nil {
 			return nil, err
 		}
 
-		caRoot, err := caReferenceToCert(ctx, caRef, namespace, cl)
+		caRoot, err := caReferenceToCert(ctx, ref.CAReference, namespace, cl)
 		if err != nil {
 			return nil, err
 		}
@@ -122,6 +129,7 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace, clust
 	options = append(options,
 		lapi.BaseURL(clientUrl),
 		lapi.UserAgent(vars.OperatorName+"/"+vars.Version),
+		lapi.Log(&logrAdapter{log.FromContext(ctx)}),
 	)
 
 	c, err := lapi.NewClient(options...)

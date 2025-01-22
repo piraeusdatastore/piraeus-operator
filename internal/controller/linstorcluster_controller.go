@@ -763,14 +763,13 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		ctx,
 		r.Client,
 		r.Namespace,
-		lcluster.Name,
-		clientSecret,
-		caRef,
-		lcluster.Spec.ExternalController,
-		append(
-			slices.Clone(r.LinstorClientOpts),
-			linstorhelper.Logr(log.FromContext(ctx)),
-		)...,
+		&piraeusiov1.ClusterReference{
+			Name:               lcluster.Name,
+			ClientSecretName:   clientSecret,
+			CAReference:        caRef,
+			ExternalController: lcluster.Spec.ExternalController,
+		},
+		r.LinstorClientOpts...,
 	)
 	if err != nil || lc == nil {
 		conds.AddError(conditions.Available, err)

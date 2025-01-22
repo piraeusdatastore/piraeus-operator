@@ -259,6 +259,24 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		return nil, err
 	}
 
+	if lsatellite.Spec.ClusterRef.ExternalController != nil {
+		lc, err := linstorhelper.NewClientForCluster(
+			ctx,
+			r.Client,
+			r.Namespace,
+			&lsatellite.Spec.ClusterRef,
+			r.LinstorClientOpts...,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		err = imageversions.SetFromExternalCluster(ctx, lc.Client, cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	imgs, precompiled := cfg.GetVersions(lsatellite.Spec.Repository, node.Status.NodeInfo.OSImage)
 
 	if precompiled {
@@ -294,14 +312,8 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		ctx,
 		r.Client,
 		r.Namespace,
-		lsatellite.Spec.ClusterRef.Name,
-		lsatellite.Spec.ClusterRef.ClientSecretName,
-		lsatellite.Spec.ClusterRef.CAReference,
-		lsatellite.Spec.ClusterRef.ExternalController,
-		append(
-			slices.Clone(r.LinstorClientOpts),
-			linstorhelper.Logr(log.FromContext(ctx)),
-		)...,
+		&lsatellite.Spec.ClusterRef,
+		r.LinstorClientOpts...,
 	)
 	if err != nil || lc == nil {
 		conds.AddError(conditions.Available, err)
@@ -513,14 +525,8 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		ctx,
 		r.Client,
 		r.Namespace,
-		lsatellite.Spec.ClusterRef.Name,
-		lsatellite.Spec.ClusterRef.ClientSecretName,
-		lsatellite.Spec.ClusterRef.CAReference,
-		lsatellite.Spec.ClusterRef.ExternalController,
-		append(
-			slices.Clone(r.LinstorClientOpts),
-			linstorhelper.Logr(log.FromContext(ctx)),
-		)...,
+		&lsatellite.Spec.ClusterRef,
+		r.LinstorClientOpts...,
 	)
 	if err != nil {
 		return err

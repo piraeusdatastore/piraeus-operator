@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Automatically set the LINSTOR Satellite image version when using an external LINSTOR Controller.
+
 ## [v2.7.1] - 2024-11-25
 
 ### Changed
