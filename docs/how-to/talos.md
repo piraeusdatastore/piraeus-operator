@@ -14,7 +14,7 @@ By default, the DRBD Module Loader will try to find the necessary header files t
 
 Ensure Talos has the correct `drbd` [system extension](https://github.com/siderolabs/extensions) loaded for the running Kernel.
 
-This is done by building a install image from the [talos factory](https://factory.talos.dev) with drbd included
+This is done by building a install image from the [talos factory](https://factory.talos.dev) with drbd included.
 
 You will also need to update the machine config to set the following kernel module parameters:
 
@@ -26,6 +26,10 @@ machine:
         parameters:
           - usermode_helper=disabled
       - name: drbd_transport_tcp
+      # LVM_THIN storage pools require this module
+      #- name: dm-thin-pool
+      # ZFS storage pools require this module from the ZFS extension
+      #- name: zfs
 ```
 
 Validate `drbd` module is loaded:
