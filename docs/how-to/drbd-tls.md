@@ -134,12 +134,12 @@ Handshake with node3.example.com (10.125.97.42) was successful
 ...
 ```
 
-> [!NOTE]
-> The following messages are expected when running `ktls-utils` in a container and can be safely ignored:
-> ```
-> File /etc/tlshd.d/tls.key: expected mode 600
-> add_key: Bad message
-> ```
+!!! note
+
+    The following messages are expected when running `ktls-utils` in a container and can be safely ignored:
+
+        File /etc/tlshd.d/tls.key: expected mode 600
+        add_key: Bad message
 
 Next, check the statistics on TLS sessions controlled by the kernel on each node. You should see an equal, nonzero
 number of `TlsRxSw` and `TlsRxSw`.
@@ -160,5 +160,6 @@ TlsDecryptRetry                 	0
 TlsRxNoPadViolation             	0
 ```
 
-> [!NOTE]
-> If your network card supports TLS offloading, you might see `TlsTxDevice` and `TlsRxDevice` being nonzero instead.
+!!! note
+
+    If your network card supports TLS offloading, you might see `TlsTxDevice` and `TlsRxDevice` being nonzero instead.

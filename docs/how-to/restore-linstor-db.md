@@ -3,9 +3,10 @@
 This guide shows you how to restore a LINSTOR® Controller from a database backup. A backup is created automatically
 on every database migration of the default `k8s` database.
 
-> [!CAUTION]
-> Restoring from a backup means all changes made to the Cluster state after the backup was taken are lost.
-> This includes information about Persistent Volumes and Volume Snapshots that where created after the backup.
+!!! danger
+
+    Restoring from a backup means all changes made to the Cluster state after the backup was taken are lost.
+    Persistent Volumes and Volume Snapshots that were created after the backup are lost.
 
 To complete this guide, you should be familiar with:
 
