@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Automatically set the LINSTOR Satellite image version when using an external LINSTOR Controller.
 
+### Changed
+- Disable debug logging by default for the Operator.
+
 ## [v2.7.1] - 2024-11-25
 
 ### Changed
