@@ -140,7 +140,7 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		RequeueAfter: 1 * time.Minute,
 	}
 
-	return result, utils.AnyError(applyErr, stateErr, condErr)
+	return utils.AnyResult(result, applyErr, stateErr, condErr)
 }
 
 func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context, lcluster *piraeusiov1.LinstorCluster) error {

@@ -108,7 +108,8 @@ func (r *LinstorNodeConnectionReconciler) Reconcile(ctx context.Context, req ctr
 	result := ctrl.Result{
 		RequeueAfter: 1 * time.Minute,
 	}
-	return result, utils.AnyError(errs...)
+
+	return utils.AnyResult(result, errs...)
 }
 
 func (r *LinstorNodeConnectionReconciler) reconcileAll(ctx context.Context, conns []piraeusiov1.LinstorNodeConnection, satellites []piraeusiov1.LinstorSatellite, nodes []corev1.Node) error {
