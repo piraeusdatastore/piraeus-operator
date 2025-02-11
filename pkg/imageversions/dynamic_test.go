@@ -3,6 +3,7 @@ package imageversions_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -215,7 +216,7 @@ func (f *FakeVersionReporter) CreateSOSReport(ctx context.Context, opts ...*lcli
 	panic("unimplemented")
 }
 
-func (f *FakeVersionReporter) DownloadSOSReport(ctx context.Context, opts ...*lclient.ListOpts) error {
+func (f *FakeVersionReporter) DownloadSOSReport(ctx context.Context, writer io.WriteCloser, opts ...*lclient.ListOpts) error {
 	panic("unimplemented")
 }
 
