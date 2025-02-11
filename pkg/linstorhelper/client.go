@@ -67,14 +67,8 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace string
 	// of other goroutines.
 	options = slices.Clone(options)
 
-	var clientUrl *url.URL
 	if ref.ExternalController != nil {
-		u, err := url.Parse(ref.ExternalController.URL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse external controller URL: %w", err)
-		}
-
-		clientUrl = u
+		options = append(options, lapi.Controllers(strings.Split(ref.ExternalController.URL, ",")))
 	} else {
 		services := corev1.ServiceList{}
 		err := cl.List(ctx, &services, client.InNamespace(namespace), client.MatchingLabels{
@@ -96,10 +90,10 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace string
 			return nil, nil
 		}
 
-		clientUrl = &url.URL{
+		options = append(options, lapi.BaseURL(&url.URL{
 			Scheme: scheme,
 			Host:   fmt.Sprintf("%s.%s.svc:%d", s.Name, s.Namespace, port),
-		}
+		}))
 	}
 
 	if ref.ClientSecretName != "" {
@@ -127,7 +121,6 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace string
 	}
 
 	options = append(options,
-		lapi.BaseURL(clientUrl),
 		lapi.UserAgent(vars.OperatorName+"/"+vars.Version),
 		lapi.Log(&logrAdapter{log.FromContext(ctx)}),
 	)

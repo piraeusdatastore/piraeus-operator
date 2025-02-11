@@ -81,7 +81,7 @@ func TestNewClientForCluster(t *testing.T) {
 				URL: "http://other-cluster.example.com:3370",
 			},
 			expectedOptions: []lapi.Option{
-				lapi.BaseURL(&url.URL{Scheme: "http", Host: "other-cluster.example.com:3370"}),
+				lapi.Controllers([]string{"http://other-cluster.example.com:3370"}),
 				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
 			},
 		},
@@ -99,10 +99,23 @@ func TestNewClientForCluster(t *testing.T) {
 			},
 			existingSecret: "client-secret",
 			expectedOptions: []lapi.Option{
-				lapi.BaseURL(&url.URL{Scheme: "https", Host: "other-cluster.example.com:3371"}),
+				lapi.Controllers([]string{"https://other-cluster.example.com:3371"}),
 				lapi.HTTPClient(&http.Client{Transport: &http.Transport{
 					TLSClientConfig: tlsConfig,
 				}}),
+				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
+			},
+		},
+		{
+			name: "cluster-external-controller-with-multiple-urls",
+			externalRef: &piraeusv1.LinstorExternalControllerRef{
+				URL: "http://other-cluster.example.com:3370,http://another-cluster.example.com:3370",
+			},
+			expectedOptions: []lapi.Option{
+				lapi.Controllers([]string{
+					"http://other-cluster.example.com:3370",
+					"http://another-cluster.example.com:3370",
+				}),
 				lapi.UserAgent(vars.OperatorName + "/" + vars.Version),
 			},
 		},
