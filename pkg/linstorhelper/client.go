@@ -61,14 +61,10 @@ func PerClusterRateLimiter(r rate.Limit, b int) lapi.Option {
 
 // NewClientForCluster returns a LINSTOR client for a LINSTOR Controller managed by the operator.
 func NewClientForCluster(ctx context.Context, cl client.Client, namespace string, ref *piraeusv1.ClusterReference, options ...lapi.Option) (*Client, error) {
-	// Defensive copy: there might be multiple goroutines calling this in parallel, using the same "options" slice.
-	// In theory this could lead to one goroutine overwriting the append()-ed options of another because they point
-	// at the same "base" slice. To prevent this, make a copy of options so we do not trample over appended elements
-	// of other goroutines.
-	options = slices.Clone(options)
+	var opts []lapi.Option
 
 	if ref.ExternalController != nil {
-		options = append(options, lapi.Controllers(strings.Split(ref.ExternalController.URL, ",")))
+		opts = append(opts, lapi.Controllers(strings.Split(ref.ExternalController.URL, ",")))
 	} else {
 		services := corev1.ServiceList{}
 		err := cl.List(ctx, &services, client.InNamespace(namespace), client.MatchingLabels{
@@ -90,7 +86,7 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace string
 			return nil, nil
 		}
 
-		options = append(options, lapi.BaseURL(&url.URL{
+		opts = append(opts, lapi.BaseURL(&url.URL{
 			Scheme: scheme,
 			Host:   fmt.Sprintf("%s.%s.svc:%d", s.Name, s.Namespace, port),
 		}))
@@ -113,19 +109,19 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace string
 			return nil, err
 		}
 
-		options = append(options, lapi.HTTPClient(&http.Client{
+		opts = append(opts, lapi.HTTPClient(&http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: tlsConfig,
 			},
 		}))
 	}
 
-	options = append(options,
+	opts = append(opts,
 		lapi.UserAgent(vars.OperatorName+"/"+vars.Version),
 		lapi.Log(&logrAdapter{log.FromContext(ctx)}),
 	)
 
-	c, err := lapi.NewClient(options...)
+	c, err := lapi.NewClient(append(opts, options...)...)
 	if err != nil {
 		return nil, err
 	}
