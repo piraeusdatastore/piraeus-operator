@@ -5,14 +5,14 @@ go 1.23.0
 toolchain go1.23.4
 
 require (
-	github.com/LINBIT/golinstor v0.53.0
+	github.com/LINBIT/golinstor v0.54.0
 	github.com/cert-manager/cert-manager v1.17.0
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
-	github.com/piraeusdatastore/linstor-csi v1.6.5
+	github.com/piraeusdatastore/linstor-csi v1.7.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/time v0.10.0

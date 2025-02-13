@@ -126,14 +126,14 @@ func TestSetFromExternalCluster(t *testing.T) {
 		},
 	}
 
-	err := imageversions.SetFromExternalCluster(context.Background(), lclient.Client{
+	err := imageversions.SetFromExternalCluster(context.Background(), &lclient.Client{
 		Controller: &FakeVersionReporter{
 			Error: fmt.Errorf("error"),
 		},
 	}, configs)
 	assert.Error(t, err)
 
-	err = imageversions.SetFromExternalCluster(context.Background(), lclient.Client{
+	err = imageversions.SetFromExternalCluster(context.Background(), &lclient.Client{
 		Controller: &FakeVersionReporter{
 			ControllerVersion: lclient.ControllerVersion{Version: "10.11.12"},
 		},

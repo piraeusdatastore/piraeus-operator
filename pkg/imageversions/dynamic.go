@@ -38,7 +38,7 @@ func FromConfigMap(ctx context.Context, client client.Client, name types.Namespa
 //
 // The Configs will be updated so that the first entry containing a LINSTOR Satellite image is updated.
 // Returns an error is the LINSTOR Controller could not be reached, or no LINSTOR Satellite image was found.
-func SetFromExternalCluster(ctx context.Context, client lclient.Client, configs Configs) error {
+func SetFromExternalCluster(ctx context.Context, client *lclient.Client, configs Configs) error {
 	version, err := client.Controller.GetVersion(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch controller version: %w", err)

@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Disable debug logging by default for the Operator.
 - Allow specifying multiple controller URLs for external LINSTOR clusters.
+- Updated images:
+    * LINSTOR 1.30.4
+    * LINSTOR CSI 1.7.0
+    * DRBD Reactor 1.8.0
+    * LINSTOR HA Controller 1.3.0
+    * Latest CSI sidecars
 
 ## [v2.7.1] - 2024-11-25
 

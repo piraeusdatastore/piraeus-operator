@@ -29,7 +29,7 @@ import (
 
 // Client is a LINSTOR client with convenience functions.
 type Client struct {
-	lapi.Client
+	*lapi.Client
 }
 
 var (
@@ -126,7 +126,7 @@ func NewClientForCluster(ctx context.Context, cl client.Client, namespace string
 		return nil, err
 	}
 
-	return &Client{*c}, nil
+	return &Client{c}, nil
 }
 
 // extractSchemeAndPort returns the preferred connection scheme and port from the service.
