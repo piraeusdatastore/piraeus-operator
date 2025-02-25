@@ -274,23 +274,25 @@ func testTlsConfig(t *testing.T) (*tls.Config, map[string][]byte) {
 func TestCreateOrUpdateNode(t *testing.T) {
 	t.Parallel()
 
-	sampleNode := lapi.Node{
-		Name: "node1",
-		Props: map[string]string{
-			"ExampleProp1":                      "val1",
-			linstorhelper.LastApplyProperty:     `["` + linstorhelper.NodeInterfaceProperty + `","ExampleProp1"]`,
-			linstorhelper.NodeInterfaceProperty: `["default-ipv4"]`,
-		},
-		NetInterfaces: []lapi.NetInterface{{
-			Name:          "default-ipv4",
-			Address:       net.IPv4(127, 0, 0, 1),
-			SatellitePort: linstor.DfltStltPortPlain,
-		}},
+	sampleNode := func() lapi.Node {
+		return lapi.Node{
+			Name: "node1",
+			Props: map[string]string{
+				"ExampleProp1":                      "val1",
+				linstorhelper.LastApplyProperty:     `["` + linstorhelper.NodeInterfaceProperty + `","ExampleProp1"]`,
+				linstorhelper.NodeInterfaceProperty: `["default-ipv4"]`,
+			},
+			NetInterfaces: []lapi.NetInterface{{
+				Name:          "default-ipv4",
+				Address:       net.IPv4(127, 0, 0, 1),
+				SatellitePort: linstor.DfltStltPortPlain,
+			}},
+		}
 	}
 
 	testcases := []struct {
 		name       string
-		node       lapi.Node
+		node       func() lapi.Node
 		setupCalls func(t *testing.T) lapi.NodeProvider
 	}{
 		{
@@ -299,8 +301,8 @@ func TestCreateOrUpdateNode(t *testing.T) {
 			setupCalls: func(t *testing.T) lapi.NodeProvider {
 				m := mocks.NewNodeProvider(t)
 				m.On("Get", mock.Anything, "node1").Return(lapi.Node{}, lapi.NotFoundError).Once()
-				m.On("Create", mock.Anything, sampleNode).Return(nil)
-				m.On("Get", mock.Anything, "node1").Return(sampleNode, nil)
+				m.On("Create", mock.Anything, sampleNode()).Return(nil)
+				m.On("Get", mock.Anything, "node1").Return(sampleNode(), nil)
 				return m
 			},
 		},
@@ -309,27 +311,29 @@ func TestCreateOrUpdateNode(t *testing.T) {
 			node: sampleNode,
 			setupCalls: func(t *testing.T) lapi.NodeProvider {
 				m := mocks.NewNodeProvider(t)
-				m.On("Get", mock.Anything, "node1").Return(sampleNode, nil)
+				m.On("Get", mock.Anything, "node1").Return(sampleNode(), nil)
 				return m
 			},
 		},
 		{
 			name: "existing-node-with-updated-props-and-interfaces",
-			node: lapi.Node{
-				Name: "node1",
-				Props: map[string]string{
-					"ExampleProp1": "val2",
-				},
-				NetInterfaces: []lapi.NetInterface{{
-					Name:                    "default-ipv6",
-					Address:                 net.IPv6loopback,
-					SatelliteEncryptionType: "SSL",
-					SatellitePort:           linstor.DfltStltPortSsl,
-				}},
+			node: func() lapi.Node {
+				return lapi.Node{
+					Name: "node1",
+					Props: map[string]string{
+						"ExampleProp1": "val2",
+					},
+					NetInterfaces: []lapi.NetInterface{{
+						Name:                    "default-ipv6",
+						Address:                 net.IPv6loopback,
+						SatelliteEncryptionType: "SSL",
+						SatellitePort:           linstor.DfltStltPortSsl,
+					}},
+				}
 			},
 			setupCalls: func(t *testing.T) lapi.NodeProvider {
 				m := mocks.NewNodeProvider(t)
-				m.On("Get", mock.Anything, "node1").Return(sampleNode, nil)
+				m.On("Get", mock.Anything, "node1").Return(sampleNode(), nil)
 				m.On("Modify", mock.Anything, "node1", lapi.NodeModify{
 					GenericPropsModify: lapi.GenericPropsModify{
 						OverrideProps: map[string]string{
@@ -394,7 +398,7 @@ func TestCreateOrUpdateNode(t *testing.T) {
 				Nodes: test.setupCalls(t),
 			}}
 
-			_, err := lc.CreateOrUpdateNode(context.Background(), test.node)
+			_, err := lc.CreateOrUpdateNode(context.Background(), test.node())
 			assert.NoError(t, err)
 		})
 	}
