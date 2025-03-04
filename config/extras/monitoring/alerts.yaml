@@ -66,6 +66,7 @@ spec:
             description: |
               DRBD Resource "{{ $labels.name }}" on "{{ $labels.node }}" is not connected to "{{ $labels.conn_name }}": {{ $labels.drbd_connection_state }}.
           expr: drbd_connection_state{drbd_connection_state!="Connected"} > 0
+          for: 1m
           labels:
             severity: warn
         - alert: drbdDeviceNotUpToDate
@@ -73,6 +74,7 @@ spec:
             description: |
               DRBD device "{{ $labels.name }}" on "{{ $labels.node }}" has unexpected device state "{{ $labels.drbd_device_state }}".
           expr: drbd_device_state{drbd_device_state!~"UpToDate|Diskless"} > 0
+          for: 1m
           labels:
             severity: warn
         - alert: drbdDeviceUnintentionalDiskless
@@ -89,6 +91,7 @@ spec:
               DRBD device "{{ $labels.name }}" on "{{ $labels.node }}" has no quorum.
               This usually indicates connectivity issues.
           expr: drbd_device_quorum == 0
+          for: 1m
           labels:
             severity: warn
         - alert: drbdResourceSuspended
@@ -112,5 +115,6 @@ spec:
             description: |
               DRBD resource "{{ $labels.name }}" has no UpToDate replicas.
           expr: sum by (name) (drbd_device_state{drbd_device_state="UpToDate"}) == 0
+          for: 1m
           labels:
             severity: critical
