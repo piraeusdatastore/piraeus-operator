@@ -44,7 +44,7 @@ var (
 // Client(s) pointing to the same URL will share a cache.
 func PerClusterNodeCache(timeout time.Duration) lapi.Option {
 	return func(c *lapi.Client) error {
-		cache, _ := nodeCaches.LoadOrStore(c.BaseURL(), &lapicache.NodeCache{Timeout: timeout})
+		cache, _ := nodeCaches.LoadOrStore(c.BaseURL().String(), &lapicache.NodeCache{Timeout: timeout})
 		return lapicache.WithCaches(cache.(*lapicache.NodeCache))(c)
 	}
 }
@@ -54,7 +54,7 @@ func PerClusterNodeCache(timeout time.Duration) lapi.Option {
 // Client(s) pointing to the same URL will share a rate limiter.
 func PerClusterRateLimiter(r rate.Limit, b int) lapi.Option {
 	return func(c *lapi.Client) error {
-		limiter, _ := rateLimiters.LoadOrStore(c.BaseURL(), rate.NewLimiter(r, b))
+		limiter, _ := rateLimiters.LoadOrStore(c.BaseURL().String(), rate.NewLimiter(r, b))
 		return lapi.Limiter(limiter.(*rate.Limiter))(c)
 	}
 }

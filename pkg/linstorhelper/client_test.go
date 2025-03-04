@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
@@ -402,4 +403,93 @@ func TestCreateOrUpdateNode(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func TestPerClusterOptions(t *testing.T) {
+	t.Parallel()
+
+	testScheme := runtime.NewScheme()
+	err := corev1.AddToScheme(testScheme)
+	assert.NoError(t, err)
+
+	err = piraeusv1.AddToScheme(testScheme)
+	assert.NoError(t, err)
+
+	k8scl := fake.NewClientBuilder().
+		WithObjects(
+			&corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster-1",
+					Namespace: "test1",
+					Labels: map[string]string{
+						"app.kubernetes.io/instance":  "test-cluster-1",
+						"app.kubernetes.io/component": "linstor-controller",
+					},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{
+						Name: "api",
+						Port: 3370,
+					}},
+				},
+			},
+			&corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster-2",
+					Namespace: "test2",
+					Labels: map[string]string{
+						"app.kubernetes.io/instance":  "test-cluster-2",
+						"app.kubernetes.io/component": "linstor-controller",
+					},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{
+						Name: "api",
+						Port: 3370,
+					}},
+				},
+			},
+		).
+		WithScheme(testScheme).
+		Build()
+
+	cluster1, err := linstorhelper.NewClientForCluster(
+		context.Background(),
+		k8scl,
+		"test1",
+		&piraeusv1.ClusterReference{Name: "test-cluster-1"},
+		linstorhelper.PerClusterNodeCache(1*time.Minute),
+	)
+	assert.NoError(t, err)
+
+	cluster1Copy, err := linstorhelper.NewClientForCluster(
+		context.Background(),
+		k8scl,
+		"test1",
+		&piraeusv1.ClusterReference{Name: "test-cluster-1"},
+		linstorhelper.PerClusterNodeCache(1*time.Minute),
+	)
+	assert.NoError(t, err)
+
+	cluster2, err := linstorhelper.NewClientForCluster(
+		context.Background(),
+		k8scl,
+		"test2",
+		&piraeusv1.ClusterReference{Name: "test-cluster-2"},
+		linstorhelper.PerClusterNodeCache(1*time.Minute),
+	)
+	assert.NoError(t, err)
+
+	getNodeCache := func(provider lapi.NodeProvider) reflect.Value {
+		v := reflect.ValueOf(provider).Elem()
+		return v.FieldByName("cache").Elem()
+	}
+
+	cluster1Cache := getNodeCache(cluster1.Nodes)
+	cluster1CopyCache := getNodeCache(cluster1Copy.Nodes)
+	cluster2Cache := getNodeCache(cluster2.Nodes)
+
+	assert.Equal(t, cluster1Cache, cluster1CopyCache)
+	assert.NotEqual(t, cluster1Cache, cluster2Cache)
+	assert.NotEqual(t, cluster1CopyCache, cluster2Cache)
 }

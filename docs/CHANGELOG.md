@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix Operator caches not being index by a comparable key, leading to cache misses and a memory leak.
+
 ## [v2.8.0] - 2025-02-13
 
 ### Added
