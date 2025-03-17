@@ -71,18 +71,11 @@ attaching a virtual console using the machines BMC, or using tools of your virtu
 or VNC.
 
 Then, reboot the machine, chosing to "Perform MOK management" when promted. Now:
-* Select "Enroll MOK":
 
-  ![mok-enroll.png](../assets/mok-enroll.png)
-* Continue enrollment of the key:
-
-  ![mok-continue.png](../assets/mok-continue.png)
-* Enter the password chosen when running `mokutil --import`:
-
-  ![mok-password.png](../assets/mok-password.png)
-* Reboot the machine:
-
-  ![mok-reboot.png](../assets/mok-reboot.png)
+* Select "Enroll MOK": ![mok-enroll.png](../assets/mok-enroll.png)
+* Continue enrollment of the key: ![mok-continue.png](../assets/mok-continue.png)
+* Enter the password chosen when running `mokutil --import`: ![mok-password.png](../assets/mok-password.png)
+* Reboot the machine: ![mok-reboot.png](../assets/mok-reboot.png)
 
 ## Sign the DRBD Module Using the Created Key Material
 

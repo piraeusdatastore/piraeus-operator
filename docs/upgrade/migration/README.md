@@ -26,9 +26,9 @@ This guide assumes:
 * You used Helm to create the original deployment and are familiar with upgrading Helm deployments.
 * Your Piraeus Datastore deployment is up-to-date with the latest v1 release. Check the releases [here](https://github.com/piraeusdatastore/piraeus-operator/releases?q=v1&expanded=true).
 * You have the following command line tools available:
-  - [`kubectl`](https://kubernetes.io/docs/tasks/tools/)
-  - [`helm`](https://docs.helm.sh/docs/intro/install/)
-  - [`jq`](https://jqlang.github.io/jq/download/)
+    - [`kubectl`](https://kubernetes.io/docs/tasks/tools/)
+    - [`helm`](https://docs.helm.sh/docs/intro/install/)
+    - [`jq`](https://jqlang.github.io/jq/download/)
 * You are familiar with the `linstor` command line utility, specifically to verify the cluster state.
 
 ## Key Changes Between Operator V1 and V2
@@ -43,18 +43,20 @@ This guide assumes:
 
 ### Operational Changes
 
-* In Operator v1, all labels on the Kubernetes node resource were replicated on the satellite, making them usable in the
-  `replicasOnSame` and `replicasOnDifferent` parameters on the storage class. In Operator v2, only the following
-  labels are automatically synchronized.
-  * `kubernetes.io/hostname`
-  * `topology.kubernetes.io/region`
-  * `topology.kubernetes.io/zone`
-  Use [`LinstorSatelliteConfiguration.spec.properties`](../../reference/linstorsatelliteconfiguration.md#specproperties)
-  to synchronize additional labels.
-* The following settings are applied by Operator v2 cluster-wide:
-  * DrbdOptions/Net/rr-conflict: retry-connect
-  * DrbdOptions/Resource/on-suspended-primary-outdated: force-secondary
-  * DrbdOptions/Resource/on-no-data-accessible: suspend-io
-  * DrbdOptions/auto-quorum: suspend-io
-* Operator v2 also includes a [High-Availability Controller](https://github.com/piraeusdatastore/piraeus-ha-controller)
-  deployment to prevent stuck nodes caused by suspended DRBD devices.
+*   In Operator v1, all labels on the Kubernetes node resource were replicated on the satellite, making them usable in the
+    `replicasOnSame` and `replicasOnDifferent` parameters on the storage class. In Operator v2, only the following
+    labels are automatically synchronized.
+    * `kubernetes.io/hostname`
+    * `topology.kubernetes.io/region`
+    * `topology.kubernetes.io/zone`
+
+    Use [`LinstorSatelliteConfiguration.spec.properties`](../../reference/linstorsatelliteconfiguration.md#specproperties)
+    to synchronize additional labels.
+
+*   The following settings are applied by Operator v2 cluster-wide:
+    * `DrbdOptions/Net/rr-conflict: retry-connect`
+    * `DrbdOptions/Resource/on-suspended-primary-outdated: force-secondary`
+    * `DrbdOptions/Resource/on-no-data-accessible: suspend-io`
+    * `DrbdOptions/auto-quorum: suspend-io`
+*   Operator v2 also includes a [High-Availability Controller](https://github.com/piraeusdatastore/piraeus-ha-controller)
+    deployment to prevent stuck nodes caused by suspended DRBD devices.

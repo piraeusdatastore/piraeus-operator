@@ -20,9 +20,9 @@ To complete this guide, you should be familiar with:
   ```
 * Use a host operating system with kernel TLS offload enabled. TLS offload was added in Linux 4.19. The following
   distributions are known to have TLS offload enabled:
-  * RHEL >= 8.2
-  * Ubuntu >= 22.04
-  * Debian >= 12
+    * RHEL >= 8.2
+    * Ubuntu >= 22.04
+    * Debian >= 12
 * Have DRBD 9.2.6 or newer loaded. The following script shows the currently loaded DRBD version on all nodes:
   ```
   for SATELLITE in $(kubectl get pods -l app.kubernetes.io/component=linstor-satellite -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'); do

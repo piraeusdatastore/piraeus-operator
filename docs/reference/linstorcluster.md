@@ -210,6 +210,7 @@ spec:
 ### `.spec.controller`
 
 Controls the LINSTOR Controller Deployment:
+
 * Setting `enabled: false` disables the controller deployment entirely. See also [`.spec.externalController`](#specexternalcontroller).
 * Setting a `podTemplate:` allows for simple modification of the LINSTOR Controller Deployment.
 
@@ -237,6 +238,7 @@ spec:
 ### `.spec.csiController`
 
 Controls the CSI Controller Deployment:
+
 * Setting `enabled: false` disables the deployment entirely.
 * Setting a `podTemplate:` allows for simple modification of the CSI Controller Deployment.
 
@@ -264,6 +266,7 @@ spec:
 ### `.spec.csiNode`
 
 Controls the CSI Node DaemonSet:
+
 * Setting `enabled: false` disables the deployment entirely.
 * Setting a `podTemplate:` allows for simple modification of the CSI Node DaemonSet.
 
@@ -291,6 +294,7 @@ spec:
 ### `.spec.highAvailabilityController`
 
 Controls the High Availability Controller DaemonSet:
+
 * Setting `enabled: false` disables the deployment entirely.
 * Setting a `podTemplate:` allows for simple modification of the CSI Node Deployment.
 
@@ -318,6 +322,7 @@ spec:
 ### `.spec.internalTLS`
 
 Configures a TLS secret used by the LINSTOR Controller to:
+
 * Validate the certificate of the LINSTOR Satellites, that is the Satellites must have certificates signed by `ca.crt`.
 * Provide a client certificate for authentication with LINSTOR Satellites, that is `tls.key` and `tls.crt` must be accepted by the Satellites.
 
