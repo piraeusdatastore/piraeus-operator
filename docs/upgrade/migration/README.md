@@ -57,6 +57,6 @@ This guide assumes:
     * `DrbdOptions/Net/rr-conflict: retry-connect`
     * `DrbdOptions/Resource/on-suspended-primary-outdated: force-secondary`
     * `DrbdOptions/Resource/on-no-data-accessible: suspend-io`
-    * `DrbdOptions/auto-quorum: suspend-io`
+    * `DrbdOptions/Resource/on-no-quorum: suspend-io`
 *   Operator v2 also includes a [High-Availability Controller](https://github.com/piraeusdatastore/piraeus-ha-controller)
     deployment to prevent stuck nodes caused by suspended DRBD devices.
