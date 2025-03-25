@@ -1,0 +1,6 @@
+version: "2"
+formatters:
+  gofumpt:
+    # Module path which contains the source code being formatted.
+    # Default: ""
+    module-path: github.com/org/project

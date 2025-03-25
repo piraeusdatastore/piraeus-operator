@@ -1,9 +1,7 @@
 package controller
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"io/fs"
 	"strings"
 
@@ -300,21 +298,13 @@ func ComponentPodTemplate(kind, name string, template json.RawMessage) ([]kustty
 }
 
 func render(f fs.FS, fileName string, params map[string]any) ([]kusttypes.Patch, error) {
-	raw, err := f.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer raw.Close()
-
-	buf := bytes.Buffer{}
-	_, err = io.Copy(&buf, raw)
+	raw, err := fs.ReadFile(f, fileName)
 	if err != nil {
 		return nil, err
 	}
 
 	var patches []kusttypes.Patch
-	err = yaml.Unmarshal(buf.Bytes(), &patches)
+	err = yaml.Unmarshal(raw, &patches)
 	if err != nil {
 		return nil, err
 	}

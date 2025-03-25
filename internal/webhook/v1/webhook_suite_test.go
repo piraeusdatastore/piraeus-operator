@@ -139,8 +139,7 @@ var _ = BeforeSuite(func(_ context.Context) {
 		if err != nil {
 			return err
 		}
-		conn.Close()
-		return nil
+		return conn.Close()
 	}).Should(Succeed())
 }, NodeTimeout(60*time.Second))
 
