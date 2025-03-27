@@ -105,6 +105,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          ports:
+            - containerPort: 3366
+              name: linstor
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: linstor
+          livenessProbe:
+            tcpSocket:
+              port: linstor
           securityContext:
             readOnlyRootFilesystem: true
             privileged: true

@@ -84,6 +84,11 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(ds.Spec.Template.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
 			Expect(ds.Spec.Template.Spec.InitContainers[1].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd-shutdown-guard:"))
 			Expect(ds.Spec.Template.Spec.InitContainers[2].Image).To(ContainSubstring("quay.io/piraeusdatastore/piraeus-server:"))
+			Expect(ds.Spec.Template.Spec.Containers).To(HaveLen(2))
+			Expect(ds.Spec.Template.Spec.Containers[0].Name).To(Equal("linstor-satellite"))
+			Expect(ds.Spec.Template.Spec.Containers[0].Ports).To(HaveLen(1))
+			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].Name).To(Equal("linstor"))
+			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort).To(Equal(int32(3366)))
 		})
 
 		It("should create pod with TLS secret", func(ctx context.Context) {
@@ -96,12 +101,17 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 			Expect(err).NotTo(HaveOccurred())
 
+			var ds appsv1.DaemonSet
 			Eventually(func(g Gomega) {
-				var ds appsv1.DaemonSet
 				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", ExampleNodeName+"-tls")))))
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+			Expect(ds.Spec.Template.Spec.Containers[0].Name).To(Equal("linstor-satellite"))
+			Expect(ds.Spec.Template.Spec.Containers[0].Ports).To(HaveLen(1))
+			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].Name).To(Equal("linstor"))
+			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort).To(Equal(int32(3367)))
 		})
 
 		It("should create pod with ktls-utils if enabled", func(ctx context.Context) {

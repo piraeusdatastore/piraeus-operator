@@ -23,6 +23,13 @@
               emptyDir: { }
           containers:
             - name: linstor-satellite
+              ports:
+                - containerPort: 3366
+                  protocol: TCP
+                  $patch: delete
+                - containerPort: 3367
+                  name: linstor
+                  protocol: TCP
               volumeMounts:
                 - name: internal-tls
                   mountPath: /etc/linstor/ssl-pem
