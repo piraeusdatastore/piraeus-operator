@@ -35,6 +35,11 @@ Holds the properties which should be set on the node level. Inherited from match
 Configures a TLS secret used by the LINSTOR Satellite. Inherited from matching
 [`LinstorSatelliteConfiguration`](./linstorsatelliteconfiguration.md#specproperties) resources.
 
+### `.spec.deletionPolicy`
+
+Configures the deletion policy to use for LINSTOR Satellites. Inherited from matching
+[`LinstorSatelliteConfiguration`](./linstorsatelliteconfiguration.md#specdeletionpolicy) resources.
+
 ### `.spec.patches`
 
 Holds patches to apply to the Kubernetes resources. Inherited from matching

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"sync"
 
 	linstor "github.com/LINBIT/golinstor"
@@ -14,31 +15,36 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
-func New() http.Handler {
-	f := &fakeLinstor{}
+func New() *FakeLinstor {
+	f := &FakeLinstor{}
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /v1/controller/version", WrapHandler(f.getVersion))
-	mux.Handle("POST /v1/nodes", WrapHandler(f.createNode))
-	mux.Handle("GET /v1/nodes/{node}", WrapHandler(f.getNode))
-	mux.Handle("DELETE /v1/nodes/{node}", WrapHandler(f.deleteNode))
-	mux.Handle("PUT /v1/nodes/{node}/evacuate", WrapHandler(f.evacuateNode))
-	mux.Handle("POST /v1/resource-definitions", WrapHandler(f.createResourceDefinition))
-	mux.Handle("DELETE /v1/resource-definitions/{rd}", WrapHandler(f.deleteResourceDefinition))
-	mux.Handle("POST /v1/resource-definitions/{rd}/resources/{node}", WrapHandler(f.createResource))
-	mux.Handle("GET /v1/view/resources", WrapHandler(f.viewResources))
+	mux.Handle("GET /v1/controller/version", wrapHandler(f.getVersion))
+	mux.Handle("POST /v1/nodes", wrapHandler(f.createNode))
+	mux.Handle("GET /v1/nodes/{node}", wrapHandler(f.getNode))
+	mux.Handle("DELETE /v1/nodes/{node}", wrapHandler(f.deleteNode))
+	mux.Handle("PUT /v1/nodes/{node}/evacuate", wrapHandler(f.evacuateNode))
+	mux.Handle("DELETE /v1/nodes/{node}/lost", wrapHandler(f.lostNode))
+	mux.Handle("POST /v1/resource-definitions", wrapHandler(f.createResourceDefinition))
+	mux.Handle("DELETE /v1/resource-definitions/{rd}", wrapHandler(f.deleteResourceDefinition))
+	mux.Handle("GET /v1/resource-definitions/{rd}/resources/{node}", wrapHandler(f.getResource))
+	mux.Handle("POST /v1/resource-definitions/{rd}/resources/{node}", wrapHandler(f.createResource))
+	mux.Handle("GET /v1/view/resources", wrapHandler(f.viewResources))
 
-	return mux
+	f.Server = httptest.NewServer(mux)
+	return f
 }
 
-type fakeLinstor struct {
+type FakeLinstor struct {
+	Server *httptest.Server
+
 	mu                  sync.Mutex
 	nodes               []lapi.Node
 	resources           []lapi.ResourceWithVolumes
 	resourceDefinitions []lapi.ResourceDefinition
 }
 
-func WrapHandler(f func(r *http.Request) (any, error)) http.Handler {
+func wrapHandler(f func(r *http.Request) (any, error)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := f(r)
 		if err != nil {
@@ -56,7 +62,7 @@ func WrapHandler(f func(r *http.Request) (any, error)) http.Handler {
 	})
 }
 
-func (f *fakeLinstor) getVersion(r *http.Request) (any, error) {
+func (f *FakeLinstor) getVersion(r *http.Request) (any, error) {
 	return lapi.ControllerVersion{
 		Version:        vars.Version,
 		RestApiVersion: "fake-rest-api",
@@ -65,7 +71,7 @@ func (f *fakeLinstor) getVersion(r *http.Request) (any, error) {
 	}, nil
 }
 
-func (f *fakeLinstor) createNode(r *http.Request) (any, error) {
+func (f *FakeLinstor) createNode(r *http.Request) (any, error) {
 	defer r.Body.Close() //nolint:errcheck
 
 	var node lapi.Node
@@ -90,7 +96,7 @@ func (f *fakeLinstor) createNode(r *http.Request) (any, error) {
 	return nil, nil
 }
 
-func (f *fakeLinstor) getNode(r *http.Request) (any, error) {
+func (f *FakeLinstor) getNode(r *http.Request) (any, error) {
 	node := r.PathValue("node")
 
 	f.mu.Lock()
@@ -105,7 +111,7 @@ func (f *fakeLinstor) getNode(r *http.Request) (any, error) {
 	return nil, lapi.NotFoundError
 }
 
-func (f *fakeLinstor) deleteNode(r *http.Request) (any, error) {
+func (f *FakeLinstor) deleteNode(r *http.Request) (any, error) {
 	node := r.PathValue("node")
 
 	f.mu.Lock()
@@ -124,7 +130,7 @@ func (f *fakeLinstor) deleteNode(r *http.Request) (any, error) {
 	return nil, nil
 }
 
-func (f *fakeLinstor) createResourceDefinition(r *http.Request) (any, error) {
+func (f *FakeLinstor) createResourceDefinition(r *http.Request) (any, error) {
 	defer r.Body.Close() //nolint:errcheck
 
 	var rd lapi.ResourceDefinitionCreate
@@ -146,7 +152,23 @@ func (f *fakeLinstor) createResourceDefinition(r *http.Request) (any, error) {
 	return nil, nil
 }
 
-func (f *fakeLinstor) createResource(r *http.Request) (any, error) {
+func (f *FakeLinstor) getResource(r *http.Request) (any, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	resource := r.PathValue("rd")
+	node := r.PathValue("node")
+
+	for i := range f.resources {
+		if f.resources[i].NodeName == node && f.resources[i].Name == resource {
+			return f.resources[i], nil
+		}
+	}
+
+	return nil, lapi.NotFoundError
+}
+
+func (f *FakeLinstor) createResource(r *http.Request) (any, error) {
 	defer r.Body.Close() //nolint:errcheck
 
 	var rc lapi.ResourceCreate
@@ -186,7 +208,7 @@ func (f *fakeLinstor) createResource(r *http.Request) (any, error) {
 	return nil, nil
 }
 
-func (f *fakeLinstor) deleteResourceDefinition(r *http.Request) (any, error) {
+func (f *FakeLinstor) deleteResourceDefinition(r *http.Request) (any, error) {
 	rd := r.PathValue("rd")
 
 	f.mu.Lock()
@@ -202,7 +224,7 @@ func (f *fakeLinstor) deleteResourceDefinition(r *http.Request) (any, error) {
 	return nil, nil
 }
 
-func (f *fakeLinstor) evacuateNode(r *http.Request) (any, error) {
+func (f *FakeLinstor) evacuateNode(r *http.Request) (any, error) {
 	node := r.PathValue("node")
 
 	f.mu.Lock()
@@ -220,7 +242,31 @@ func (f *fakeLinstor) evacuateNode(r *http.Request) (any, error) {
 	return nil, lapi.NotFoundError
 }
 
-func (f *fakeLinstor) viewResources(r *http.Request) (any, error) {
+func (f *FakeLinstor) lostNode(r *http.Request) (any, error) {
+	node := r.PathValue("node")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	for i := range f.nodes {
+		if f.nodes[i].Name == node {
+			if f.nodes[i].ConnectionStatus != "OFFLINE" {
+				return nil, fmt.Errorf("node '%s' is not 'OFFLINE'", node)
+			}
+		}
+	}
+
+	f.nodes = slices.DeleteFunc(f.nodes, func(n lapi.Node) bool {
+		return n.Name == node
+	})
+	f.resources = slices.DeleteFunc(f.resources, func(n lapi.ResourceWithVolumes) bool {
+		return n.NodeName == node
+	})
+
+	return nil, nil
+}
+
+func (f *FakeLinstor) viewResources(r *http.Request) (any, error) {
 	r.URL.Query()
 
 	resources := slices.Clone(f.resources)
@@ -231,4 +277,15 @@ func (f *fakeLinstor) viewResources(r *http.Request) (any, error) {
 	}
 
 	return resources, nil
+}
+
+func (f *FakeLinstor) SetConnectionStatus(name string, status string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	for i := range f.nodes {
+		if f.nodes[i].Name == name {
+			f.nodes[i].ConnectionStatus = status
+		}
+	}
 }

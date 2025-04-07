@@ -134,6 +134,7 @@ var _ = Describe("LinstorCluster controller", func() {
 						Patches: []piraeusiov1.Patch{
 							{Target: &piraeusiov1.Selector{Kind: "Pod"}, Patch: "pod-patch1"},
 						},
+						DeletionPolicy: piraeusiov1.DeletionPolicyEvacuate,
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -186,7 +187,8 @@ var _ = Describe("LinstorCluster controller", func() {
 						{Name: "pool1", LvmPool: &piraeusiov1.LinstorStoragePoolLvm{}},
 						{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
 					},
-					InternalTLS: &piraeusiov1.TLSConfigWithHandshakeDaemon{},
+					InternalTLS:    &piraeusiov1.TLSConfigWithHandshakeDaemon{},
+					DeletionPolicy: piraeusiov1.DeletionPolicyEvacuate,
 				}
 
 				specZoneB := &piraeusiov1.LinstorSatelliteSpec{
@@ -202,7 +204,8 @@ var _ = Describe("LinstorCluster controller", func() {
 						{Name: "pool1", LvmPool: &piraeusiov1.LinstorStoragePoolLvm{}},
 						{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{}},
 					},
-					InternalTLS: &piraeusiov1.TLSConfigWithHandshakeDaemon{},
+					InternalTLS:    &piraeusiov1.TLSConfigWithHandshakeDaemon{},
+					DeletionPolicy: piraeusiov1.DeletionPolicyRetain,
 				}
 
 				Expect(&satNode1A.Spec).To(Equal(specZoneA))

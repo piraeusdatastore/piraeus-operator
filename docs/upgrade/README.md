@@ -14,6 +14,27 @@ $ kubectl apply --server-side -k "https://github.com/piraeusdatastore/piraeus-op
 $ kubectl wait pod --for=condition=Ready -n piraeus-datastore --all
 ```
 
+# Upgrades from v2.8 to v2.9
+
+Generally, no special steps required.
+
+The default behaviour when deleting the `LinstorSatellite` resource has been changed. The Operator no longer causes
+the node to be evacuated by default. Instead, the LINSTOR Satellite is left unchanged. To restore the old behaviour,
+create the following resource:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: satellite-deletion-policy
+spec:
+ deletionPolicy: Evacuate
+```
+
+# Upgrades from v2.7 to v2.8
+
+No special steps required.
+
 # Upgrades from v2.6 to v2.7
 
 Generally, no special steps required.

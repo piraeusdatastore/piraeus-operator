@@ -262,6 +262,31 @@ spec:
       name: piraeus-root
 ```
 
+### `spec.deletionPolicy`
+
+Configure how Satellite removal is handled. Possible policies are:
+
+* `Retain`, the default policy if not set. This policy will cause the Satellite to remain registered in LINSTOR when
+   the LinstorSatellite resource is removed.
+* `Evacuate`. This policy will cause the Satellite to be evacuated, i.e. all deployed resources will be moved to a
+   replacement node. This requires spare capacity in the cluster. Deletion will only succeed if all resources have
+   been moved off the node.
+* `Delete`. This policy causes the Satellite to be forcefully removed from the Cluster. All Kubernetes resources will
+   be removed, and the node will be removed from LINSTOR without regard for replica integrity.
+
+#### Example
+
+This example sets the deletion policy of LINSTOR Satellites to `Evacuate`.
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: satellite-deletion-policy
+spec:
+ deletionPolicy: Evacuate
+```
+
 ### `.spec.ipFamilies`
 
 Configures the IP Family (IPv4 or IPv6) to use to connect to the LINSTOR Satellite.

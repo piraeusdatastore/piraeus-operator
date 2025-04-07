@@ -62,6 +62,10 @@ type LinstorSatelliteSpec struct {
 	// If not set, the Operator will configure all families found in the Satellites Pods' Status.
 	// +kubebuilder:validation:Optional
 	IPFamilies []IPFamily `json:"ipFamilies,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=Retain
+	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`
 }
 
 // LinstorSatelliteStatus defines the observed state of LinstorSatellite

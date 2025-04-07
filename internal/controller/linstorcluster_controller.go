@@ -671,6 +671,14 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 		})
 	}
 
+	if cfg.Spec.DeletionPolicy != "" {
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/spec/deletionPolicy",
+			Value: cfg.Spec.DeletionPolicy,
+		})
+	}
+
 	for j := range cfg.Spec.Properties {
 		patches = append(patches, utils.JsonPatch{
 			Op:    utils.Add,

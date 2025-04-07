@@ -62,6 +62,10 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 		if cfg.Spec.IPFamilies != nil {
 			result.Spec.IPFamilies = cfg.Spec.IPFamilies
 		}
+
+		if cfg.Spec.DeletionPolicy != "" {
+			result.Spec.DeletionPolicy = cfg.Spec.DeletionPolicy
+		}
 	}
 
 	for _, v := range propsMap {

@@ -71,6 +71,9 @@ type LinstorSatelliteConfigurationSpec struct {
 	// +kubebuilder:validation:Optional
 	IPFamilies []IPFamily `json:"ipFamilies,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`
+
 	// Template to apply to Satellite Pods.
 	//
 	// The template is applied as a patch to the default resource, so it can be "sparse", not listing any

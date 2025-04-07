@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -30,7 +31,7 @@ import (
 	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -88,7 +89,7 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	lsatellite := &piraeusiov1.LinstorSatellite{}
 	err := r.Get(ctx, req.NamespacedName, lsatellite)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
@@ -97,7 +98,7 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	var node corev1.Node
 	err = r.Get(ctx, req.NamespacedName, &node)
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
 
@@ -117,9 +118,9 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if lsatellite.GetDeletionTimestamp() != nil {
 		deleteErr = r.deleteSatellite(ctx, lsatellite)
 		if deleteErr != nil {
-			conds.AddError("EvacuationCompleted", deleteErr)
+			conds.AddError("DeletionCompleted", deleteErr)
 		} else {
-			conds.AddSuccess("EvacuationCompleted", "evacuation complete")
+			conds.AddSuccess("DeletionCompleted", fmt.Sprintf("deletion using '%s' policy complete", lsatellite.Spec.DeletionPolicy))
 		}
 	} else {
 		if controllerutil.AddFinalizer(lsatellite, vars.SatelliteFinalizer) {
@@ -144,6 +145,11 @@ func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Contex
 	resMap, err := r.kustomizeNodeResources(ctx, lsatellite, node)
 	if err != nil {
 		return err
+	}
+
+	if lsatellite.GetDeletionTimestamp() != nil && lsatellite.Spec.DeletionPolicy == piraeusiov1.DeletionPolicyDelete {
+		r.log.Info("Forcing deletion of Satellite resources because of deletion policy 'Delete'")
+		resMap = resmap.New()
 	}
 
 	for _, res := range resMap.Resources() {
@@ -535,28 +541,38 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		return r.Client.Update(ctx, lsatellite)
 	}
 
-	err = lc.Nodes.Evacuate(ctx, lsatellite.Name)
-	if err != nil && err != lapi.NotFoundError {
-		return err
-	}
-
-	ress, err := lc.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{lsatellite.Name}})
-	if err != nil && err != lapi.NotFoundError {
-		return err
-	}
-
-	if len(ress) > 0 {
-		resNames := make([]string, 0, len(ress))
-		for _, r := range ress {
-			resNames = append(resNames, r.Name)
+	switch lsatellite.Spec.DeletionPolicy {
+	case piraeusiov1.DeletionPolicyEvacuate:
+		err = lc.Nodes.Evacuate(ctx, lsatellite.Name)
+		if err != nil && !errors.Is(err, lapi.NotFoundError) {
+			return err
 		}
 
-		return fmt.Errorf("remaining resources: %s", strings.Join(resNames, ", "))
-	}
+		ress, err := lc.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{lsatellite.Name}})
+		if err != nil && !errors.Is(err, lapi.NotFoundError) {
+			return err
+		}
 
-	err = lc.Nodes.Delete(ctx, lsatellite.Name)
-	if err != nil && err != lapi.NotFoundError {
-		return err
+		if len(ress) > 0 {
+			resNames := make([]string, 0, len(ress))
+			for _, r := range ress {
+				resNames = append(resNames, r.Name)
+			}
+
+			return fmt.Errorf("remaining resources: %s", strings.Join(resNames, ", "))
+		}
+
+		err = lc.Nodes.Delete(ctx, lsatellite.Name)
+		if err != nil && !errors.Is(err, lapi.NotFoundError) {
+			return err
+		}
+	case piraeusiov1.DeletionPolicyDelete:
+		err := lc.Nodes.Lost(ctx, lsatellite.Name)
+		if err != nil && !errors.Is(err, lapi.NotFoundError) {
+			return err
+		}
+	case "", piraeusiov1.DeletionPolicyRetain:
+		r.log.Info("Nothing to do for deletion of satellite with 'Retain' deletion policy")
 	}
 
 	controllerutil.RemoveFinalizer(lsatellite, vars.SatelliteFinalizer)
