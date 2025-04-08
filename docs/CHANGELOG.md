@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated default properties applied on controller level to match LINSTOR release 1.31.0
+- Updated images:
+    * LINSTOR 1.31.0
+    * LINSTOR CSI 1.7.1
+    * DRBD 9.2.13
+    * Latest CSI sidecars
+
 ### Fixed
 
 - Fix Operator caches not being index by a comparable key, leading to cache misses and a memory leak.
