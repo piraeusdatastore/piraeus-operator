@@ -70,6 +70,7 @@ type LinstorClusterReconciler struct {
 	Namespace          string
 	PullSecret         string
 	ImageConfigMapName string
+	RequeueInterval    time.Duration
 	LinstorClientOpts  []lapi.Option
 	Kustomizer         *resources.Kustomizer
 	APIVersion         *utils.APIVersion
@@ -136,11 +137,7 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return nil
 	})
 
-	result := ctrl.Result{
-		RequeueAfter: 1 * time.Minute,
-	}
-
-	return utils.AnyResult(result, applyErr, stateErr, condErr)
+	return utils.AnyResult(ctrl.Result{RequeueAfter: r.RequeueInterval}, applyErr, stateErr, condErr)
 }
 
 func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context, lcluster *piraeusiov1.LinstorCluster) error {

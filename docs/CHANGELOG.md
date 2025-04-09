@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to set the maximum time between reconciliations.
+
 ### Changed
 
 - Updated default properties applied on controller level to match LINSTOR release 1.31.0

@@ -66,6 +66,7 @@ type LinstorSatelliteReconciler struct {
 	Scheme             *runtime.Scheme
 	Namespace          string
 	ImageConfigMapName string
+	RequeueInterval    time.Duration
 	LinstorClientOpts  []lapi.Option
 	Kustomizer         *resources.Kustomizer
 	log                logr.Logger
@@ -136,11 +137,7 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return nil
 	})
 
-	result := ctrl.Result{
-		RequeueAfter: 1 * time.Minute,
-	}
-
-	return utils.AnyResult(result, applyErr, stateErr, deleteErr, condErr)
+	return utils.AnyResult(ctrl.Result{RequeueAfter: r.RequeueInterval}, applyErr, stateErr, deleteErr, condErr)
 }
 
 func (r *LinstorSatelliteReconciler) reconcileAppliedResource(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {

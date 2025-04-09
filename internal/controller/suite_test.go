@@ -135,6 +135,7 @@ var _ = BeforeSuite(func() {
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
+		RequeueInterval:    DefaultCheckInterval,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -143,6 +144,7 @@ var _ = BeforeSuite(func() {
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
+		RequeueInterval:    DefaultCheckInterval,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 

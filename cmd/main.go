@@ -71,6 +71,7 @@ func main() {
 	var imageConfigMapName string
 	var linstorApiQps float64
 	var nodeCacheDuration time.Duration
+	var requeueInterval time.Duration
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -81,6 +82,7 @@ func main() {
 	flag.StringVar(&imageConfigMapName, "image-config-map-name", os.Getenv("IMAGE_CONFIG_MAP_NAME"), "Config map holding default images to use")
 	flag.Float64Var(&linstorApiQps, "linstor-api-qps", 100.0, "Limit requests to the LINSTOR API to this many queries per second")
 	flag.DurationVar(&nodeCacheDuration, "linstor-node-cache-duration", 1*time.Minute, "Duration for which the results of node and storage pool related API responses should be cached.")
+	flag.DurationVar(&requeueInterval, "requeue-interval", 1*time.Minute, "Maximum time between reconciliation, even if no Kubernetes resource change was detected.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -124,6 +126,7 @@ func main() {
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
 		PullSecret:         pullSecret,
+		RequeueInterval:    requeueInterval,
 		LinstorClientOpts:  linstorOpts,
 	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorCluster")
@@ -134,6 +137,7 @@ func main() {
 		Scheme:             mgr.GetScheme(),
 		Namespace:          namespace,
 		ImageConfigMapName: imageConfigMapName,
+		RequeueInterval:    requeueInterval,
 		LinstorClientOpts:  linstorOpts,
 	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
@@ -143,6 +147,7 @@ func main() {
 		Client:            mgr.GetClient(),
 		Scheme:            mgr.GetScheme(),
 		Namespace:         namespace,
+		RequeueInterval:   requeueInterval,
 		LinstorClientOpts: linstorOpts,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorNodeConnection")

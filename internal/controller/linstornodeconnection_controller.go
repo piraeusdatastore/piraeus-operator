@@ -52,6 +52,7 @@ type LinstorNodeConnectionReconciler struct {
 	client.Client
 	Scheme            *runtime.Scheme
 	Namespace         string
+	RequeueInterval   time.Duration
 	LinstorClientOpts []lapi.Option
 }
 
@@ -105,11 +106,7 @@ func (r *LinstorNodeConnectionReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
-	result := ctrl.Result{
-		RequeueAfter: 1 * time.Minute,
-	}
-
-	return utils.AnyResult(result, errs...)
+	return utils.AnyResult(ctrl.Result{RequeueAfter: r.RequeueInterval}, errs...)
 }
 
 func (r *LinstorNodeConnectionReconciler) reconcileAll(ctx context.Context, conns []piraeusiov1.LinstorNodeConnection, satellites []piraeusiov1.LinstorSatellite, nodes []corev1.Node) error {

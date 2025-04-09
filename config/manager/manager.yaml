@@ -39,6 +39,7 @@ spec:
         - --namespace=$(NAMESPACE)
         - --zap-devel=$(ZAP_DEVEL)
         - --image-config-map-name=$(IMAGE_CONFIG_MAP_NAME)
+        - --requeue-interval=$(REQUEUE_INTERVAL)
         image: controller:latest
         name: manager
         env:
@@ -50,6 +51,8 @@ spec:
             value: "false"
           - name: IMAGE_CONFIG_MAP_NAME
             value: image-config
+          - name: REQUEUE_INTERVAL
+            value: "1m"
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
