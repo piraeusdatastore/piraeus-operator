@@ -39,9 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
-
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
+	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/k8sgc"
 	//+kubebuilder:scaffold:imports
 )

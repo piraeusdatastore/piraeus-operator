@@ -2,18 +2,25 @@ package controller_test
 
 import (
 	"context"
+	"net"
+	"net/http/httptest"
 
+	linstor "github.com/LINBIT/golinstor"
+	lapi "github.com/LINBIT/golinstor/client"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/fakelinstor"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
@@ -21,8 +28,13 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 	TypeMeta := metav1.TypeMeta{Kind: "LinstorSatellite", APIVersion: piraeusiov1.GroupVersion.String()}
 
 	Context("When creating LinstorSatellite resources", func() {
+		var clusterRef *piraeusiov1.ClusterReference
 		var satellite *piraeusiov1.LinstorSatellite
+		var linstorController *httptest.Server
+
 		BeforeEach(func(ctx context.Context) {
+			linstorController = httptest.NewServer(fakelinstor.New())
+
 			err := k8sClient.Create(ctx, &corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 				Status: corev1.NodeStatus{
@@ -38,11 +50,18 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			satellite = &piraeusiov1.LinstorSatellite{
 				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
 				Spec: piraeusiov1.LinstorSatelliteSpec{
-					ClusterRef: piraeusiov1.ClusterReference{Name: "example"},
+					ClusterRef: piraeusiov1.ClusterReference{
+						Name: "example",
+						ExternalController: &piraeusiov1.LinstorExternalControllerRef{
+							URL: linstorController.URL,
+						},
+					},
 				},
 			}
 			err = k8sClient.Create(ctx, satellite)
 			Expect(err).NotTo(HaveOccurred())
+
+			clusterRef = &satellite.Spec.ClusterRef
 		})
 
 		AfterEach(func(ctx context.Context) {
@@ -58,6 +77,8 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 
 			err = k8sClient.DeleteAllOf(ctx, &corev1.Node{})
 			Expect(err).NotTo(HaveOccurred())
+
+			linstorController.Close()
 		})
 
 		It("should select loader image, apply resources, setting finalizer and condition", func(ctx context.Context) {
@@ -189,45 +210,123 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 		})
 
-		Context("with additional finalizer", func() {
+		Context("with created Pod resource", func() {
+			var linstorClient *linstorhelper.Client
+
 			BeforeEach(func(ctx context.Context) {
-				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
-					TypeMeta:   TypeMeta,
-					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName, Finalizers: []string{"piraeus.io/test"}},
-				}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+				var ds *appsv1.DaemonSet
+				Eventually(func() *appsv1.DaemonSet {
+					var current appsv1.DaemonSet
+					err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &current)
+					if err != nil {
+						return nil
+					}
+					ds = &current
+					return ds
+				}).Should(Not(BeNil()))
+
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						GenerateName:    "linstor-satellite-" + ExampleNodeName,
+						Namespace:       Namespace,
+						Labels:          ds.Spec.Template.Labels,
+						Annotations:     ds.Spec.Template.Annotations,
+						OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(ds, schema.FromAPIVersionAndKind("apps/v1", "DaemonSet"))},
+					},
+					Spec: ds.Spec.Template.Spec,
+				}
+
+				pod.Spec.NodeName = ExampleNodeName
+				err := k8sClient.Create(ctx, pod)
+				Expect(err).NotTo(HaveOccurred())
+
+				pod.Status = corev1.PodStatus{
+					Phase: corev1.PodRunning,
+					PodIP: "10.0.0.147",
+					PodIPs: []corev1.PodIP{{
+						IP: "10.0.0.147",
+					}},
+				}
+
+				err = k8sClient.Status().Update(ctx, pod)
+				Expect(err).NotTo(HaveOccurred())
+
+				linstorClient, err = linstorhelper.NewClientForCluster(ctx, k8sClient, Namespace, clusterRef)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func(ctx context.Context) {
-				err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
-					TypeMeta:   TypeMeta,
-					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-				}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+				err := k8sClient.DeleteAllOf(ctx, &corev1.Pod{}, client.InNamespace(Namespace))
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("should continue to reconcile after deleting a k8s node", func(ctx context.Context) {
-				err := k8sClient.Delete(ctx, &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+			It("should register the satellite", func(ctx context.Context) {
+				Eventually(func(g Gomega) {
+					node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(node.Name).To(Equal(ExampleNodeName))
+					g.Expect(node.NetInterfaces).To(HaveExactElements(lapi.NetInterface{
+						Name:                    "default-ipv4",
+						Address:                 net.ParseIP("10.0.0.147"),
+						SatellitePort:           linstor.DfltStltPortPlain,
+						SatelliteEncryptionType: linstor.ValNetcomTypePlain,
+					}))
+				}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+			})
+
+			Context("with additional finalizer", func() {
+				BeforeEach(func(ctx context.Context) {
+					err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+						TypeMeta:   TypeMeta,
+						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName, Finalizers: []string{"piraeus.io/test"}},
+					}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+					Expect(err).NotTo(HaveOccurred())
 				})
-				Expect(err).NotTo(HaveOccurred())
 
-				err = k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName}})
-				Expect(err).NotTo(HaveOccurred())
+				AfterEach(func(ctx context.Context) {
+					err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+						TypeMeta:   TypeMeta,
+						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+					}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+					Expect(err).NotTo(HaveOccurred())
+				})
 
-				Eventually(func() metav1.ConditionStatus {
-					var satellite piraeusiov1.LinstorSatellite
-					err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-					if err != nil {
-						return metav1.ConditionUnknown
-					}
+				It("should evacuate the node after deleting the satellite", func(ctx context.Context) {
+					Eventually(func(g Gomega) {
+						node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
+						g.Expect(err).NotTo(HaveOccurred())
+						g.Expect(node.Name).To(Equal(ExampleNodeName))
+						g.Expect(node.ConnectionStatus).To(Equal("ONLINE"))
+					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 
-					condition := meta.FindStatusCondition(satellite.Status.Conditions, "EvacuationCompleted")
-					if condition == nil || condition.ObservedGeneration != satellite.Generation {
-						return metav1.ConditionUnknown
-					}
-					return condition.Status
-				}, DefaultTimeout, DefaultCheckInterval).Should(Equal(metav1.ConditionTrue))
+					err := k8sClient.Delete(ctx, &corev1.Node{
+						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					err = k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName}})
+					Expect(err).NotTo(HaveOccurred())
+
+					Eventually(func(g Gomega) {
+						_, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
+						g.Expect(err).To(Equal(lapi.NotFoundError))
+					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+					Eventually(func() metav1.ConditionStatus {
+						var satellite piraeusiov1.LinstorSatellite
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
+						if err != nil {
+							return metav1.ConditionUnknown
+						}
+
+						condition := meta.FindStatusCondition(satellite.Status.Conditions, "EvacuationCompleted")
+						if condition == nil || condition.ObservedGeneration != satellite.Generation {
+							return metav1.ConditionUnknown
+						}
+
+						return condition.Status
+					}, DefaultTimeout, DefaultCheckInterval).Should(Equal(metav1.ConditionTrue))
+				})
 			})
 		})
 	})
