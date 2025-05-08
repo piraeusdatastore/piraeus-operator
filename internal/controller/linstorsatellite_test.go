@@ -75,7 +75,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				err = k8sClient.List(ctx, &satellites)
 				Expect(err).NotTo(HaveOccurred())
 				return satellites.Items
-			}, DefaultTimeout, DefaultCheckInterval).Should(BeEmpty())
+			}).Should(BeEmpty())
 
 			err = k8sClient.DeleteAllOf(ctx, &corev1.Node{})
 			Expect(err).NotTo(HaveOccurred())
@@ -96,7 +96,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					return false
 				}
 				return condition.Status == metav1.ConditionTrue
-			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+			}).Should(BeTrue())
 
 			Expect(satellite.Finalizers).To(ContainElement(vars.SatelliteFinalizer))
 
@@ -129,7 +129,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", ExampleNodeName+"-tls")))))
-			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+			}).Should(Succeed())
 
 			Expect(ds.Spec.Template.Spec.Containers[0].Name).To(Equal("linstor-satellite"))
 			Expect(ds.Spec.Template.Spec.Containers[0].Ports).To(HaveLen(1))
@@ -157,7 +157,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				container := GetContainer(ds.Spec.Template.Spec.Containers, "ktls-utils")
 				g.Expect(container).NotTo(BeNil())
 				g.Expect(container.VolumeMounts).To(ContainElement(HaveField("Name", "internal-tls")))
-			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		It("should mount host directory for file storage", func(ctx context.Context) {
@@ -180,7 +180,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("HostPath.Path", "/var/lib/linstor-pools/pool1")))
-			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		It("should convert bare pod patches to daemonset patches", func(ctx context.Context) {
@@ -209,7 +209,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				g.Expect(ds.Spec.Template.Labels).To(HaveKeyWithValue("example.com/foo", "bar"))
 				g.Expect(ds.Spec.Template.Spec.HostNetwork).To(BeTrue())
 				g.Expect(ds.Spec.Template.Spec.Containers).NotTo(ContainElement(HaveField("Name", "drbd-reactor")))
-			}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		Context("with created Pod resource", func() {
@@ -273,7 +273,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						SatellitePort:           linstor.DfltStltPortPlain,
 						SatelliteEncryptionType: linstor.ValNetcomTypePlain,
 					}))
-				}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+				}).Should(Succeed())
 			})
 
 			Context("with additional finalizer and resource", func() {
@@ -289,7 +289,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						g.Expect(err).NotTo(HaveOccurred())
 						g.Expect(node.Name).To(Equal(ExampleNodeName))
 						g.Expect(node.ConnectionStatus).To(Equal("ONLINE"))
-					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+					}).Should(Succeed())
 
 					err = linstorClient.ResourceDefinitions.Create(ctx, lapi.ResourceDefinitionCreate{
 						ResourceDefinition: lapi.ResourceDefinition{Name: "resource1"},
@@ -330,7 +330,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
 						g.Expect(err).NotTo(HaveOccurred())
 						g.Expect(node.Flags).To(ContainElement(linstor.FlagEvacuate))
-					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+					}).Should(Succeed())
 
 					GinkgoWriter.Println("checking that Satellite status reports evacuation progress")
 
@@ -347,7 +347,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						}
 
 						return condition
-					}, DefaultTimeout, DefaultCheckInterval).Should(And(
+					}).Should(And(
 						Not(BeNil()),
 						HaveField("Status", metav1.ConditionFalse),
 						HaveField("Message", ContainSubstring("resource1"))),
@@ -361,7 +361,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					Eventually(func(g Gomega) {
 						_, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
 						g.Expect(err).To(Equal(lapi.NotFoundError))
-					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+					}).Should(Succeed())
 
 					Eventually(func() metav1.ConditionStatus {
 						var satellite piraeusiov1.LinstorSatellite
@@ -376,7 +376,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						}
 
 						return condition.Status
-					}, DefaultTimeout, DefaultCheckInterval).Should(Equal(metav1.ConditionTrue))
+					}).Should(Equal(metav1.ConditionTrue))
 				})
 			})
 		})

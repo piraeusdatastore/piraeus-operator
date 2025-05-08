@@ -33,7 +33,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				err = k8sClient.List(ctx, &satellites)
 				Expect(err).NotTo(HaveOccurred())
 				return satellites.Items
-			}, DefaultTimeout, DefaultCheckInterval).Should(BeEmpty())
+			}).Should(BeEmpty())
 		})
 
 		It("should set the available condition", func(ctx context.Context) {
@@ -54,14 +54,14 @@ var _ = Describe("LinstorCluster controller", func() {
 				}
 
 				return condition
-			}, DefaultTimeout, DefaultCheckInterval).Should(Not(BeNil()))
+			}).Should(Not(BeNil()))
 		})
 
 		It("should create controller resources", func(ctx context.Context) {
 			Eventually(func() error {
 				deploy := appsv1.Deployment{}
 				return k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: "piraeus-datastore"}, &deploy)
-			}, DefaultTimeout, DefaultCheckInterval).Should(Not(HaveOccurred()))
+			}).Should(Not(HaveOccurred()))
 		})
 
 		Describe("with cluster nodes present", func() {
@@ -97,7 +97,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					return satellites.Items
-				}, DefaultTimeout, DefaultCheckInterval).Should(HaveLen(3))
+				}).Should(HaveLen(3))
 			})
 
 			It("should apply LinstorSatelliteConfigs to matching nodes", func(ctx context.Context) {
@@ -152,7 +152,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					}
 
 					return true
-				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+				}).Should(BeTrue())
 
 				var satNode1A, satNode1B, satNode2A piraeusiov1.LinstorSatellite
 				err = k8sClient.Get(ctx, types.NamespacedName{Name: "node-1a"}, &satNode1A)
@@ -217,7 +217,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					return satellites.Items
-				}, DefaultTimeout, DefaultCheckInterval).Should(HaveLen(3))
+				}).Should(HaveLen(3))
 
 				var cluster piraeusiov1.LinstorCluster
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
@@ -241,7 +241,7 @@ var _ = Describe("LinstorCluster controller", func() {
 						}
 					}
 					return result
-				}, DefaultTimeout, DefaultCheckInterval).Should(ConsistOf("node-1a", "node-2a"))
+				}).Should(ConsistOf("node-1a", "node-2a"))
 
 				Eventually(func() string {
 					var controllerDeployment appsv1.Deployment
@@ -250,7 +250,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					controller := GetContainer(controllerDeployment.Spec.Template.Spec.Containers, "linstor-controller")
 					Expect(controller).NotTo(BeNil())
 					return controller.Image
-				}, DefaultTimeout, DefaultCheckInterval).Should(HavePrefix("piraeus.io/test"))
+				}).Should(HavePrefix("piraeus.io/test"))
 			})
 
 			It("should apply affinity set on the cluster resource", func(ctx context.Context) {
@@ -260,7 +260,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					return satellites.Items
-				}, DefaultTimeout, DefaultCheckInterval).Should(HaveLen(3))
+				}).Should(HaveLen(3))
 
 				var cluster piraeusiov1.LinstorCluster
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
@@ -297,7 +297,7 @@ var _ = Describe("LinstorCluster controller", func() {
 						}
 					}
 					return result
-				}, DefaultTimeout, DefaultCheckInterval).Should(ConsistOf("node-2a"))
+				}).Should(ConsistOf("node-2a"))
 			})
 		})
 	})
@@ -321,7 +321,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-controller-internal-tls")))))
-		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		}).Should(Succeed())
 	})
 
 	It("should not deploy a controller when using external controller ref", func(ctx context.Context) {
@@ -347,7 +347,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			container := GetContainer(csiControllerDeployment.Spec.Template.Spec.Containers, "linstor-csi")
 			g.Expect(container).NotTo(BeNil())
 			g.Expect(container.Env[0]).To(Equal(corev1.EnvVar{Name: "LS_CONTROLLERS", Value: "http://linstor-controller.invalid:3370"}))
-		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		}).Should(Succeed())
 
 		Eventually(func(g Gomega) {
 			var csiDaemonSet appsv1.DaemonSet
@@ -356,7 +356,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			container := GetContainer(csiDaemonSet.Spec.Template.Spec.Containers, "linstor-csi")
 			g.Expect(container).NotTo(BeNil())
 			g.Expect(container.Env[0]).To(Equal(corev1.EnvVar{Name: "LS_CONTROLLERS", Value: "http://linstor-controller.invalid:3370"}))
-		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		}).Should(Succeed())
 
 		var controllerDeployment appsv1.Deployment
 		err = k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
@@ -388,7 +388,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-api-tls")))))
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-client-tls")))))
-		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		}).Should(Succeed())
 
 		csiEnvCheck := func(g Gomega, container *corev1.Container, secretName string) {
 			g.Expect(container).NotTo(BeNil())
@@ -432,7 +432,7 @@ var _ = Describe("LinstorCluster controller", func() {
 
 			linstorCsi := GetContainer(csiControllerDeployment.Spec.Template.Spec.Containers, "linstor-csi")
 			csiEnvCheck(g, linstorCsi, "my-csi-controller-tls")
-		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		}).Should(Succeed())
 
 		Eventually(func(g Gomega) {
 			var csiNodeDaemonSet appsv1.DaemonSet
@@ -441,7 +441,7 @@ var _ = Describe("LinstorCluster controller", func() {
 
 			linstorCsi := GetContainer(csiNodeDaemonSet.Spec.Template.Spec.Containers, "linstor-csi")
 			csiEnvCheck(g, linstorCsi, "my-csi-node-tls")
-		}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+		}).Should(Succeed())
 	})
 })
 

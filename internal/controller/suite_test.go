@@ -46,8 +46,8 @@ import (
 )
 
 const (
-	DefaultTimeout       = 30 * time.Second
-	DefaultCheckInterval = 5 * time.Second
+	defaultTimeout       = 30 * time.Second
+	defaultCheckInterval = 5 * time.Second
 	Namespace            = "piraeus-datastore"
 	ImageConfigMapName   = "image-config"
 	ExampleNodeName      = "node1.example.com"
@@ -62,6 +62,11 @@ var (
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
+
+	SetDefaultEventuallyTimeout(defaultTimeout)
+	SetDefaultConsistentlyDuration(defaultTimeout)
+	SetDefaultEventuallyPollingInterval(defaultCheckInterval)
+	SetDefaultConsistentlyPollingInterval(defaultCheckInterval)
 
 	RunSpecs(t, "Controller Suite")
 }
@@ -134,7 +139,7 @@ var _ = BeforeSuite(func() {
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
-		RequeueInterval:    DefaultCheckInterval,
+		RequeueInterval:    defaultCheckInterval,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -143,7 +148,7 @@ var _ = BeforeSuite(func() {
 		Scheme:             k8sManager.GetScheme(),
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
-		RequeueInterval:    DefaultCheckInterval,
+		RequeueInterval:    defaultCheckInterval,
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
