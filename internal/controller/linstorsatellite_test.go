@@ -11,11 +11,13 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
@@ -304,11 +306,18 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					err := linstorClient.ResourceDefinitions.Delete(ctx, "resource1")
 					Expect(err).NotTo(HaveOccurred())
 
-					err = k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
-						TypeMeta:   TypeMeta,
-						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-					}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
-					Expect(err).NotTo(HaveOccurred())
+					Eventually(func(g Gomega) {
+						var satellite piraeusiov1.LinstorSatellite
+						err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: ExampleNodeName}, &satellite)
+						if errors.IsNotFound(err) {
+							return
+						}
+						g.Expect(err).NotTo(HaveOccurred())
+
+						controllerutil.RemoveFinalizer(&satellite, "piraeus.io/test")
+						err = k8sClient.Update(ctx, &satellite)
+						g.Expect(err).NotTo(HaveOccurred())
+					}).Should(Succeed())
 				})
 
 				It("should evacuate the node after deleting the satellite", func(ctx context.Context) {

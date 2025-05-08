@@ -37,23 +37,31 @@ var _ = Describe("LinstorCluster controller", func() {
 		})
 
 		It("should set the available condition", func(ctx context.Context) {
-			Eventually(func() bool {
+			Eventually(func() *metav1.Condition {
 				cluster := &piraeusiov1.LinstorCluster{}
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, cluster)
 				if err != nil {
-					return false
+					return nil
 				}
 
-				return meta.FindStatusCondition(cluster.Status.Conditions, string(conditions.Applied)) != nil
-			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
-		})
-		It("should create controller resources", func(ctx context.Context) {
-			Eventually(func() bool {
-				deploy := appsv1.Deployment{}
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: "piraeus-datastore"}, &deploy)
+				condition := meta.FindStatusCondition(cluster.Status.Conditions, string(conditions.Applied))
+				if condition == nil {
+					return nil
+				}
 
-				return err == nil
-			}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+				if condition.ObservedGeneration != cluster.Generation {
+					return nil
+				}
+
+				return condition
+			}, DefaultTimeout, DefaultCheckInterval).Should(Not(BeNil()))
+		})
+
+		It("should create controller resources", func(ctx context.Context) {
+			Eventually(func() error {
+				deploy := appsv1.Deployment{}
+				return k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: "piraeus-datastore"}, &deploy)
+			}, DefaultTimeout, DefaultCheckInterval).Should(Not(HaveOccurred()))
 		})
 
 		Describe("with cluster nodes present", func() {
@@ -83,13 +91,13 @@ var _ = Describe("LinstorCluster controller", func() {
 			})
 
 			It("should create LinstorSatellite resources", func(ctx context.Context) {
-				Eventually(func() bool {
+				Eventually(func() []piraeusiov1.LinstorSatellite {
 					var satellites piraeusiov1.LinstorSatelliteList
 					err := k8sClient.List(ctx, &satellites)
 					Expect(err).NotTo(HaveOccurred())
 
-					return len(satellites.Items) == 3
-				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+					return satellites.Items
+				}, DefaultTimeout, DefaultCheckInterval).Should(HaveLen(3))
 			})
 
 			It("should apply LinstorSatelliteConfigs to matching nodes", func(ctx context.Context) {
@@ -203,13 +211,13 @@ var _ = Describe("LinstorCluster controller", func() {
 			})
 
 			It("should apply changes made to the cluster resource", func(ctx context.Context) {
-				Eventually(func() bool {
+				Eventually(func() []piraeusiov1.LinstorSatellite {
 					var satellites piraeusiov1.LinstorSatelliteList
 					err := k8sClient.List(ctx, &satellites)
 					Expect(err).NotTo(HaveOccurred())
 
-					return len(satellites.Items) == 3
-				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+					return satellites.Items
+				}, DefaultTimeout, DefaultCheckInterval).Should(HaveLen(3))
 
 				var cluster piraeusiov1.LinstorCluster
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
@@ -246,13 +254,13 @@ var _ = Describe("LinstorCluster controller", func() {
 			})
 
 			It("should apply affinity set on the cluster resource", func(ctx context.Context) {
-				Eventually(func() bool {
+				Eventually(func() []piraeusiov1.LinstorSatellite {
 					var satellites piraeusiov1.LinstorSatelliteList
 					err := k8sClient.List(ctx, &satellites)
 					Expect(err).NotTo(HaveOccurred())
 
-					return len(satellites.Items) == 3
-				}, DefaultTimeout, DefaultCheckInterval).Should(BeTrue())
+					return satellites.Items
+				}, DefaultTimeout, DefaultCheckInterval).Should(HaveLen(3))
 
 				var cluster piraeusiov1.LinstorCluster
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
