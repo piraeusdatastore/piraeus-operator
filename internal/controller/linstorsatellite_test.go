@@ -274,24 +274,14 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 			})
 
-			Context("with additional finalizer", func() {
+			Context("with additional finalizer and resource", func() {
 				BeforeEach(func(ctx context.Context) {
 					err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
 						TypeMeta:   TypeMeta,
 						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName, Finalizers: []string{"piraeus.io/test"}},
 					}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 					Expect(err).NotTo(HaveOccurred())
-				})
 
-				AfterEach(func(ctx context.Context) {
-					err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
-						TypeMeta:   TypeMeta,
-						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
-					}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				It("should evacuate the node after deleting the satellite", func(ctx context.Context) {
 					Eventually(func(g Gomega) {
 						node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
 						g.Expect(err).NotTo(HaveOccurred())
@@ -299,12 +289,64 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						g.Expect(node.ConnectionStatus).To(Equal("ONLINE"))
 					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
 
-					err := k8sClient.Delete(ctx, &corev1.Node{
-						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+					err = linstorClient.ResourceDefinitions.Create(ctx, lapi.ResourceDefinitionCreate{
+						ResourceDefinition: lapi.ResourceDefinition{Name: "resource1"},
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					err = k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName}})
+					err = linstorClient.Resources.Create(ctx, lapi.ResourceCreate{
+						Resource: lapi.Resource{Name: "resource1", NodeName: ExampleNodeName},
+					})
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func(ctx context.Context) {
+					err := linstorClient.ResourceDefinitions.Delete(ctx, "resource1")
+					Expect(err).NotTo(HaveOccurred())
+
+					err = k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+						TypeMeta:   TypeMeta,
+						ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+					}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should evacuate the node after deleting the satellite", func(ctx context.Context) {
+					err := k8sClient.Delete(ctx, &piraeusiov1.LinstorSatellite{ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName}})
+					Expect(err).NotTo(HaveOccurred())
+
+					GinkgoWriter.Println("checking that Satellite is in evacuation")
+
+					Eventually(func(g Gomega) {
+						node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
+						g.Expect(err).NotTo(HaveOccurred())
+						g.Expect(node.Flags).To(ContainElement(linstor.FlagEvacuate))
+					}, DefaultTimeout, DefaultCheckInterval).Should(Succeed())
+
+					GinkgoWriter.Println("checking that Satellite status reports evacuation progress")
+
+					Eventually(func() *metav1.Condition {
+						var satellite piraeusiov1.LinstorSatellite
+						err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
+						if err != nil {
+							return nil
+						}
+
+						condition := meta.FindStatusCondition(satellite.Status.Conditions, "EvacuationCompleted")
+						if condition == nil || condition.ObservedGeneration != satellite.Generation {
+							return nil
+						}
+
+						return condition
+					}, DefaultTimeout, DefaultCheckInterval).Should(And(
+						Not(BeNil()),
+						HaveField("Status", metav1.ConditionFalse),
+						HaveField("Message", ContainSubstring("resource1"))),
+					)
+
+					GinkgoWriter.Println("by deleting resources, evacuation should complete")
+
+					err = linstorClient.ResourceDefinitions.Delete(ctx, "resource1")
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(func(g Gomega) {

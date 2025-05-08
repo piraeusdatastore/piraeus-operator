@@ -103,7 +103,7 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	conds := conditions.New()
 
-	var applyErr, stateErr error
+	var applyErr error
 	if node.Name != "" {
 		applyErr = r.reconcileAppliedResource(ctx, lsatellite, &node)
 		if applyErr != nil {
@@ -111,11 +111,9 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		} else {
 			conds.AddSuccess(conditions.Applied, "Resources applied")
 		}
-
-		stateErr = r.reconcileLinstorSatelliteState(ctx, lsatellite, &node, conds)
 	}
 
-	var deleteErr error
+	var deleteErr, stateErr error
 	if lsatellite.GetDeletionTimestamp() != nil {
 		deleteErr = r.deleteSatellite(ctx, lsatellite)
 		if deleteErr != nil {
@@ -127,6 +125,8 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if controllerutil.AddFinalizer(lsatellite, vars.SatelliteFinalizer) {
 			deleteErr = r.Client.Update(ctx, lsatellite)
 		}
+
+		stateErr = r.reconcileLinstorSatelliteState(ctx, lsatellite, &node, conds)
 	}
 
 	_, condErr := controllerutil.CreateOrPatch(ctx, r.Client, lsatellite, func() error {
