@@ -14,6 +14,10 @@ spec:
           sourceLabels:
             - __meta_kubernetes_pod_node_name
           targetLabel: node
+        - action: replace
+          sourceLabels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_component
+          targetLabel: job
   selector:
     matchLabels:
       app.kubernetes.io/component: linstor-satellite
