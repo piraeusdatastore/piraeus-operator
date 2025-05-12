@@ -1328,7 +1328,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg_over_time(scrape_duration_seconds{job=\"linstor-node\", node=~\"$node\"}[$__rate_interval])",
+          "expr": "avg_over_time(scrape_duration_seconds{job=~\".*/linstor-satellite\", node=~\"$node\"}[$__rate_interval])",
           "legendFormat": "{{node}}",
           "refId": "A"
         }
