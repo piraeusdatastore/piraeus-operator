@@ -413,6 +413,13 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 	if lnode.ConnectionStatus == "ONLINE" {
 		conds.AddSuccess(conditions.Available, "satellite online")
 
+		if slices.Contains(lnode.Flags, linstor.FlagEvacuate) || slices.Contains(lnode.Flags, linstor.FlagEvicted) {
+			err := lc.Nodes.Restore(ctx, lnode.Name, lapi.NodeRestore{})
+			if err != nil {
+				conds.AddError(conditions.Configured, err)
+			}
+		}
+
 		err := r.reconcileStoragePools(ctx, lc, lsatellite, node)
 		if err != nil {
 			conds.AddError(conditions.Configured, err)

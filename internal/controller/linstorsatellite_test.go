@@ -82,24 +82,17 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 		})
 
 		It("should select loader image, apply resources, setting finalizer and condition", func(ctx context.Context) {
+			Eventually(func() *metav1.Condition {
+				return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, string(conditions.Applied))
+			}).Should(HaveField("Status", metav1.ConditionTrue))
+
 			var satellite piraeusiov1.LinstorSatellite
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-				if err != nil {
-					return false
-				}
-
-				condition := meta.FindStatusCondition(satellite.Status.Conditions, string(conditions.Applied))
-				if condition == nil || condition.ObservedGeneration != satellite.Generation {
-					return false
-				}
-				return condition.Status == metav1.ConditionTrue
-			}).Should(BeTrue())
-
+			err := k8sClient.Get(ctx, client.ObjectKey{Name: ExampleNodeName}, &satellite)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(satellite.Finalizers).To(ContainElement(vars.SatelliteFinalizer))
 
 			var ds appsv1.DaemonSet
-			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
+			err = k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ds.Spec.Template.Spec.InitContainers).To(HaveLen(3))
 			Expect(ds.Spec.Template.Spec.InitContainers[0].Image).To(ContainSubstring("quay.io/piraeusdatastore/drbd9-almalinux9:"))
@@ -274,6 +267,22 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 				}).Should(Succeed())
 			})
 
+			It("should restore an evacuated satellite", func(ctx context.Context) {
+				Eventually(func(g Gomega) {
+					_, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
+					g.Expect(err).NotTo(HaveOccurred())
+				}).Should(Succeed())
+
+				err := linstorClient.Nodes.Evacuate(ctx, ExampleNodeName)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func(g Gomega) {
+					node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(node.Flags).NotTo(ContainElement(linstor.FlagEvacuate))
+				}).Should(Succeed())
+			})
+
 			Context("with additional finalizer and resource", func() {
 				BeforeEach(func(ctx context.Context) {
 					err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
@@ -326,18 +335,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(func() *metav1.Condition {
-						var satellite piraeusiov1.LinstorSatellite
-						err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-						if err != nil {
-							return nil
-						}
-
-						condition := meta.FindStatusCondition(satellite.Status.Conditions, "DeletionCompleted")
-						if condition == nil || condition.ObservedGeneration != satellite.Generation {
-							return nil
-						}
-
-						return condition
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
 					}).Should(HaveField("Status", metav1.ConditionTrue))
 
 					node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
@@ -370,20 +368,8 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 
 					GinkgoWriter.Println("checking that Satellite status reports evacuation progress")
 					Eventually(func() *metav1.Condition {
-						var satellite piraeusiov1.LinstorSatellite
-						err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-						if err != nil {
-							return nil
-						}
-
-						condition := meta.FindStatusCondition(satellite.Status.Conditions, "DeletionCompleted")
-						if condition == nil || condition.ObservedGeneration != satellite.Generation {
-							return nil
-						}
-
-						return condition
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
 					}).Should(And(
-						Not(BeNil()),
 						HaveField("Status", metav1.ConditionFalse),
 						HaveField("Message", ContainSubstring("resource1"))),
 					)
@@ -397,20 +383,9 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 						g.Expect(err).To(Equal(lapi.NotFoundError))
 					}).Should(Succeed())
 
-					Eventually(func() metav1.ConditionStatus {
-						var satellite piraeusiov1.LinstorSatellite
-						err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-						if err != nil {
-							return metav1.ConditionUnknown
-						}
-
-						condition := meta.FindStatusCondition(satellite.Status.Conditions, "DeletionCompleted")
-						if condition == nil || condition.ObservedGeneration != satellite.Generation {
-							return metav1.ConditionUnknown
-						}
-
-						return condition.Status
-					}).Should(Equal(metav1.ConditionTrue))
+					Eventually(func() *metav1.Condition {
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
+					}).Should(HaveField("Status", metav1.ConditionTrue))
 				})
 
 				It("should respect DeletionPolicy=Delete", func(ctx context.Context) {
@@ -438,18 +413,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					}).Should(Succeed())
 
 					Eventually(func() *metav1.Condition {
-						var satellite piraeusiov1.LinstorSatellite
-						err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
-						if err != nil {
-							return nil
-						}
-
-						condition := meta.FindStatusCondition(satellite.Status.Conditions, "DeletionCompleted")
-						if condition == nil || condition.ObservedGeneration != satellite.Generation {
-							return nil
-						}
-
-						return condition
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
 					}).Should(And(
 						Not(BeNil()),
 						HaveField("Status", metav1.ConditionFalse),
@@ -468,3 +432,18 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 		})
 	})
 })
+
+func GetSatelliteCondition(ctx context.Context, k8sClient client.Client, nodeName, ty string) *metav1.Condition {
+	var satellite piraeusiov1.LinstorSatellite
+	err := k8sClient.Get(ctx, types.NamespacedName{Name: ExampleNodeName}, &satellite)
+	if err != nil {
+		return nil
+	}
+
+	condition := meta.FindStatusCondition(satellite.Status.Conditions, ty)
+	if condition == nil || condition.ObservedGeneration != satellite.Generation {
+		return nil
+	}
+
+	return condition
+}

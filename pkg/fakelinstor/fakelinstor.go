@@ -24,6 +24,7 @@ func New() *FakeLinstor {
 	mux.Handle("GET /v1/nodes/{node}", wrapHandler(f.getNode))
 	mux.Handle("DELETE /v1/nodes/{node}", wrapHandler(f.deleteNode))
 	mux.Handle("PUT /v1/nodes/{node}/evacuate", wrapHandler(f.evacuateNode))
+	mux.Handle("PUT /v1/nodes/{node}/restore", wrapHandler(f.restoreNode))
 	mux.Handle("DELETE /v1/nodes/{node}/lost", wrapHandler(f.lostNode))
 	mux.Handle("POST /v1/resource-definitions", wrapHandler(f.createResourceDefinition))
 	mux.Handle("DELETE /v1/resource-definitions/{rd}", wrapHandler(f.deleteResourceDefinition))
@@ -235,6 +236,24 @@ func (f *FakeLinstor) evacuateNode(r *http.Request) (any, error) {
 			if !slices.Contains(f.nodes[i].Flags, linstor.FlagEvacuate) {
 				f.nodes[i].Flags = append(f.nodes[i].Flags, linstor.FlagEvacuate)
 			}
+			return nil, nil
+		}
+	}
+
+	return nil, lapi.NotFoundError
+}
+
+func (f *FakeLinstor) restoreNode(r *http.Request) (any, error) {
+	node := r.PathValue("node")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	for i := range f.nodes {
+		if f.nodes[i].Name == node {
+			f.nodes[i].Flags = slices.DeleteFunc(f.nodes[i].Flags, func(s string) bool {
+				return s == linstor.FlagEvacuate || s == linstor.FlagEvicted
+			})
 			return nil, nil
 		}
 	}
