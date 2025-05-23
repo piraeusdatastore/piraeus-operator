@@ -60,6 +60,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/cluster"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils/tolerations"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
@@ -153,6 +154,12 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 			return !matches
 		})
 	}
+
+	satelliteTolerations := tolerations.MergeTolerations(tolerations.DefaultDaemonSetTolerations, tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	satelliteNodes.Items = slices.DeleteFunc(satelliteNodes.Items, func(node corev1.Node) bool {
+		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(node.Spec.Taints, satelliteTolerations, nil)
+		return untolerated
+	})
 
 	satelliteConfigs := piraeusiov1.LinstorSatelliteConfigurationList{}
 	err = r.Client.List(ctx, &satelliteConfigs)
@@ -332,6 +339,14 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		patches = append(patches, p...)
 	}
 
+	t := tolerations.MergeTolerations(tolerations.LinstorControllerTolerations, tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	p, err := TolerationsPatch("Deployment", "linstor-controller", t)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
+
 	if lcluster.Spec.LinstorPassphraseSecret != "" {
 		p, err := ClusterLinstorPassphrasePatch(lcluster.Spec.LinstorPassphraseSecret)
 		if err != nil {
@@ -453,6 +468,14 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 		patches = append(patches, p...)
 	}
 
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	p, err := TolerationsPatch("Deployment", "linstor-csi-controller", t)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
+
 	if lcluster.Spec.ApiTLS != nil {
 		controllerSecret := lcluster.Spec.ApiTLS.GetCsiControllerSecretName()
 
@@ -495,6 +518,7 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 // * default images
 // * pull secret (if any)
 // * restrict CSI driver daemon set to cluster's node selector
+// * apply cluster tolerations
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	if !lcluster.Spec.CSINode.IsEnabled() {
@@ -523,6 +547,14 @@ func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusio
 
 		patches = append(patches, p...)
 	}
+
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	p, err := TolerationsPatch("DaemonSet", "linstor-csi-node", t)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
 
 	if lcluster.Spec.ApiTLS != nil {
 		nodeSecret := lcluster.Spec.ApiTLS.GetCsiNodeSecretName()
@@ -566,6 +598,7 @@ func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusio
 // * default images
 // * pull secret (if any)
 // * restrict daemon set to cluster's node selector
+// * apply cluster tolerations
 // * user defined patches
 func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	if !lcluster.Spec.HighAvailabilityController.IsEnabled() {
@@ -585,6 +618,14 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 
 		patches = append(patches, p...)
 	}
+
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	p, err := TolerationsPatch("DaemonSet", "ha-controller", t)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
 
 	if lcluster.Spec.HighAvailabilityController.GetTemplate() != nil {
 		p, err := ComponentPodTemplate("DaemonSet", "ha-controller", lcluster.Spec.HighAvailabilityController.GetTemplate())
@@ -618,6 +659,7 @@ func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeu
 // Applies the following changes over the base resources:
 // * Use exact names for LinstorSatellite resources (== node name)
 // * default labels
+// * Add tolerations, if any are set on the cluster
 // * Set the cluster reference to the owning LinstorCluster
 // * Apply the result of merging all LinstorSatelliteConfigurations to the LinstorSatellite
 // * user defined patches
@@ -652,6 +694,20 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 	}
 
 	patches := []utils.JsonPatch{renamePatch, repositoryPatch, clusterRefPatch}
+
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	tolerationsPatches, err := TolerationsPatch("DaemonSet", "linstor-satellite", t)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range tolerationsPatches {
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/spec/patches/-",
+			Value: p,
+		})
+	}
 
 	cfg := merge.SatelliteConfigurations(ctx, node, configs...)
 

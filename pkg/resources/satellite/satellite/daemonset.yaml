@@ -244,12 +244,3 @@ spec:
         - name: run
           emptyDir: { }
       restartPolicy: Always
-      tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/control-plane
-        - key: drbd.linbit.com/lost-quorum
-          effect: NoSchedule
-        - key: drbd.linbit.com/force-io-error
-          effect: NoSchedule

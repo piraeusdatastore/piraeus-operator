@@ -5,15 +5,17 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-
+	"github.com/piraeusdatastore/piraeus-ha-controller/pkg/metadata"
+	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils/tolerations"
 )
 
 var _ = Describe("LinstorCluster controller", func() {
@@ -219,6 +221,12 @@ var _ = Describe("LinstorCluster controller", func() {
 					DeletionPolicy: piraeusiov1.DeletionPolicyRetain,
 				}
 
+				// The first patch is always for tolerations. We ignore this here, as this is not related to
+				// LinstorSatelliteConfigurations.
+				satNode1A.Spec.Patches = satNode1A.Spec.Patches[1:]
+				satNode1B.Spec.Patches = satNode1B.Spec.Patches[1:]
+				satNode2A.Spec.Patches = satNode2A.Spec.Patches[1:]
+
 				Expect(&satNode1A.Spec).To(Equal(specZoneA))
 				Expect(&satNode1B.Spec).To(Equal(specZoneB))
 				Expect(&satNode2A.Spec).To(Equal(specZoneA))
@@ -312,6 +320,114 @@ var _ = Describe("LinstorCluster controller", func() {
 					}
 					return result
 				}).Should(ConsistOf("node-2a"))
+			})
+
+			It("should respect nodes taints", func(ctx context.Context) {
+				var nodes corev1.NodeList
+				err := k8sClient.List(ctx, &nodes)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(nodes.Items).Should(HaveLen(3))
+
+				taintsToAdd := []corev1.Taint{
+					// A HA Controller taint we ignore by default.
+					{Key: metadata.NodeForceIoErrorTaint, Effect: corev1.TaintEffectNoSchedule},
+					// Another "core" taint we ignore by default.
+					{Key: corev1.TaintNodeUnschedulable, Effect: corev1.TaintEffectNoSchedule},
+					// A Taint we manually tolerate later.
+					{Key: "example.com/manual-taint", Effect: corev1.TaintEffectPreferNoSchedule},
+					// A Taint we never tolerate.
+					{Key: "example.com/untolerated-taint", Effect: corev1.TaintEffectNoExecute},
+				}
+
+				for i := range nodes.Items {
+					// Apply two taints to the first node, three to the second, all four to the third
+					nodes.Items[i].Spec.Taints = taintsToAdd[:i+2]
+					err := k8sClient.Update(ctx, &nodes.Items[i])
+					Expect(err).NotTo(HaveOccurred())
+				}
+
+				Eventually(func() []piraeusiov1.LinstorSatellite {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+					return satellites.Items
+				}).Should(ConsistOf(
+					// Only the first node has taints we always tolerate
+					HaveField("Name", nodes.Items[0].Name),
+				))
+
+				// Update the LinstorCluster to tolerate an additional taint
+				var cluster piraeusiov1.LinstorCluster
+				err = k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
+				Expect(err).NotTo(HaveOccurred())
+
+				cluster.Spec.Tolerations = append(cluster.Spec.Tolerations, corev1.Toleration{
+					Key:      "example.com/manual-taint",
+					Operator: corev1.TolerationOpExists,
+					Effect:   corev1.TaintEffectPreferNoSchedule,
+				})
+				err = k8sClient.Update(ctx, &cluster)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() appsv1.DaemonSet {
+					var csiNodes appsv1.DaemonSet
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-node", Namespace: Namespace}, &csiNodes)
+					Expect(err).NotTo(HaveOccurred())
+					return csiNodes
+				}).Should(HaveField("Spec.Template.Spec.Tolerations", ContainElement(corev1.Toleration{
+					Key:      "example.com/manual-taint",
+					Operator: corev1.TolerationOpExists,
+					Effect:   corev1.TaintEffectPreferNoSchedule,
+				})))
+
+				Eventually(func() []piraeusiov1.LinstorSatellite {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+					return satellites.Items
+				}).Should(ConsistOf(
+					// The first node has taints we always tolerate
+					HaveField("Name", nodes.Items[0].Name),
+					// The second node has taints we now tolerate
+					HaveField("Name", nodes.Items[1].Name),
+				))
+
+				Eventually(func() []appsv1.Deployment {
+					var deployments appsv1.DeploymentList
+					err := k8sClient.List(ctx, &deployments)
+					Expect(err).NotTo(HaveOccurred())
+					return deployments.Items
+				}).Should(And(
+					HaveLen(2), // 1 LINSTOR Controller, 1 CSI Controller
+					// LINSTOR Controller has some additional tolerations, which we do not test for here.
+					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ContainElements(
+						append(
+							slices.Clone(tolerations.HAControllerTolerations),
+							corev1.Toleration{
+								Key:      "example.com/manual-taint",
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectPreferNoSchedule,
+							}),
+					))),
+				))
+
+				// The Satellites, CSI nodes, and HA Controller should have a patch updating their tolerations
+				Eventually(func() []appsv1.DaemonSet {
+					var daemonSets appsv1.DaemonSetList
+					err := k8sClient.List(ctx, &daemonSets)
+					Expect(err).NotTo(HaveOccurred())
+					return daemonSets.Items
+				}).Should(And(
+					HaveLen(4), // 2 Satellites DS, 1 CSI Node, 1 HA Controller.
+					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
+						append(slices.Clone(tolerations.HAControllerTolerations),
+							corev1.Toleration{
+								Key:      "example.com/manual-taint",
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectPreferNoSchedule,
+							})),
+					)),
+				))
 			})
 		})
 	})

@@ -31,6 +31,26 @@ spec:
  deletionPolicy: Evacuate
 ```
 
+The default behaviour of starting Piraeus Datastore components also on control plane nodes has been changed.
+Piraeus Datastore will no longer run on nodes tainted by the `node-role.kubernetes.io/control-plane:NoSchedule` or
+`node-role.kubernetes.io/master:NoSchedule` Taints. To restore the old behaviour, make the following change to the
+`LinstorCluster` resource:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    effect: NoSchedule
+    operator: Exists
+  - key: node-role.kubernetes.io/worker
+    effect: NoSchedule
+    operator: Exists
+```
+
 # Upgrades from v2.7 to v2.8
 
 No special steps required.

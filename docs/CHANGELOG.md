@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for different deletion policies on satellites.
+- Option to select taints that should be tolerated by Piraeus Datastore.
 
 ### Changed
 
 - Deletion of `LinstorSatellite` no longer causes a node evacuation by default. See [`spec.deletionPolicy`](./reference/linstorsatelliteconfiguration.md#specdeletionpolicy).
+- Piraeus Datastore no longer runs on control plane nodes by default.
 
 ## [v2.8.1] - 2025-04-09
 

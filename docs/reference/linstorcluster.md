@@ -67,6 +67,38 @@ spec:
             operator: DoesNotExist
 ```
 
+### `.spec.tolerations`
+
+Sets additional tolerations to pass to the Cluster components. Piraeus Datastore components tolerate the following
+Taints:
+
+* `node.kubernetes.io/not-ready:NoExecute`
+* `node.kubernetes.io/unreachable:NoExecute`
+* `node.kubernetes.io/disk-pressure:NoSchedule`
+* `node.kubernetes.io/memory-pressure:NoSchedule`
+* `node.kubernetes.io/pid-pressure:NoSchedule`
+* `node.kubernetes.io/unschedulable:NoSchedule`
+* `node.kubernetes.io/network-unavailable:NoSchedule`
+* `drbd.linbit.com/force-io-error:NoSchedule`
+* `drbd.linbit.com/lost-quorum:NoSchedule`
+
+They match the default tolerations added to DaemonSet, as well as specific Taints added by the Piraeus HA Controller.
+
+#### Example
+
+This example allows Piraeus Datastore components to run on control-plane nodes:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
+      operator: Exists
+```
 
 ### `.spec.repository`
 

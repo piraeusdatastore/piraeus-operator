@@ -152,6 +152,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "TolerationsPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.TolerationsPatch("DaemonSet", "linstor-csi-node", []corev1.Toleration{{Key: "node-role.kubernetes.io/control-plane", Effect: corev1.TaintEffectNoSchedule}})
+			},
+		},
+		{
 			name: "ComponentPodTemplate",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ComponentPodTemplate("DaemonSet", "linstor-csi-node", json.RawMessage(`{"spec": {"hostNetwork": true}}`))

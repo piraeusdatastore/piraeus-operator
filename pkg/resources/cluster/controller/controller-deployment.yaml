@@ -113,16 +113,3 @@ spec:
           emptyDir: { }
         - name: migration
           emptyDir: { }
-      tolerations:
-        - key: "node.kubernetes.io/unreachable"
-          operator: "Exists"
-          effect: "NoExecute"
-          tolerationSeconds: 30
-        - key: "node.kubernetes.io/not-ready"
-          operator: "Exists"
-          effect: "NoExecute"
-          tolerationSeconds: 30
-        - effect: NoSchedule
-          key: drbd.linbit.com/lost-quorum
-        - effect: NoSchedule
-          key: drbd.linbit.com/force-io-error

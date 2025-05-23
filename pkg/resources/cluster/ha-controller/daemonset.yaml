@@ -38,12 +38,3 @@ spec:
             httpGet:
               port: 8000
               path: /healthz
-      tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/control-plane
-        - effect: NoSchedule
-          key: drbd.linbit.com/lost-quorum
-        - effect: NoSchedule
-          key: drbd.linbit.com/force-io-error

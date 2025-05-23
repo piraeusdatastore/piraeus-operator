@@ -44,6 +44,13 @@ type LinstorClusterSpec struct {
 	// +kubebuilder:validation:Optional
 	NodeAffinity *corev1.NodeSelector `json:"nodeAffinity,omitempty"`
 
+	// Tolerations selects the nodes on which LINSTOR Satellites will be deployed.
+	//
+	// The default tolerations for DaemonSets are automatically added.
+	// +kubebuilder:validation:Optional
+	// +listType=atomic
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
 	// Properties to apply on the cluster level.
 	//
 	// Use to create default settings for DRBD that should apply to all resources or to configure some other cluster
