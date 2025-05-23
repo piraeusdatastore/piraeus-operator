@@ -39,7 +39,7 @@ type LinstorClusterSpec struct {
 	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// NodeAffinity selects the nodes on which LINSTOR Satellite will be deployed.
+	// NodeAffinity selects the nodes on which LINSTOR Satellites will be deployed.
 	// See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +kubebuilder:validation:Optional
 	NodeAffinity *corev1.NodeSelector `json:"nodeAffinity,omitempty"`

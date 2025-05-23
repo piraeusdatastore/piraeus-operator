@@ -274,7 +274,7 @@ spec:
                 type: string
               nodeAffinity:
                 description: |-
-                  NodeAffinity selects the nodes on which LINSTOR Satellite will be deployed.
+                  NodeAffinity selects the nodes on which LINSTOR Satellites will be deployed.
                   See https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
                 properties:
                   nodeSelectorTerms:
