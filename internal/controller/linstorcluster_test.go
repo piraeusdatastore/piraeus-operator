@@ -66,27 +66,38 @@ var _ = Describe("LinstorCluster controller", func() {
 
 		Describe("with cluster nodes present", func() {
 			BeforeEach(func(ctx context.Context) {
-				err := k8sClient.Create(ctx, &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-1a", Labels: map[string]string{
-						"topology.kubernetes.io/zone": "a",
-						"example.com/exclude":         "yes",
-					}},
-				})
-				Expect(err).NotTo(HaveOccurred())
+				nodes := []corev1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{Name: "node-1a", Labels: map[string]string{
+							"topology.kubernetes.io/zone": "a",
+							"example.com/exclude":         "yes",
+						}},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{Name: "node-2a", Labels: map[string]string{"topology.kubernetes.io/zone": "a"}},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{Name: "node-1b", Labels: map[string]string{"topology.kubernetes.io/zone": "b"}},
+					},
+				}
 
-				err = k8sClient.Create(ctx, &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-2a", Labels: map[string]string{"topology.kubernetes.io/zone": "a"}},
-				})
-				Expect(err).NotTo(HaveOccurred())
+				for i := range nodes {
+					err := k8sClient.Create(ctx, &nodes[i])
+					Expect(err).NotTo(HaveOccurred())
 
-				err = k8sClient.Create(ctx, &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{Name: "node-1b", Labels: map[string]string{"topology.kubernetes.io/zone": "b"}},
-				})
-				Expect(err).NotTo(HaveOccurred())
+					// Nodes automatically get the "not-ready" taint, we remove that so we can assume a "working"
+					// cluster.
+					nodes[i].Spec.Taints = nil
+					err = k8sClient.Update(ctx, &nodes[i])
+					Expect(err).NotTo(HaveOccurred())
+				}
 			})
 
 			AfterEach(func(ctx context.Context) {
 				err := k8sClient.DeleteAllOf(ctx, &corev1.Node{})
+				Expect(err).NotTo(HaveOccurred())
+
+				err = k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorSatelliteConfiguration{})
 				Expect(err).NotTo(HaveOccurred())
 			})
 
