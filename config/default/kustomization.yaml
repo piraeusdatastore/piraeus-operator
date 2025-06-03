@@ -25,6 +25,7 @@ resources:
 
 patches:
 - path: manager_webhook_patch.yaml
+- path: gencert_rbac_patch.yaml
 
 replacements:
 - source:
