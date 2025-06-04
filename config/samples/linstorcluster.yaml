@@ -26,3 +26,5 @@ spec: {}
 #          name: csi-controller
 #        spec:
 #          replicas: 3
+status:
+  conditions: []

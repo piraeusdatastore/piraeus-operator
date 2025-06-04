@@ -19,3 +19,5 @@ spec: {}
 #      source:
 #        hostDevices:
 #          - /dev/vdb
+status:
+  conditions: []

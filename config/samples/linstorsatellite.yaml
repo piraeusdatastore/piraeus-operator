@@ -1,0 +1,9 @@
+apiVersion: piraeus.io/v1
+kind: LinstorSatellite
+metadata:
+  name: example-satellite
+spec:
+  clusterRef:
+    name: linstorcluster
+status:
+  conditions: []

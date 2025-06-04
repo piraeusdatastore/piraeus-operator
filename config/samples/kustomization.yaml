@@ -1,5 +1,6 @@
 resources:
 - linstorcluster.yaml
 - linstorsatelliteconfiguration.yaml
+- linstorsatellite.yaml
 - linstornodeconnection.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
