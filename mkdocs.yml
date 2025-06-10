@@ -34,6 +34,7 @@ nav:
       - Flatcar Container Linux: how-to/flatcar.md
       - Microk8s: how-to/microk8s.md
       - k0s: how-to/k0s.md
+      - Raspian: how-to/raspian.md
     - Networking:
       - Deploy Piraeus Datastore behind an HTTP Proxy: how-to/http-proxy.md
       - Deploy a NetworkPolicy for Piraeus Datastore: how-to/network-policy.md
