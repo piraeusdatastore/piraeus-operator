@@ -18,15 +18,17 @@ type Config struct {
 }
 
 type ComponentConfig struct {
-	Tag   string    `yaml:"tag"`
-	Match []OsMatch `yaml:"match"`
-	Image string    `yaml:"image"`
+	Tag    string    `yaml:"tag"`
+	Match  []OsMatch `yaml:"match"`
+	Image  string    `yaml:"image"`
+	Digest string    `yaml:"digest,omitempty"`
 }
 
 type OsMatch struct {
 	OsImage     string `yaml:"osImage"`
 	Image       string `yaml:"image"`
 	Precompiled bool   `yaml:"precompiled"`
+	Digest      string `yaml:"digest,omitempty"`
 }
 
 func (c Configs) GetVersions(base string, osImage string) ([]kusttypes.Image, bool) {
@@ -55,36 +57,41 @@ func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bo
 	precompiled := false
 
 	for c := range f.Components {
-		name, tag, compiled := f.get(f.Components[c], base, osImage)
+		img, compiled := f.get(f.Components[c], base, osImage)
 
 		precompiled = precompiled || compiled
 
-		if name != "" {
-			result = append(result, kusttypes.Image{
-				Name:    string(c),
-				NewName: name,
-				NewTag:  tag,
-			})
+		if img != nil {
+			img.Name = c
+			result = append(result, *img)
 		}
 	}
 
 	return result, precompiled
 }
 
-func (f *Config) get(img ComponentConfig, base string, osImage string) (string, string, bool) {
+func (f *Config) get(img ComponentConfig, base string, osImage string) (*kusttypes.Image, bool) {
 	if base == "" {
 		base = f.Base
 	}
 
 	for _, matchRule := range img.Match {
 		if ok, _ := regexp.MatchString(matchRule.OsImage, osImage); ok {
-			return fmt.Sprintf("%s/%s", base, matchRule.Image), img.Tag, matchRule.Precompiled
+			return &kusttypes.Image{
+				NewName: fmt.Sprintf("%s/%s", base, matchRule.Image),
+				NewTag:  img.Tag,
+				Digest:  matchRule.Digest,
+			}, matchRule.Precompiled
 		}
 	}
 
 	if img.Image == "" {
-		return "", "", false
+		return nil, false
 	}
 
-	return fmt.Sprintf("%s/%s", base, img.Image), img.Tag, false
+	return &kusttypes.Image{
+		NewName: fmt.Sprintf("%s/%s", base, img.Image),
+		NewTag:  img.Tag,
+		Digest:  img.Digest,
+	}, false
 }

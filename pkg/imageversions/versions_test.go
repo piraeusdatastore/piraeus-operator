@@ -37,6 +37,20 @@ var (
 			},
 		},
 	}
+	DigestConfig = imageversions.Config{
+		Base: "example.com/digest",
+		Components: map[string]imageversions.ComponentConfig{
+			"image-with-digest": {
+				Image:  "fallback",
+				Tag:    "v1",
+				Digest: "sha256:abcd",
+				Match: []imageversions.OsMatch{
+					{OsImage: "Ubuntu", Image: "ubuntu"},
+					{OsImage: "AlmaLinux 9", Image: "new-alma", Precompiled: true, Digest: "sha256:dcba"},
+				},
+			},
+		},
+	}
 )
 
 func TestConfig_GetVersions(t *testing.T) {
@@ -106,4 +120,24 @@ func TestConfigs_GetVersions_prefer_later_config(t *testing.T) {
 		{Name: "linstor-satellite", NewName: "repo.example.com/base/satellite", NewTag: "v1"},
 		{Name: "drbd-module-loader", NewName: "repo.example.com/base/ubuntu", NewTag: "v2"},
 	}, actual)
+}
+
+func TestConfigs_GetVersions_use_digests_if_set(t *testing.T) {
+	t.Parallel()
+	configs := imageversions.Configs{&DigestConfig}
+
+	actual, _ := configs.GetVersions("", "SomeOs")
+	assert.ElementsMatch(t, actual, []kusttypes.Image{
+		{Name: "image-with-digest", NewName: "example.com/digest/fallback", NewTag: "v1", Digest: "sha256:abcd"},
+	})
+
+	actual, _ = configs.GetVersions("", "Ubuntu")
+	assert.ElementsMatch(t, actual, []kusttypes.Image{
+		{Name: "image-with-digest", NewName: "example.com/digest/ubuntu", NewTag: "v1"},
+	})
+
+	actual, _ = configs.GetVersions("", "AlmaLinux 9.0 (Emerald Puma)")
+	assert.ElementsMatch(t, actual, []kusttypes.Image{
+		{Name: "image-with-digest", NewName: "example.com/digest/new-alma", NewTag: "v1", Digest: "sha256:dcba"},
+	})
 }
