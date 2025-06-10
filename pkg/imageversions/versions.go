@@ -3,10 +3,14 @@ package imageversions
 import (
 	_ "embed"
 	"fmt"
+	"os"
 	"regexp"
 
+	imageutil "sigs.k8s.io/kustomize/api/pkg/util"
 	kusttypes "sigs.k8s.io/kustomize/api/types"
 )
+
+const ImageOverrideEnvPrefix = "RELATED_IMAGE_"
 
 // Configs is a list of Config, where later
 type Configs []*Config
@@ -57,7 +61,7 @@ func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bo
 	precompiled := false
 
 	for c := range f.Components {
-		img, compiled := f.get(f.Components[c], base, osImage)
+		img, compiled := f.get(f.Components[c], base, c, osImage)
 
 		precompiled = precompiled || compiled
 
@@ -70,13 +74,17 @@ func (f *Config) GetVersions(base string, osImage string) ([]kusttypes.Image, bo
 	return result, precompiled
 }
 
-func (f *Config) get(img ComponentConfig, base string, osImage string) (*kusttypes.Image, bool) {
+func (f *Config) get(img ComponentConfig, base, component, osImage string) (*kusttypes.Image, bool) {
 	if base == "" {
 		base = f.Base
 	}
 
 	for _, matchRule := range img.Match {
 		if ok, _ := regexp.MatchString(matchRule.OsImage, osImage); ok {
+			if img := getOverrideForImageFromEnv(component, matchRule.Image); img != nil {
+				return img, matchRule.Precompiled
+			}
+
 			return &kusttypes.Image{
 				NewName: fmt.Sprintf("%s/%s", base, matchRule.Image),
 				NewTag:  img.Tag,
@@ -89,9 +97,31 @@ func (f *Config) get(img ComponentConfig, base string, osImage string) (*kusttyp
 		return nil, false
 	}
 
+	if img := getOverrideForImageFromEnv(component, img.Image); img != nil {
+		return img, false
+	}
+
 	return &kusttypes.Image{
 		NewName: fmt.Sprintf("%s/%s", base, img.Image),
 		NewTag:  img.Tag,
 		Digest:  img.Digest,
 	}, false
+}
+
+func getOverrideForImageFromEnv(component, image string) *kusttypes.Image {
+	img := os.Getenv(ImageOverrideEnvPrefix + component + "_" + image)
+	if img == "" {
+		img = os.Getenv(ImageOverrideEnvPrefix + component)
+	}
+
+	if img == "" {
+		return nil
+	}
+
+	name, tag, digest := imageutil.SplitImageName(img)
+	return &kusttypes.Image{
+		NewName: name,
+		NewTag:  tag,
+		Digest:  digest,
+	}
 }

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for different deletion policies on satellites.
 - Option to select taints that should be tolerated by Piraeus Datastore.
 - Allow pinning images in the image configuration to a specific digest.
+- Support overriding image configuration directly on the Operator Deployment using `RELATED_IMAGE_*` environment variables.
 
 ### Changed
 
