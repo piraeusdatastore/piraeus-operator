@@ -88,3 +88,7 @@ tags
 # mkdocs files
 /.cache
 /site
+
+# Release artifacts
+/manifest.yaml
+/changes.md

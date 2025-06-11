@@ -278,3 +278,11 @@ release: $(YQ) $(KUSTOMIZE)
 .PHONY: sync-chart
 sync-chart:
 	hack/copy-image-config-to-chart.sh
+
+.PHONY: manifest.yaml
+manifest.yaml: $(KUSTOMIZE)
+	$(KUSTOMIZE) build config/default > $@
+
+.PHONY: changes.md
+changes.md:
+	hack/extract-changelog.sh v$(VERSION) > $@
