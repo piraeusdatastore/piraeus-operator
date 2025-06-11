@@ -39,11 +39,6 @@ pushd config/default
 $KUSTOMIZE edit set image controller="$IMG:v$VERSION"
 popd
 
-# replace deployment instructions in docs
-for FILE in ./README.md ./docs/tutorial/get-started.md ./docs/upgrade/README.md ; do
-	sed -e "s/ref=v[0-9\.]\+/ref=v$VERSION/" -i "$FILE"
-done
-
 # replace version in Makefile
 sed -e "s/^VERSION ?=.*/VERSION ?= $VERSION/" -i Makefile
 
