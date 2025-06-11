@@ -55,6 +55,7 @@ nav:
   - Understanding Piraeus:
     - Understanding Piraeus: explanation/README.md
     - Piraeus Components: explanation/components.md
+    - Image Configuration: explanation/image-configuration.md
   - Reference:
     - Reference: reference/README.md
     - LinstorCluster: reference/linstorcluster.md
