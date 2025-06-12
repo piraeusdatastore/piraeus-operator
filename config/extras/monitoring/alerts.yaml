@@ -73,7 +73,7 @@ spec:
           annotations:
             description: |
               DRBD device "{{ $labels.name }}" on "{{ $labels.node }}" has unexpected device state "{{ $labels.drbd_device_state }}".
-          expr: drbd_device_state{drbd_device_state!~"UpToDate|Diskless"} > 0
+          expr: drbd_device_state{drbd_device_state!~"UpToDate|Diskless|Inconsistent"} > 0
           for: 1m
           labels:
             severity: warn
