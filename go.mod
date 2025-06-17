@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
-	github.com/piraeusdatastore/linstor-csi v1.7.1
+	github.com/piraeusdatastore/linstor-csi v1.8.0
 	github.com/piraeusdatastore/piraeus-ha-controller v1.3.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
