@@ -41,6 +41,8 @@ components:
         image: drbd9-almalinux8
       - osImage: Red Hat Enterprise Linux 9\.
         image: drbd9-almalinux9
+      - osImage: Red Hat Enterprise Linux 10\.
+        image: drbd9-almalinux10
       - osImage: "Red Hat Enterprise Linux CoreOS 41[3-9]"
         image: drbd9-almalinux9
       - osImage: Red Hat Enterprise Linux CoreOS
@@ -53,14 +55,20 @@ components:
         image: drbd9-almalinux8
       - osImage: AlmaLinux 9
         image: drbd9-almalinux9
+      - osImage: AlmaLinux 10
+        image: drbd9-almalinux10
       - osImage: Oracle Linux Server 8\.
         image: drbd9-almalinux8
       - osImage: Oracle Linux Server 9\.
         image: drbd9-almalinux9
+      - osImage: Oracle Linux Server 10\.
+        image: drbd9-almalinux10
       - osImage: Rocky Linux 8
         image: drbd9-almalinux8
       - osImage: Rocky Linux 9
         image: drbd9-almalinux9
+      - osImage: Rocky Linux 10
+        image: drbd9-almalinux10
       - osImage: Ubuntu 18\.04
         image: drbd9-bionic
       - osImage: Ubuntu 20\.04

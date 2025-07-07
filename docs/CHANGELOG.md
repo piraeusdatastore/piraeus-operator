@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Image configuration for RHEL10 clones.
+
 ## [v2.9.0] - 2025-06-17
 
 ### Added
