@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -545,9 +546,11 @@ var _ = Describe("LinstorCluster controller", func() {
 			g.Expect(container.Env[0]).To(Equal(corev1.EnvVar{Name: "LS_CONTROLLERS", Value: "http://linstor-controller.invalid:3370"}))
 		}).Should(Succeed())
 
-		var controllerDeployment appsv1.Deployment
-		err = k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
-		Expect(err).NotTo(BeNil())
+		Eventually(func(g Gomega) {
+			var controllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
+			g.Expect(err).To(MatchError(errors.IsNotFound, "IsNotFound"))
+		}).Should(Succeed())
 	})
 
 	It("should add TLS secrets to the LINSTOR Components, configuring HTTPS access", func(ctx context.Context) {
