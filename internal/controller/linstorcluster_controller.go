@@ -155,9 +155,24 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 		})
 	}
 
+	existingSatellites := piraeusiov1.LinstorSatelliteList{}
+	err = r.Client.List(ctx, &existingSatellites, &client.ListOptions{})
+	if err != nil {
+		return err
+	}
+
 	satelliteTolerations := tolerations.MergeTolerations(tolerations.DefaultDaemonSetTolerations, tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
 	satelliteNodes.Items = slices.DeleteFunc(satelliteNodes.Items, func(node corev1.Node) bool {
-		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(node.Spec.Taints, satelliteTolerations, nil)
+		hasExistingSatellite := slices.ContainsFunc(existingSatellites.Items, func(existing piraeusiov1.LinstorSatellite) bool {
+			return existing.DeletionTimestamp == nil && existing.Name == node.Name
+		})
+		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(node.Spec.Taints, satelliteTolerations, func(taint *corev1.Taint) bool {
+			if hasExistingSatellite {
+				return taint.Effect == corev1.TaintEffectNoExecute
+			} else {
+				return taint.Effect == corev1.TaintEffectNoSchedule || taint.Effect == corev1.TaintEffectNoExecute
+			}
+		})
 		return untolerated
 	})
 

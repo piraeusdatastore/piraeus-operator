@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Image configuration for RHEL10 clones.
+- Do not remove existing satellites for `*NoSchedule` taints.
 
 ## [v2.9.0] - 2025-06-17
 
