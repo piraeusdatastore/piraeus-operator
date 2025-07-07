@@ -334,7 +334,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					// Another "core" taint we ignore by default.
 					{Key: corev1.TaintNodeUnschedulable, Effect: corev1.TaintEffectNoSchedule},
 					// A Taint we manually tolerate later.
-					{Key: "example.com/manual-taint", Effect: corev1.TaintEffectPreferNoSchedule},
+					{Key: "example.com/manual-taint", Effect: corev1.TaintEffectNoExecute},
 					// A Taint we never tolerate.
 					{Key: "example.com/untolerated-taint", Effect: corev1.TaintEffectNoExecute},
 				}
@@ -364,7 +364,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				cluster.Spec.Tolerations = append(cluster.Spec.Tolerations, corev1.Toleration{
 					Key:      "example.com/manual-taint",
 					Operator: corev1.TolerationOpExists,
-					Effect:   corev1.TaintEffectPreferNoSchedule,
+					Effect:   corev1.TaintEffectNoExecute,
 				})
 				err = k8sClient.Update(ctx, &cluster)
 				Expect(err).NotTo(HaveOccurred())
@@ -377,7 +377,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				}).Should(HaveField("Spec.Template.Spec.Tolerations", ContainElement(corev1.Toleration{
 					Key:      "example.com/manual-taint",
 					Operator: corev1.TolerationOpExists,
-					Effect:   corev1.TaintEffectPreferNoSchedule,
+					Effect:   corev1.TaintEffectNoExecute,
 				})))
 
 				Eventually(func() []piraeusiov1.LinstorSatellite {
@@ -406,7 +406,7 @@ var _ = Describe("LinstorCluster controller", func() {
 							corev1.Toleration{
 								Key:      "example.com/manual-taint",
 								Operator: corev1.TolerationOpExists,
-								Effect:   corev1.TaintEffectPreferNoSchedule,
+								Effect:   corev1.TaintEffectNoExecute,
 							}),
 					))),
 				))
@@ -424,9 +424,66 @@ var _ = Describe("LinstorCluster controller", func() {
 							corev1.Toleration{
 								Key:      "example.com/manual-taint",
 								Operator: corev1.TolerationOpExists,
-								Effect:   corev1.TaintEffectPreferNoSchedule,
+								Effect:   corev1.TaintEffectNoExecute,
 							})),
 					)),
+				))
+			})
+
+			It("should keep scheduled satellites on '*NoSchedule' tainted nodes", func(ctx context.Context) {
+				var nodes corev1.NodeList
+				err := k8sClient.List(ctx, &nodes)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(nodes.Items).Should(HaveLen(3))
+
+				By("Ensuring we have all Satellites scheduled")
+				Eventually(func() []piraeusiov1.LinstorSatellite {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+
+					return satellites.Items
+				}).Should(HaveLen(3))
+
+				By("Tainting nodes with NoExecute, NoSchedule and PreferNoSchedule effects")
+				taintsToAdd := []corev1.Taint{
+					{Key: "example.com/manual-taint", Effect: corev1.TaintEffectNoExecute},
+					{Key: "example.com/manual-taint", Effect: corev1.TaintEffectNoSchedule},
+					{Key: "example.com/manual-taint", Effect: corev1.TaintEffectPreferNoSchedule},
+				}
+
+				for i := range nodes.Items {
+					// Apply one taint to each node, all having different effects.
+					nodes.Items[i].Spec.Taints = append(nodes.Items[i].Spec.Taints, taintsToAdd[i])
+					err := k8sClient.Update(ctx, &nodes.Items[i])
+					Expect(err).NotTo(HaveOccurred())
+				}
+
+				Eventually(func() []piraeusiov1.LinstorSatellite {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+					return satellites.Items
+				}).Should(ConsistOf(
+					// The satellite of the first node should be removed, as it has a NoExecute taint.
+					HaveField("Name", nodes.Items[1].Name),
+					HaveField("Name", nodes.Items[2].Name),
+				))
+
+				By("Deleting the remaining Satellites, only the PreferNoSchedule node should be recreated")
+				err = k8sClient.DeleteAllOf(ctx, &piraeusiov1.LinstorSatellite{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() []piraeusiov1.LinstorSatellite {
+					var satellites piraeusiov1.LinstorSatelliteList
+					err := k8sClient.List(ctx, &satellites)
+					Expect(err).NotTo(HaveOccurred())
+					return satellites.Items
+				}).Should(ConsistOf(
+					// The satellite of the first node was already removed by the NoExecute taint.
+					// The satellite of the second node was removed, and now has a NoSchedule taint.
+					// The satellite of the third node should be recreated, as we ignore PreferNoSchedule taints.
+					HaveField("Name", nodes.Items[2].Name),
 				))
 			})
 		})
