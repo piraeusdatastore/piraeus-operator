@@ -5,8 +5,8 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
-	github.com/LINBIT/golinstor v0.56.0
-	github.com/cert-manager/cert-manager v1.18.1
+	github.com/LINBIT/golinstor v0.56.1
+	github.com/cert-manager/cert-manager v1.18.2
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-cmp v0.7.0
@@ -65,7 +65,7 @@ require (
 	github.com/prometheus/client_golang v1.22.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
-	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
@@ -75,7 +75,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.3 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
