@@ -23,6 +23,7 @@ package k8sgc
 
 import (
 	"context"
+	"errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -59,7 +60,8 @@ func New(ctx context.Context, cl client.Client) (GC, error) {
 				continue
 			}
 
-			if _, ok := err.(*apierrors.StatusError); ok {
+			var statusError *apierrors.StatusError
+			if errors.As(err, &statusError) {
 				continue
 			}
 
