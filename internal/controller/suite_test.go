@@ -58,6 +58,7 @@ var (
 	cfg           *rest.Config
 	k8sClient     client.Client
 	testEnv       *envtest.Environment
+	gc            k8sgc.GC
 )
 
 func TestAPIs(t *testing.T) {
@@ -158,11 +159,11 @@ var _ = BeforeSuite(func() {
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
 
+	gc, err = k8sgc.New(ctx, k8sClient)
+	Expect(err).ToNot(HaveOccurred(), "failed to create GC")
+
 	go func() {
 		defer GinkgoRecover()
-		gc, err := k8sgc.New(ctx, k8sClient)
-		Expect(err).ToNot(HaveOccurred(), "failed to create GC")
-
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 
@@ -176,7 +177,7 @@ var _ = BeforeSuite(func() {
 					return
 				}
 
-				Expect(err).ToNot(HaveOccurred(), "failed to run GC")
+				Expect(err).ToNot(HaveOccurred(), "failed to run K8s GC")
 			}
 		}
 	}()
@@ -190,4 +191,13 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = AfterEach(func(ctx context.Context) {
+	_, err := gc.Run(ctx)
+	if ctx.Err() != nil {
+		return
+	}
+
+	Expect(err).ToNot(HaveOccurred(), "failed to manually run K8s GC after test")
 })
