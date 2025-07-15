@@ -1,0 +1,10 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- affinity-controller-cluster-role.yaml
+- affinity-controller-cluster-role-binding.yaml
+- affinity-controller-deployment.yaml
+- affinity-controller-role.yaml
+- affinity-controller-role-binding.yaml
+- affinity-controller-service-account.yaml

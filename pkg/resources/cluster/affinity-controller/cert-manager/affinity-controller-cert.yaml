@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linstor-affinity-controller-tls
+spec:
+  issuerRef:
+    name: FILLME
+  secretName: linstor-affinity-controller-tls
+  commonName: linstor-affinity-controller
+  dnsNames:
+  - linstor-affinity-controller
+  usages:
+    - "client auth"

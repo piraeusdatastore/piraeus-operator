@@ -276,7 +276,7 @@ Controls the CSI Controller Deployment:
 
 #### Example
 
-This example configures a resource request of `cpu: 10m` for the CSI Controller Deployment:
+This example configures a resource request of `memory: 1Gi` for the CSI Controller Deployment:
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -304,7 +304,7 @@ Controls the CSI Node DaemonSet:
 
 #### Example
 
-This example configures a resource request of `cpu: 10m` for the CSI Node DaemonSet:
+This example configures a resource request of `memory: 1Gi` for the CSI Node DaemonSet:
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -328,11 +328,11 @@ spec:
 Controls the High Availability Controller DaemonSet:
 
 * Setting `enabled: false` disables the deployment entirely.
-* Setting a `podTemplate:` allows for simple modification of the CSI Node Deployment.
+* Setting a `podTemplate:` allows for simple modification of the High Availability Controller DaemonSet.
 
 #### Example
 
-This example configures a resource request of `cpu: 10m` for the CSI Node Deployment:
+This example configures a resource request of `memory: 1Gi` for the High Availability Controller DaemonSet:
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -346,6 +346,34 @@ spec:
       spec:
         containers:
           - name: ha-controller
+            resources:
+              requests:
+                memory: 1Gi
+```
+
+### `.spec.affinityController`
+
+Controls the Affinity Controller Deployment:
+
+* Setting `enabled: false` disables the deployment entirely.
+* Setting a `podTemplate:` allows for simple modification of the Affinity Controller Deployment.
+
+#### Example
+
+This example configures a resource request of `memory: 1Gi` for the Affinity Controller Deployment:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  affinityController:
+    enabled: true
+    podTemplate:
+      spec:
+        containers:
+          - name: linstor-affinity-controller
             resources:
               requests:
                 memory: 1Gi

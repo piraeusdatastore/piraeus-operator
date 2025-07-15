@@ -259,6 +259,11 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		return nil, err
 	}
 
+	affinityControllerRes, err := r.kustomizeAffinityControllerResources(lcluster, imgs)
+	if err != nil {
+		return nil, err
+	}
+
 	commonNodeRes, err := r.kustomizeNodeCommonResources(lcluster, imgs)
 	if err != nil {
 		return nil, err
@@ -324,6 +329,11 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 	}
 
 	err = resMap.AppendAll(haControllerRes)
+	if err != nil {
+		return nil, err
+	}
+
+	err = resMap.AppendAll(affinityControllerRes)
 	if err != nil {
 		return nil, err
 	}
@@ -663,6 +673,84 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 	}
 
 	return r.kustomize([]string{"ha-controller"}, lcluster, imgs, patches...)
+}
+
+// Create the Affinity controller resources.
+//
+// Applies the following changes over the base resources:
+// * Namespace
+// * default labels
+// * default images
+// * pull secret (if any)
+// * user defined patches
+func (r *LinstorClusterReconciler) kustomizeAffinityControllerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	if !lcluster.Spec.AffinityController.IsEnabled() {
+		return resmap.New(), nil
+	}
+
+	resourceDirs := []string{"affinity-controller"}
+
+	patches, err := ClusterAffinityControllerNodeSelector(lcluster.Spec.NodeSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointPatches, err := ClusterApiEndpointPatch(LinstorControllerUrl(lcluster))
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, endpointPatches...)
+
+	if lcluster.Spec.NodeAffinity != nil {
+		p, err := ClusterAffinityControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	p, err := TolerationsPatch("Deployment", "linstor-affinity-controller", t)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
+
+	if lcluster.Spec.ApiTLS != nil {
+		controllerSecret := lcluster.Spec.ApiTLS.GetAffinityControllerSecretName()
+
+		p, err := ClusterAffinityControllerApiTLSPatch(controllerSecret, lcluster.Spec.ApiTLS.CAReference)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+
+		if lcluster.Spec.ApiTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "affinity-controller/cert-manager")
+
+			p, err := ClusterApiTLSClientCertManagerPatch("linstor-affinity-controller-tls", controllerSecret, lcluster.Spec.ApiTLS.CertManager)
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, p...)
+		}
+	}
+
+	if lcluster.Spec.AffinityController.GetTemplate() != nil {
+		p, err := ComponentPodTemplate("Deployment", "linstor-affinity-controller", lcluster.Spec.AffinityController.GetTemplate())
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.

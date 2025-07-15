@@ -1,0 +1,29 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: linstor-affinity-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-affinity-controller
+    spec:
+      template:
+        spec:
+          containers:
+          - name: linstor-affinity-controller
+            env:
+              - name: LS_ROOT_CA
+                valueFrom: $LINSTOR_AFFINITY_CONTROLLER_API_TLS_CA_SOURCE
+              - name: LS_USER_CERTIFICATE
+                valueFrom:
+                  secretKeyRef:
+                    name: $LINSTOR_AFFINITY_CONTROLLER_API_TLS_SECRET_NAME
+                    key: tls.crt
+              - name: LS_USER_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: $LINSTOR_AFFINITY_CONTROLLER_API_TLS_SECRET_NAME
+                    key: tls.key

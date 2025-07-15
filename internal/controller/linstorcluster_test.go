@@ -399,7 +399,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					Expect(err).NotTo(HaveOccurred())
 					return deployments.Items
 				}).Should(And(
-					HaveLen(2), // 1 LINSTOR Controller, 1 CSI Controller
+					HaveLen(3), // 1 LINSTOR Controller, 1 CSI Controller, 1 Affinity Controller
 					// LINSTOR Controller has some additional tolerations, which we do not test for here.
 					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ContainElements(
 						append(
@@ -538,6 +538,15 @@ var _ = Describe("LinstorCluster controller", func() {
 		}).Should(Succeed())
 
 		Eventually(func(g Gomega) {
+			var csiControllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-affinity-controller", Namespace: Namespace}, &csiControllerDeployment)
+			g.Expect(err).NotTo(HaveOccurred())
+			container := GetContainer(csiControllerDeployment.Spec.Template.Spec.Containers, "linstor-affinity-controller")
+			g.Expect(container).NotTo(BeNil())
+			g.Expect(container.Env[0]).To(Equal(corev1.EnvVar{Name: "LS_CONTROLLERS", Value: "http://linstor-controller.invalid:3370"}))
+		}).Should(Succeed())
+
+		Eventually(func(g Gomega) {
 			var csiDaemonSet appsv1.DaemonSet
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-node", Namespace: Namespace}, &csiDaemonSet)
 			g.Expect(err).NotTo(HaveOccurred())
@@ -563,10 +572,11 @@ var _ = Describe("LinstorCluster controller", func() {
 			ObjectMeta: metav1.ObjectMeta{Name: "default"},
 			Spec: piraeusiov1.LinstorClusterSpec{
 				ApiTLS: &piraeusiov1.LinstorClusterApiTLS{
-					ApiSecretName:           "my-api-tls",
-					ClientSecretName:        "my-client-tls",
-					CsiControllerSecretName: "my-csi-controller-tls",
-					CsiNodeSecretName:       "my-csi-node-tls",
+					ApiSecretName:                "my-api-tls",
+					ClientSecretName:             "my-client-tls",
+					CsiControllerSecretName:      "my-csi-controller-tls",
+					CsiNodeSecretName:            "my-csi-node-tls",
+					AffinityControllerSecretName: "my-affinity-controller-tls",
 				},
 			},
 		})
@@ -580,7 +590,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-client-tls")))))
 		}).Should(Succeed())
 
-		csiEnvCheck := func(g Gomega, container *corev1.Container, secretName string) {
+		envCheck := func(g Gomega, container *corev1.Container, secretName string) {
 			g.Expect(container).NotTo(BeNil())
 			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
 				Name:  "LS_CONTROLLERS",
@@ -621,7 +631,7 @@ var _ = Describe("LinstorCluster controller", func() {
 			g.Expect(err).NotTo(HaveOccurred())
 
 			linstorCsi := GetContainer(csiControllerDeployment.Spec.Template.Spec.Containers, "linstor-csi")
-			csiEnvCheck(g, linstorCsi, "my-csi-controller-tls")
+			envCheck(g, linstorCsi, "my-csi-controller-tls")
 		}).Should(Succeed())
 
 		Eventually(func(g Gomega) {
@@ -630,7 +640,16 @@ var _ = Describe("LinstorCluster controller", func() {
 			g.Expect(err).NotTo(HaveOccurred())
 
 			linstorCsi := GetContainer(csiNodeDaemonSet.Spec.Template.Spec.Containers, "linstor-csi")
-			csiEnvCheck(g, linstorCsi, "my-csi-node-tls")
+			envCheck(g, linstorCsi, "my-csi-node-tls")
+		}).Should(Succeed())
+
+		Eventually(func(g Gomega) {
+			var affinityControllerDeployment appsv1.Deployment
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-affinity-controller", Namespace: Namespace}, &affinityControllerDeployment)
+			g.Expect(err).NotTo(HaveOccurred())
+
+			linstorCsi := GetContainer(affinityControllerDeployment.Spec.Template.Spec.Containers, "linstor-affinity-controller")
+			envCheck(g, linstorCsi, "my-affinity-controller-tls")
 		}).Should(Succeed())
 	})
 })

@@ -1,0 +1,15 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: linstor-affinity-controller
+  labels:
+    app.kubernetes.io/component: linstor-affinity-controller
+spec:
+  podMetricsEndpoints:
+    - port: metrics
+      scheme: http
+      path: /metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: linstor-affinity-controller

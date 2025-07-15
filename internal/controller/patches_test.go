@@ -76,6 +76,23 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ClusterAffinityControllerNodeSelector",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterAffinityControllerNodeSelector(map[string]string{"foo": "bar"})
+			},
+		},
+		{
+			name: "ClusterAffinityControllerNodeAffinityPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterAffinityControllerNodeAffinityPatch(&corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{{MatchExpressions: []corev1.NodeSelectorRequirement{{
+						Key:      "example.com/label",
+						Operator: corev1.NodeSelectorOpDoesNotExist,
+					}}}},
+				})
+			},
+		},
+		{
 			name: "ClusterCSINodeSelectorPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterCSINodeSelectorPatch(map[string]string{"foo": "bar"})
@@ -193,6 +210,15 @@ func TestPatches(t *testing.T) {
 			name: "ClusterCSIControllerApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterCSIControllerApiTLSPatch("controller", &piraeusiov1.CAReference{
+					Name: "trust-root",
+					Kind: "Secret",
+				})
+			},
+		},
+		{
+			name: "ClusterAffinityControllerApiTLSPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterAffinityControllerApiTLSPatch("controller", &piraeusiov1.CAReference{
 					Name: "trust-root",
 					Kind: "Secret",
 				})

@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linstor-affinity-controller
+  labels:
+    app.kubernetes.io/component: linstor-affinity-controller
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: linstor-affinity-controller
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: linstor-affinity-controller
+      labels:
+        app.kubernetes.io/component: linstor-affinity-controller
+    spec:
+      containers:
+      - name: linstor-affinity-controller
+        image: linstor-affinity-controller
+        args:
+        - /linstor-affinity-controller
+        - --v=$(VERBOSE)
+        - --leader-election=$(LEADER_ELECTION)
+        - --property-namespace=$(PROPERTY_NAMESPACE)
+        - --bind-address=$(BIND_ADDRESS)
+        - --metrics-address=$(METRICS_ADDRESS)
+        env:
+        - name: VERBOSE
+          value: "1"
+        - name: LEADER_ELECTION
+          value: "true"
+        - name: PROPERTY_NAMESPACE
+          value: Aux/topology
+        - name: BIND_ADDRESS
+          value: ":8000"
+        - name: METRICS_ADDRESS
+          value: ":8081"
+        - name: LEASE_LOCK_NAME
+          value: linstor-affinity-controller
+        - name: LEASE_HOLDER_IDENTITY
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+              apiVersion: v1
+        - name: LS_CONTROLLERS
+          value: 'http://linstor-controller:3370'
+        ports:
+        - name: health
+          containerPort: 8000
+          protocol: TCP
+        - name: metrics
+          containerPort: 8081
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            port: health
+            path: /healthz
+        startupProbe:
+          httpGet:
+            port: health
+            path: /healthz
+          failureThreshold: 30
+          periodSeconds: 10
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      enableServiceLinks: false
+      serviceAccountName: linstor-affinity-controller
+      priorityClassName: system-cluster-critical

@@ -109,6 +109,10 @@ type LinstorClusterSpec struct {
 	// HighAvailabilityController controls the deployment of the High Availability Controller DaemonSet.
 	// +kubebuilder:validation:Optional
 	HighAvailabilityController *ComponentSpec `json:"highAvailabilityController,omitempty"`
+
+	// AffinityController controls the deployment of the Affinity Controller Deployment.
+	// +kubebuilder:validation:Optional
+	AffinityController *ComponentSpec `json:"affinityController,omitempty"`
 }
 
 type LinstorExternalControllerRef struct {
@@ -137,6 +141,11 @@ type LinstorClusterApiTLS struct {
 	// the volume state. Defaults to "linstor-csi-node-tls".
 	//+kubebuilder:validation:Optional
 	CsiNodeSecretName string `json:"csiNodeSecretName,omitempty"`
+
+	// AffinityControllerSecretName references a secret holding the TLS key and certificate used by the CSI Controller
+	// to provision volumes. Defaults to "linstor-affinity-controller-tls".
+	//+kubebuilder:validation:Optional
+	AffinityControllerSecretName string `json:"affinityControllerSecretName,omitempty"`
 
 	// CertManager references a cert-manager Issuer or ClusterIssuer.
 	// If set, cert-manager.io/Certificate resources will be created, provisioning the secrets referenced in
@@ -180,6 +189,14 @@ func (l *LinstorClusterApiTLS) GetCsiNodeSecretName() string {
 	}
 
 	return l.CsiNodeSecretName
+}
+
+func (l *LinstorClusterApiTLS) GetAffinityControllerSecretName() string {
+	if l.AffinityControllerSecretName == "" {
+		return "linstor-affinity-controller-tls"
+	}
+
+	return l.AffinityControllerSecretName
 }
 
 // LinstorClusterStatus defines the observed state of LinstorCluster

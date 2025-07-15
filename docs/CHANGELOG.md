@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Deploy [LINSTOR Affinity Controller] as part of Piraeus Datastore.
+
+[LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
+
 ### Changed
 
 - Image configuration for RHEL10 clones.

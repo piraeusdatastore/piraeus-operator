@@ -85,6 +85,24 @@ func ClusterCSIControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kus
 		})
 }
 
+func ClusterAffinityControllerNodeSelector(selector map[string]string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/affinity-controller-selector.yaml",
+		map[string]any{
+			"NODE_SELECTOR": selector,
+		})
+}
+
+func ClusterAffinityControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/affinity-controller-node-affinity.yaml",
+		map[string]any{
+			"NODE_AFFINITY": affinity,
+		})
+}
+
 func ClusterCSINodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
@@ -172,6 +190,16 @@ func ClusterCSIControllerApiTLSPatch(controllerSecret string, caRef *piraeusiov1
 		map[string]any{
 			"LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME": controllerSecret,
 			"LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE":   caRef.ToEnvVarSource(controllerSecret),
+		})
+}
+
+func ClusterAffinityControllerApiTLSPatch(controllerSecret string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls-affinity-controller.yaml",
+		map[string]any{
+			"LINSTOR_AFFINITY_CONTROLLER_API_TLS_SECRET_NAME": controllerSecret,
+			"LINSTOR_AFFINITY_CONTROLLER_API_TLS_CA_SOURCE":   caRef.ToEnvVarSource(controllerSecret),
 		})
 }
 

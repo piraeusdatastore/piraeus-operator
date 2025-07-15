@@ -2,6 +2,24 @@
     group: apps
     version: v1
     kind: Deployment
+    name: linstor-affinity-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-affinity-controller
+    spec:
+      template:
+        spec:
+          containers:
+          - name: linstor-affinity-controller
+            env:
+              - name: LS_CONTROLLERS
+                value: $LINSTOR_CONTROLLER_URL
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
     name: linstor-csi-controller
   patch: |
     apiVersion: apps/v1

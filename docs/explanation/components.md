@@ -10,6 +10,7 @@ running the following `kubectl` command:
 $ kubectl get pods '-ocustom-columns=NAME:.metadata.name,COMPONENT:.metadata.labels.app\.kubernetes\.io/component'
 NAME                                                   COMPONENT
 ha-controller-vd82w                                    ha-controller
+linstor-affinity-controller-c84cf8958-p5wjx            linstor-affinity-controller
 linstor-controller-6c8f8dc47-cm8hr                     linstor-controller
 linstor-csi-controller-59b9968b86-ftl76                linstor-csi-controller
 linstor-csi-node-hcmk9                                 linstor-csi-node
@@ -76,21 +77,39 @@ with the host operating system also leads to two noteworthy interactions with [L
 
 # `linstor-csi-controller`
 
-The LINSTOR CSI Controller Pod creates, modifies and deletes volumes and snapshots. It translates the state of Kubernetes
+The [LINSTOR CSI] Controller Pod creates, modifies and deletes volumes and snapshots. It translates the state of Kubernetes
 resources (`StorageClass`, `PersistentVolumeClaims`, `VolumeSnapshots`) into their equivalent in LINSTOR.
 
 # `linstor-csi-node`
 
-The LINSTOR CSI Node Pods execute mount and unmount operations. Mount and Unmount are initiated by kubelet before
+The [LINSTOR CSI] Node Pods execute mount and unmount operations. Mount and Unmount are initiated by kubelet before
 starting a Pod with a Piraeus volume.
 
 They are deployed as a DaemonSet on every node in the cluster by default. There needs to be a LINSTOR Satellite running
 on the same node as a CSI Node Pod.
 
+# `linstor-affinity-controller`
+
+The [LINSTOR Affinity Controller] keeps the affinity of volumes in sync between Kubernetes and LINSTOR.
+
+It watches the Kubernetes API for `PersistentVolumes` created by the LINSTOR CSI Controller and updates the
+[`nodeAffinity`](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#node-affinity) accordingly.
+
+Usually, the affinity only affects volumes with a `allowRemoteVolumeAccess` other than the default `true`. In that
+case, LINSTOR CSI will create a PV bound to a specific set of nodes. If the volume is later reconfigured in LINSTOR,
+the Affinity Controller will ensure the PV resource is also updated.
+
+Because a PV in Kubernetes is immutable, the PV needs to be forcefully removed before the update can be applied.
+The Affinity Controller performs this action in such a way that the backing volume is never actually removed.
+
 # `ha-controller`
 
-The Piraeus High Availability Controller will speed up the fail-over process for stateful workloads using Piraeus for
+The [Piraeus High Availability Controller] will speed up the fail-over process for stateful workloads using Piraeus for
 storage.
 
 It is deployed on every node in the cluster and listens for DRBD® events to detect storage failures on other nodes. It
 evicts Pods when it detects that the storage on their node is inaccessible.
+
+[LINSTOR CSI]: https://github.com/piraeusdatastore/linstor-csi
+[LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
+[Piraeus High Availability Controller]: https://github.com/piraeusdatastore/piraeus-ha-controller
