@@ -161,28 +161,13 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 		return err
 	}
 
-	satelliteTolerations := tolerations.MergeTolerations(tolerations.DefaultDaemonSetTolerations, tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
-	satelliteNodes.Items = slices.DeleteFunc(satelliteNodes.Items, func(node corev1.Node) bool {
-		hasExistingSatellite := slices.ContainsFunc(existingSatellites.Items, func(existing piraeusiov1.LinstorSatellite) bool {
-			return existing.DeletionTimestamp == nil && existing.Name == node.Name
-		})
-		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(node.Spec.Taints, satelliteTolerations, func(taint *corev1.Taint) bool {
-			if hasExistingSatellite {
-				return taint.Effect == corev1.TaintEffectNoExecute
-			} else {
-				return taint.Effect == corev1.TaintEffectNoSchedule || taint.Effect == corev1.TaintEffectNoExecute
-			}
-		})
-		return untolerated
-	})
-
 	satelliteConfigs := piraeusiov1.LinstorSatelliteConfigurationList{}
 	err = r.Client.List(ctx, &satelliteConfigs)
 	if err != nil {
 		return err
 	}
 
-	resMap, err := r.kustomizeResources(ctx, lcluster, satelliteNodes.Items, satelliteConfigs.Items)
+	resMap, err := r.kustomizeResources(ctx, lcluster, satelliteNodes.Items, satelliteConfigs.Items, existingSatellites.Items)
 	if err != nil {
 		return err
 	}
@@ -246,7 +231,7 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 	return nil
 }
 
-func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, satelliteNodes []corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, satelliteNodes []corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration, existingSatellites []piraeusiov1.LinstorSatellite) (resmap.ResMap, error) {
 	cfg, err := imageversions.FromConfigMap(ctx, r.Client, types.NamespacedName{Name: r.ImageConfigMapName, Namespace: r.Namespace})
 	if err != nil {
 		return nil, err
@@ -285,8 +270,34 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		return configs[i].Name < configs[j].Name
 	})
 
+	satelliteTolerations := tolerations.MergeTolerations(tolerations.DefaultDaemonSetTolerations, tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+
 	for i := range satelliteNodes {
-		satRes, err := r.kustomizeLinstorSatellite(ctx, lcluster, &satelliteNodes[i], configs, imgs)
+		node := &satelliteNodes[i]
+
+		var existingSatellite *piraeusiov1.LinstorSatellite
+		for j := range existingSatellites {
+			if existingSatellites[j].Name == node.Name {
+				existingSatellite = &existingSatellites[j]
+				break
+			}
+		}
+
+		// Filter out satellites based on tolerations:
+		// * If there is a NoExecute taint we do not tolerate, do not configure a satellite.
+		// * If there is a NoSchedule taint we do not tolerate, configure a satellite only if one already exists.
+		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(node.Spec.Taints, satelliteTolerations, func(taint *corev1.Taint) bool {
+			if existingSatellite != nil {
+				return taint.Effect == corev1.TaintEffectNoExecute
+			} else {
+				return taint.Effect == corev1.TaintEffectNoSchedule || taint.Effect == corev1.TaintEffectNoExecute
+			}
+		})
+		if untolerated {
+			continue
+		}
+
+		satRes, err := r.kustomizeLinstorSatellite(ctx, lcluster, node, existingSatellite, configs, imgs)
 		if err != nil {
 			return nil, err
 		}
@@ -678,7 +689,7 @@ func (r *LinstorClusterReconciler) kustomizeNodeCommonResources(lcluster *piraeu
 // * Set the cluster reference to the owning LinstorCluster
 // * Apply the result of merging all LinstorSatelliteConfigurations to the LinstorSatellite
 // * user defined patches
-func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, node *corev1.Node, configs []piraeusiov1.LinstorSatelliteConfiguration, imgs []kusttypes.Image) (resmap.ResMap, error) {
+func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, node *corev1.Node, existingSatellite *piraeusiov1.LinstorSatellite, configs []piraeusiov1.LinstorSatelliteConfiguration, imgs []kusttypes.Image) (resmap.ResMap, error) {
 	renamePatch := utils.JsonPatch{
 		Op:    utils.Replace,
 		Path:  "/metadata/name",
@@ -709,6 +720,20 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 	}
 
 	patches := []utils.JsonPatch{renamePatch, repositoryPatch, clusterRefPatch}
+
+	if existingSatellite != nil {
+		// Special case for satellites on "NoSchedule" nodes. There is a possible race where we:
+		// * Performed a successful check that the satellite already exists
+		// * LinstorSatellite gets removed
+		// * We reapply the LinstorSatellite immediately
+		// Ensuring that a UID is set, we indicate that we want to update the specific resource, so we will
+		// get an error from the API server in the above case.
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/metadata/uid",
+			Value: existingSatellite.UID,
+		})
+	}
 
 	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
 	tolerationsPatches, err := TolerationsPatch("DaemonSet", "linstor-satellite", t)
