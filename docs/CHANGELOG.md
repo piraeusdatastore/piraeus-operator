@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Deploy [LINSTOR Affinity Controller] as part of Piraeus Datastore.
+- Add option to set replica count for Deployment components.
 
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
 

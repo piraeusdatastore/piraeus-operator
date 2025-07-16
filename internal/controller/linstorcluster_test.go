@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
@@ -65,6 +66,33 @@ var _ = Describe("LinstorCluster controller", func() {
 				deploy := appsv1.Deployment{}
 				return k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: "piraeus-datastore"}, &deploy)
 			}).Should(Not(HaveOccurred()))
+		})
+
+		It("should scale deployment resources", func(ctx context.Context) {
+			var cluster piraeusiov1.LinstorCluster
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
+			Expect(err).NotTo(HaveOccurred())
+
+			cluster.Spec.AffinityController = &piraeusiov1.DeploymentComponentSpec{
+				Replicas: ptr.To(int32(2)),
+			}
+			cluster.Spec.CSIController = &piraeusiov1.DeploymentComponentSpec{
+				Replicas: ptr.To(int32(3)),
+			}
+
+			err = k8sClient.Update(ctx, &cluster)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func(g Gomega) {
+				var deployment appsv1.Deployment
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-affinity-controller"}, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(deployment.Spec.Replicas).To(Equal(ptr.To(int32(2))))
+
+				err = k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-csi-controller"}, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(deployment.Spec.Replicas).To(Equal(ptr.To(int32(3))))
+			}).Should(Succeed())
 		})
 
 		Describe("with cluster nodes present", func() {

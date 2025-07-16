@@ -35,3 +35,11 @@ func ValidateComponentSpec(curSpec *piraeusiov1.ComponentSpec, fieldPrefix *fiel
 
 	return ValidatePodTemplate(curSpec.PodTemplate, fieldPrefix.Child("podTemplate"))
 }
+
+func ValidateDeploymentSpec(curSpec *piraeusiov1.DeploymentComponentSpec, fieldPrefix *field.Path) field.ErrorList {
+	if curSpec == nil {
+		return nil
+	}
+
+	return ValidateComponentSpec(&curSpec.ComponentSpec, fieldPrefix)
+}

@@ -347,6 +347,29 @@ func ComponentPodTemplate(kind, name string, template json.RawMessage) ([]kustty
 	return patches, nil
 }
 
+func ComponentReplicasPatch(kind, name string, replicas int32) ([]kusttypes.Patch, error) {
+	patches, err := render(
+		cluster.Resources,
+		"patches/replicas-patch.yaml",
+		map[string]any{
+			"KIND":     kind,
+			"NAME":     name,
+			"REPLICAS": replicas,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range patches {
+		patches[i].Target = &kusttypes.Selector{
+			ResId: resid.NewResIdKindOnly(kind, name),
+		}
+	}
+
+	return patches, nil
+}
+
 func render(f fs.FS, fileName string, params map[string]any) ([]kusttypes.Patch, error) {
 	raw, err := fs.ReadFile(f, fileName)
 	if err != nil {

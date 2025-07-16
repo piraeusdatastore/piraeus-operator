@@ -272,11 +272,12 @@ spec:
 Controls the CSI Controller Deployment:
 
 * Setting `enabled: false` disables the deployment entirely.
+* Setting `replicas:` sets the desired number of Pods for the Deployment.
 * Setting a `podTemplate:` allows for simple modification of the CSI Controller Deployment.
 
 #### Example
 
-This example configures a resource request of `memory: 1Gi` for the CSI Controller Deployment:
+This example configures 2 replicas and a resource request of `memory: 1Gi` for the CSI Controller Deployment:
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -286,6 +287,7 @@ metadata:
 spec:
   csiController:
     enabled: true
+    replicas: 2
     podTemplate:
       spec:
         containers:
@@ -356,11 +358,12 @@ spec:
 Controls the Affinity Controller Deployment:
 
 * Setting `enabled: false` disables the deployment entirely.
+* Setting `replicas:` sets the desired number of Pods for the Deployment.
 * Setting a `podTemplate:` allows for simple modification of the Affinity Controller Deployment.
 
 #### Example
 
-This example configures a resource request of `memory: 1Gi` for the Affinity Controller Deployment:
+This example configures 3 replicas and a resource request of `memory: 1Gi` for the Affinity Controller Deployment:
 
 ```yaml
 apiVersion: piraeus.io/v1
@@ -370,6 +373,7 @@ metadata:
 spec:
   affinityController:
     enabled: true
+    replicas: 3
     podTemplate:
       spec:
         containers:

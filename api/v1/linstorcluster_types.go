@@ -100,7 +100,7 @@ type LinstorClusterSpec struct {
 
 	// CSIController controls the deployment of the CSI Controller Deployment.
 	// +kubebuilder:validation:Optional
-	CSIController *ComponentSpec `json:"csiController,omitempty"`
+	CSIController *DeploymentComponentSpec `json:"csiController,omitempty"`
 
 	// CSINode controls the deployment of the CSI Node DaemonSet.
 	// +kubebuilder:validation:Optional
@@ -112,7 +112,7 @@ type LinstorClusterSpec struct {
 
 	// AffinityController controls the deployment of the Affinity Controller Deployment.
 	// +kubebuilder:validation:Optional
-	AffinityController *ComponentSpec `json:"affinityController,omitempty"`
+	AffinityController *DeploymentComponentSpec `json:"affinityController,omitempty"`
 }
 
 type LinstorExternalControllerRef struct {

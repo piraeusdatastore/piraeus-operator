@@ -34,3 +34,32 @@ func (c *ComponentSpec) GetTemplate() json.RawMessage {
 
 	return c.PodTemplate
 }
+
+type DeploymentComponentSpec struct {
+	ComponentSpec `json:",inline"`
+
+	// Number of desired pods. Defaults to 1.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
+func (d *DeploymentComponentSpec) IsEnabled() bool {
+	return d == nil || d.ComponentSpec.IsEnabled()
+}
+
+func (d *DeploymentComponentSpec) GetTemplate() json.RawMessage {
+	if d == nil {
+		return nil
+	}
+
+	return d.ComponentSpec.GetTemplate()
+}
+
+func (d *DeploymentComponentSpec) GetReplicas() *int32 {
+	if d == nil {
+		return nil
+	}
+
+	return d.Replicas
+}

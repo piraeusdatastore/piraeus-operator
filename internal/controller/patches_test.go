@@ -181,6 +181,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ComponentReplicasPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ComponentReplicasPatch("Deployment", "linstor-affinity-controller", 2)
+			},
+		},
+		{
 			name: "ClusterApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterApiTLSPatch("apiSecret", "clientSecret", nil)
