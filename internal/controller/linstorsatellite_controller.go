@@ -324,25 +324,11 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		return err
 	}
 
-	var pods corev1.PodList
-	err = r.Client.List(ctx, &pods, client.MatchingLabels{vars.SatelliteNodeLabel: string(lsatellite.UID)})
+	pod, err := r.getReadyPod(ctx, lsatellite)
 	if err != nil {
 		conds.AddError(conditions.Available, err)
-		conds.AddUnknown(conditions.Configured, "Missing Pod")
+		conds.AddUnknown(conditions.Configured, "Pod not ready")
 		return err
-	}
-
-	if len(pods.Items) != 1 {
-		conds.AddError(conditions.Available, fmt.Errorf("expected one Pod, got %d", len(pods.Items)))
-		conds.AddUnknown(conditions.Configured, "Missing Pod")
-		return nil
-	}
-	pod := &pods.Items[0]
-
-	if len(pod.Status.PodIPs) == 0 {
-		conds.AddError(conditions.Available, fmt.Errorf("missing IP address on pod"))
-		conds.AddUnknown(conditions.Configured, "missing IP address on pod")
-		return nil
 	}
 
 	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -606,6 +592,32 @@ func (r *LinstorSatelliteReconciler) kustomLabels(uuid types.UID, instance strin
 			Pairs: vars.ExtraLabels,
 		},
 	}
+}
+
+func (r *LinstorSatelliteReconciler) getReadyPod(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite) (*corev1.Pod, error) {
+	var pods corev1.PodList
+
+	err := r.Client.List(ctx, &pods, client.MatchingLabels{vars.SatelliteNodeLabel: string(lsatellite.UID)})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Pods with label '%s=%s': %w", vars.SatelliteNodeLabel, lsatellite.UID, err)
+	}
+
+	if len(pods.Items) != 1 {
+		return nil, fmt.Errorf("expected one Pod, got %d with label '%s=%s'", len(pods.Items), vars.SatelliteNodeLabel, lsatellite.UID)
+	}
+	pod := &pods.Items[0]
+
+	if len(pod.Status.PodIPs) == 0 {
+		return nil, fmt.Errorf("no assinged IP address for Pod '%s'", pod.Name)
+	}
+
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+			return pod, nil
+		}
+	}
+
+	return nil, fmt.Errorf("'%s' not ready", pod.Name)
 }
 
 // SetupWithManager sets up the controller with the Manager.

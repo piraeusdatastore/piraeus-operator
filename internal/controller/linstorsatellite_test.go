@@ -235,6 +235,10 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 
 				pod.Status = corev1.PodStatus{
 					Phase: corev1.PodRunning,
+					Conditions: []corev1.PodCondition{{
+						Type:   corev1.PodReady,
+						Status: corev1.ConditionTrue,
+					}},
 					PodIP: "10.0.0.147",
 					PodIPs: []corev1.PodIP{{
 						IP: "10.0.0.147",
