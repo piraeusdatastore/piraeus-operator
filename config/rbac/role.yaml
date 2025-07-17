@@ -89,6 +89,13 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - machines
+  verbs:
+  - get
+  - update
+- apiGroups:
   - events.k8s.io
   resources:
   - events

@@ -12,6 +12,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
+	github.com/piraeusdatastore/linstor-affinity-controller v1.3.0
 	github.com/piraeusdatastore/linstor-csi v1.8.1
 	github.com/piraeusdatastore/piraeus-ha-controller v1.3.0
 	github.com/stretchr/testify v1.10.0
@@ -22,6 +23,8 @@ require (
 	k8s.io/apimachinery v0.33.2
 	k8s.io/client-go v0.33.2
 	k8s.io/component-helpers v0.33.2
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	sigs.k8s.io/cluster-api v1.10.4
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/kustomize/api v0.20.0
 	sigs.k8s.io/kustomize/kyaml v0.20.0
@@ -52,9 +55,13 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/haySwim/data v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0 // indirect
+	github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
+	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
@@ -93,7 +100,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.33.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250628140032-d90c4fd18f59 // indirect
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
+	k8s.io/mount-utils v0.33.2 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 	sigs.k8s.io/gateway-api v1.3.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect

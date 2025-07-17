@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deploy [LINSTOR Affinity Controller] as part of Piraeus Datastore.
 - Add option to set replica count for Deployment components.
+- Integration with ClusterAPI to enable graceful node evacuation in case of rolling machine updates.
 
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
 

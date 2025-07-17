@@ -18,6 +18,7 @@ operator:
 
   options:
     leaderElect: true
+    #clusterApiKubeconfig: "" # set to "<none>" to disable ClusterAPI integration
 
   resources: { }
     # limits:

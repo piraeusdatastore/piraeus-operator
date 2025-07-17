@@ -40,6 +40,7 @@ spec:
         - --zap-devel=$(ZAP_DEVEL)
         - --image-config-map-name=$(IMAGE_CONFIG_MAP_NAME)
         - --requeue-interval=$(REQUEUE_INTERVAL)
+        - --cluster-api-kubeconfig=$(CLUSTER_API_KUBECONFIG)
         image: controller:latest
         name: manager
         env:
@@ -53,6 +54,8 @@ spec:
             value: image-config
           - name: REQUEUE_INTERVAL
             value: "1m"
+          - name: CLUSTER_API_KUBECONFIG
+            value: ""
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true

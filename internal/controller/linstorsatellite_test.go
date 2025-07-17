@@ -339,7 +339,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Eventually(func() *metav1.Condition {
-						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "SatelliteDeleted")
 					}).Should(HaveField("Status", metav1.ConditionTrue))
 
 					node, err := linstorClient.Nodes.Get(ctx, ExampleNodeName)
@@ -372,9 +372,10 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 
 					GinkgoWriter.Println("checking that Satellite status reports evacuation progress")
 					Eventually(func() *metav1.Condition {
-						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "SatelliteDeleted")
 					}).Should(And(
 						HaveField("Status", metav1.ConditionFalse),
+						HaveField("Reason", string(conditions.ReasonInProgress)),
 						HaveField("Message", ContainSubstring("resource1"))),
 					)
 
@@ -388,7 +389,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					}).Should(Succeed())
 
 					Eventually(func() *metav1.Condition {
-						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "SatelliteDeleted")
 					}).Should(HaveField("Status", metav1.ConditionTrue))
 				})
 
@@ -417,7 +418,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					}).Should(Succeed())
 
 					Eventually(func() *metav1.Condition {
-						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "DeletionCompleted")
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "SatelliteDeleted")
 					}).Should(And(
 						Not(BeNil()),
 						HaveField("Status", metav1.ConditionFalse),

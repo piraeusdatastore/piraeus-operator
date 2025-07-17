@@ -20,6 +20,8 @@ const (
 
 	ReasonNotObserved Reason = "NotObserved"
 	ReasonAsExpected  Reason = "AsExpected"
+	ReasonCompleted   Reason = "Completed"
+	ReasonInProgress  Reason = "InProgress"
 	ReasonUnknown     Reason = "Unknown"
 	ReasonError       Reason = "Error"
 )
@@ -27,8 +29,10 @@ const (
 var conditionPriority = map[Reason]int{
 	ReasonNotObserved: 0,
 	ReasonAsExpected:  1,
-	ReasonUnknown:     2,
-	ReasonError:       3,
+	ReasonCompleted:   2,
+	ReasonInProgress:  3,
+	ReasonUnknown:     4,
+	ReasonError:       5,
 }
 
 type condition struct {
@@ -64,6 +68,24 @@ func (c Conditions) AddSuccess(condType CondType, message string) {
 	if conditionPriority[ct.Reason] < conditionPriority[ReasonAsExpected] {
 		ct.Status = metav1.ConditionTrue
 		ct.Reason = ReasonAsExpected
+	}
+}
+
+func (c Conditions) AddCompleted(condType CondType, message string) {
+	ct := c.get(condType)
+	ct.Message = append(ct.Message, message)
+	if conditionPriority[ct.Reason] < conditionPriority[ReasonCompleted] {
+		ct.Status = metav1.ConditionTrue
+		ct.Reason = ReasonCompleted
+	}
+}
+
+func (c Conditions) AddInProgress(condType CondType, message string) {
+	ct := c.get(condType)
+	ct.Message = append(ct.Message, message)
+	if conditionPriority[ct.Reason] < conditionPriority[ReasonInProgress] {
+		ct.Status = metav1.ConditionFalse
+		ct.Reason = ReasonInProgress
 	}
 }
 
