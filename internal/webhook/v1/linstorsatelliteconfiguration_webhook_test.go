@@ -2,10 +2,11 @@ package v1_test
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -110,7 +111,8 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		}
 		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).To(HaveOccurred())
-		statusErr := err.(*errors.StatusError)
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
 		Expect(statusErr).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
@@ -132,7 +134,8 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		}
 		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).To(HaveOccurred())
-		statusErr := err.(*errors.StatusError)
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
 		Expect(statusErr).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(2))
@@ -157,7 +160,8 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		}
 		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).To(HaveOccurred())
-		statusErr := err.(*errors.StatusError)
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
 		Expect(statusErr).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(1))
@@ -208,7 +212,8 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		}
 		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).To(HaveOccurred())
-		statusErr := err.(*errors.StatusError)
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
 		Expect(statusErr).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
 		Expect(statusErr.ErrStatus.Details.Causes).To(HaveLen(4))
@@ -216,5 +221,23 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(statusErr.ErrStatus.Details.Causes[1].Field).To(Equal("spec.properties.1.valueFrom.nodeFieldRef"))
 		Expect(statusErr.ErrStatus.Details.Causes[2].Field).To(Equal("spec.properties.2.expandFrom.nodeFieldRef"))
 		Expect(statusErr.ErrStatus.Details.Causes[3].Field).To(Equal("spec.properties.3.expandFrom"))
+	})
+
+	It("should reject storage pool changes", func(ctx context.Context) {
+		err := k8sClient.Patch(ctx, complexSatelliteConfig.DeepCopy(), client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).NotTo(HaveOccurred())
+
+		satelliteConfigCopy := complexSatelliteConfig.DeepCopy()
+		satelliteConfigCopy.Spec.StoragePools[0].LvmThinPool = nil
+		satelliteConfigCopy.Spec.StoragePools[0].LvmPool = &piraeusv1.LinstorStoragePoolLvm{}
+		err = k8sClient.Patch(ctx, satelliteConfigCopy, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).To(HaveOccurred())
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
+		Expect(statusErr).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details.Causes).To(ConsistOf(
+			HaveField("Field", Equal("spec.storagePools.0.lvmThinPool")),
+		))
 	})
 })

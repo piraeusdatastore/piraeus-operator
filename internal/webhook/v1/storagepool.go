@@ -127,7 +127,7 @@ func validateLinstorStoragePoolLvmThin(newSP *piraeusv1.LinstorStoragePoolLvmThi
 		))
 	}
 
-	if oldSP != nil && newSP.VolumeGroup != oldSP.LvmThinPool.VolumeGroup {
+	if oldSP != nil && oldSP.LvmThinPool != nil && newSP.VolumeGroup != oldSP.LvmThinPool.VolumeGroup {
 		result = append(result, field.Forbidden(
 			fieldPrefix.Child("volumeGroup"),
 			"Cannot change VG name",
@@ -142,7 +142,7 @@ func validateLinstorStoragePoolLvmThin(newSP *piraeusv1.LinstorStoragePoolLvmThi
 		))
 	}
 
-	if oldSP != nil && newSP.ThinPool != oldSP.LvmThinPool.ThinPool {
+	if oldSP != nil && oldSP.LvmThinPool != nil && newSP.ThinPool != oldSP.LvmThinPool.ThinPool {
 		result = append(result, field.Forbidden(
 			fieldPrefix.Child("thinPool"),
 			"Cannot change thinpool LV name",
@@ -170,7 +170,7 @@ func ValidateLinstorStoragePoolLvm(newSP *piraeusv1.LinstorStoragePoolLvm, oldSP
 		))
 	}
 
-	if oldSP != nil && newSP.VolumeGroup != oldSP.LvmPool.VolumeGroup {
+	if oldSP != nil && oldSP.LvmPool != nil && newSP.VolumeGroup != oldSP.LvmPool.VolumeGroup {
 		result = append(result, field.Forbidden(
 			fieldPrefix.Child("volumeGroup"),
 			"Cannot change VG name",
