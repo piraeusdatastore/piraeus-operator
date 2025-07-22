@@ -17,4 +17,11 @@ The following documents explain how Piraeus Datastore works, and why it works th
     An introduction on the image configuration format, selection process, and the ways to influence and override them.
 
     [:octicons-arrow-right-24: Read](./image-configuration.md)
+
+-   :material-school:{ .lg .middle } __Satellite Deletion Policies__
+
+    ---
+    An explanation of the details of the Satellite Deletion Policies available in Piraeus Datastore.
+
+    [:octicons-arrow-right-24: Read](./deletion-policies.md)
 </div>
