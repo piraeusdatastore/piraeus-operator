@@ -56,6 +56,7 @@ nav:
     - Understanding Piraeus: explanation/README.md
     - Piraeus Components: explanation/components.md
     - Image Configuration: explanation/image-configuration.md
+    - Satellite Deletion Policies: explanation/deletion-policies.md
   - Reference:
     - Reference: reference/README.md
     - LinstorCluster: reference/linstorcluster.md
