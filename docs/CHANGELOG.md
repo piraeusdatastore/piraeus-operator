@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image configuration for RHEL10 clones.
 - Do not remove existing satellites for `*NoSchedule` taints.
 
+### Fixed
+
+- Fix a crash in the validation webhook when trying to change the type of storage pool.
+
 ## [v2.9.0] - 2025-06-17
 
 ### Added
