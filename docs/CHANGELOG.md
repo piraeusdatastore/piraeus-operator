@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix a crash in the validation webhook when trying to change the type of storage pool.
 
+### Removed
+
+- Removed image configuration for EOL distributions:
+  * Ubuntu 18.04 ("Bionic Beaver")
+  * Ubuntu 20.04 ("Focal Fossa")
+  * CentOS 7
+  * Debian 10 ("Buster")
+
 ## [v2.9.0] - 2025-06-17
 
 ### Added
