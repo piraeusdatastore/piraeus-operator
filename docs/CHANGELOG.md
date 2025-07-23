@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
 
+### Removed
+
+- Removed image configuration for EOL distributions:
+  * Ubuntu 18.04 ("Bionic Beaver")
+  * Ubuntu 20.04 ("Focal Fossa")
+  * CentOS 7
+  * Debian 10 ("Buster")
+
 ### Changed
 
 - Image configuration for RHEL10 clones.

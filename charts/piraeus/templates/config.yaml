@@ -47,8 +47,6 @@ data:
         # here. If one matches, that specific image name will be used instead of the fallback image.
         image: drbd9-noble # Fallback image: chose a recent kernel, which can hopefully compile whatever config is actually in use
         match:
-          - osImage: Red Hat Enterprise Linux Server 7\.
-            image: drbd9-centos7
           - osImage: Red Hat Enterprise Linux 8\.
             image: drbd9-almalinux8
           - osImage: Red Hat Enterprise Linux 9\.
@@ -59,8 +57,6 @@ data:
             image: drbd9-almalinux9
           - osImage: Red Hat Enterprise Linux CoreOS
             image: drbd9-almalinux8
-          - osImage: CentOS Linux 7
-            image: drbd9-centos7
           - osImage: CentOS Linux 8
             image: drbd9-almalinux8
           - osImage: AlmaLinux 8
@@ -81,10 +77,6 @@ data:
             image: drbd9-almalinux9
           - osImage: Rocky Linux 10
             image: drbd9-almalinux10
-          - osImage: Ubuntu 18\.04
-            image: drbd9-bionic
-          - osImage: Ubuntu 20\.04
-            image: drbd9-focal
           - osImage: Ubuntu 22\.04
             image: drbd9-jammy
           - osImage: Ubuntu 24\.04
@@ -93,8 +85,6 @@ data:
             image: drbd9-bookworm
           - osImage: Debian GNU/Linux 11
             image: drbd9-bullseye
-          - osImage: Debian GNU/Linux 10
-            image: drbd9-buster
   0_sig_storage_images.yaml: |
     ---
     base: registry.k8s.io/sig-storage

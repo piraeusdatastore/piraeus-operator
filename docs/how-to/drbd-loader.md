@@ -63,18 +63,15 @@ spec:
 
 Piraeus maintains the following images:
 
-| Image                                       | Distribution                       |
-|---------------------------------------------|------------------------------------|
-| `quay.io/piraeusdatastore/drbd9-almalinux9` | RedHat Enterprise Linux 9 rebuilds |
-| `quay.io/piraeusdatastore/drbd9-almalinux8` | RedHat Enterprise Linux 8 rebuilds |
-| `quay.io/piraeusdatastore/drbd9-centos7`    | RedHat Enterprise Linux 7 rebuilds |
-| `quay.io/piraeusdatastore/drbd9-noble`      | Ubuntu 24.04                       |
-| `quay.io/piraeusdatastore/drbd9-jammy`      | Ubuntu 22.04                       |
-| `quay.io/piraeusdatastore/drbd9-focal`      | Ubuntu 20.04                       |
-| `quay.io/piraeusdatastore/drbd9-bionic`     | Ubuntu 18.04                       |
-| `quay.io/piraeusdatastore/drbd9-bookworm`   | Debian 12                          |
-| `quay.io/piraeusdatastore/drbd9-bullseye`   | Debian 11                          |
-| `quay.io/piraeusdatastore/drbd9-buster`     | Debian 10                          |
+| Image                                        | Distribution                        |
+|----------------------------------------------|-------------------------------------|
+| `quay.io/piraeusdatastore/drbd9-almalinux10` | RedHat Enterprise Linux 10 rebuilds |
+| `quay.io/piraeusdatastore/drbd9-almalinux9`  | RedHat Enterprise Linux 9 rebuilds  |
+| `quay.io/piraeusdatastore/drbd9-almalinux8`  | RedHat Enterprise Linux 8 rebuilds  |
+| `quay.io/piraeusdatastore/drbd9-noble`       | Ubuntu 24.04                        |
+| `quay.io/piraeusdatastore/drbd9-jammy`       | Ubuntu 22.04                        |
+| `quay.io/piraeusdatastore/drbd9-bookworm`    | Debian 12                           |
+| `quay.io/piraeusdatastore/drbd9-bullseye`    | Debian 11                           |
 
 You can create a loader image for your own distribution using the [Piraeus sources](https://github.com/piraeusdatastore/piraeus/tree/master/dockerfiles/drbd-driver-loader)
 as reference.
