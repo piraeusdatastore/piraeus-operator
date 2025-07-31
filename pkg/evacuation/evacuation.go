@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
 	affinity "github.com/piraeusdatastore/linstor-affinity-controller/pkg/version"
 	linstorcsidriver "github.com/piraeusdatastore/linstor-csi/pkg/driver"
@@ -235,11 +236,40 @@ func waitForReattach(ctx context.Context, cl client.Client, nodeName string) (st
 }
 
 func evacuateNode(ctx context.Context, lclient *lapi.Client, node *lapi.Node) error {
-	// We retry evacuation every time. LINSTOR needs multiple kicks until it actually starts moving all resources in
-	// some cases.
-	err := lclient.Nodes.Evacuate(ctx, node.Name)
+	ress, err := lclient.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{node.Name}})
 	if err != nil && !errors.Is(err, lapi.NotFoundError) {
 		return err
+	}
+
+	// Workaround for current LINSTOR issues:
+	// * We need to call evacuate repeatedly, as a restart of the LINSTOR Controller causes LINSTOR to not properly
+	//   clean up the remaining resources on the evacuated node.
+	// * However, if we call evacuate while the replacement resource is syncing, LINSTOR will create a new replica
+	//   because it does not consider the syncing replica a valid replacement (yet).
+	// So we want to call evacuate only when:
+	// * Once to initiate evacuation.
+	// * All current resource are fully synced, but there are still resource remaining on the node.
+	evacuationInProgress := false
+	for _, resource := range ress {
+		// This key is set by LINSTOR to indicate that the resource should be cleaned up after syncing. Use this as an
+		// indication that the resource is being evacuated.
+		if resource.Props[linstor.KeyRscMigrateFrom] != "" {
+			status, err := lclient.ResourceDefinitions.SyncStatus(ctx, resource.Name)
+			if err != nil {
+				return fmt.Errorf("failed to check sync status of '%s': %w", resource.Name, err)
+			}
+
+			if !status.SyncedOnAll {
+				evacuationInProgress = true
+			}
+		}
+	}
+
+	if !slices.Contains(node.Flags, linstor.FlagEvacuate) || !evacuationInProgress {
+		err := lclient.Nodes.Evacuate(ctx, node.Name)
+		if err != nil && !errors.Is(err, lapi.NotFoundError) {
+			return err
+		}
 	}
 
 	return nil
