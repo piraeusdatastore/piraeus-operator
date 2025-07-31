@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"math"
 	"slices"
 	"sort"
 	"strings"
@@ -31,12 +32,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -129,9 +132,23 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		conds.AddSuccess(conditions.Applied, "Resources applied")
 	}
 
-	stateErr := r.reconcileClusterState(ctx, lcluster, conds)
+	status, stateErr := r.reconcileClusterState(ctx, lcluster, conds)
 
 	_, condErr := controllerutil.CreateOrPatch(ctx, r.Client, lcluster, func() error {
+		status.DeepCopyInto(&lcluster.Status)
+
+		if status.RunningSatellites != nil && status.ScheduledSatellites != nil {
+			lcluster.Status.Satellites = fmt.Sprintf("%d/%d", *status.RunningSatellites, *status.ScheduledSatellites)
+		}
+
+		if status.FreeCapacityBytes != nil && status.TotalCapacityBytes != nil {
+			// Report used/total capacity. Assume "used" is total - free. Always report in GiB.
+			lcluster.Status.Capacity = fmt.Sprintf("%d/%dGiB",
+				resource.NewQuantity(*status.TotalCapacityBytes-*status.FreeCapacityBytes, resource.BinarySI).ScaledValue(resource.Giga),
+				resource.NewQuantity(*status.TotalCapacityBytes, resource.BinarySI).ScaledValue(resource.Giga),
+			)
+		}
+
 		for _, cond := range conds.ToConditions(lcluster.Generation) {
 			meta.SetStatusCondition(&lcluster.Status.Conditions, cond)
 		}
@@ -959,9 +976,11 @@ func (r *LinstorClusterReconciler) kustomLabels(lcluster *piraeusiov1.LinstorClu
 	}
 }
 
-func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, conds conditions.Conditions) error {
+func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, conds conditions.Conditions) (piraeusiov1.LinstorClusterStatus, error) {
 	var caRef *piraeusiov1.CAReference
 	var clientSecret string
+	var status piraeusiov1.LinstorClusterStatus
+
 	if lcluster.Spec.ApiTLS != nil {
 		caRef = lcluster.Spec.ApiTLS.CAReference
 		clientSecret = lcluster.Spec.ApiTLS.GetClientSecretName()
@@ -982,7 +1001,7 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 	if err != nil || lc == nil {
 		conds.AddError(conditions.Available, err)
 		conds.AddUnknown(conditions.Configured, "Controller unreachable")
-		return err
+		return status, err
 	}
 
 	connectCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -991,15 +1010,16 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 	if err != nil {
 		conds.AddError(conditions.Available, err)
 		conds.AddUnknown(conditions.Configured, "Controller unreachable")
-		return err
+		return status, err
 	}
 
+	status.Version = version.Version
 	conds.AddSuccess(conditions.Available, fmt.Sprintf("Controller %s (API: %s, Git: %s) reachable at '%s'", version.Version, version.RestApiVersion, version.GitHash, lc.BaseURL()))
 
 	current, err := lc.Controller.GetProps(ctx)
 	if err != nil {
 		conds.AddError(conditions.Configured, err)
-		return err
+		return status, err
 	}
 
 	expectedProperties := utils.ResolveClusterProperties(vars.DefaultControllerProperties, lcluster.Spec.Properties...)
@@ -1010,13 +1030,87 @@ func (r *LinstorClusterReconciler) reconcileClusterState(ctx context.Context, lc
 		err = lc.Controller.Modify(ctx, *modification)
 		if err != nil {
 			conds.AddError(conditions.Configured, err)
-			return err
+			return status, err
 		}
 	}
 
 	conds.AddSuccess(conditions.Configured, "Properties applied")
 
-	return r.reconcileCSINodes(ctx, lcluster, lc, conds)
+	err = r.getClusterStatus(ctx, lcluster, lc, &status)
+	if err != nil {
+		conds.AddError(conditions.Configured, err)
+		return status, err
+	}
+
+	return status, r.reconcileCSINodes(ctx, lcluster, lc, conds)
+}
+
+func (r *LinstorClusterReconciler) getClusterStatus(ctx context.Context, lcluster *piraeusiov1.LinstorCluster, lc *linstorhelper.Client, status *piraeusiov1.LinstorClusterStatus) error {
+	var satelliteList piraeusiov1.LinstorSatelliteList
+	err := r.Client.List(ctx, &satelliteList, client.MatchingLabels{
+		"app.kubernetes.io/instance": lcluster.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to fetch LinstorSatellites: %w", err)
+	}
+
+	var scheduled, running int32
+	for _, satellite := range satelliteList.Items {
+		if satellite.DeletionTimestamp == nil {
+			scheduled++
+		}
+
+		cond := meta.FindStatusCondition(satellite.Status.Conditions, string(conditions.Available))
+		if cond != nil && cond.Status == metav1.ConditionTrue {
+			running++
+		}
+	}
+
+	status.ScheduledSatellites = &scheduled
+	status.RunningSatellites = &running
+
+	sp, err := lc.Nodes.GetStoragePoolView(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch storage pools: %w", err)
+	}
+
+	var total, free int64
+	for _, pool := range sp {
+		if pool.TotalCapacity == math.MaxInt64 {
+			// Skip all the "diskless" pools, they always report max capacity
+			continue
+		}
+
+		// LINSTOR reports KiB
+		total += pool.TotalCapacity * 1024
+		free += pool.FreeCapacity * 1024
+	}
+
+	status.TotalCapacityBytes = &total
+	status.FreeCapacityBytes = &free
+
+	rds, err := lc.ResourceDefinitions.GetAll(ctx, lapi.RDGetAllRequest{WithVolumeDefinitions: true})
+	if err != nil {
+		return fmt.Errorf("failed to fetch resource definitions: %w", err)
+	}
+
+	var vols int32
+	for _, rd := range rds {
+		if len(rd.VolumeDefinitions) > 0 {
+			// Only count RDs with volume definitions, others are "snapshot-only" RDs
+			vols++
+		}
+	}
+	status.NumberOfVolumes = &vols
+
+	snapshots, err := lc.Resources.GetSnapshotView(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch snapshot views: %w", err)
+	}
+
+	status.NumberOfSnapshots = ptr.To(int32(len(snapshots)))
+
+	return nil
 }
 
 // reconcileCSINodes ensures that the CSINode resources are up-to-date.

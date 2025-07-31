@@ -14,7 +14,41 @@ spec:
     singular: linstorcluster
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: If the LINSTOR Cluster is available
+      jsonPath: .status.conditions[?(@.type=='Available')].status
+      name: Available
+      type: string
+    - description: If the LINSTOR Cluster is fully configured
+      jsonPath: .status.conditions[?(@.type=='Configured')].status
+      name: Configured
+      type: string
+    - description: The version of the LINSTOR Cluster
+      jsonPath: .status.version
+      name: Version
+      priority: 10
+      type: string
+    - description: The number of running/expected Satellites
+      jsonPath: .status.satellites
+      name: Satellites
+      type: string
+    - description: The used capacity in all storage pools
+      jsonPath: .status.capacity
+      name: Used Capacity
+      type: string
+    - description: The number of volumes in the cluster
+      jsonPath: .status.numberOfVolumes
+      name: Volumes
+      type: integer
+    - description: The number of snapshots in the cluster
+      jsonPath: .status.numberOfSnapshots
+      name: Snapshots
+      priority: 10
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: LinstorCluster is the Schema for the linstorclusters API
@@ -526,6 +560,15 @@ spec:
           status:
             description: LinstorClusterStatus defines the observed state of LinstorCluster
             properties:
+              availableCapacityBytes:
+                description: The number of bytes in total in all storage pools in
+                  the LINSTOR Cluster.
+                format: int64
+                type: integer
+              capacity:
+                description: Capacity mirrors the information from TotalCapacityBytes
+                  and FreeCapacityBytes in a human-readable string
+                type: string
               conditions:
                 description: Current LINSTOR Cluster state
                 items:
@@ -586,6 +629,35 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              freeCapacityBytes:
+                description: The number of bytes free in all storage pools in the
+                  LINSTOR Cluster.
+                format: int64
+                type: integer
+              numberOfSnapshots:
+                description: The number of snapshots in the LINSTOR Cluster.
+                format: int32
+                type: integer
+              numberOfVolumes:
+                description: The number of volumes in the LINSTOR Cluster.
+                format: int32
+                type: integer
+              runningSatellites:
+                description: The number of LINSTOR Satellites currently running.
+                format: int32
+                type: integer
+              satellites:
+                description: Satellites mirrors the information from ScheduledSatellites
+                  and RunningSatellites in a human-readable string
+                type: string
+              scheduledSatellites:
+                description: The number of LINSTOR Satellites that are expected to
+                  run.
+                format: int32
+                type: integer
+              version:
+                description: The Version of the LINSTOR Cluster.
+                type: string
             type: object
         type: object
     served: true

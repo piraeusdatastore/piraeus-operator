@@ -386,17 +386,20 @@ var _ = Describe("LinstorCluster controller", func() {
 				))
 
 				// Update the LinstorCluster to tolerate an additional taint
-				var cluster piraeusiov1.LinstorCluster
-				err = k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
-				Expect(err).NotTo(HaveOccurred())
+				Eventually(func() error {
+					var cluster piraeusiov1.LinstorCluster
+					err = k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
+					if err != nil {
+						return err
+					}
 
-				cluster.Spec.Tolerations = append(cluster.Spec.Tolerations, corev1.Toleration{
-					Key:      "example.com/manual-taint",
-					Operator: corev1.TolerationOpExists,
-					Effect:   corev1.TaintEffectNoExecute,
-				})
-				err = k8sClient.Update(ctx, &cluster)
-				Expect(err).NotTo(HaveOccurred())
+					cluster.Spec.Tolerations = append(cluster.Spec.Tolerations, corev1.Toleration{
+						Key:      "example.com/manual-taint",
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoExecute,
+					})
+					return k8sClient.Update(ctx, &cluster)
+				}).Should(Succeed())
 
 				Eventually(func() appsv1.DaemonSet {
 					var csiNodes appsv1.DaemonSet
