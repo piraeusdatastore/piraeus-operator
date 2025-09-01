@@ -32,7 +32,7 @@ import (
 // The function should be called repeatedly until completion of the evacuation.
 func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine) (string, bool, error) {
 	// Step 1: ensure PVs can be rescheduled to other nodes
-	msg, done, err := preparePVsforEvacuation(ctx, cl, node.Name)
+	msg, done, err := preparePVsforEvacuation(ctx, cl, lclient, node.Name)
 	if err != nil || !done {
 		return msg, done, err
 	}
@@ -87,7 +87,7 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 // It checks for PVs attached to the current node and:
 // * marks them with annotations so later steps can find them.
 // * ensures that "local" PVs are temporarily reschedulable during evacuation.
-func preparePVsforEvacuation(ctx context.Context, cl client.Client, nodeName string) (string, bool, error) {
+func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lapi.Client, nodeName string) (string, bool, error) {
 	var volumeAttachmentList storagev1.VolumeAttachmentList
 	err := cl.List(ctx, &volumeAttachmentList)
 	if err != nil {
@@ -98,6 +98,24 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, nodeName str
 	err = cl.List(ctx, &nodeList)
 	if err != nil {
 		return "", false, err
+	}
+
+	rgSlice, err := lclient.ResourceGroups.GetAll(ctx)
+	if err != nil {
+		return "", false, err
+	}
+	rgs := make(map[string]lapi.ResourceGroup)
+	for _, rg := range rgSlice {
+		rgs[rg.Name] = rg
+	}
+
+	rdSlice, err := lclient.ResourceDefinitions.GetAll(ctx, lapi.RDGetAllRequest{})
+	if err != nil {
+		return "", false, err
+	}
+	rds := make(map[string]lapi.ResourceDefinition)
+	for _, rd := range rdSlice {
+		rds[rd.Name] = rd.ResourceDefinition
 	}
 
 	attachedPVs := getAttachedPVs(volumeAttachmentList.Items, nodeName)
@@ -125,10 +143,8 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, nodeName str
 			pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] = "true"
 		}
 
-		// Check if the PV is "local access only". This can either be because of a local-only access policy, or some
-		// more complicated affinity settings. In both cases, we need to temporarily lift the affinity requirements
-		// on the PV, so that the workloads can be rescheduled.
-		if hasLocalOnlyAccessPolicy(&pv, nodeName) || !isAttachableOnOtherNode(&pv, nodeName, nodeList.Items) {
+		switch evacuationActionForPV(&pv, rds, rgs, nodeName, nodeList.Items) {
+		case PVEvacuationActionAffinityOverride:
 			// This annotation is used by the Affinity Controller to override the normal Node Affinity of the PV.
 			// We set it to "true", meaning "allow access from anywhere".
 			_, ok := pv.Annotations[affinity.OverrideAnnotationPrefix+"/"+nodeName]
@@ -138,10 +154,33 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, nodeName str
 			}
 
 			unschedulablePVs = append(unschedulablePVs, pv.Name)
+		case PVEvacuationActionDelete:
+			// Delete the PVC and the PV, so that they can get recreated on new nodes.
+			if pv.Spec.ClaimRef != nil {
+				pvc := &corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      pv.Spec.ClaimRef.Name,
+						Namespace: pv.Spec.ClaimRef.Namespace,
+					},
+				}
+				if err := cl.Delete(ctx, pvc, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.Spec.ClaimRef.UID)))); err != nil && !k8serrors.IsNotFound(err) {
+					errs = append(errs, err)
+				}
+			}
+
+			if pv.DeletionTimestamp == nil {
+				if err := cl.Delete(ctx, &pv, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.UID)))); err != nil && !k8serrors.IsNotFound(err) {
+					errs = append(errs, err)
+				}
+			}
+		case PVEvacuationActionNone:
+			// Nothing to do
 		}
 
 		if toUpdate {
-			errs = append(errs, cl.Update(ctx, &pv))
+			if err := cl.Update(ctx, &pv); err != nil && !k8serrors.IsNotFound(err) {
+				errs = append(errs, err)
+			}
 		}
 	}
 
@@ -155,6 +194,49 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, nodeName str
 	}
 
 	return "", true, nil
+}
+
+type PVEvacuationAction string
+
+const (
+	// PVEvacuationActionNone indicates the PV is ready for evacuation as-is.
+	PVEvacuationActionNone PVEvacuationAction = "None"
+	// PVEvacuationActionDelete indicates the PV and PVC should be deleted so that it gets recreated on draining the node.
+	PVEvacuationActionDelete PVEvacuationAction = "Delete"
+	// PVEvacuationActionAffinityOverride indicates the PV should be prepared for evacuation by setting a less strict affinity.
+	PVEvacuationActionAffinityOverride PVEvacuationAction = "AffinityOverride"
+)
+
+// Determine the evacuation action for this PV.
+//
+// It first searches the PV annotations for vars.EvacuationActionAnnotation.
+// Then, it searches first on the ResourceDefinition and then the ResourceGroup properties.
+// As fallback, it returns PVEvacuationActionAffinityOverride for volumes which are local accessible only.
+func evacuationActionForPV(pv *corev1.PersistentVolume, rds map[string]lapi.ResourceDefinition, rgs map[string]lapi.ResourceGroup, nodeName string, nodes []corev1.Node) PVEvacuationAction {
+	if v, ok := pv.Annotations[vars.EvacuationActionAnnotation]; ok {
+		return PVEvacuationAction(v)
+	}
+
+	if pv.Spec.CSI != nil {
+		rd := rds[pv.Spec.CSI.VolumeHandle]
+		if v, ok := rd.Props[linstor.NamespcAuxiliary+"/"+vars.EvacuationActionAnnotation]; ok {
+			return PVEvacuationAction(v)
+		}
+
+		rg := rgs[rd.ResourceGroupName]
+		if v, ok := rg.Props[linstor.NamespcAuxiliary+"/"+vars.EvacuationActionAnnotation]; ok {
+			return PVEvacuationAction(v)
+		}
+	}
+
+	// Check if the PV is "local access only". This can either be because of a local-only access policy, or some
+	// more complicated affinity settings. In both cases, we need to temporarily lift the affinity requirements
+	// on the PV, so that the workloads can be rescheduled.
+	if hasLocalOnlyAccessPolicy(pv, nodeName) && !isAttachableOnOtherNode(pv, nodeName, nodes) {
+		return PVEvacuationActionAffinityOverride
+	}
+
+	return PVEvacuationActionNone
 }
 
 func waitForConfiguredSatellites(ctx context.Context, cl client.Client, nodeName string) (string, bool, error) {

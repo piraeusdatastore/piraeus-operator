@@ -66,12 +66,22 @@ snapshots are removed.
 In order to keep potential fail-over times short, Piraeus Datastore performs the following steps during evacuation:
 
 1. Piraeus Datastore searches for PersistentVolumes (PVs) that:
-    * Are attached on the Node to be evacuated and marks them with `wait-for-reattach.evacuation.piraeus.io/<node-name>`
-      annotation. It will later use this annotation to wait for the PV to be reattached.
-    * In addition, if the PVs are also either using the `allowRemoteVolumeAcesss: "false"` policy or are otherwise bound
-      to the Node to be evacuated in their `.spec.nodeAffinity`, they are annotated with
-      `override.piraeus.io/<nodename>`. This causes the LINSTOR Affinity Controller to temporarily mark the PV as
-      accessible from any Node.
+    *   Are attached on the Node to be evacuated and marks them with `wait-for-reattach.evacuation.piraeus.io/<node-name>`
+        annotation. It will later use this annotation to wait for the PV to be reattached.
+    *   If the PV has a `linstor.csi.linbit.com/evacuation-action` annotation or the storage class has the
+        `property.linstor.csi.linbit.com/Aux/linstor.csi.linbit.com/evacuation-action` parameter set, the value is used
+        to determine the evacuation action. Possible actions are:
+        * `AffinityOverride`: Annotate the PV with `override.piraeus.io/<nodename>`. This causes the LINSTOR Affinity
+          Controller to temporarily mark the PV as accessible from any Node.
+        * `Delete`: Delete the PVC and PV, causing the **existing data** to be **lost**. This is _only_ useful for PVCs
+          storing caches or otherwise ephemeral data that get recreated automatically, for example using a StatefulSet
+          with `volumeClaimTemplates`.
+        * `None`: No special action is taken to ensure the PV can be evacuated.
+
+        If no action is specified, PVs using the `allowRemoteVolumeAccess: "false"` policy, or PVs that are otherwise
+        bound to the Node to be evacuated in their `.spec.nodeAffinity`, default to using the `AffinityOverride` action.
+        All other PVs use the `None` action.
+
 2. Piraeus Datastore will wait for all other `LinstorSatellite` resources to become available. This ensures that during
    rolling upgrades of the infrastructure, it waits until a replacement node for the node to be evacuated is available.
 3. If using ClusterAPI, the `pre-drain.delete.hook.machine.cluster.x-k8s.io/linstor-prepare-for-drain` annotation on the

@@ -129,6 +129,116 @@ func TestEvacuateSatelliteWithLocalPVs(t *testing.T) {
 	assert.Contains(t, getMachine(t, cl, "machine-a").Annotations, vars.MachinePreTerminateHookAnnotation)
 }
 
+func TestEvacuateSatelliteWithEvacuationActionPVs(t *testing.T) {
+	t.Parallel()
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-ns"}}
+	localPV := createPV("local-pv-attached", "false", nil, TestNodeA.Name)
+
+	localActionDeletePV := createPV("local-pv-action-delete-on-pv", "false", map[string]string{
+		vars.EvacuationActionAnnotation: "Delete",
+	}, TestNodeA.Name)
+	localActionDeletePV.Spec.ClaimRef = &corev1.ObjectReference{
+		Namespace: namespace.Name,
+		Name:      "local-pv-action-delete-on-pv",
+	}
+	localActionDeletePVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "local-pv-action-delete-on-pv",
+			Namespace: namespace.Name,
+		},
+	}
+	localActionDeleteOnRDPV := createPV("local-pv-action-delete-on-rd", "true", nil, TestNodeA.Name)
+	localActionDeleteOnRDPV.Spec.ClaimRef = &corev1.ObjectReference{
+		Namespace: namespace.Name,
+		Name:      "local-pv-action-delete-on-rd",
+	}
+	localActionDeleteOnRDPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "local-pv-action-delete-on-rd",
+			Namespace: namespace.Name,
+		},
+	}
+	localActionDeleteOnRGPV := createPV("local-pv-action-delete-on-rg", "true", nil, TestNodeA.Name)
+	localActionDeleteOnRGPV.Spec.ClaimRef = &corev1.ObjectReference{
+		Namespace: namespace.Name,
+		Name:      "local-pv-action-delete-on-rg",
+	}
+	localActionDeleteOnRGPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "local-pv-action-delete-on-rg",
+			Namespace: namespace.Name,
+		},
+	}
+
+	cl, lc := setupTestCluster(t,
+		TestNodeA, TestNodeB, MachineA, MachineB, namespace,
+		localPV, createAttachment(TestNodeA, localPV),
+		localActionDeletePVC, localActionDeletePV, createAttachment(TestNodeA, localActionDeletePV),
+		localActionDeleteOnRDPVC, localActionDeleteOnRDPV, createAttachment(TestNodeA, localActionDeleteOnRDPV),
+		localActionDeleteOnRGPVC, localActionDeleteOnRGPV, createAttachment(TestNodeA, localActionDeleteOnRGPV),
+	)
+
+	err := lc.ResourceGroups.Create(t.Context(), lapi.ResourceGroup{
+		Name: "test-rg-default",
+	})
+	assert.NoError(t, err)
+
+	err = lc.ResourceGroups.Create(t.Context(), lapi.ResourceGroup{
+		Name: "test-rg-delete",
+		Props: map[string]string{
+			linstor.NamespcAuxiliary + "/" + vars.EvacuationActionAnnotation: "Delete",
+		},
+	})
+	assert.NoError(t, err)
+
+	err = lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{
+		Name:              "local-pv-action-delete-on-pv",
+		ResourceGroupName: "test-rg-default",
+	}})
+	assert.NoError(t, err)
+
+	err = lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{
+		Name:              "local-pv-action-delete-on-rd",
+		ResourceGroupName: "test-rg-default",
+		Props: map[string]string{
+			linstor.NamespcAuxiliary + "/" + vars.EvacuationActionAnnotation: "Delete",
+		},
+	}})
+	assert.NoError(t, err)
+
+	err = lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{
+		Name:              "local-pv-action-delete-on-rg",
+		ResourceGroupName: "test-rg-delete",
+	}})
+	assert.NoError(t, err)
+
+	// Satellite still has a local-only PV
+	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	assert.NoError(t, err)
+	assert.False(t, cont)
+	assert.Contains(t, msg, "Waiting for PVs to be schedulable on other nodes")
+	assert.Contains(t, msg, "local-pv-attached")
+	assert.NotContains(t, msg, "local-pv-action-delete-on-pv")
+	assert.NotContains(t, msg, "local-pv-action-delete-on-rd")
+	assert.NotContains(t, msg, "local-pv-action-delete-on-rg")
+
+	// Attached PVs should be marked for rescheduling, local only PV additionally with attach override
+	assert.Contains(t, getPV(t, cl, "local-pv-attached").Annotations, affinity.OverrideAnnotationPrefix+"/node-a")
+	assert.Contains(t, getPV(t, cl, "local-pv-attached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
+
+	for _, pvName := range []string{"local-pv-action-delete-on-pv", "local-pv-action-delete-on-rd", "local-pv-action-delete-on-rg"} {
+		var pvc corev1.PersistentVolumeClaim
+		assert.Error(t, cl.Get(t.Context(), client.ObjectKey{Namespace: namespace.Name, Name: pvName}, &pvc))
+		var pv corev1.PersistentVolume
+		assert.Error(t, cl.Get(t.Context(), client.ObjectKey{Name: pvName}, &pv))
+	}
+
+	// No evacuation, no drain, no termination
+	assert.NotContains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
+	assert.Contains(t, getMachine(t, cl, "machine-a").Annotations, vars.MachinePreDrainHookAnnotation)
+	assert.Contains(t, getMachine(t, cl, "machine-a").Annotations, vars.MachinePreTerminateHookAnnotation)
+}
+
 func TestEvacuateSatelliteWaitForOtherSatellites(t *testing.T) {
 	t.Parallel()
 	cl, lc := setupTestCluster(t,

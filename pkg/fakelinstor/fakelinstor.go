@@ -26,7 +26,10 @@ func New() *FakeLinstor {
 	mux.Handle("PUT /v1/nodes/{node}/evacuate", wrapHandler(f.evacuateNode))
 	mux.Handle("PUT /v1/nodes/{node}/restore", wrapHandler(f.restoreNode))
 	mux.Handle("DELETE /v1/nodes/{node}/lost", wrapHandler(f.lostNode))
+	mux.Handle("POST /v1/resource-groups", wrapHandler(f.createResourceGroup))
+	mux.Handle("GET /v1/resource-groups", wrapHandler(f.getResourceGroups))
 	mux.Handle("POST /v1/resource-definitions", wrapHandler(f.createResourceDefinition))
+	mux.Handle("GET /v1/resource-definitions", wrapHandler(f.getResourceDefinitions))
 	mux.Handle("DELETE /v1/resource-definitions/{rd}", wrapHandler(f.deleteResourceDefinition))
 	mux.Handle("GET /v1/resource-definitions/{rd}/resources/{node}", wrapHandler(f.getResource))
 	mux.Handle("POST /v1/resource-definitions/{rd}/resources/{node}", wrapHandler(f.createResource))
@@ -43,6 +46,7 @@ type FakeLinstor struct {
 	nodes               []lapi.Node
 	resources           []lapi.ResourceWithVolumes
 	resourceDefinitions []lapi.ResourceDefinition
+	resourceGroups      []lapi.ResourceGroup
 }
 
 func wrapHandler(f func(r *http.Request) (any, error)) http.Handler {
@@ -131,6 +135,35 @@ func (f *FakeLinstor) deleteNode(r *http.Request) (any, error) {
 	return nil, nil
 }
 
+func (f *FakeLinstor) createResourceGroup(r *http.Request) (any, error) {
+	defer r.Body.Close() //nolint:errcheck
+
+	var rg lapi.ResourceGroup
+	err := json.NewDecoder(r.Body).Decode(&rg)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding resource group: %w", err)
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if slices.ContainsFunc(f.resourceGroups, func(exist lapi.ResourceGroup) bool {
+		return exist.Name == rg.Name
+	}) {
+		return nil, fmt.Errorf("resource group '%s' already exists", rg.Name)
+	}
+
+	f.resourceGroups = append(f.resourceGroups, rg)
+	return nil, nil
+}
+
+func (f *FakeLinstor) getResourceGroups(r *http.Request) (any, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.resourceGroups, nil
+}
+
 func (f *FakeLinstor) createResourceDefinition(r *http.Request) (any, error) {
 	defer r.Body.Close() //nolint:errcheck
 
@@ -151,6 +184,13 @@ func (f *FakeLinstor) createResourceDefinition(r *http.Request) (any, error) {
 
 	f.resourceDefinitions = append(f.resourceDefinitions, rd.ResourceDefinition)
 	return nil, nil
+}
+
+func (f *FakeLinstor) getResourceDefinitions(r *http.Request) (any, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.resourceDefinitions, nil
 }
 
 func (f *FakeLinstor) getResource(r *http.Request) (any, error) {

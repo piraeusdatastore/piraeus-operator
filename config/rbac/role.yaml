@@ -28,6 +28,7 @@ rules:
   - nodes
   - persistentvolumeclaims
   verbs:
+  - delete
   - get
   - list
   - patch
