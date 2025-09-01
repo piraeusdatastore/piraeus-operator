@@ -66,6 +66,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.23.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
@@ -100,6 +101,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250628140032-d90c4fd18f59 // indirect
 	k8s.io/mount-utils v0.33.4 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
+	sigs.k8s.io/cluster-api v1.11.0 // indirect
 	sigs.k8s.io/gateway-api v1.3.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect

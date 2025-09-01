@@ -2,7 +2,7 @@ package vars
 
 import (
 	linstorcsi "github.com/piraeusdatastore/linstor-csi/pkg/linstor"
-	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck
 
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )

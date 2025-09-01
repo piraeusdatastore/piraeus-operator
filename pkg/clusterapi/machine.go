@@ -5,7 +5,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
