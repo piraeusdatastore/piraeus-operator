@@ -201,9 +201,10 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 .PHONY: yq
 yq: $(YQ)
 $(YQ): $(LOCALBIN)
-	curl -sSLo "$(YQ)~" https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(shell go env GOOS)_$(shell go env GOARCH)
-	chmod +x "$(YQ)~"
-	mv -v "$(YQ)~" $(YQ)
+	@if ! test -x $(YQ) || ! $(YQ) --version | grep -q $(YQ_VERSION); then \
+		curl -sSLo "$(YQ)" https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(shell go env GOOS)_$(shell go env GOARCH); \
+		chmod +x $(YQ); \
+	fi
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
