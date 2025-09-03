@@ -277,8 +277,9 @@ release: $(YQ) $(KUSTOMIZE)
 	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) hack/make-release.sh $(VERSION)
 
 .PHONY: sync-chart
-sync-chart:
+sync-chart: $(YQ) $(KUSTOMIZE)
 	hack/copy-image-config-to-chart.sh
+	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) hack/copy-rbac-config-to-chart.sh
 
 .PHONY: manifest.yaml
 manifest.yaml: $(KUSTOMIZE)
