@@ -95,13 +95,13 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	go run ./hack/csvinflater > config/manifests/csv-resource-patch.yaml
+	go run ./tools/csvinflater > config/manifests/csv-resource-patch.yaml
 	$(CONTROLLER_GEN) rbac:roleName=controller-manager crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	hack/crd-charts-copy.sh > charts/piraeus/templates/crds.yaml
+	tools/crd-charts-copy.sh > charts/piraeus/templates/crds.yaml
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="tools/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -274,12 +274,12 @@ catalog-push: ## Push a catalog image.
 
 .PHONY: release
 release: $(YQ) $(KUSTOMIZE)
-	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) hack/make-release.sh $(VERSION)
+	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) tools/make-release.sh $(VERSION)
 
 .PHONY: sync-chart
 sync-chart: $(YQ) $(KUSTOMIZE)
-	hack/copy-image-config-to-chart.sh
-	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) hack/copy-rbac-config-to-chart.sh
+	tools/copy-image-config-to-chart.sh
+	KUSTOMIZE=$(abspath $(KUSTOMIZE)) YQ=$(abspath $(YQ)) tools/copy-rbac-config-to-chart.sh
 
 .PHONY: manifest.yaml
 manifest.yaml: $(KUSTOMIZE)

@@ -6,7 +6,7 @@ KUSTOMIZE="${KUSTOMIZE:-kustomize}"
 
 {
 	cat <<EOF
-# DO NOT EDIT; Automatically created by hack/copy-rbac-config-to-chart.sh
+# DO NOT EDIT; Automatically created by tools/copy-rbac-config-to-chart.sh
 {{ if .Values.rbac.create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1

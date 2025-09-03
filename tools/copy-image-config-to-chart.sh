@@ -2,7 +2,7 @@
 set -e
 
 cat <<EOF > charts/piraeus/templates/config.yaml
-# DO NOT EDIT; Automatically created by hack/copy-image-config-to-chart.sh
+# DO NOT EDIT; Automatically created by tools/copy-image-config-to-chart.sh
 apiVersion: v1
 kind: ConfigMap
 metadata:
