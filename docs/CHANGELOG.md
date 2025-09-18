@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional status information on `LinstorCluster`, `LinstorSatelliteConfiguration` and `LinstorSatellite` resources.
 - Sign container images using keyless [cosign] signatures
 - Support for [Volume Group Snapshots](https://kubernetes.io/blog/2025/09/16/kubernetes-v1-34-volume-group-snapshot-beta-2/)
+- Support for RWX filesystems using regular LINSTOR CSI volumes.
 
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
 [cosign]: https://docs.sigstore.dev/quickstart/quickstart-cosign/
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image configuration for RHEL10 clones.
 - Do not remove existing satellites for `*NoSchedule` taints.
 - Set `shareProcessNamespace: true` on workloads to automatically reap orphaned processes.
+- LINSTOR CSI now use `hostNetwork: true` so RWX mounts use a stable IP when connecting to NFS.
 
 ### Fixed
 

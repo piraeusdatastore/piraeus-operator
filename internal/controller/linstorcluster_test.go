@@ -450,7 +450,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					Expect(err).NotTo(HaveOccurred())
 					return daemonSets.Items
 				}).Should(And(
-					HaveLen(4), // 2 Satellites DS, 1 CSI Node, 1 HA Controller.
+					HaveLen(5), // 2 Satellites DS, 1 CSI Node, 1 HA Controller, 1 NFS Server.
 					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
 						append(slices.Clone(tolerations.HAControllerTolerations),
 							corev1.Toleration{
@@ -607,6 +607,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					ClientSecretName:             "my-client-tls",
 					CsiControllerSecretName:      "my-csi-controller-tls",
 					CsiNodeSecretName:            "my-csi-node-tls",
+					NFSServerSecretName:          "my-nfs-server-tls",
 					AffinityControllerSecretName: "my-affinity-controller-tls",
 				},
 			},
@@ -681,6 +682,15 @@ var _ = Describe("LinstorCluster controller", func() {
 
 			linstorCsi := GetContainer(affinityControllerDeployment.Spec.Template.Spec.Containers, "linstor-affinity-controller")
 			envCheck(g, linstorCsi, "my-affinity-controller-tls")
+		}).Should(Succeed())
+
+		Eventually(func(g Gomega) {
+			var csiNodeDaemonSet appsv1.DaemonSet
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-csi-nfs-server", Namespace: Namespace}, &csiNodeDaemonSet)
+			g.Expect(err).NotTo(HaveOccurred())
+
+			linstorWaitNodeOnline := GetContainer(csiNodeDaemonSet.Spec.Template.Spec.InitContainers, "linstor-wait-node-online")
+			envCheck(g, linstorWaitNodeOnline, "my-nfs-server-tls")
 		}).Should(Succeed())
 	})
 })

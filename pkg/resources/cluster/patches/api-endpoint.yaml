@@ -62,3 +62,21 @@
             env:
               - name: LS_CONTROLLERS
                 value: $LINSTOR_CONTROLLER_URL
+- target:
+    group: apps
+    version: v1
+    kind: DaemonSet
+    name: linstor-csi-nfs-server
+  patch: |
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: linstor-csi-nfs-server
+    spec:
+      template:
+        spec:
+          initContainers:
+          - name:  linstor-wait-node-online
+            env:
+              - name: LS_CONTROLLERS
+                value: $LINSTOR_CONTROLLER_URL

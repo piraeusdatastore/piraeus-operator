@@ -98,6 +98,7 @@ type LinstorClusterReconciler struct {
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups="",resources=persistentvolumeclaims/status,verbs=patch
+//+kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices;endpointslices/restricted,verbs=create;delete
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=internal.linstor.linbit.com,resources=*,verbs=get;list;watch;create;update;patch;delete;deletecollection
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=csidrivers,verbs=get;list;watch;create;update;patch;delete
@@ -275,37 +276,27 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 
 	imgs, _ := cfg.GetVersions(lcluster.Spec.Repository, "")
 
-	ctrlRes, err := r.kustomizeControllerResources(lcluster, imgs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	csiControllerRes, err := r.kustomizeCSIControllerResources(lcluster, imgs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	csiNodeRes, err := r.kustomizeCSINodeResources(lcluster, imgs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	haControllerRes, err := r.kustomizeHAControllerResources(lcluster, imgs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	affinityControllerRes, err := r.kustomizeAffinityControllerResources(lcluster, imgs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	commonNodeRes, err := r.kustomizeNodeCommonResources(lcluster, imgs)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	resMap := resmap.New()
+
+	for _, f := range []func(*piraeusiov1.LinstorCluster, []kusttypes.Image) (resmap.ResMap, error){
+		r.kustomizeControllerResources,
+		r.kustomizeCSIControllerResources,
+		r.kustomizeCSINodeResources,
+		r.kustomizeHAControllerResources,
+		r.kustomizeAffinityControllerResources,
+		r.kustomizeNFSServerResources,
+		r.kustomizeNFSServiceResources,
+		r.kustomizeNodeCommonResources,
+	} {
+		r, err := f(lcluster, imgs)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if err := resMap.AppendAll(r); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	sort.Slice(configs, func(i, j int) bool {
 		return configs[i].Name < configs[j].Name
@@ -351,36 +342,6 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		}
 
 		appliedConfigurations[node.Name] = matched
-	}
-
-	err = resMap.AppendAll(ctrlRes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = resMap.AppendAll(csiControllerRes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = resMap.AppendAll(csiNodeRes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = resMap.AppendAll(haControllerRes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = resMap.AppendAll(affinityControllerRes)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = resMap.AppendAll(commonNodeRes)
-	if err != nil {
-		return nil, nil, err
 	}
 
 	return resMap, appliedConfigurations, nil
@@ -572,6 +533,15 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 
 			patches = append(patches, p...)
 		}
+	}
+
+	if !lcluster.Spec.NFSServer.IsEnabled() {
+		p, err := ClusterCSIControllerDisableRWXPatch()
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
 	}
 
 	if lcluster.Spec.CSIController.GetTemplate() != nil {
@@ -811,6 +781,108 @@ func (r *LinstorClusterReconciler) kustomizeAffinityControllerResources(lcluster
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
+// Create the NFS Server resources.
+//
+// Applies the following changes over the base resources:
+// * Namespace
+// * default labels
+// * default images
+// * pull secret (if any)
+// * restrict daemon set to cluster's node selector
+// * apply cluster tolerations
+// * user defined patches
+func (r *LinstorClusterReconciler) kustomizeNFSServerResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	if !lcluster.Spec.NFSServer.IsEnabled() {
+		return resmap.New(), nil
+	}
+
+	resourceDirs := []string{"nfs-server"}
+
+	patches, err := ClusterNFSServerNodeSelectorPatch(lcluster.Spec.NodeSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointPatches, err := ClusterApiEndpointPatch(LinstorControllerUrl(lcluster))
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, endpointPatches...)
+
+	if lcluster.Spec.NodeAffinity != nil {
+		p, err := ClusterNFSServerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	p, err := TolerationsPatch("DaemonSet", "linstor-csi-nfs-server", t)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, p...)
+
+	if lcluster.Spec.ApiTLS != nil {
+		nfsServerSecret := lcluster.Spec.ApiTLS.GetNFSServerSecretName()
+
+		p, err := ClusterNFSServerApiTLSPatch(nfsServerSecret, lcluster.Spec.ApiTLS.CAReference)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+
+		if lcluster.Spec.ApiTLS.CertManager != nil {
+			resourceDirs = append(resourceDirs, "nfs-server/cert-manager")
+
+			p, err := ClusterApiTLSClientCertManagerPatch("linstor-csi-nfs-server-tls", nfsServerSecret, lcluster.Spec.ApiTLS.CertManager)
+			if err != nil {
+				return nil, err
+			}
+
+			patches = append(patches, p...)
+		}
+	}
+
+	if lcluster.Spec.NFSServer.GetTemplate() != nil {
+		p, err := ComponentPodTemplate("DaemonSet", "linstor-csi-nfs-server", lcluster.Spec.NFSServer.GetTemplate())
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
+}
+
+// Create the NFS Service resource
+// Applies the following changes over the base resources:
+// * Namespace
+// * default labels, without applying them to selectors
+// * user defined patches
+func (r *LinstorClusterReconciler) kustomizeNFSServiceResources(lcluster *piraeusiov1.LinstorCluster, imgs []kusttypes.Image) (resmap.ResMap, error) {
+	if !lcluster.Spec.NFSServer.IsEnabled() {
+		return resmap.New(), nil
+	}
+
+	k := &kusttypes.Kustomization{
+		Namespace: r.Namespace,
+		// Disable inclusion in selectors: the Service is explicitly not using Selectors as DRBD Reactor is used to
+		// create the necessary EndpointSlices manually.
+		Labels:    r.kustomLabels(lcluster, false, false),
+		Resources: []string{"nfs-service"},
+		Patches:   utils.MakeKustPatches(lcluster.Spec.Patches...),
+	}
+
+	return r.Kustomizer.Kustomize(k)
+}
+
 // Create the common resources for LINSTOR satellites, but not the actual LinstorSatellite resources.
 //
 // The resources here are shared by all LinstorSatellite instances. This is used for:
@@ -974,7 +1046,7 @@ func (r *LinstorClusterReconciler) kustomize(resources []string, lcluster *pirae
 
 	k := &kusttypes.Kustomization{
 		Namespace: r.Namespace,
-		Labels:    r.kustomLabels(lcluster),
+		Labels:    r.kustomLabels(lcluster, true, true),
 		Resources: resources,
 		Images:    imgs,
 		Patches:   append(append(patches, saPatch...), utils.MakeKustPatches(lcluster.Spec.Patches...)...),
@@ -991,15 +1063,15 @@ func (r *LinstorClusterReconciler) pullSecretPatch() ([]kusttypes.Patch, error) 
 	return PullSecretPatch(r.PullSecret)
 }
 
-func (r *LinstorClusterReconciler) kustomLabels(lcluster *piraeusiov1.LinstorCluster) []kusttypes.Label {
+func (r *LinstorClusterReconciler) kustomLabels(lcluster *piraeusiov1.LinstorCluster, includeSelectors, includeTemplate bool) []kusttypes.Label {
 	return []kusttypes.Label{
 		{
 			Pairs: map[string]string{
 				"app.kubernetes.io/name":     vars.ProjectName,
 				"app.kubernetes.io/instance": lcluster.Name,
 			},
-			IncludeSelectors: true,
-			IncludeTemplates: true,
+			IncludeSelectors: includeSelectors,
+			IncludeTemplates: includeTemplate,
 		},
 		{
 			Pairs: vars.ExtraLabels,

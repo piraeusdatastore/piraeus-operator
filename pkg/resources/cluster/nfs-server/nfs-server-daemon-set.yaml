@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: linstor-csi-nfs-server
+  labels:
+    app.kubernetes.io/component: linstor-csi-nfs-server
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: linstor-csi-nfs-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: linstor-csi-nfs-server
+      annotations:
+        kubectl.kubernetes.io/default-container: "nfs-server"
+    spec:
+      serviceAccountName: linstor-csi-nfs-server
+      enableServiceLinks: false
+      initContainers:
+      - name: linstor-wait-node-online
+        image: linstor-csi
+        command:
+        - /linstor-wait-until
+        - satellite-online
+        - $(NODE_NAME)
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: LS_CONTROLLERS
+          value: 'http://linstor-controller:3370'
+      containers:
+      - name: nfs-server
+        image: nfs-server
+        tty: true # So systemd logs to the container logs
+        securityContext:
+          # Need privileged to mount DRBD volumes in the container
+          privileged: true
+          capabilities:
+            drop:
+            - "*"
+        env:
+        # Set according to https://systemd.io/CONTAINER_INTERFACE/
+        - name: container
+          value: kubernetes
+        - name: SYSTEMD_LOG_TARGET
+          value: console
+        - name: HOST_DEV_PREFIX
+          value: /host
+        - name: REACTOR_CONFIG_MAP
+          value: linstor-csi-nfs-server-reactor-config
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        volumeMounts:
+        - mountPath: /etc/nfs-helper
+          name: linstor-csi-nfs-server-templates
+          readOnly: true
+        - mountPath: /etc/drbd-reactor.d
+          name: reactor-config
+        - mountPath: /host/dev
+          name: dev
+          mountPropagation: HostToContainer
+        # Mount /sys readonly according to https://systemd.io/CONTAINER_INTERFACE/
+        - mountPath: /sys
+          name: sys
+          mountPropagation: HostToContainer
+          readOnly: true
+        - mountPath: /run
+          name: run
+      # Ensure systemd in the nfs-server container is PID 1
+      shareProcessNamespace: false
+      volumes:
+      # Otherwise systemd will create its own /run on tmpfs, nuking the service account along the way
+      - name: run
+        emptyDir: { }
+      - name: reactor-config
+        emptyDir: { }
+      - name: dev
+        hostPath:
+          path: /dev
+          type: Directory
+      - name: sys
+        hostPath:
+          path: /sys
+          type: Directory
+      - name: linstor-csi-nfs-server-templates
+        configMap:
+          name: linstor-csi-nfs-server-templates

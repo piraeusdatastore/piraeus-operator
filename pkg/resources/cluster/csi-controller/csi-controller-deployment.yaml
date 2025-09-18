@@ -39,11 +39,21 @@ spec:
           image: linstor-csi
           args:
             - --csi-endpoint=unix://$(ADDRESS)
-            - --property-namespace=Aux/topology
-            - --label-by-storage-pool=false
+            - --property-namespace=$(PROPERTY_NAMESPACE)
+            - --label-by-storage-pool=$(LABEL_BY_STORAGE_POOL)
+            - --enable-rwx=$(ENABLE_RWX)
+            - --nfs-reactor-config-map-name=$(NFS_REACTOR_CONFIG_MAP_NAME)
           env:
             - name: ADDRESS
               value: /csi/csi.sock
+            - name: PROPERTY_NAMESPACE
+              value: Aux/topology
+            - name: LABEL_BY_STORAGE_POOL
+              value: 'false'
+            - name: ENABLE_RWX
+              value: 'true'
+            - name: NFS_REACTOR_CONFIG_MAP_NAME
+              value: linstor-csi-nfs-server-reactor-config
             - name: LS_CONTROLLERS
               value: 'http://linstor-controller:3370'
           volumeMounts:

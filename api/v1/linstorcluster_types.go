@@ -113,6 +113,10 @@ type LinstorClusterSpec struct {
 	// AffinityController controls the deployment of the Affinity Controller Deployment.
 	// +kubebuilder:validation:Optional
 	AffinityController *DeploymentComponentSpec `json:"affinityController,omitempty"`
+
+	// NFSServer controls the deployment of the LINSTOR CSI NFS Server DaemonSet.
+	// +kubebuilder:validation:Optional
+	NFSServer *ComponentSpec `json:"nfsServer,omitempty"`
 }
 
 type LinstorExternalControllerRef struct {
@@ -142,10 +146,15 @@ type LinstorClusterApiTLS struct {
 	//+kubebuilder:validation:Optional
 	CsiNodeSecretName string `json:"csiNodeSecretName,omitempty"`
 
-	// AffinityControllerSecretName references a secret holding the TLS key and certificate used by the CSI Controller
-	// to provision volumes. Defaults to "linstor-affinity-controller-tls".
+	// AffinityControllerSecretName references a secret holding the TLS key and certificate used by the Affinity
+	// Controller to monitor volume state. Defaults to "linstor-affinity-controller-tls".
 	//+kubebuilder:validation:Optional
 	AffinityControllerSecretName string `json:"affinityControllerSecretName,omitempty"`
+
+	// NFSServerSecretName references a secret holding the TLS key and certificate used by the NFS Server to query
+	// the cluster state. Defaults to "linstor-csi-nfs-server-tls".
+	//+kubebuilder:validation:Optional
+	NFSServerSecretName string `json:"nfsServerSecretName,omitempty"`
 
 	// CertManager references a cert-manager Issuer or ClusterIssuer.
 	// If set, cert-manager.io/Certificate resources will be created, provisioning the secrets referenced in
@@ -197,6 +206,14 @@ func (l *LinstorClusterApiTLS) GetAffinityControllerSecretName() string {
 	}
 
 	return l.AffinityControllerSecretName
+}
+
+func (l *LinstorClusterApiTLS) GetNFSServerSecretName() string {
+	if l.NFSServerSecretName == "" {
+		return "linstor-csi-nfs-server-tls"
+	}
+
+	return l.NFSServerSecretName
 }
 
 // LinstorClusterStatus defines the observed state of LinstorCluster

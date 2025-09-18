@@ -20,6 +20,8 @@ spec:
       enableServiceLinks: false
       serviceAccountName: linstor-csi-node
       shareProcessNamespace: true
+      hostNetwork: true # For mounting NFS resources
+      dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: system-node-critical
       initContainers:
         - name: linstor-wait-node-online

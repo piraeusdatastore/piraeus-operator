@@ -139,6 +139,24 @@ func ClusterHAControllerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kust
 		})
 }
 
+func ClusterNFSServerNodeSelectorPatch(selector map[string]string) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/nfs-server-node-selector.yaml",
+		map[string]any{
+			"NODE_SELECTOR": selector,
+		})
+}
+
+func ClusterNFSServerNodeAffinityPatch(affinity *corev1.NodeSelector) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/nfs-server-node-affinity.yaml",
+		map[string]any{
+			"NODE_AFFINITY": affinity,
+		})
+}
+
 func ClusterApiTLSPatch(apiSecretName, clientSecretName string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
@@ -183,6 +201,14 @@ func ClusterApiEndpointPatch(url string) ([]kusttypes.Patch, error) {
 		})
 }
 
+func ClusterCSIControllerDisableRWXPatch() ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/csi-controller-disable-rwx.yaml",
+		nil,
+	)
+}
+
 func ClusterCSIControllerApiTLSPatch(controllerSecret string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
@@ -210,6 +236,16 @@ func ClusterCSINodeApiTLSPatch(nodeSecret string, caRef *piraeusiov1.CAReference
 		map[string]any{
 			"LINSTOR_CSI_NODE_API_TLS_SECRET_NAME": nodeSecret,
 			"LINSTOR_CSI_NODE_API_TLS_CA_SOURCE":   caRef.ToEnvVarSource(nodeSecret),
+		})
+}
+
+func ClusterNFSServerApiTLSPatch(serverSecret string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/api-tls-nfs-server.yaml",
+		map[string]any{
+			"LINSTOR_CSI_NFS_SERVER_API_TLS_SECRET_NAME": serverSecret,
+			"LINSTOR_CSI_NFS_SERVER_API_TLS_CA_SOURCE":   caRef.ToEnvVarSource(serverSecret),
 		})
 }
 

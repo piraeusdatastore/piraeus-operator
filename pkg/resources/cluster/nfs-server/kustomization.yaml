@@ -1,0 +1,19 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- nfs-server-daemon-set.yaml
+- nfs-server-service-account.yaml
+configMapGenerator:
+- name: linstor-csi-nfs-server-templates
+  files:
+  - default-config.tmpl
+  options:
+    disableNameSuffixHash: true
+    labels:
+        app.kubernetes.io/component: linstor-csi-nfs-server
+- name: linstor-csi-nfs-server-reactor-config
+  options:
+    disableNameSuffixHash: true
+    labels:
+      app.kubernetes.io/component: linstor-csi-nfs-server

@@ -110,6 +110,14 @@ rules:
     - get
     - update
 - apiGroups:
+    - discovery.k8s.io
+  resources:
+    - endpointslices
+    - endpointslices/restricted
+  verbs:
+    - create
+    - delete
+- apiGroups:
     - events.k8s.io
   resources:
     - events

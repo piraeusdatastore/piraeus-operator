@@ -13,6 +13,7 @@ ha-controller-vd82w                                    ha-controller
 linstor-affinity-controller-c84cf8958-p5wjx            linstor-affinity-controller
 linstor-controller-6c8f8dc47-cm8hr                     linstor-controller
 linstor-csi-controller-59b9968b86-ftl76                linstor-csi-controller
+linstor-csi-nfs-server-n64jv                           linstor-csi-nfs-server
 linstor-csi-node-hcmk9                                 linstor-csi-node
 linstor-satellite-k8s-10.test-66687                    linstor-satellite
 piraeus-operator-controller-manager-6dcfcb4568-6jntp   piraeus-operator
@@ -87,6 +88,15 @@ starting a Pod with a Piraeus volume.
 
 They are deployed as a DaemonSet on every node in the cluster by default. There needs to be a LINSTOR Satellite running
 on the same node as a CSI Node Pod.
+
+# `linstor-csi-nfs-server`
+
+The [LINSTOR CSI] NFS Server Pods export the NFS volumes to enable ReadWriteMany support for volumes. A Pod can run one
+or more NFS Server using [DRBD Reactor](https://github.com/LINBIT/drbd-reactor/) ensuring high availability in case of
+node failures.
+
+They are deployed as a DaemonSet on every node in the cluster by default. NFS exports can run on any node that has a
+replica of the volume deployed.
 
 # `linstor-affinity-controller`
 

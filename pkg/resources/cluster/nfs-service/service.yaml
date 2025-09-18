@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: linstor-csi-nfs
+  labels:
+    app.kubernetes.io/component: linstor-csi-nfs
+spec:
+  ports:
+  # This port only exists to deploy a valid Service object
+  # At a later point, we may actually export metrics from here
+  - port: 999
+    name: metrics
+    protocol: TCP

@@ -383,6 +383,34 @@ spec:
                 memory: 1Gi
 ```
 
+### `.spec.nfsServer`
+
+Controls the NFS Server DaemonSet:
+
+* Setting `enabled: false` disables the DaemonSet entirely.
+* Setting a `podTemplate:` allows for simple modification of the NFS Server DaemonSet.
+
+#### Example
+
+This example configures a resource request of `memory: 2Gi` for the NFS Server DaemonSet:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  nfsServer:
+    enabled: true
+    podTemplate:
+      spec:
+        containers:
+        - name: nfs-server
+          resources:
+            requests:
+              memory: 2Gi
+```
+
 ### `.spec.internalTLS`
 
 Configures a TLS secret used by the LINSTOR Controller to:
@@ -451,17 +479,22 @@ spec:
 
 ### `.spec.apiTLS`
 
-Configures the TLS secrets used to secure the LINSTOR API. There are four different secrets to configure:
+Configures the TLS secrets used to secure the LINSTOR API. If the value is defined but empty (`apiTLS: {}`), TLS is
+configured expecting the following secrets using their default names to exist:
 
 * `apiSecretName`: sets the name of the secret used by the LINSTOR Controller to enable HTTPS. Defaults to
   `linstor-api-tls`. All clients of the API must have certificates signed by the `ca.crt` of this secret.
 * `clientSecretName`: sets the name of the secret used by the Operator to connect to the LINSTOR API. Defaults to
   `linstor-client-tls`. Must be trusted by `ca.crt` in the API Secret. Also used by the LINSTOR Controller to configure
   the included LINSTOR CLI.
+* `affinityControllerSecretName` sets the name of secret used by the Affinity Controller. Defaults to
+  `linstor-affinity-controller-tls`. Must be trusted by `ca.crt` in the API Secret.
 * `csiControllerSecretName` sets the name of the secret used by the CSI Controller. Defaults to
   `linstor-csi-controller-tls`. Must be trusted by `ca.crt` in the API Secret.
-* `csiNodeSecretName` sets the name of the secret used by the CSI Controller. Defaults to `linstor-csi-node-tls`.
+* `csiNodeSecretName` sets the name of the secret used by the CSI Nodes. Defaults to `linstor-csi-node-tls`.
   Must be trusted by `ca.crt` in the API Secret.
+* `nfsServerSecretName` sets the name of the secret used by the NFS Server. Defaults to
+  `linstor-csi-nfs-server-tls`. Must be trusted by `ca.crt` in the API Secret.
 
 Optional, a reference to a [cert-manager `Issuer`](https://cert-manager.io/docs/concepts/issuer/) can be provided
 to let the operator create the required secrets.
@@ -506,6 +539,8 @@ spec:
     clientSecretName: my-linstor-client-tls
     csiControllerSecretName: my-linstor-client-tls
     csiNodeSecretName: my-linstor-client-tls
+    affinityControllerSecretName: my-linstor-client-tls
+    nfsServerSecretName: my-linstor-client-tls
 ```
 
 #### Example

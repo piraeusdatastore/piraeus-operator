@@ -127,6 +127,23 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ClusterNFSServerNodeSelectorPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterNFSServerNodeSelectorPatch(map[string]string{"foo": "bar"})
+			},
+		},
+		{
+			name: "ClusterNFSServerNodeAffinityPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterNFSServerNodeAffinityPatch(&corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{{MatchExpressions: []corev1.NodeSelectorRequirement{{
+						Key:      "example.com/label",
+						Operator: corev1.NodeSelectorOpDoesNotExist,
+					}}}},
+				})
+			},
+		},
+		{
 			name: "PullSecretPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.PullSecretPatch("secret")
@@ -213,6 +230,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ClusterCSIControllerDisableRWXPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterCSIControllerDisableRWXPatch()
+			},
+		},
+		{
 			name: "ClusterCSIControllerApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterCSIControllerApiTLSPatch("controller", &piraeusiov1.CAReference{
@@ -234,6 +257,16 @@ func TestPatches(t *testing.T) {
 			name: "ClusterCSINodeApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterCSINodeApiTLSPatch("node", &piraeusiov1.CAReference{
+					Name: "trust-root",
+					Kind: "ConfigMap",
+					Key:  "tls.crt",
+				})
+			},
+		},
+		{
+			name: "ClusterNFSServerApiTLSPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterNFSServerApiTLSPatch("node", &piraeusiov1.CAReference{
 					Name: "trust-root",
 					Kind: "ConfigMap",
 					Key:  "tls.crt",

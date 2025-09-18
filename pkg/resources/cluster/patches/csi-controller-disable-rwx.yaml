@@ -1,0 +1,17 @@
+---
+- target:
+    kind: Deployment
+    name: linstor-csi-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-csi-controller
+    spec:
+      template:
+        spec:
+          containers:
+          - name: linstor-csi
+            env:
+            - name: ENABLE_RWX
+              value: "false"

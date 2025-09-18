@@ -1,0 +1,38 @@
+NFS_Core_Param
+{
+	Protocols = 4;
+	NFS_Protocols = 4;
+	Dbus_Name_Prefix = "{{.DbusPrefix}}";
+	Enable_NLM = false;
+	Enable_RQUOTA = false;
+	fsid_device = true;
+	Enable_UDP = false;
+	NFS_Port = {{.Port}};
+}
+
+NFS_KRB5
+{
+	CCacheDir = "/var/run/ganesha/{{.Resource}}";
+	Active_krb5 = false;
+}
+
+NFSV4
+{
+	RecoveryRoot = "/var/lib/nfs/ganesha/{{.Resource}}";
+	RecoveryBackend = "fs_ng";
+	Grace_Period = 60;
+	Server_Scope = "{{.Resource}}";
+}
+
+EXPORT
+{
+	Export_Id = {{.ExportID}};
+	Path = "/srv/exports/{{.Resource}}";
+	Pseudo = "/{{.Resource}}";
+	Access_Type = RW;
+	SecType = sys;
+	Squash = {{.Squash}};
+	FSAL {
+		Name = VFS;
+	}
+}
