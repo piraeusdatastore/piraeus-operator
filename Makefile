@@ -287,4 +287,4 @@ manifest.yaml: $(KUSTOMIZE)
 
 .PHONY: changes.md
 changes.md:
-	hack/extract-changelog.sh v$(VERSION) > $@
+	tools/extract-changelog.sh v$(VERSION) > $@
