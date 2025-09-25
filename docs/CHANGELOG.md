@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Image configuration for RHEL10 clones.
 - Do not remove existing satellites for `*NoSchedule` taints.
+- Updated images:
+    * LINSTOR 1.32.1
+    * LINSTOR CSI 1.9.0
+    * DRBD 9.2.15
+    * DRBD Reactor 1.9.0
+    * kTLS-utils 1.2.1
+    * Latest CSI sidecars
 
 ### Fixed
 
