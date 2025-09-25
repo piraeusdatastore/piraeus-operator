@@ -24,6 +24,7 @@ const (
 	ApplyAnnotation                                 = Domain + "/last-applied"
 	NodeInterfaceAnnotation                         = Domain + "/configured-interfaces"
 	ManagedByLabel                                  = Domain + "/managed-by"
+	AppliedConfigurationAnnotation                  = Domain + "/applied-configurations"
 	SatelliteNodeLabel                              = Domain + "/linstor-satellite"
 	SatelliteFinalizer                              = Domain + "/satellite-protection"
 	PersistentVolumeWaitForReattachAnnotationPrefix = "wait-for-reattach.evacuation." + Domain

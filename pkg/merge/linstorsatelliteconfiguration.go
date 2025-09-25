@@ -19,8 +19,9 @@ import (
 // * Concatenating all patches in the matching configs
 // * Merging all properties by name. A property defined in a "later" config overrides previous property definitions.
 // * Merging all storage pools by name. A storage pool defined in a "later" config overrides previous property definitions.
-func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...piraeusv1.LinstorSatelliteConfiguration) *piraeusv1.LinstorSatelliteConfiguration {
+func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...piraeusv1.LinstorSatelliteConfiguration) (*piraeusv1.LinstorSatelliteConfiguration, []string) {
 	result := &piraeusv1.LinstorSatelliteConfiguration{}
+	var matched []string
 
 	propsMap := make(map[string]*piraeusv1.LinstorNodeProperty)
 	storPoolMap := make(map[string]*piraeusv1.LinstorStoragePool)
@@ -37,6 +38,8 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 				continue
 			}
 		}
+
+		matched = append(matched, cfg.Name)
 
 		for j := range cfg.Spec.Properties {
 			propsMap[cfg.Spec.Properties[j].Name] = &cfg.Spec.Properties[j]
@@ -84,7 +87,7 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 		return result.Spec.StoragePools[i].Name < result.Spec.StoragePools[j].Name
 	})
 
-	return result
+	return result, matched
 }
 
 type satellitePatch struct {

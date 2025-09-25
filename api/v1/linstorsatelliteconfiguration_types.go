@@ -94,12 +94,25 @@ type LinstorSatelliteConfigurationStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+
+	// AppliedTo lists the LinstorSatellite resource this configuration was applied to
+	// +kubebuilder:validation:Optional
+	AppliedTo []string `json:"appliedTo"`
+
+	// Number of configured LinstorSatellite resource.
+	// +kubebuilder:validation:Optional
+	Matched *int64 `json:"matched"`
 }
 
 // LinstorSatelliteConfiguration is the Schema for the linstorsatelliteconfigurations API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="Selector",type=string,JSONPath=`.spec.nodeSelector`,description="The node selector used"
+// +kubebuilder:printcolumn:name="Applied",type=string,JSONPath=`.status.conditions[?(@.type=='Applied')].status`,description="If the Configuration was applied"
+// +kubebuilder:printcolumn:name="Matched",type=integer,JSONPath=`.status.matched`,description="Number of Satellites this Configuration has been applied to"
+// +kubebuilder:printcolumn:name="Satellites",type=string,JSONPath=`.status.appliedTo`,description="Satellites this Configuration has been applied to",priority=10
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type LinstorSatelliteConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

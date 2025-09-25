@@ -15,6 +15,7 @@ import (
 
 var (
 	Config1 = piraeusv1.LinstorSatelliteConfiguration{
+		ObjectMeta: metav1.ObjectMeta{Name: "Config1"},
 		Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 			NodeSelector: map[string]string{
 				"config1": "true",
@@ -37,6 +38,7 @@ var (
 		},
 	}
 	Config2 = piraeusv1.LinstorSatelliteConfiguration{
+		ObjectMeta: metav1.ObjectMeta{Name: "Config2"},
 		Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 			NodeSelector: map[string]string{
 				"config2": "true",
@@ -54,6 +56,7 @@ var (
 		},
 	}
 	Config3 = piraeusv1.LinstorSatelliteConfiguration{
+		ObjectMeta: metav1.ObjectMeta{Name: "Config3"},
 		Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 			NodeSelector: map[string]string{
 				"config3": "true",
@@ -76,6 +79,7 @@ var (
 		},
 	}
 	Config4 = piraeusv1.LinstorSatelliteConfiguration{
+		ObjectMeta: metav1.ObjectMeta{Name: "Config4"},
 		Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 			NodeAffinity: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{
@@ -98,6 +102,7 @@ var (
 		},
 	}
 	Config5 = piraeusv1.LinstorSatelliteConfiguration{
+		ObjectMeta: metav1.ObjectMeta{Name: "Config5"},
 		Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 			PodTemplate: json.RawMessage(`{"spec": {"hostNetwork": true}}`),
 		},
@@ -112,6 +117,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 		labels  map[string]string
 		configs []piraeusv1.LinstorSatelliteConfiguration
 		result  *piraeusv1.LinstorSatelliteConfiguration
+		matched []string
 	}{
 		{
 			name:   "empty",
@@ -129,6 +135,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 				"config2": "true",
 				"config3": "true",
 			},
+			matched: []string{"Config1", "Config2", "Config3"},
 			configs: []piraeusv1.LinstorSatelliteConfiguration{Config1, Config2, Config3},
 			result: &piraeusv1.LinstorSatelliteConfiguration{
 				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
@@ -158,6 +165,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 		{
 			name:    "filter",
 			labels:  map[string]string{"config2": "true"},
+			matched: []string{"Config2"},
 			configs: []piraeusv1.LinstorSatelliteConfiguration{Config1, Config2, Config3},
 			result: &piraeusv1.LinstorSatelliteConfiguration{
 				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
@@ -176,6 +184,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 		{
 			name:    "complex-filter-positive",
 			labels:  map[string]string{"config4": "false"},
+			matched: []string{"Config4"},
 			configs: []piraeusv1.LinstorSatelliteConfiguration{Config4},
 			result: &piraeusv1.LinstorSatelliteConfiguration{
 				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
@@ -188,6 +197,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 		{
 			name:    "patch-convert",
 			configs: []piraeusv1.LinstorSatelliteConfiguration{Config5},
+			matched: []string{"Config5"},
 			result: &piraeusv1.LinstorSatelliteConfiguration{
 				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
 					Patches: []piraeusv1.Patch{{
@@ -204,11 +214,12 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := merge.SatelliteConfigurations(context.Background(), &corev1.Node{ObjectMeta: metav1.ObjectMeta{
+			actual, actualMatched := merge.SatelliteConfigurations(context.Background(), &corev1.Node{ObjectMeta: metav1.ObjectMeta{
 				Name:   tcase.name,
 				Labels: tcase.labels,
 			}}, tcase.configs...)
 			assert.Equal(t, tcase.result, actual)
+			assert.Equal(t, tcase.matched, actualMatched)
 		})
 	}
 }
