@@ -681,7 +681,15 @@ spec:
     singular: linstornodeconnection
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: If the LINSTOR Node Connection is fully configured
+      jsonPath: .status.conditions[?(@.type=='Configured')].status
+      name: Configured
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: LinstorNodeConnection is the Schema for the linstornodeconnections
