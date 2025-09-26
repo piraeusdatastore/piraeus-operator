@@ -14,7 +14,51 @@ spec:
     singular: linstorsatellite
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: If the LINSTOR Satellite is connected
+      jsonPath: .status.conditions[?(@.type=='Available')].status
+      name: Connected
+      type: string
+    - description: If the LINSTOR Satellite is fully configured
+      jsonPath: .status.conditions[?(@.type=='Configured')].status
+      name: Configured
+      type: string
+    - description: The Satellite Configurations applied to this Satellite
+      jsonPath: .metadata.annotations.piraeus\.io/applied-configurations
+      name: Applied Configurations
+      priority: 10
+      type: string
+    - description: The deletion policy of the Satellite
+      jsonPath: .spec.deletionPolicy
+      name: Deletion Policy
+      type: string
+    - description: The used capacity on the node
+      jsonPath: .status.capacity
+      name: Used Capacity
+      type: string
+    - description: The number of volumes on the node
+      jsonPath: .status.numberOfVolumes
+      name: Volumes
+      type: integer
+    - description: The number of snapshots on the node
+      jsonPath: .status.numberOfSnapshots
+      name: Snapshots
+      priority: 10
+      type: integer
+    - description: The storage providers supported by the node
+      jsonPath: .status.storageProviders
+      name: Storage Providers
+      priority: 10
+      type: string
+    - description: The device layers supported by the node
+      jsonPath: .status.deviceLayers
+      name: Device Layers
+      priority: 10
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: LinstorSatellite is the Schema for the linstorsatellites API
@@ -459,6 +503,15 @@ spec:
           status:
             description: LinstorSatelliteStatus defines the observed state of LinstorSatellite
             properties:
+              availableCapacityBytes:
+                description: The number of bytes in total in all storage pools on
+                  this Satellite.
+                format: int64
+                type: integer
+              capacity:
+                description: Capacity mirrors the information from TotalCapacityBytes
+                  and FreeCapacityBytes in a human-readable string.
+                type: string
               conditions:
                 description: Current LINSTOR Satellite state
                 items:
@@ -519,6 +572,31 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              deviceLayers:
+                description: DeviceLayers lists the device layers (LUKS, CACHE, etc...)
+                  this Satellite supports.
+                items:
+                  type: string
+                type: array
+              freeCapacityBytes:
+                description: The number of bytes free in all storage pools on this
+                  Satellite.
+                format: int64
+                type: integer
+              numberOfSnapshots:
+                description: The number of snapshots on this Satellite.
+                format: int32
+                type: integer
+              numberOfVolumes:
+                description: The number of volumes on this Satellite.
+                format: int32
+                type: integer
+              storageProviders:
+                description: StorageProviders lists the storage providers (LVM, ZFS,
+                  etc...) this Satellite supports.
+                items:
+                  type: string
+                type: array
             type: object
         type: object
     served: true

@@ -75,6 +75,34 @@ type LinstorSatelliteStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+
+	// The number of volumes on this Satellite.
+	//+kubebuilder:validation:Optional
+	NumberOfVolumes *int32 `json:"numberOfVolumes"`
+
+	// The number of snapshots on this Satellite.
+	//+kubebuilder:validation:Optional
+	NumberOfSnapshots *int32 `json:"numberOfSnapshots"`
+
+	// The number of bytes in total in all storage pools on this Satellite.
+	//+kubebuilder:validation:Optional
+	TotalCapacityBytes *int64 `json:"availableCapacityBytes"`
+
+	// The number of bytes free in all storage pools on this Satellite.
+	//+kubebuilder:validation:Optional
+	FreeCapacityBytes *int64 `json:"freeCapacityBytes"`
+
+	// Capacity mirrors the information from TotalCapacityBytes and FreeCapacityBytes in a human-readable string.
+	//+kubebuilder:validation:Optional
+	Capacity string `json:"capacity"`
+
+	// StorageProviders lists the storage providers (LVM, ZFS, etc...) this Satellite supports.
+	//+kubebuilder:validation:Optional
+	StorageProviders []string `json:"storageProviders,omitempty"`
+
+	// DeviceLayers lists the device layers (LUKS, CACHE, etc...) this Satellite supports.
+	//+kubebuilder:validation:Optional
+	DeviceLayers []string `json:"deviceLayers,omitempty"`
 }
 
 type ClusterReference struct {
@@ -99,6 +127,16 @@ type ClusterReference struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="Connected",type=string,JSONPath=`.status.conditions[?(@.type=='Available')].status`,description="If the LINSTOR Satellite is connected"
+// +kubebuilder:printcolumn:name="Configured",type=string,JSONPath=`.status.conditions[?(@.type=='Configured')].status`,description="If the LINSTOR Satellite is fully configured"
+// +kubebuilder:printcolumn:name="Applied Configurations",type=string,JSONPath=`.metadata.annotations.piraeus\.io/applied-configurations`,description="The Satellite Configurations applied to this Satellite",priority=10
+// +kubebuilder:printcolumn:name="Deletion Policy",type=string,JSONPath=`.spec.deletionPolicy`,description="The deletion policy of the Satellite"
+// +kubebuilder:printcolumn:name="Used Capacity",type=string,JSONPath=`.status.capacity`,description="The used capacity on the node"
+// +kubebuilder:printcolumn:name="Volumes",type=integer,JSONPath=`.status.numberOfVolumes`,description="The number of volumes on the node"
+// +kubebuilder:printcolumn:name="Snapshots",type=integer,JSONPath=`.status.numberOfSnapshots`,description="The number of snapshots on the node",priority=10
+// +kubebuilder:printcolumn:name="Storage Providers",type=string,JSONPath=`.status.storageProviders`,description="The storage providers supported by the node",priority=10
+// +kubebuilder:printcolumn:name="Device Layers",type=string,JSONPath=`.status.deviceLayers`,description="The device layers supported by the node",priority=10
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type LinstorSatellite struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
