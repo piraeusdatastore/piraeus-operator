@@ -9,6 +9,7 @@ require (
 	github.com/cert-manager/cert-manager v1.18.2
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
+	github.com/go-openapi/jsonpointer v0.22.1
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
@@ -45,20 +46,19 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
-	github.com/go-openapi/jsonpointer v0.22.0 // indirect
-	github.com/go-openapi/jsonreference v0.21.1 // indirect
-	github.com/go-openapi/swag v0.25.0 // indirect
-	github.com/go-openapi/swag/cmdutils v0.25.0 // indirect
-	github.com/go-openapi/swag/conv v0.25.0 // indirect
-	github.com/go-openapi/swag/fileutils v0.25.0 // indirect
-	github.com/go-openapi/swag/jsonname v0.25.0 // indirect
-	github.com/go-openapi/swag/jsonutils v0.25.0 // indirect
-	github.com/go-openapi/swag/loading v0.25.0 // indirect
-	github.com/go-openapi/swag/mangling v0.25.0 // indirect
-	github.com/go-openapi/swag/netutils v0.25.0 // indirect
-	github.com/go-openapi/swag/stringutils v0.25.0 // indirect
-	github.com/go-openapi/swag/typeutils v0.25.0 // indirect
-	github.com/go-openapi/swag/yamlutils v0.25.0 // indirect
+	github.com/go-openapi/jsonreference v0.21.2 // indirect
+	github.com/go-openapi/swag v0.25.1 // indirect
+	github.com/go-openapi/swag/cmdutils v0.25.1 // indirect
+	github.com/go-openapi/swag/conv v0.25.1 // indirect
+	github.com/go-openapi/swag/fileutils v0.25.1 // indirect
+	github.com/go-openapi/swag/jsonname v0.25.1 // indirect
+	github.com/go-openapi/swag/jsonutils v0.25.1 // indirect
+	github.com/go-openapi/swag/loading v0.25.1 // indirect
+	github.com/go-openapi/swag/mangling v0.25.1 // indirect
+	github.com/go-openapi/swag/netutils v0.25.1 // indirect
+	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
+	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
+	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/btree v1.1.3 // indirect
