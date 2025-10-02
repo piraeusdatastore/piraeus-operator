@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add option to set replica count for Deployment components.
 - Integration with ClusterAPI to enable graceful node evacuation in case of rolling machine updates.
 - Additional status information on `LinstorCluster`, `LinstorSatelliteConfiguration` and `LinstorSatellite` resources.
+- Sign container images using keyless [cosign] signatures
 
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
+[cosign]: https://docs.sigstore.dev/quickstart/quickstart-cosign/
 
 ### Removed
 
