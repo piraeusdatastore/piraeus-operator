@@ -144,9 +144,12 @@ spec:
             - '--leader-election=true'
             - '--leader-election-namespace=$(NAMESPACE)'
             - '--worker-threads=10'
+            - '--feature-gates=$(FEATURE_GATES)'
           env:
             - name: ADDRESS
               value: /csi/csi.sock
+            - name: FEATURE_GATES
+              value: CSIVolumeGroupSnapshot=true
             - name: NAMESPACE
               valueFrom:
                 fieldRef:

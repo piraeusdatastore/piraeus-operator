@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration with ClusterAPI to enable graceful node evacuation in case of rolling machine updates.
 - Additional status information on `LinstorCluster`, `LinstorSatelliteConfiguration` and `LinstorSatellite` resources.
 - Sign container images using keyless [cosign] signatures
+- Support for [Volume Group Snapshots](https://kubernetes.io/blog/2025/09/16/kubernetes-v1-34-volume-group-snapshot-beta-2/)
 
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
 [cosign]: https://docs.sigstore.dev/quickstart/quickstart-cosign/
