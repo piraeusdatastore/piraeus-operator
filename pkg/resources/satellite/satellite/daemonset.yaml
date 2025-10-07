@@ -19,6 +19,7 @@ spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
       serviceAccountName: satellite
+      shareProcessNamespace: true
       priorityClassName: system-node-critical
       hostIPC: true
       initContainers:

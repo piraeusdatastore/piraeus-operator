@@ -71,3 +71,4 @@ spec:
       enableServiceLinks: false
       serviceAccountName: linstor-affinity-controller
       priorityClassName: system-cluster-critical
+      shareProcessNamespace: true

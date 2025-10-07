@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Image configuration for RHEL10 clones.
 - Do not remove existing satellites for `*NoSchedule` taints.
+- Set `shareProcessNamespace: true` on workloads to automatically reap orphaned processes.
 
 ### Fixed
 
