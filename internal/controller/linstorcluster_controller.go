@@ -225,6 +225,7 @@ func (r *LinstorClusterReconciler) reconcileAppliedResource(ctx context.Context,
 				ObservedGeneration: config.Generation,
 			})
 
+			config.Status.AppliedTo = nil
 			for node, configs := range appliedConfigurations {
 				if slices.Contains(configs, config.Name) {
 					config.Status.AppliedTo = append(config.Status.AppliedTo, node)
