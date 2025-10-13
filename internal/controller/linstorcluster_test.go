@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/conditions"
@@ -313,27 +314,30 @@ var _ = Describe("LinstorCluster controller", func() {
 					return satellites.Items
 				}).Should(HaveLen(3))
 
-				var cluster piraeusiov1.LinstorCluster
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
-				Expect(err).NotTo(HaveOccurred())
-
-				cluster.Spec.NodeAffinity = &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
-							{
-								Key:      "topology.kubernetes.io/zone",
-								Operator: corev1.NodeSelectorOpNotIn,
-								Values:   []string{"b"},
-							},
-							{
-								Key:      "example.com/exclude",
-								Operator: corev1.NodeSelectorOpDoesNotExist,
-							},
+				cluster := piraeusiov1.LinstorCluster{
+					ObjectMeta: metav1.ObjectMeta{Name: "default"},
+					Spec: piraeusiov1.LinstorClusterSpec{
+						NodeAffinity: &corev1.NodeSelector{
+							NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "topology.kubernetes.io/zone",
+										Operator: corev1.NodeSelectorOpNotIn,
+										Values:   []string{"b"},
+									},
+									{
+										Key:      "example.com/exclude",
+										Operator: corev1.NodeSelectorOpDoesNotExist,
+									},
+								},
+							}},
 						},
-					}},
+					},
 				}
 
-				err = k8sClient.Update(ctx, &cluster)
+				err := k8sClient.Patch(ctx, &cluster, client.MergeFrom(&piraeusiov1.LinstorCluster{
+					ObjectMeta: metav1.ObjectMeta{Name: "default"},
+				}))
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() []string {
