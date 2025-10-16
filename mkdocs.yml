@@ -20,6 +20,7 @@ nav:
   - How-To Guides:
     - How-To Guides: how-to/README.md
     - Advanced Deployments:
+      - Use Helm to deploy Piraeus Datastore: how-to/helm.md
       - Use Piraeus Datastore with an Existing LINSTOR Cluster: how-to/external-controller.md
       - Configure the DRBD Module Loader: how-to/drbd-loader.md
       - Install Kernel Headers to build DRBD: how-to/install-kernel-headers.md

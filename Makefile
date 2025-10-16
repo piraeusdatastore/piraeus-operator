@@ -288,3 +288,9 @@ manifest.yaml: $(KUSTOMIZE)
 .PHONY: changes.md
 changes.md:
 	tools/extract-changelog.sh v$(VERSION) > $@
+
+chart: piraeus-$(VERSION).tar.gz
+
+.PHONY: piraeus-$(VERSION).tar.gz
+piraeus-$(VERSION).tar.gz:
+	helm package charts/piraeus

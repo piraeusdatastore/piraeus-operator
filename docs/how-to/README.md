@@ -5,6 +5,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 ## Advanced Deployments
 <div class="cards grid" markdown>
 
+*   Use Helm to deploy Piraeus Datastore
+
+    [:octicons-arrow-right-24: Guide](./helm.md)
+
 *   Use Piraeus Datastore with an Existing LINSTOR Cluster
 
     [:octicons-arrow-right-24: Guide](./external-controller.md)
@@ -12,6 +16,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 *   Configure the DRBD Module Loader
 
     [:octicons-arrow-right-24: Guide](./drbd-loader.md)
+
+*   Install Kernel Headers to build DRBD
+
+    [:octicons-arrow-right-24: Guide](./install-kernel-headers.md)
 
 </div>
 
