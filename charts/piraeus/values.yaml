@@ -1,3 +1,4 @@
+---
 replicaCount: 1
 
 installCRDs: false
@@ -81,6 +82,7 @@ rbac:
   create: true
 
 podAnnotations: { }
+podLabels: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
