@@ -26,7 +26,7 @@ require (
 	k8s.io/component-helpers v0.34.1
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	sigs.k8s.io/cluster-api v1.11.2
-	sigs.k8s.io/controller-runtime v0.22.3
+	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/kustomize/api v0.20.1
 	sigs.k8s.io/kustomize/kyaml v0.20.1
 	sigs.k8s.io/yaml v1.6.0
@@ -81,8 +81,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.67.1 // indirect
-	github.com/prometheus/procfs v0.19.1 // indirect
+	github.com/prometheus/common v0.67.2 // indirect
+	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
