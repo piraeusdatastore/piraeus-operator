@@ -20,6 +20,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [LINSTOR Affinity Controller]: https://github.com/piraeusdatastore/linstor-affinity-controller
 [cosign]: https://docs.sigstore.dev/quickstart/quickstart-cosign/
 
+### Changed
+
+- Set `shareProcessNamespace: true` on workloads to automatically reap orphaned processes.
+- LINSTOR CSI now use `hostNetwork: true` so RWX mounts use a stable IP when connecting to NFS.
+
+
+## [v2.9.1] - 2025-09-25
+
+### Changed
+
+- Image configuration for RHEL10 clones.
+- Do not remove existing satellites for `*NoSchedule` taints.
+- Updated images:
+    * LINSTOR 1.32.1
+    * LINSTOR CSI 1.9.0
+    * DRBD 9.2.15
+    * DRBD Reactor 1.9.0
+    * kTLS-utils 1.2.1
+    * Latest CSI sidecars
+
+### Fixed
+
+- Fix a crash in the validation webhook when trying to change the type of storage pool.
+
 ### Removed
 
 - Removed image configuration for EOL distributions:
@@ -27,17 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Ubuntu 20.04 ("Focal Fossa")
   * CentOS 7
   * Debian 10 ("Buster")
-
-### Changed
-
-- Image configuration for RHEL10 clones.
-- Do not remove existing satellites for `*NoSchedule` taints.
-- Set `shareProcessNamespace: true` on workloads to automatically reap orphaned processes.
-- LINSTOR CSI now use `hostNetwork: true` so RWX mounts use a stable IP when connecting to NFS.
-
-### Fixed
-
-- Fix a crash in the validation webhook when trying to change the type of storage pool.
 
 ## [v2.9.0] - 2025-06-17
 
@@ -1071,4 +1084,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v2.8.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.7.1...v2.8.0
 [v2.8.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.8.0...v2.8.1
 [v2.9.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.8.1...v2.9.0
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.9.0...HEAD
+[v2.9.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.9.0...v2.9.1
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.9.1...HEAD

@@ -8,10 +8,10 @@ base: quay.io/piraeusdatastore
 #   quay.io/piraeusdatastore/piraeus-server:v1.24.2
 components:
   linstor-controller:
-    tag: v1.31.2
+    tag: v1.32.1
     image: piraeus-server
   linstor-satellite:
-    tag: v1.31.2
+    tag: v1.32.1
     image: piraeus-server
   linstor-csi:
     tag: v1.9.0
@@ -20,7 +20,7 @@ components:
     tag: v1.9.0
     image: piraeus-csi-nfs-server
   drbd-reactor:
-    tag: v1.8.0
+    tag: v1.9.0
     image: drbd-reactor
   ha-controller:
     tag: v1.3.0
@@ -29,13 +29,13 @@ components:
     tag: v1.0.0
     image: drbd-shutdown-guard
   ktls-utils:
-    tag: v1.1.0
+    tag: v1.2.1
     image: ktls-utils
   linstor-affinity-controller:
     tag: v1.3.0
     image: linstor-affinity-controller
   drbd-module-loader:
-    tag: v9.2.14
+    tag: v9.2.15
     # The special "match" attribute is used to select an image based on the node's reported OS.
     # The operator will first check the k8s node's ".status.nodeInfo.osImage" field, and compare it against the list
     # here. If one matches, that specific image name will be used instead of the fallback image.

@@ -51,6 +51,17 @@ spec:
     operator: Exists
 ```
 
+Combined, these changes might lead to situations where LINSTOR Satellites are registered for control plane nodes without
+any additional reconciliation. To clean up these LINSTOR Satellites, run:
+
+```
+$ kubectl exec deploy/linstor-controller -- linstor node list --props Aux/piraeus.io/last-applied
+# Check for OFFLINE nodes, verify that it is no longer managed by the Operator:
+$ kubectl get linstorsatellite <offline-node>
+# Must report: linstorsatellites.piraeus.io "<offline-node>" not found
+$ kubectl exec deploy/linstor-controller -- linstor node delete <offline-node>
+```
+
 # Upgrades from v2.7 to v2.8
 
 No special steps required.
