@@ -24,7 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Set `shareProcessNamespace: true` on workloads to automatically reap orphaned processes.
 - LINSTOR CSI now use `hostNetwork: true` so RWX mounts use a stable IP when connecting to NFS.
-
+- Updated images:
+    * LINSTOR 1.32.3
+    * LINSTOR CSI 1.10.1
+    * DRBD Reactor 1.10.0
+    * DRBD Shutdown Guard: 1.1.1
+    * LINSTOR HA Controller 1.3.1
+    * Latest CSI sidecars
 
 ## [v2.9.1] - 2025-09-25
 

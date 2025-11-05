@@ -82,6 +82,8 @@ spec:
               mountPath: /dev
             - name: run-mount
               mountPath: /run/mount
+            - name: run-fsck
+              mountPath: /run/fsck
         - name: csi-node-driver-registrar
           image: csi-node-driver-registrar
           args:
@@ -141,3 +143,5 @@ spec:
           hostPath:
             path: /run/mount
             type: Directory
+        - name: run-fsck
+          emptyDir: {}
