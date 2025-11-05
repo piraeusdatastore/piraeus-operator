@@ -18,7 +18,7 @@ jobs:
           draft: true
           files: |
             manifest.yaml
-            piraeus-*.tar.gz
+            piraeus-*.tgz
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -27,4 +27,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push Charts to GHCR
         run: |
-          helm push piraeus-*.tar.gz oci://ghcr.io/${{ github.repository }}
+          helm push piraeus-*.tgz oci://ghcr.io/${{ github.repository }}
