@@ -5,6 +5,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,7 +30,7 @@ func (cl *Client) GetMachineForNode(ctx context.Context, node *corev1.Node) (*Ma
 	var machine clusterapiv1beta1.Machine
 	err := cl.client.Get(ctx, client.ObjectKey{Name: machineName, Namespace: clusterNs}, &machine)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if errors.IsNotFound(err) || meta.IsNoMatchError(err) {
 			return nil, nil
 		}
 
