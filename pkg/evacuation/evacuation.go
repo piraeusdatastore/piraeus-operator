@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
@@ -30,7 +31,7 @@ import (
 //
 // Returns a message indicating the current progress and a bool indicating if evacuation is complete.
 // The function should be called repeatedly until completion of the evacuation.
-func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine) (string, bool, error) {
+func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
 	// Step 1: ensure PVs can be rescheduled to other nodes
 	msg, done, err := preparePVsforEvacuation(ctx, cl, lclient, node.Name)
 	if err != nil || !done {
@@ -50,7 +51,7 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 	}
 
 	// Step 4: Wait for PVs that have been active on this node to be reattached
-	msg, done, err = waitForReattach(ctx, cl, node.Name)
+	msg, done, err = waitForReattach(ctx, cl, node.Name, evacuationStrategy)
 	if err != nil || !done {
 		return msg, done, err
 	}
@@ -84,7 +85,7 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 
 // preparePVsforEvacuation is the first step of node evacuation.
 //
-// It checks for PVs attached to the current node and:
+// It checks for PVs that are either only accessible from the local node or are currently attached and:
 // * marks them with annotations so later steps can find them.
 // * ensures that "local" PVs are temporarily reschedulable during evacuation.
 func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lapi.Client, nodeName string) (string, bool, error) {
@@ -94,11 +95,21 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 		return "", false, err
 	}
 
+	attachments := AttachmentsByPV(volumeAttachmentList.Items)
+
 	var nodeList corev1.NodeList
 	err = cl.List(ctx, &nodeList)
 	if err != nil {
 		return "", false, err
 	}
+
+	var persistentVolumeList corev1.PersistentVolumeList
+	err = cl.List(ctx, &persistentVolumeList)
+	if err != nil {
+		return "", false, err
+	}
+
+	pvs := PVsByLinstorResource(persistentVolumeList.Items)
 
 	rgSlice, err := lclient.ResourceGroups.GetAll(ctx)
 	if err != nil {
@@ -118,17 +129,18 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 		rds[rd.Name] = rd.ResourceDefinition
 	}
 
-	attachedPVs := getAttachedPVs(volumeAttachmentList.Items, nodeName)
+	resourceList, err := getDiskfulResourcesOnNode(ctx, lclient, nodeName)
+	if err != nil {
+		return "", false, err
+	}
+
 	var unschedulablePVs []string
 	var errs []error
-	for _, pvName := range attachedPVs {
-		var pv corev1.PersistentVolume
-		err := cl.Get(ctx, client.ObjectKey{Name: pvName}, &pv)
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				continue
-			}
-			return "", false, fmt.Errorf("failed to get PV %s: %w", pvName, err)
+	for _, rdName := range resourceList {
+		pv, ok := pvs[rdName]
+		if !ok {
+			// No PV -> not managed by Kubernetes, so there is nothing to prepare
+			continue
 		}
 
 		toUpdate := false
@@ -137,13 +149,19 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 			pv.Annotations = make(map[string]string)
 		}
 
-		_, ok := pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName]
+		_, ok = pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName]
 		if !ok {
 			toUpdate = true
-			pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] = "true"
+
+			attachment := attachments[pv.Name]
+			if attachment != nil {
+				pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] = "true"
+			} else {
+				pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] = "false"
+			}
 		}
 
-		switch evacuationActionForPV(&pv, rds, rgs, nodeName, nodeList.Items) {
+		switch evacuationActionForPV(pv, rds, rgs, nodeName, nodeList.Items) {
 		case PVEvacuationActionAffinityOverride:
 			// This annotation is used by the Affinity Controller to override the normal Node Affinity of the PV.
 			// We set it to "true", meaning "allow access from anywhere".
@@ -169,7 +187,7 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 			}
 
 			if pv.DeletionTimestamp == nil {
-				if err := cl.Delete(ctx, &pv, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.UID)))); err != nil && !k8serrors.IsNotFound(err) {
+				if err := cl.Delete(ctx, pv, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.UID)))); err != nil && !k8serrors.IsNotFound(err) {
 					errs = append(errs, err)
 				}
 			}
@@ -178,7 +196,7 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 		}
 
 		if toUpdate {
-			if err := cl.Update(ctx, &pv); err != nil && !k8serrors.IsNotFound(err) {
+			if err := cl.Update(ctx, pv); err != nil && !k8serrors.IsNotFound(err) {
 				errs = append(errs, err)
 			}
 		}
@@ -277,7 +295,9 @@ func waitForConfiguredSatellites(ctx context.Context, cl client.Client, nodeName
 	return "", true, nil
 }
 
-func waitForReattach(ctx context.Context, cl client.Client, nodeName string) (string, bool, error) {
+func waitForReattach(ctx context.Context, cl client.Client, nodeName string, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
+	now := time.Now()
+
 	var pvs corev1.PersistentVolumeList
 	err := cl.List(ctx, &pvs)
 	if err != nil {
@@ -292,26 +312,54 @@ func waitForReattach(ctx context.Context, cl client.Client, nodeName string) (st
 
 	pvAttachementMap := toAttachedNodes(volumeAttachmentList.Items)
 
-	var unattachedPVs []string
+	var unattachedPVs []*corev1.PersistentVolume
 	for _, pv := range pvs.Items {
-		if pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] != "true" {
+		waitedForReattachSince := now
+		if val, ok := pv.Annotations[vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName]; ok {
+			waitedForReattachSince, err = time.Parse(time.RFC3339, val)
+			if err != nil {
+				return "", false, err
+			}
+		}
+
+		switch pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] {
+		case "true":
+			if now.Sub(waitedForReattachSince) >= evacuationStrategy.AttachedVolumeReattachTimeout.Duration {
+				continue
+			}
+		case "false":
+			if now.Sub(waitedForReattachSince) >= evacuationStrategy.UnattachedVolumeAttachTimeout.Duration {
+				continue
+			}
+		default:
 			continue
 		}
 
 		attachedNodes := pvAttachementMap[pv.Name]
 
 		// We don't want the volume to still be attached to evacuating Node.
-		if slices.Contains(attachedNodes, nodeName) {
-			unattachedPVs = append(unattachedPVs, pv.Name)
-		}
-
-		if len(attachedNodes) == 0 {
-			unattachedPVs = append(unattachedPVs, pv.Name)
+		if len(attachedNodes) == 0 || slices.Contains(attachedNodes, nodeName) {
+			unattachedPVs = append(unattachedPVs, &pv)
 		}
 	}
 
 	if len(unattachedPVs) > 0 {
-		return fmt.Sprintf("Waiting for PVs to reattach on other nodes: %s", strings.Join(unattachedPVs, ", ")), false, nil
+		unattachedPVNames := make([]string, 0, len(unattachedPVs))
+		for _, pv := range unattachedPVs {
+			if _, ok := pv.Annotations[vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName]; !ok {
+				// NB: pv.Annotations cannot be null, as only PVs with the "wait-for-reattach" annotation are considered
+				pv.Annotations[vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName] = now.Format(time.RFC3339)
+
+				if err := cl.Update(ctx, pv); err != nil {
+					return "", false, err
+				}
+
+			}
+
+			unattachedPVNames = append(unattachedPVNames, pv.Name)
+		}
+
+		return fmt.Sprintf("Waiting for PVs to reattach on other nodes: %s", strings.Join(unattachedPVNames, ", ")), false, nil
 	}
 
 	return "", true, nil
@@ -394,10 +442,12 @@ func cleanPVsAfterEvacuation(ctx context.Context, cl client.Client, nodeName str
 
 	var errs []error
 	for _, pv := range pvs.Items {
+		_, hasReattachSinceAnnotation := pv.Annotations[vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName]
 		_, hasReattachAnnotation := pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName]
 		_, hasEvacuateAnnotation := pv.Annotations[affinity.OverrideAnnotationPrefix+"/"+nodeName]
 
-		if hasEvacuateAnnotation || hasReattachAnnotation {
+		if hasReattachSinceAnnotation || hasEvacuateAnnotation || hasReattachAnnotation {
+			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName)
 			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName)
 			delete(pv.Annotations, affinity.OverrideAnnotationPrefix+"/"+nodeName)
 			errs = append(errs, cl.Update(ctx, &pv))
@@ -407,25 +457,51 @@ func cleanPVsAfterEvacuation(ctx context.Context, cl client.Client, nodeName str
 	return errors.Join(errs...)
 }
 
-func getAttachedPVs(attachments []storagev1.VolumeAttachment, nodeName string) []string {
-	var attachedPVs []string
-	for _, attachment := range attachments {
-		if attachment.Spec.NodeName != nodeName {
-			continue
-		}
-
-		if attachment.Spec.Attacher != linstorcsi.DriverName {
-			continue
-		}
-
-		if attachment.Spec.Source.PersistentVolumeName == nil {
-			continue
-		}
-
-		attachedPVs = append(attachedPVs, *attachment.Spec.Source.PersistentVolumeName)
+func getDiskfulResourcesOnNode(ctx context.Context, lclient *lapi.Client, nodeName string) ([]string, error) {
+	ress, err := lclient.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{nodeName}})
+	if err != nil && !errors.Is(err, lapi.NotFoundError) {
+		return nil, err
 	}
 
-	return attachedPVs
+	var resources []string
+	for _, res := range ress {
+		if !slices.Contains(res.Flags, linstor.FlagDiskless) {
+			resources = append(resources, res.Name)
+		}
+	}
+
+	return resources, nil
+}
+
+// PVsByLinstorResource converts a list of PersistentVolumes to a map of LINSTOR Resource Names -> Persistent Volumes
+func PVsByLinstorResource(pvs []corev1.PersistentVolume) map[string]*corev1.PersistentVolume {
+	result := make(map[string]*corev1.PersistentVolume)
+	for i := range pvs {
+		pv := &pvs[i]
+
+		if pv.Spec.CSI == nil {
+			continue
+		}
+
+		if pv.Spec.CSI.Driver != linstorcsi.DriverName {
+			continue
+		}
+
+		result[pv.Spec.CSI.VolumeHandle] = pv
+	}
+
+	return result
+}
+
+func AttachmentsByPV(attachments []storagev1.VolumeAttachment) map[string]*storagev1.VolumeAttachment {
+	result := make(map[string]*storagev1.VolumeAttachment)
+	for i := range attachments {
+		if attachments[i].Spec.Source.PersistentVolumeName != nil {
+			result[*attachments[i].Spec.Source.PersistentVolumeName] = &attachments[i]
+		}
+	}
+
+	return result
 }
 
 // toAttachedNodes converts the attachments to a map of PV name -> attached node names

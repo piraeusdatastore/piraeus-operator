@@ -287,6 +287,32 @@ spec:
  deletionPolicy: Evacuate
 ```
 
+### `spec.evacuationStrategy`
+
+Configure timeouts for Satellite Evacuation. To have any effect, `deletionPolicy: Delete` is required.
+
+* `attachedVolumeReattachTimeout`: sets the duration the evacuation waits for volumes that were attached before draining
+  the Node to be attached on a new node. Defaults to 5 minutes. Can be set to 0 to disable waiting.
+* `unattachedVolumeAttachTimeout`: sets the duration the evacuation waits for volumes that were not attached before
+  draining the Node to be attached on a new node. Defaults to 5 minutes. Can be set to 0 to disable waiting.
+
+#### Example
+
+This example sets the re-attach timeout for volumes attached to the node being evacuated to one hour, and the timeout
+for volumes not currently attached to 30 minutes.
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: evacuation-timeout
+spec:
+  deletionPolicy: Evacuate
+  evacuationStrategy:
+    attachedVolumeReattachTimeout: "1h"
+    unattachedVolumeAttachTimeout: "30m"
+```
+
 ### `.spec.ipFamilies`
 
 Configures the IP Family (IPv4 or IPv6) to use to connect to the LINSTOR Satellite.

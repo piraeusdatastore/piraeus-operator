@@ -508,7 +508,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 
 		if clusterapi.ShouldEvacuateNode(machine) && lsatellite.Spec.DeletionPolicy == piraeusiov1.DeletionPolicyEvacuate {
 			r.log.Info("Request to evacuate node from ClusterAPI")
-			msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, lnode, r.MachineClient, machine)
+			msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
 			if err != nil {
 				conds.AddError("SatelliteEvacuated", err)
 			} else if !done {
@@ -685,7 +685,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 			return "", false, err
 		}
 
-		msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, &lnode, r.MachineClient, machine)
+		msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, &lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
 		if err != nil {
 			conds.AddError("SatelliteEvacuated", err)
 			return "", false, err

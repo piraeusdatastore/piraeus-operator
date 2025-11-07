@@ -1016,6 +1016,14 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 		})
 	}
 
+	if cfg.Spec.EvacuationStrategy != nil {
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/spec/evacuationStrategy",
+			Value: cfg.Spec.EvacuationStrategy,
+		})
+	}
+
 	for j := range cfg.Spec.Properties {
 		patches = append(patches, utils.JsonPatch{
 			Op:    utils.Add,

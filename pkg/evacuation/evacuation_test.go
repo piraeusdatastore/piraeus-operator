@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"testing"
+	"time"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
@@ -103,25 +104,34 @@ func TestEvacuateSatelliteWithLocalPVs(t *testing.T) {
 		unattachedRemotePV,
 	)
 
+	createResource(t, lc, "local-pv-attached", "rg1", nil, TestNodeA.Name)
+	createResource(t, lc, "local-pv-unattached", "rg1", nil, TestNodeA.Name)
+	createResource(t, lc, "remote-pv-attached", "rg1", nil, TestNodeA.Name, TestNodeB.Name)
+	createResource(t, lc, "remote-pv-unattached", "rg1", nil, TestNodeA.Name, TestNodeB.Name)
+
 	// Satellite still has a local-only PV
 	msg, cont, err := runEvacuateSatellite(t, cl, lc)
 	assert.NoError(t, err)
 	assert.False(t, cont)
 	assert.Contains(t, msg, "Waiting for PVs to be schedulable on other nodes")
 	assert.Contains(t, msg, "local-pv-attached")
-	assert.NotContains(t, msg, "local-pv-unattached")
+	assert.Contains(t, msg, "local-pv-unattached")
 	assert.NotContains(t, msg, "remote-pv-attached")
 	assert.NotContains(t, msg, "remote-pv-unattached")
 
 	// Attached PVs should be marked for rescheduling, local only PV additionally with attach override
 	assert.Contains(t, getPV(t, cl, "local-pv-attached").Annotations, affinity.OverrideAnnotationPrefix+"/node-a")
 	assert.Contains(t, getPV(t, cl, "local-pv-attached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
-	assert.NotContains(t, getPV(t, cl, "local-pv-unattached").Annotations, affinity.OverrideAnnotationPrefix+"/node-a")
-	assert.NotContains(t, getPV(t, cl, "local-pv-unattached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
+	assert.Equal(t, "true", getPV(t, cl, "local-pv-attached").Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a"])
+	assert.Contains(t, getPV(t, cl, "local-pv-unattached").Annotations, affinity.OverrideAnnotationPrefix+"/node-a")
+	assert.Contains(t, getPV(t, cl, "local-pv-unattached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
+	assert.Equal(t, "false", getPV(t, cl, "local-pv-unattached").Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a"])
 	assert.NotContains(t, getPV(t, cl, "remote-pv-attached").Annotations, affinity.OverrideAnnotationPrefix+"/node-a")
 	assert.Contains(t, getPV(t, cl, "remote-pv-attached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
+	assert.Equal(t, "true", getPV(t, cl, "remote-pv-attached").Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a"])
 	assert.NotContains(t, getPV(t, cl, "remote-pv-unattached").Annotations, affinity.OverrideAnnotationPrefix+"/node-a")
-	assert.NotContains(t, getPV(t, cl, "remote-pv-unattached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
+	assert.Contains(t, getPV(t, cl, "remote-pv-unattached").Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a")
+	assert.Equal(t, "false", getPV(t, cl, "remote-pv-unattached").Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/node-a"])
 
 	// No evacuation, no drain, no termination
 	assert.NotContains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
@@ -191,26 +201,12 @@ func TestEvacuateSatelliteWithEvacuationActionPVs(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{
-		Name:              "local-pv-action-delete-on-pv",
-		ResourceGroupName: "test-rg-default",
-	}})
-	assert.NoError(t, err)
-
-	err = lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{
-		Name:              "local-pv-action-delete-on-rd",
-		ResourceGroupName: "test-rg-default",
-		Props: map[string]string{
-			linstor.NamespcAuxiliary + "/" + vars.EvacuationActionAnnotation: "Delete",
-		},
-	}})
-	assert.NoError(t, err)
-
-	err = lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{
-		Name:              "local-pv-action-delete-on-rg",
-		ResourceGroupName: "test-rg-delete",
-	}})
-	assert.NoError(t, err)
+	createResource(t, lc, "local-pv-attached", "test-rg-default", nil, TestNodeA.Name)
+	createResource(t, lc, "local-pv-action-delete-on-pv", "test-rg-default", nil, TestNodeA.Name)
+	createResource(t, lc, "local-pv-action-delete-on-rd", "test-rg-default", map[string]string{
+		linstor.NamespcAuxiliary + "/" + vars.EvacuationActionAnnotation: "Delete",
+	}, TestNodeA.Name)
+	createResource(t, lc, "local-pv-action-delete-on-rg", "test-rg-delete", nil, TestNodeA.Name)
 
 	// Satellite still has a local-only PV
 	msg, cont, err := runEvacuateSatellite(t, cl, lc)
@@ -305,11 +301,17 @@ func TestEvacuateSatelliteWaitForLinstorEvacuation(t *testing.T) {
 		affinity.OverrideAnnotationPrefix + "/node-a":                    "true",
 		vars.PersistentVolumeWaitForReattachAnnotationPrefix + "/node-a": "true",
 	})
-	unattachedLocalPV := createPV("local-pv-unattached", "false", nil, TestNodeA.Name)
+	unattachedLocalPV := createPV("local-pv-unattached", "false", map[string]string{
+		affinity.OverrideAnnotationPrefix + "/node-a":                         "true",
+		vars.PersistentVolumeWaitForReattachAnnotationPrefix + "/node-a":      "true",
+		vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix + "/node-a": time.Now().Add(-1 * time.Minute).Format(time.RFC3339),
+	}, TestNodeA.Name)
 	remotePV := createPV("remote-pv-attached", "true", map[string]string{
 		vars.PersistentVolumeWaitForReattachAnnotationPrefix + "/node-a": "true",
 	})
-	unattachedRemotePV := createPV("remote-pv-unattached", "true", nil)
+	unattachedRemotePV := createPV("remote-pv-unattached", "true", map[string]string{
+		vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix + "/node-a": time.Now().Add(-1 * time.Minute).Format(time.RFC3339),
+	})
 
 	cl, lc := setupTestCluster(t,
 		TestNodeA, TestNodeB, MachineA, MachineB,
@@ -322,15 +324,10 @@ func TestEvacuateSatelliteWaitForLinstorEvacuation(t *testing.T) {
 	)
 
 	// Create fake linstor resources, let the "unattached" ones be still on node A.
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "local-pv-attached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "local-pv-attached", NodeName: "node-b"}}))
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "local-pv-unattached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "local-pv-unattached", NodeName: "node-a"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "local-pv-unattached", NodeName: "node-b"}}))
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "remote-pv-attached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "remote-pv-attached", NodeName: "node-b"}}))
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "remote-pv-unattached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "remote-pv-unattached", NodeName: "node-a"}}))
+	createResource(t, lc, "local-pv-attached", "rg1", nil, TestNodeB.Name)
+	createResource(t, lc, "local-pv-unattached", "rg1", nil, TestNodeA.Name, TestNodeB.Name)
+	createResource(t, lc, "remote-pv-attached", "rg1", nil, TestNodeB.Name)
+	createResource(t, lc, "remote-pv-unattached", "rg1", nil, TestNodeA.Name)
 
 	// PVs already attached on other Nodes, now waiting for LINSTOR to clear the resource
 	msg, cont, err := runEvacuateSatellite(t, cl, lc)
@@ -371,14 +368,10 @@ func TestEvacuateSatelliteComplete(t *testing.T) {
 	)
 
 	// Create fake linstor resources, everything is now on node B so A is fully evacuated.
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "local-pv-attached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "local-pv-attached", NodeName: "node-b"}}))
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "local-pv-unattached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "local-pv-unattached", NodeName: "node-b"}}))
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "remote-pv-attached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "remote-pv-attached", NodeName: "node-b"}}))
-	assert.NoError(t, lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{ResourceDefinition: lapi.ResourceDefinition{Name: "remote-pv-unattached"}}))
-	assert.NoError(t, lc.Resources.Create(t.Context(), lapi.ResourceCreate{Resource: lapi.Resource{Name: "remote-pv-unattached", NodeName: "node-b"}}))
+	createResource(t, lc, "local-pv-attached", "rg1", nil, TestNodeB.Name)
+	createResource(t, lc, "local-pv-unattached", "rg1", nil, TestNodeB.Name)
+	createResource(t, lc, "remote-pv-attached", "rg1", nil, TestNodeB.Name)
+	createResource(t, lc, "remote-pv-unattached", "rg1", nil, TestNodeB.Name)
 
 	// PVs already attached on other Nodes, LINSTOR resources cleaned up
 	msg, cont, err := runEvacuateSatellite(t, cl, lc)
@@ -507,6 +500,27 @@ func setupTestCluster(t *testing.T, objs ...client.Object) (client.Client, *lapi
 	return cl, lc
 }
 
+func createResource(t *testing.T, lc *lapi.Client, name, resourceGroup string, props map[string]string, nodes ...string) {
+	err := lc.ResourceDefinitions.Create(t.Context(), lapi.ResourceDefinitionCreate{
+		ResourceDefinition: lapi.ResourceDefinition{
+			Name:              name,
+			ResourceGroupName: resourceGroup,
+			Props:             props,
+		},
+	})
+	assert.NoError(t, err)
+
+	for _, node := range nodes {
+		err := lc.Resources.Create(t.Context(), lapi.ResourceCreate{
+			Resource: lapi.Resource{
+				Name:     name,
+				NodeName: node,
+			},
+		})
+		assert.NoError(t, err)
+	}
+}
+
 func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client) (string, bool, error) {
 	machineCl := clusterapi.NewClient(cl)
 
@@ -520,7 +534,10 @@ func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client) (stri
 	machine, err := machineCl.GetMachineForNode(t.Context(), &node)
 	assert.NoError(t, err)
 
-	return evacuation.EvacuateSatellite(t.Context(), cl, lc, &satellite, machineCl, machine)
+	return evacuation.EvacuateSatellite(t.Context(), cl, lc, &satellite, machineCl, machine, &piraeusv1.EvacuationStrategy{
+		AttachedVolumeReattachTimeout: metav1.Duration{Duration: 5 * time.Second},
+		UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 10 * time.Second},
+	})
 }
 
 func getSatellite(t *testing.T, lc *lapi.Client, name string) *lapi.Node {

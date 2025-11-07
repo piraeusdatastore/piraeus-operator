@@ -69,6 +69,10 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 		if cfg.Spec.DeletionPolicy != "" {
 			result.Spec.DeletionPolicy = cfg.Spec.DeletionPolicy
 		}
+
+		if cfg.Spec.EvacuationStrategy != nil {
+			result.Spec.EvacuationStrategy = cfg.Spec.EvacuationStrategy
+		}
 	}
 
 	for _, v := range propsMap {

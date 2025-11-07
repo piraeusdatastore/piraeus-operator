@@ -20,16 +20,22 @@ var (
 )
 
 const (
-	FieldOwner                                      = Domain + "/operator"
-	ApplyAnnotation                                 = Domain + "/last-applied"
-	NodeInterfaceAnnotation                         = Domain + "/configured-interfaces"
-	ManagedByLabel                                  = Domain + "/managed-by"
-	AppliedConfigurationAnnotation                  = Domain + "/applied-configurations"
-	SatelliteNodeLabel                              = Domain + "/linstor-satellite"
-	SatelliteFinalizer                              = Domain + "/satellite-protection"
+	FieldOwner                        = Domain + "/operator"
+	ApplyAnnotation                   = Domain + "/last-applied"
+	NodeInterfaceAnnotation           = Domain + "/configured-interfaces"
+	ManagedByLabel                    = Domain + "/managed-by"
+	AppliedConfigurationAnnotation    = Domain + "/applied-configurations"
+	SatelliteNodeLabel                = Domain + "/linstor-satellite"
+	SatelliteFinalizer                = Domain + "/satellite-protection"
+	EvacuationActionAnnotation        = linstorcsi.DriverName + "/evacuation-action"
+	MachinePreDrainHookAnnotation     = clusterapiv1beta1.PreDrainDeleteHookAnnotationPrefix + "/linstor-prepare-for-drain"
+	MachinePreTerminateHookAnnotation = clusterapiv1beta1.PreTerminateDeleteHookAnnotationPrefix + "/linstor-wait-for-complete-evacuation"
+	GenCertLeaderElectionID           = OperatorName + "-gencert"
+	// PersistentVolumeWaitForReattachAnnotationPrefix is the annotation on the PV used during node evacuation to
+	// indicate that the PV needs to attached on another node before executing the actual LINSTOR Node evacuation.
+	// The value is "true" if the volume was actually attached at the start of the evacuation, "false" if not.
 	PersistentVolumeWaitForReattachAnnotationPrefix = "wait-for-reattach.evacuation." + Domain
-	EvacuationActionAnnotation                      = linstorcsi.DriverName + "/evacuation-action"
-	MachinePreDrainHookAnnotation                   = clusterapiv1beta1.PreDrainDeleteHookAnnotationPrefix + "/linstor-prepare-for-drain"
-	MachinePreTerminateHookAnnotation               = clusterapiv1beta1.PreTerminateDeleteHookAnnotationPrefix + "/linstor-wait-for-complete-evacuation"
-	GenCertLeaderElectionID                         = OperatorName + "-gencert"
+	// PersistentVolumeWaitForReattachSinceAnnotationPrefix is the annotation on the PV used during node evacuation to
+	// store the timestamp of the start of the "wait-for-reattach" phase, used to calculate the timeout.
+	PersistentVolumeWaitForReattachSinceAnnotationPrefix = "wait-for-reattach-since.evacuation." + Domain
 )

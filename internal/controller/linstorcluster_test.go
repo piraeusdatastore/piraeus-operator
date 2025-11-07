@@ -2,6 +2,7 @@ package controller_test
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -159,6 +160,10 @@ var _ = Describe("LinstorCluster controller", func() {
 							{Target: &piraeusiov1.Selector{Kind: "ServiceAccount"}, Patch: "sa-patch1"},
 						},
 						InternalTLS: &piraeusiov1.TLSConfigWithHandshakeDaemon{},
+						EvacuationStrategy: &piraeusiov1.EvacuationStrategy{
+							AttachedVolumeReattachTimeout: metav1.Duration{Duration: 1 * time.Minute},
+							UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 2 * time.Minute},
+						},
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -232,6 +237,10 @@ var _ = Describe("LinstorCluster controller", func() {
 					},
 					InternalTLS:    &piraeusiov1.TLSConfigWithHandshakeDaemon{},
 					DeletionPolicy: piraeusiov1.DeletionPolicyEvacuate,
+					EvacuationStrategy: piraeusiov1.EvacuationStrategy{
+						AttachedVolumeReattachTimeout: metav1.Duration{Duration: 1 * time.Minute},
+						UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 2 * time.Minute},
+					},
 				}
 
 				specZoneB := &piraeusiov1.LinstorSatelliteSpec{
@@ -249,6 +258,10 @@ var _ = Describe("LinstorCluster controller", func() {
 					},
 					InternalTLS:    &piraeusiov1.TLSConfigWithHandshakeDaemon{},
 					DeletionPolicy: piraeusiov1.DeletionPolicyRetain,
+					EvacuationStrategy: piraeusiov1.EvacuationStrategy{
+						AttachedVolumeReattachTimeout: metav1.Duration{Duration: 1 * time.Minute},
+						UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 2 * time.Minute},
+					},
 				}
 
 				// The first patch is always for tolerations. We ignore this here, as this is not related to

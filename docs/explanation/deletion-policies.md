@@ -66,8 +66,10 @@ snapshots are removed.
 In order to keep potential fail-over times short, Piraeus Datastore performs the following steps during evacuation:
 
 1. Piraeus Datastore searches for PersistentVolumes (PVs) that:
-    *   Are attached on the Node to be evacuated and marks them with `wait-for-reattach.evacuation.piraeus.io/<node-name>`
-        annotation. It will later use this annotation to wait for the PV to be reattached.
+    *   Have a replica on the Node to be evacuated and marks them with
+        `wait-for-reattach.evacuation.piraeus.io/<node-name>` annotation. It will later use this annotation to wait for
+        the PV to be reattached. The value of the annotation is `true` if the volume is currently attached on the node,
+        `false` otherwise.
     *   If the PV has a `linstor.csi.linbit.com/evacuation-action` annotation or the storage class has the
         `property.linstor.csi.linbit.com/Aux/linstor.csi.linbit.com/evacuation-action` parameter set, the value is used
         to determine the evacuation action. Possible actions are:
@@ -87,7 +89,8 @@ In order to keep potential fail-over times short, Piraeus Datastore performs the
 3. If using ClusterAPI, the `pre-drain.delete.hook.machine.cluster.x-k8s.io/linstor-prepare-for-drain` annotation on the
    Machine is removed. This will cause ClusterAPI to start draining the node.
 4. Piraeus Datastore will wait for all PVs that were marked in Step 1 to be reattached on new nodes. This ensures that
-   LINSTOR can choose the optimal replica placement for the next step.
+   LINSTOR can choose the optimal replica placement for the next step. Piraeus Datastore will wait for a certain amount
+   of time, which can be configured using [`LinstorSatelliteConfiguration`](../reference/linstorsatelliteconfiguration.md#specevacuationstrategy)
 5. Piraeus Datastore will signal LINSTOR to evacuate the node. LINSTOR will create replacement resources for all diskful
    and diskless resources on the node. Volumes that are currently in use on a diskless will get a local replica, if that
    is possible based on the available storage pools.

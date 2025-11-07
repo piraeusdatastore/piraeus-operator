@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Configurable timeouts for how long the Operator waits for volume to (re-)attach during evacuation.
+
 ### Fixed
 
 - Ensure `mount` commands pass along SELinux options by mounting SELinux directories.

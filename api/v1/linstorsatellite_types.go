@@ -66,6 +66,9 @@ type LinstorSatelliteSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=Retain
 	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	EvacuationStrategy EvacuationStrategy `json:"evacuationStrategy,omitempty"`
 }
 
 // LinstorSatelliteStatus defines the observed state of LinstorSatellite

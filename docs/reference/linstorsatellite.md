@@ -40,6 +40,11 @@ Configures a TLS secret used by the LINSTOR Satellite. Inherited from matching
 Configures the deletion policy to use for LINSTOR Satellites. Inherited from matching
 [`LinstorSatelliteConfiguration`](./linstorsatelliteconfiguration.md#specdeletionpolicy) resources.
 
+### `spec.evacuationStrategy`
+
+Configures the evacuation strategy to use for LINSTOR Satellites. Inherited from matching
+[`LinstorSatelliteConfiguration`](./linstorsatelliteconfiguration.md#specevacuationstrategy) resources.
+
 ### `.spec.patches`
 
 Holds patches to apply to the Kubernetes resources. Inherited from matching

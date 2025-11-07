@@ -8,6 +8,9 @@ spec:
     name: CLUSTER
   patches: []
   storagePools: []
+  evacuationStrategy:
+    attachedVolumeReattachTimeout: "5m"
+    unattachedVolumeAttachTimeout: "5m"
   properties:
     - name: Aux/topology/linbit.com/hostname
       valueFrom:
