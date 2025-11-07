@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Liveness probes for CSI sidecars
+
 ## [v2.10.0] - 2025-11-05
 
 ### Added

@@ -76,20 +76,35 @@ spec:
         - name: csi-attacher
           image: csi-attacher
           args:
-            - '--v=5'
+            - '--v=$(VERBOSE)'
             - '--csi-address=$(ADDRESS)'
-            - '--timeout=1m'
-            - '--leader-election=true'
+            - '--timeout=$(TIMEOUT)'
+            - '--leader-election=$(LEADER_ELECTION)'
             - '--leader-election-namespace=$(NAMESPACE)'
-            - '--worker-threads=10'
+            - '--worker-threads=$(WORKER_THREADS)'
+            - '--http-endpoint=$(HTTP_ENDPOINT)'
           env:
+            - name: VERBOSE
+              value: "5"
             - name: ADDRESS
               value: /csi/csi.sock
+            - name: TIMEOUT
+              value: "1m"
+            - name: LEADER_ELECTION
+              value: "true"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: WORKER_THREADS
+              value: "10"
+            - name: HTTP_ENDPOINT
+              value: :9809
+          livenessProbe:
+            httpGet:
+              port: 9809
+              path: /healthz/leader-election
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -116,29 +131,52 @@ spec:
         - name: csi-provisioner
           image: csi-provisioner
           args:
+            - '--v=$(VERBOSE)'
             - '--csi-address=$(ADDRESS)'
-            - '--timeout=1m'
-            - '--default-fstype=ext4'
-            - '--feature-gates=Topology=true'
-            - '--leader-election=true'
+            - '--timeout=$(TIMEOUT)'
+            - '--leader-election=$(LEADER_ELECTION)'
             - '--leader-election-namespace=$(NAMESPACE)'
-            - '--enable-capacity'
-            - '--extra-create-metadata'
-            - '--capacity-ownerref-level=2'
-            - '--worker-threads=10'
+            - '--worker-threads=$(WORKER_THREADS)'
+            - '--http-endpoint=$(HTTP_ENDPOINT)'
+            - '--default-fstype=$(DEFAULT_FS_TYPE)'
+            - '--enable-capacity=$(ENABLE_CAPACITY)'
+            - '--extra-create-metadata=$(EXTRA_CREATE_METADATA)'
+            - '--capacity-ownerref-level=$(CAPACITY_OWNERREF_LEVEL)'
           env:
+            - name: VERBOSE
+              value: "5"
             - name: ADDRESS
               value: /csi/csi.sock
+            - name: TIMEOUT
+              value: "1m"
+            - name: LEADER_ELECTION
+              value: "true"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: WORKER_THREADS
+              value: "10"
+            - name: HTTP_ENDPOINT
+              value: :9810
+            - name: DEFAULT_FS_TYPE
+              value: ext4
+            - name: ENABLE_CAPACITY
+              value: "true"
+            - name: EXTRA_CREATE_METADATA
+              value: "true"
+            - name: CAPACITY_OWNERREF_LEVEL
+              value: "2"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
+          livenessProbe:
+            httpGet:
+              port: 9810
+              path: /healthz/leader-election
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -150,22 +188,38 @@ spec:
         - name: csi-snapshotter
           image: csi-snapshotter
           args:
-            - '--timeout=1m'
+            - '--v=$(VERBOSE)'
             - '--csi-address=$(ADDRESS)'
-            - '--leader-election=true'
+            - '--timeout=$(TIMEOUT)'
+            - '--leader-election=$(LEADER_ELECTION)'
             - '--leader-election-namespace=$(NAMESPACE)'
-            - '--worker-threads=10'
+            - '--worker-threads=$(WORKER_THREADS)'
+            - '--http-endpoint=$(HTTP_ENDPOINT)'
             - '--feature-gates=$(FEATURE_GATES)'
           env:
+            - name: VERBOSE
+              value: "5"
             - name: ADDRESS
               value: /csi/csi.sock
-            - name: FEATURE_GATES
-              value: CSIVolumeGroupSnapshot=true
+            - name: TIMEOUT
+              value: "1m"
+            - name: LEADER_ELECTION
+              value: "true"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: WORKER_THREADS
+              value: "10"
+            - name: HTTP_ENDPOINT
+              value: :9811
+            - name: FEATURE_GATES
+              value: CSIVolumeGroupSnapshot=true
+          livenessProbe:
+            httpGet:
+              port: 9811
+              path: /healthz/leader-election
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -177,21 +231,38 @@ spec:
         - name: csi-resizer
           image: csi-resizer
           args:
-            - '--v=5'
+            - '--v=$(VERBOSE)'
             - '--csi-address=$(ADDRESS)'
-            - '--timeout=1m'
-            - '--handle-volume-inuse-error=false'
-            - '--leader-election=true'
+            - '--timeout=$(TIMEOUT)'
+            - '--leader-election=$(LEADER_ELECTION)'
             - '--leader-election-namespace=$(NAMESPACE)'
-            - '--workers=10'
+            - '--workers=$(WORKER_THREADS)' # the only one using a different name
+            - '--http-endpoint=$(HTTP_ENDPOINT)'
+            - '--handle-volume-inuse-error=$(HANDLE_VOLUME_INUSE_ERROR)'
           env:
+            - name: VERBOSE
+              value: "5"
             - name: ADDRESS
               value: /csi/csi.sock
+            - name: TIMEOUT
+              value: "1m"
+            - name: LEADER_ELECTION
+              value: "true"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: WORKER_THREADS
+              value: "10"
+            - name: HTTP_ENDPOINT
+              value: :9812
+            - name: HANDLE_VOLUME_INUSE_ERROR
+              value: "false"
+          livenessProbe:
+            httpGet:
+              port: 9812
+              path: /healthz/leader-election
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -203,19 +274,35 @@ spec:
         - name: csi-health-monitor
           image: csi-external-health-monitor-controller
           args:
-            - '--v=5'
+            - '--v=$(VERBOSE)'
             - '--csi-address=$(ADDRESS)'
-            - '--timeout=1m'
-            - '--leader-election=true'
+            - '--timeout=$(TIMEOUT)'
+            - '--leader-election=$(LEADER_ELECTION)'
             - '--leader-election-namespace=$(NAMESPACE)'
+            - '--worker-threads=$(WORKER_THREADS)'
+            - '--http-endpoint=$(HTTP_ENDPOINT)'
           env:
+            - name: VERBOSE
+              value: "5"
             - name: ADDRESS
               value: /csi/csi.sock
+            - name: TIMEOUT
+              value: "1m"
+            - name: LEADER_ELECTION
+              value: "true"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: WORKER_THREADS
+              value: "10"
+            - name: HTTP_ENDPOINT
+              value: :9813
+          livenessProbe:
+            httpGet:
+              port: 9813
+              path: /healthz/leader-election
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
