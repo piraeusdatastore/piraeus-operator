@@ -1,0 +1,17 @@
+---
+- target:
+    kind: Deployment
+    name: linstor-csi-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-csi-controller
+    spec:
+      template:
+        spec:
+          containers:
+          - name: csi-snapshotter
+            env:
+            - name: FEATURE_GATE_CSI_VOLUME_GROUP_SNAPSHOT
+              value: "false"

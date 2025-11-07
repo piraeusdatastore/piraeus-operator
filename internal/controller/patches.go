@@ -209,6 +209,14 @@ func ClusterCSIControllerDisableRWXPatch() ([]kusttypes.Patch, error) {
 	)
 }
 
+func ClusterCSIControllerDisableVolumeGroupSnapshotPatch() ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/csi-controller-disable-volume-group-snapshots.yaml",
+		nil,
+	)
+}
+
 func ClusterCSIControllerApiTLSPatch(controllerSecret string, caRef *piraeusiov1.CAReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,

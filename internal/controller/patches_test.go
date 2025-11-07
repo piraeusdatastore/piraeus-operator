@@ -236,6 +236,12 @@ func TestPatches(t *testing.T) {
 			},
 		},
 		{
+			name: "ClusterCSIControllerDisableVolumeGroupSnapshotPatch",
+			call: func() ([]kusttypes.Patch, error) {
+				return controller.ClusterCSIControllerDisableVolumeGroupSnapshotPatch()
+			},
+		},
+		{
 			name: "ClusterCSIControllerApiTLSPatch",
 			call: func() ([]kusttypes.Patch, error) {
 				return controller.ClusterCSIControllerApiTLSPatch("controller", &piraeusiov1.CAReference{

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Liveness probes for CSI sidecars
 
+### Changed
+
+- Disable group snapshots if we cannot be sure they are supported, otherwise the csi-snapshot silently breaks.
+
 ## [v2.10.0] - 2025-11-05
 
 ### Added

@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
@@ -71,14 +72,15 @@ import (
 // LinstorClusterReconciler reconciles a LinstorCluster object
 type LinstorClusterReconciler struct {
 	client.Client
-	Scheme             *runtime.Scheme
-	Namespace          string
-	PullSecret         string
-	ImageConfigMapName string
-	RequeueInterval    time.Duration
-	LinstorClientOpts  []lapi.Option
-	Kustomizer         *resources.Kustomizer
-	APIVersion         *utils.APIVersion
+	Scheme                       *runtime.Scheme
+	Namespace                    string
+	PullSecret                   string
+	ImageConfigMapName           string
+	RequeueInterval              time.Duration
+	LinstorClientOpts            []lapi.Option
+	Kustomizer                   *resources.Kustomizer
+	APIVersion                   *utils.APIVersion
+	SupportsVolumeGroupSnapshots bool
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorclusters,verbs=get;list;watch;create;update;patch;delete
@@ -537,6 +539,15 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 
 	if !lcluster.Spec.NFSServer.IsEnabled() {
 		p, err := ClusterCSIControllerDisableRWXPatch()
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	if !r.SupportsVolumeGroupSnapshots {
+		p, err := ClusterCSIControllerDisableVolumeGroupSnapshotPatch()
 		if err != nil {
 			return nil, err
 		}
@@ -1345,7 +1356,13 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		opts.RateLimiter = DefaultRateLimiter[reconcile.Request]()
 	}
 
-	r.APIVersion = utils.NewAPIVersionFromConfigWithFallback(mgr.GetConfig(), &vars.FallbackAPIVersion)
+	apiDiscovery := utils.NewAPIDiscoveryClient(mgr.GetConfig(), &vars.FallbackAPIVersion)
+	r.APIVersion = apiDiscovery.ServerVersion()
+	r.SupportsVolumeGroupSnapshots = apiDiscovery.HasGroupVersionResource(schema.GroupVersionResource{
+		Group:    "groupsnapshot.storage.k8s.io",
+		Version:  "v1beta2",
+		Resource: "volumegroupsnapshots",
+	})
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorCluster{}).
