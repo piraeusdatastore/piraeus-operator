@@ -140,11 +140,15 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	_, condErr := controllerutil.CreateOrPatch(ctx, r.Client, lsatellite, func() error {
-		status.DeepCopyInto(&lsatellite.Status)
+		// Fill in existing conditions so meta.SetStatusCondition does not update the LastTransitionTime if the
+		// condition is already set.
+		status.Conditions = lsatellite.Status.Conditions
 
 		for _, cond := range conds.ToConditions(lsatellite.Generation) {
-			meta.SetStatusCondition(&lsatellite.Status.Conditions, cond)
+			meta.SetStatusCondition(&status.Conditions, cond)
 		}
+
+		status.DeepCopyInto(&lsatellite.Status)
 
 		if status.FreeCapacityBytes != nil && status.TotalCapacityBytes != nil {
 			// Report used/total capacity. Assume "used" is total - free. Always report in GiB.

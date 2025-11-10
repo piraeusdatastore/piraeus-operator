@@ -142,6 +142,14 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	status, stateErr := r.reconcileClusterState(ctx, lcluster, conds)
 
 	_, condErr := controllerutil.CreateOrPatch(ctx, r.Client, lcluster, func() error {
+		// Fill in existing conditions so meta.SetStatusCondition does not update the LastTransitionTime if the
+		// condition is already set.
+		status.Conditions = lcluster.Status.Conditions
+
+		for _, cond := range conds.ToConditions(lcluster.Generation) {
+			meta.SetStatusCondition(&status.Conditions, cond)
+		}
+
 		status.DeepCopyInto(&lcluster.Status)
 
 		if status.RunningSatellites != nil && status.ScheduledSatellites != nil {
@@ -154,10 +162,6 @@ func (r *LinstorClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				resource.NewQuantity(*status.TotalCapacityBytes-*status.FreeCapacityBytes, resource.BinarySI).ScaledValue(resource.Giga),
 				resource.NewQuantity(*status.TotalCapacityBytes, resource.BinarySI).ScaledValue(resource.Giga),
 			)
-		}
-
-		for _, cond := range conds.ToConditions(lcluster.Generation) {
-			meta.SetStatusCondition(&lcluster.Status.Conditions, cond)
 		}
 
 		return nil

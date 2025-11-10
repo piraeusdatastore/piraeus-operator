@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Disable group snapshots if we cannot be sure they are supported, otherwise the csi-snapshot silently breaks.
 
+### Fixed
+
+- Status update on LinstorCluster and LinstorSatellite resources no longer causes infinite reconciles.
+
 ## [v2.10.0] - 2025-11-05
 
 ### Added
