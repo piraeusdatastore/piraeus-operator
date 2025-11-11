@@ -21,7 +21,7 @@ type Patch struct {
 
 	// Options is a list of options for the patch
 	// +kubebuilder:validation:Optional
-	Options map[string]bool `json:"options,omitempty" yaml:"options,omitempty"`
+	Options *PatchArgs `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 // Selector specifies a set of resources.
@@ -46,6 +46,15 @@ type Selector struct {
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
 	// It matches against the resource labels.
 	LabelSelector string `json:"labelSelector,omitempty" yaml:"labelSelector,omitempty"`
+}
+
+// PatchArgs represent set of options on resources of a patch.
+type PatchArgs struct {
+	// AllowNameChange allows name changes to the resource.
+	AllowNameChange bool `json:"allowNameChange,omitempty" yaml:"allowNameChange,omitempty"`
+
+	// AllowKindChange allows kind changes to the resource.
+	AllowKindChange bool `json:"allowKindChange,omitempty" yaml:"allowKindChange,omitempty"`
 }
 
 func (p *Patch) GetTarget() *Selector {

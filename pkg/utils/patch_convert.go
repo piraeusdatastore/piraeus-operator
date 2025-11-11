@@ -38,7 +38,7 @@ func MakeKustPatches(patches ...piraeusiov1.Patch) []kusttypes.Patch {
 		result = append(result, kusttypes.Patch{
 			Target:  makeKustSelector(patches[i].Target),
 			Patch:   patches[i].Patch,
-			Options: patches[i].Options,
+			Options: makeKustPatchArgs(patches[i].Options),
 		})
 	}
 
@@ -58,6 +58,17 @@ func makeKustSelector(selector *piraeusiov1.Selector) *kusttypes.Selector {
 		},
 		AnnotationSelector: selector.AnnotationSelector,
 		LabelSelector:      selector.LabelSelector,
+	}
+}
+
+func makeKustPatchArgs(args *piraeusiov1.PatchArgs) *kusttypes.PatchArgs {
+	if args == nil {
+		return nil
+	}
+
+	return &kusttypes.PatchArgs{
+		AllowNameChange: args.AllowNameChange,
+		AllowKindChange: args.AllowKindChange,
 	}
 }
 

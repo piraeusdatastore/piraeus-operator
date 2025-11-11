@@ -76,12 +76,12 @@ func TestMakeKustPatches(t *testing.T) {
 			patches: []piraeusv1.Patch{
 				{Patch: "patch-without-selector"},
 				{Patch: "patch-with-selector", Target: &piraeusv1.Selector{Kind: "Deployment", Version: "v1", Group: "apps", Name: "foo", Namespace: "test-ns", AnnotationSelector: "annotation1=val1", LabelSelector: "label1=val2"}},
-				{Patch: "patch-with-options", Options: map[string]bool{"opt1": true, "opt2": false}},
+				{Patch: "patch-with-options", Options: &piraeusv1.PatchArgs{AllowKindChange: true, AllowNameChange: false}},
 			},
 			result: []kusttypes.Patch{
 				{Patch: "patch-without-selector"},
 				{Patch: "patch-with-selector", Target: &kusttypes.Selector{ResId: resid.ResId{Gvk: resid.Gvk{Kind: "Deployment", Version: "v1", Group: "apps"}, Name: "foo", Namespace: "test-ns"}, AnnotationSelector: "annotation1=val1", LabelSelector: "label1=val2"}},
-				{Patch: "patch-with-options", Options: map[string]bool{"opt1": true, "opt2": false}},
+				{Patch: "patch-with-options", Options: &kusttypes.PatchArgs{AllowKindChange: true, AllowNameChange: false}},
 			},
 		},
 	}

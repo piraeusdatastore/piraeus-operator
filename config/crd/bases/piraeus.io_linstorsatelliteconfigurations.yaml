@@ -271,9 +271,16 @@ spec:
                     JSON patch and its targets.
                   properties:
                     options:
-                      additionalProperties:
-                        type: boolean
                       description: Options is a list of options for the patch
+                      properties:
+                        allowKindChange:
+                          description: AllowKindChange allows kind changes to the
+                            resource.
+                          type: boolean
+                        allowNameChange:
+                          description: AllowNameChange allows name changes to the
+                            resource.
+                          type: boolean
                       type: object
                     patch:
                       description: Patch is the content of a patch.
