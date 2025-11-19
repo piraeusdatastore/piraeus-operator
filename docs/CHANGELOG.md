@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Ensure `mount` commands pass along SELinux options by mounting SELinux directories.
+
 ## [v2.10.1] - 2025-11-12
 
 ### Added

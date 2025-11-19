@@ -84,6 +84,12 @@ spec:
               mountPath: /run/mount
             - name: run-fsck
               mountPath: /run/fsck
+            - name: etc-selinux
+              mountPath: /etc/selinux
+              readOnly: true
+            - name: sys
+              mountPath: /sys
+              readOnly: true
         - name: csi-node-driver-registrar
           image: csi-node-driver-registrar
           args:
@@ -130,6 +136,14 @@ spec:
         - name: publish-dir
           hostPath:
             path: /var/lib/kubelet
+            type: Directory
+        - name: etc-selinux
+          hostPath:
+            path: /etc/selinux
+            type: DirectoryOrCreate
+        - name: sys
+          hostPath:
+            path: /sys
             type: Directory
         - name: registration-dir
           hostPath:
