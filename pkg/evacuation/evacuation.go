@@ -18,6 +18,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	schedulingcorev1 "k8s.io/component-helpers/scheduling/corev1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -27,13 +28,21 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
 
+const (
+	VolumeEvacuatingEvent                   = "VolumeEvacuating"
+	VolumeTemporarilyMadeReschedulableEvent = "VolumeTemporarilyMadeReschedulable"
+	VolumeDeletedForEvacuationEvent         = "VolumeDeletedForEvacuation"
+	VolumeNotAttachedForEvacuationEvent     = "VolumeNotAttachedForEvacuation"
+	VolumeAttachedForEvacuationEvent        = "VolumeAttachedForEvacuation"
+)
+
 // EvacuateSatellite by ensuring all LINSTOR Resource have been moved to other nodes.
 //
 // Returns a message indicating the current progress and a bool indicating if evacuation is complete.
 // The function should be called repeatedly until completion of the evacuation.
-func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
+func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
 	// Step 1: ensure PVs can be rescheduled to other nodes
-	msg, done, err := preparePVsforEvacuation(ctx, cl, lclient, node.Name)
+	msg, done, err := preparePVsforEvacuation(ctx, cl, lclient, recorder, node.Name)
 	if err != nil || !done {
 		return msg, done, err
 	}
@@ -45,13 +54,13 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 	}
 
 	// Step 3: Node is now ready to be drained
-	err = machineClient.AllowMachineDrain(ctx, machine)
+	err = machineClient.AllowMachineDrain(ctx, recorder, machine)
 	if err != nil {
 		return "", false, err
 	}
 
 	// Step 4: Wait for PVs that have been active on this node to be reattached
-	msg, done, err = waitForReattach(ctx, cl, node.Name, evacuationStrategy)
+	msg, done, err = waitForReattach(ctx, cl, recorder, node.Name, evacuationStrategy)
 	if err != nil || !done {
 		return msg, done, err
 	}
@@ -75,7 +84,7 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 	}
 
 	// Step 8: Allow Machine to be terminated
-	err = machineClient.AllowMachineTermination(ctx, machine)
+	err = machineClient.AllowMachineTermination(ctx, recorder, machine)
 	if err != nil {
 		return "", false, err
 	}
@@ -88,7 +97,7 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 // It checks for PVs that are either only accessible from the local node or are currently attached and:
 // * marks them with annotations so later steps can find them.
 // * ensures that "local" PVs are temporarily reschedulable during evacuation.
-func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lapi.Client, nodeName string) (string, bool, error) {
+func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, nodeName string) (string, bool, error) {
 	var volumeAttachmentList storagev1.VolumeAttachmentList
 	err := cl.List(ctx, &volumeAttachmentList)
 	if err != nil {
@@ -159,6 +168,8 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 			} else {
 				pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] = "false"
 			}
+
+			PVCOrPVEventf(recorder, pv, corev1.EventTypeNormal, VolumeEvacuatingEvent, "Volume is being evacuated from Node '%s'", nodeName)
 		}
 
 		switch evacuationActionForPV(pv, rds, rgs, nodeName, nodeList.Items) {
@@ -169,6 +180,8 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 			if !ok {
 				toUpdate = true
 				pv.Annotations[affinity.OverrideAnnotationPrefix+"/"+nodeName] = "true"
+
+				PVCOrPVEventf(recorder, pv, corev1.EventTypeNormal, VolumeTemporarilyMadeReschedulableEvent, "Volume is made reschedulable to attach on replacement node")
 			}
 
 			unschedulablePVs = append(unschedulablePVs, pv.Name)
@@ -181,6 +194,9 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 						Namespace: pv.Spec.ClaimRef.Namespace,
 					},
 				}
+
+				PVCOrPVEventf(recorder, pv, corev1.EventTypeNormal, VolumeDeletedForEvacuationEvent, "Volume deleted on node according to evacuation action")
+
 				if err := cl.Delete(ctx, pvc, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.Spec.ClaimRef.UID)))); err != nil && !k8serrors.IsNotFound(err) {
 					errs = append(errs, err)
 				}
@@ -295,7 +311,7 @@ func waitForConfiguredSatellites(ctx context.Context, cl client.Client, nodeName
 	return "", true, nil
 }
 
-func waitForReattach(ctx context.Context, cl client.Client, nodeName string, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
+func waitForReattach(ctx context.Context, cl client.Client, recorder record.EventRecorder, nodeName string, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
 	now := time.Now()
 
 	var pvs corev1.PersistentVolumeList
@@ -325,10 +341,12 @@ func waitForReattach(ctx context.Context, cl client.Client, nodeName string, eva
 		switch pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] {
 		case "true":
 			if now.Sub(waitedForReattachSince) >= evacuationStrategy.AttachedVolumeReattachTimeout.Duration {
+				PVCOrPVEventf(recorder, &pv, corev1.EventTypeNormal, VolumeNotAttachedForEvacuationEvent, "Timed out waiting for Volume to reattach (limit: %s), proceeding with evacuation", evacuationStrategy.AttachedVolumeReattachTimeout.Duration)
 				continue
 			}
 		case "false":
 			if now.Sub(waitedForReattachSince) >= evacuationStrategy.UnattachedVolumeAttachTimeout.Duration {
+				PVCOrPVEventf(recorder, &pv, corev1.EventTypeNormal, VolumeNotAttachedForEvacuationEvent, "Timed out waiting for Volume to attach (limit: %s), proceeding with evacuation", evacuationStrategy.UnattachedVolumeAttachTimeout.Duration)
 				continue
 			}
 		default:
@@ -340,6 +358,16 @@ func waitForReattach(ctx context.Context, cl client.Client, nodeName string, eva
 		// We don't want the volume to still be attached to evacuating Node.
 		if len(attachedNodes) == 0 || slices.Contains(attachedNodes, nodeName) {
 			unattachedPVs = append(unattachedPVs, &pv)
+		} else {
+			// PV attached on another node, we can remove it from our PVs to wait on.
+			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName)
+			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName)
+
+			if err := cl.Update(ctx, &pv); err != nil {
+				return "", false, err
+			}
+
+			PVCOrPVEventf(recorder, &pv, corev1.EventTypeNormal, VolumeAttachedForEvacuationEvent, "Volume successfully attached on Node(s) [%s], proceeding with evacuation", strings.Join(attachedNodes, ", "))
 		}
 	}
 
@@ -353,7 +381,6 @@ func waitForReattach(ctx context.Context, cl client.Client, nodeName string, eva
 				if err := cl.Update(ctx, pv); err != nil {
 					return "", false, err
 				}
-
 			}
 
 			unattachedPVNames = append(unattachedPVNames, pv.Name)
@@ -552,4 +579,13 @@ func isAttachableOnOtherNode(pv *corev1.PersistentVolume, currentNodeName string
 	}
 
 	return false
+}
+
+// PVCOrPVEventf records an event, either for the PVC or for the PV, if no PVC is currently bound.
+func PVCOrPVEventf(recorder record.EventRecorder, pv *corev1.PersistentVolume, eventtype, reason, message string, args ...interface{}) {
+	if pv.Spec.ClaimRef != nil {
+		recorder.Eventf(pv.Spec.ClaimRef, eventtype, reason, message, args...)
+	} else {
+		recorder.Eventf(pv, eventtype, reason, message, args...)
+	}
 }

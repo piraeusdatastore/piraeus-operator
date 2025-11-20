@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -534,7 +535,7 @@ func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client) (stri
 	machine, err := machineCl.GetMachineForNode(t.Context(), &node)
 	assert.NoError(t, err)
 
-	return evacuation.EvacuateSatellite(t.Context(), cl, lc, &satellite, machineCl, machine, &piraeusv1.EvacuationStrategy{
+	return evacuation.EvacuateSatellite(t.Context(), cl, lc, &record.FakeRecorder{}, &satellite, machineCl, machine, &piraeusv1.EvacuationStrategy{
 		AttachedVolumeReattachTimeout: metav1.Duration{Duration: 5 * time.Second},
 		UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 10 * time.Second},
 	})

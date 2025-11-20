@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -75,6 +76,7 @@ type LinstorSatelliteReconciler struct {
 	LinstorClientOpts  []lapi.Option
 	Kustomizer         *resources.Kustomizer
 	log                logr.Logger
+	recorder           record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites,verbs=get;list;watch;create;update;patch;delete
@@ -358,8 +360,8 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 		}
 	} else {
 		err = errors.Join(
-			r.MachineClient.AllowMachineDrain(ctx, machine),
-			r.MachineClient.AllowMachineTermination(ctx, machine),
+			r.MachineClient.AllowMachineDrain(ctx, r.recorder, machine),
+			r.MachineClient.AllowMachineTermination(ctx, r.recorder, machine),
 		)
 		if err != nil {
 			conds.AddError(conditions.Available, err)
@@ -508,7 +510,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 
 		if clusterapi.ShouldEvacuateNode(machine) && lsatellite.Spec.DeletionPolicy == piraeusiov1.DeletionPolicyEvacuate {
 			r.log.Info("Request to evacuate node from ClusterAPI")
-			msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
+			msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
 			if err != nil {
 				conds.AddError("SatelliteEvacuated", err)
 			} else if !done {
@@ -651,13 +653,13 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 
 	if lc == nil {
 		r.log.Info("Allow Machine to drain for Satellite without cluster")
-		err := r.MachineClient.AllowMachineDrain(ctx, machine)
+		err := r.MachineClient.AllowMachineDrain(ctx, r.recorder, machine)
 		if err != nil {
 			return "", false, err
 		}
 
 		r.log.Info("Allow Machine to terminate for Satellite without cluster")
-		err = r.MachineClient.AllowMachineTermination(ctx, machine)
+		err = r.MachineClient.AllowMachineTermination(ctx, r.recorder, machine)
 		if err != nil {
 			return "", false, err
 		}
@@ -685,7 +687,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 			return "", false, err
 		}
 
-		msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, &lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
+		msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, &lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
 		if err != nil {
 			conds.AddError("SatelliteEvacuated", err)
 			return "", false, err
@@ -774,6 +776,7 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 	}
 
 	r.log = mgr.GetLogger().WithName("LinstorSatelliteReconciler")
+	r.recorder = mgr.GetEventRecorderFor("LinstorSatelliteReconciler")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorSatellite{}).
