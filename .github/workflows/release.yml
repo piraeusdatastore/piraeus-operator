@@ -8,7 +8,7 @@ jobs:
   create-draft-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Build release resources
         run: |
           make manifest.yaml changes.md chart
