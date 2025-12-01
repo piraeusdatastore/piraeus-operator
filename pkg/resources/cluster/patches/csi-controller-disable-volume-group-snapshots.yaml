@@ -11,6 +11,11 @@
       template:
         spec:
           containers:
+          # Preserve order of containers: https://github.com/kubernetes-sigs/kustomize/issues/3912
+          - name: linstor-csi
+          - name: csi-attacher
+          - name: csi-livenessprobe
+          - name: csi-provisioner
           - name: csi-snapshotter
             env:
             - name: FEATURE_GATE_CSI_VOLUME_GROUP_SNAPSHOT
