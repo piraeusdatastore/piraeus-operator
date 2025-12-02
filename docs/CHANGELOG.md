@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Update RBAC for `csi-resizer` sidecar.
+
 ## [v2.10.2] - 2025-11-26
 
 ### Added
