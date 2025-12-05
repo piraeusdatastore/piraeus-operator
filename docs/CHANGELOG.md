@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update RBAC for `csi-resizer` sidecar.
 
+### Changed
+- Updated images:
+    * LINSTOR CSI 1.10.4
+    * HA Controller 1.3.2
+    * DRBD Shutdown Guard 1.1.2
+
 ## [v2.10.2] - 2025-11-26
 
 ### Added
