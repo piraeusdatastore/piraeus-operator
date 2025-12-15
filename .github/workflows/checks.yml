@@ -32,7 +32,7 @@ jobs:
           go-version: '1.25'
       - uses: actions/setup-python@v6
       - name: Cache envtest assets
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: envtest-base
           path: |
@@ -47,7 +47,7 @@ jobs:
         with:
           go-version: '1.25'
       - name: Cache envtest assets
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: envtest-compat
           path: |
