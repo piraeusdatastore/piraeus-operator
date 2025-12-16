@@ -14,7 +14,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.3
 	github.com/piraeusdatastore/linstor-affinity-controller v1.3.0
-	github.com/piraeusdatastore/linstor-csi v1.10.4
+	github.com/piraeusdatastore/linstor-csi v1.10.5
 	github.com/piraeusdatastore/piraeus-ha-controller v1.3.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
