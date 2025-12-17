@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Name collision for CSI Node container ports
+
 ## [v2.10.3] - 2025-12-05
 
 ### Fixed

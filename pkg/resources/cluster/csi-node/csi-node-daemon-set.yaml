@@ -104,11 +104,11 @@ spec:
                 - ALL
           ports:
             - containerPort: 9809
-              name: healthz
+              name: reg-healthz
           livenessProbe:
             httpGet:
               path: /healthz
-              port: healthz
+              port: reg-healthz
             initialDelaySeconds: 5
             timeoutSeconds: 5
           volumeMounts:
