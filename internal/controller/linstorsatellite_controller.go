@@ -613,9 +613,13 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 
 				// CreateDevicePool also registers the storage pool in LINSTOR.
 				err = lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lapi.PhysicalStorageCreate{
-					ProviderKind: pool.ProviderKind(),
-					PoolName:     pool.PoolName(),
-					DevicePaths:  pool.Source.HostDevices,
+					ProviderKind:         pool.ProviderKind(),
+					PoolName:             pool.PoolName(),
+					DevicePaths:          pool.Source.HostDevices,
+					PvCreateArguments:    pool.PvCreateArguments(),
+					VgCreateArguments:    pool.VgCreateArguments(),
+					LvCreateArguments:    pool.LvCreateArguments(),
+					ZpoolCreateArguments: pool.ZpoolCreateArguments(),
 					WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
 						Name:  pool.Name,
 						Props: linstorhelper.UpdateLastApplyProperty(expectedProperties),

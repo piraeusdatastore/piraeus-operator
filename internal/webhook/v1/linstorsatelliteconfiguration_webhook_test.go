@@ -185,6 +185,63 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(warningHandler[0].text).To(ContainSubstring("consider targeting the DaemonSet 'linstor-satellite'"))
 	})
 
+	It("should warn on updating storage pool creation arguments", func(ctx context.Context) {
+		warningHandler.Clear()
+		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "storage-pool-args"},
+			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+				StoragePools: []piraeusv1.LinstorStoragePool{
+					{
+						Name: "lvm",
+						LvmPool: &piraeusv1.LinstorStoragePoolLvm{
+							PhysicalVolumeCreateArguments: []string{"--some", "pv-arg"},
+							VolumeGroupCreateArguments:    []string{"--some", "vg-arg"},
+						},
+					},
+					{
+						Name: "lvm-thin",
+						LvmThinPool: &piraeusv1.LinstorStoragePoolLvmThin{
+							PhysicalVolumeCreateArguments: []string{"--some", "pv-arg"},
+							VolumeGroupCreateArguments:    []string{"--some", "vg-arg"},
+							LogicalVolumeCreateArguments:  []string{"--some", "lv-arg"},
+						},
+					},
+					{
+						Name: "zfs",
+						ZfsPool: &piraeusv1.LinstorStoragePoolZfs{
+							ZpoolCreateArguments: []string{"--some", "zpool-arg"},
+						},
+					},
+					{
+						Name: "zfs-thin",
+						ZfsThinPool: &piraeusv1.LinstorStoragePoolZfs{
+							ZpoolCreateArguments: []string{"--some", "zpool-thin-arg"},
+						},
+					},
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(warningHandler).To(HaveLen(7))
+		Expect(warningHandler).To(HaveEach(ContainSubstring("Arguments without a pool source have no effect")))
+		warningHandler.Clear()
+
+		satelliteConfig.Spec.StoragePools[0].LvmPool.PhysicalVolumeCreateArguments = append(satelliteConfig.Spec.StoragePools[0].LvmPool.PhysicalVolumeCreateArguments, "extra-pv")
+		satelliteConfig.Spec.StoragePools[0].LvmPool.VolumeGroupCreateArguments = append(satelliteConfig.Spec.StoragePools[0].LvmPool.VolumeGroupCreateArguments, "extra-vg")
+		satelliteConfig.Spec.StoragePools[1].LvmThinPool.PhysicalVolumeCreateArguments = append(satelliteConfig.Spec.StoragePools[1].LvmThinPool.PhysicalVolumeCreateArguments, "extra-pv")
+		satelliteConfig.Spec.StoragePools[1].LvmThinPool.VolumeGroupCreateArguments = append(satelliteConfig.Spec.StoragePools[1].LvmThinPool.VolumeGroupCreateArguments, "extra-vg")
+		satelliteConfig.Spec.StoragePools[1].LvmThinPool.LogicalVolumeCreateArguments = append(satelliteConfig.Spec.StoragePools[1].LvmThinPool.LogicalVolumeCreateArguments, "extra-lv")
+		satelliteConfig.Spec.StoragePools[2].ZfsPool.ZpoolCreateArguments = append(satelliteConfig.Spec.StoragePools[2].ZfsPool.ZpoolCreateArguments, "extra-zfs")
+		satelliteConfig.Spec.StoragePools[3].ZfsThinPool.ZpoolCreateArguments = append(satelliteConfig.Spec.StoragePools[3].ZfsThinPool.ZpoolCreateArguments, "extra-zfs")
+
+		err = k8sClient.Update(ctx, satelliteConfig)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(warningHandler).To(HaveLen(14))
+		Expect(warningHandler).To(HaveEach(Or(ContainSubstring("Update will only apply to new nodes"), ContainSubstring("Arguments without a pool source have no effect"))))
+	})
+
 	It("should reject invalid property sources", func(ctx context.Context) {
 		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
 			TypeMeta:   typeMeta,

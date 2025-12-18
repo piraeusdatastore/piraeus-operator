@@ -80,9 +80,7 @@ func (r *LinstorSatelliteConfigurationCustomValidator) validate(obj, old *piraeu
 		oldSPs = old.Spec.StoragePools
 	}
 
-	var warnings admission.Warnings
-
-	errs := ValidateStoragePools(obj.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))
+	warnings, errs := ValidateStoragePools(obj.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))
 	errs = append(errs, ValidateNodeSelector(obj.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))...)
 	errs = append(errs, ValidateNodeProperties(obj.Spec.Properties, field.NewPath("spec", "properties"))...)
 	errs = append(errs, ValidatePodTemplate(obj.Spec.PodTemplate, field.NewPath("spec", "podTemplate"))...)

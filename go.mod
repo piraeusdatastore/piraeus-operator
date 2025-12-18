@@ -15,6 +15,7 @@ require (
 	github.com/piraeusdatastore/linstor-csi v1.11.2
 	github.com/piraeusdatastore/piraeus-ha-controller v1.3.2
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
 	golang.org/x/time v0.15.0
 	gonum.org/v1/gonum v0.17.0
 	k8s.io/api v0.36.2

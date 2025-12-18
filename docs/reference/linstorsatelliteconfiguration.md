@@ -151,19 +151,43 @@ Configures LINSTOR Storage Pools.
 Every Storage Pool needs at least a `name`, and a type. Types are specified by setting a (potentially empty) value on
 the matching key. Available types are:
 
-* `lvmPool`: Configures a [LVM Volume Group](https://linbit.com/drbd-user-guide/drbd-guide-9_0-en/#s-lvm-primer) as storage
-  pool. Defaults to using the storage pool name as the VG name. Can be overridden by setting `volumeGroup`.
-* `lvmThinPool`: Configures a [LVM Thin Pool](https://man7.org/linux/man-pages/man7/lvmthin.7.html) as storage pool.
-  Defaults to using the storage pool name as name for the thin pool volume and the storage pool name prefixed by
-  `linstor_` as the VG name. Can be overridden by setting `thinPool` and `volumeGroup`.
-* `filePool`: Configures a file system based storage pool. Configures a host directory as location for the volume files.
-  Defaults to using the `/var/lib/linstor-pools/<storage pool name>` directory.
-* `fileThinPool`: Configures a file system based storage pool. Behaves the same as `filePool`, except the files will
-  be thinly allocated on file systems that support sparse files.
-* `zfsPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Defaults to using the storage
-  pool name as name for the zpool. Can be overriden by setting `zPool`.
-* `zfsThinPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Behaves the same as
-  `zfsPool`, except the contained zVol will be created using sparse reservation.
+*   `lvmPool`: Configures a [LVM Volume Group](https://linbit.com/drbd-user-guide/drbd-guide-9_0-en/#s-lvm-primer) as storage pool.
+
+    Arguments:
+    * `volumeGroup`: Set the name of the Volume Group to use. Defaults to using the storage pool name.
+    * `physicalVolumeCreateArguments`: Additional arguments to pass to the `pvcreate` command. Only applies when the
+      pool is first set up from a `source`.
+    * `volumeGroupCreateArguments`: Additional arguments to pass to the `vgcreate` command. Only applies when the
+      pool is first set up from a `source`.
+*   `lvmThinPool`: Configures a [LVM Thin Pool](https://man7.org/linux/man-pages/man7/lvmthin.7.html) as storage pool.
+
+    Arguments:
+    * `volumeGroup`: Set the name of the Volume Group to use. Defaults to using the storage pool name prefixed with
+      `linstor_`.
+    * `thinPool`: Set the name of the Thinpool Logical Volume to use. Defaults to using the storage pool name.
+    * `physicalVolumeCreateArguments`: Additional arguments to pass to the `pvcreate` command. Only applies when the
+      pool is first set up from a `source`.
+    * `volumeGroupCreateArguments`: Additional arguments to pass to the `vgcreate` command. Only applies when the
+      pool is first set up from a `source`.
+    * `logicalVolumeCreateArguments`: Additional arguments to pass to the `lvcreate` command. Only applies when the
+      pool is first set up from a `source`.
+*   `filePool`: Configures a file system based storage pool. Configures a host directory as location for the volume
+    files.
+
+    Arguments:
+    * `directory`: Host directory used to store volume data. Defaults to using the
+      `/var/lib/linstor-pools/<storage pool name>` directory.
+*   `fileThinPool`: Configures a file system based storage pool. Behaves the same as `filePool`, except the files will
+    be thinly allocated on file systems that support sparse files. Supports the same arguments as `filePool`.
+*   `zfsPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Defaults to using the storage
+    pool name as name for the zpool. Can be overridden by setting `zPool`.
+
+    Arguments:
+    * `zPool`: Set the name of the zpool on the host. Defaults to the storage pool name.
+    * `zPoolCreateArguments`: Additional arguments to pass to the `zpool create` command. Only applies when the pool
+      is first set up from a `source`.
+*   `zfsThinPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Behaves the same as `zfsPool`, except the contained
+    zVol will be created using sparse reservation. Supports the same arguments as `zfsPool`.
 
 Optionally, you can configure LINSTOR to automatically create the backing pools. `source.hostDevices` takes a list
 of raw block devices, which LINSTOR will prepare as the chosen backing pool.
@@ -193,6 +217,9 @@ This example configures these LINSTOR Storage Pools on all satellites:
 * A LVM Pool named `vg2-from-raw-devices`. It will use the VG `vg2`, which will be created on demand from the raw
   devices `/dev/sdb` and `/dev/sdc` if it does not exist already. In addition, it sets the `StorDriver/LvcreateOptions`
   property to `-i 2`, which causes every created LV to be striped across 2 PVs.
+* A LVM Thin Pool named `thin-raid`. It will use the thinpool `linstor_thin-raid/thin-raid`, which will be created on
+  `/dev/nvme0n2` and `/dev/nvme0n3`. The backing VG will have a physical extent size of 512KiB and the Thinpool LV
+  striped across both devices.
 * A File System Pool named `fs1`. It will use the `/var/lib/linstor-pools/fs1` directory on the host, creating the
   directory if necessary.
 * A File System Pool named `fs2`, using sparse files. It will use the custom `/mnt/data` directory on the host.
@@ -223,6 +250,14 @@ spec:
       properties:
         - name: StorDriver/LvcreateOptions
           value: '-i 2'
+    - name: thin-raid
+      lvmThinPool:
+        volumeGroupCreateArguments: ["-s", "512KiB"]
+        logicalVolumeCreateArguments: ["-i", "2"]
+      source:
+        hostDevices:
+          - /dev/nvme0n2
+          - /dev/nvme0n3
     - name: fs1
       filePool: {}
     - name: fs2

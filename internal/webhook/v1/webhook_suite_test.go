@@ -159,6 +159,10 @@ type Warning struct {
 	text  string
 }
 
+func (w Warning) String() string {
+	return fmt.Sprintf("%d(%s): %s", w.code, w.agent, w.text)
+}
+
 type WarningHandler []Warning
 
 func (w *WarningHandler) HandleWarningHeader(code int, agent string, text string) {

@@ -9,8 +9,10 @@ import (
 	"strings"
 
 	lclient "github.com/LINBIT/golinstor/client"
+	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type LinstorStoragePool struct {
@@ -104,6 +106,37 @@ func (p *LinstorStoragePool) PoolName() string {
 	return ""
 }
 
+func (p *LinstorStoragePool) PvCreateArguments() []string {
+	switch {
+	case p.LvmPool != nil:
+		return p.LvmPool.PhysicalVolumeCreateArguments
+	case p.LvmThinPool != nil:
+		return p.LvmThinPool.PhysicalVolumeCreateArguments
+	default:
+		return nil
+	}
+}
+
+func (p *LinstorStoragePool) VgCreateArguments() []string {
+	switch {
+	case p.LvmPool != nil:
+		return p.LvmPool.VolumeGroupCreateArguments
+	case p.LvmThinPool != nil:
+		return p.LvmThinPool.VolumeGroupCreateArguments
+	default:
+		return nil
+	}
+}
+
+func (p *LinstorStoragePool) LvCreateArguments() []string {
+	switch {
+	case p.LvmThinPool != nil:
+		return p.LvmThinPool.LogicalVolumeCreateArguments
+	default:
+		return nil
+	}
+}
+
 // BackendProbeCommand returns a read-only command that lists the existing backend storage objects of the same
 // kind as this storage pool (all LVM volume groups, or all ZFS datasets), one identifier per line. It returns
 // nil for storage pools without a separate backend to probe (file based pools).
@@ -121,14 +154,59 @@ func (p *LinstorStoragePool) BackendProbeCommand() []string {
 	}
 }
 
+func (p *LinstorStoragePool) ZpoolCreateArguments() []string {
+	switch {
+	case p.ZfsPool != nil:
+		if len(p.ZfsPool.ZpoolCreateArguments) == 0 {
+			return []string{"-o", "failmode=continue"}
+		}
+
+		return p.ZfsPool.ZpoolCreateArguments
+	case p.ZfsThinPool != nil:
+		if len(p.ZfsThinPool.ZpoolCreateArguments) == 0 {
+			return []string{"-o", "failmode=continue"}
+		}
+
+		return p.ZfsThinPool.ZpoolCreateArguments
+	default:
+		return nil
+	}
+}
+
 type LinstorStoragePoolLvm struct {
+	// VolumeGroup is the name of the Volume Group (VG) to use.
 	VolumeGroup string `json:"volumeGroup,omitempty"`
+
+	// PhysicalVolumeCreateArguments are arguments to pass to "pvcreate".
+	// This has no effect on an existing VG, it only applies when the VG initially gets created.
+	// +kubebuilder:validation:Optional
+	PhysicalVolumeCreateArguments []string `json:"physicalVolumeCreateArguments,omitempty"`
+
+	// VolumeGroupCreateArguments are arguments to pass to "vgcreate".
+	// This has no effect on an existing VG, it only applies when the VG initially gets created.
+	// +kubebuilder:validation:Optional
+	VolumeGroupCreateArguments []string `json:"volumeGroupCreateArguments,omitempty"`
 }
 
 type LinstorStoragePoolLvmThin struct {
 	VolumeGroup string `json:"volumeGroup,omitempty"`
 	// ThinPool is the name of the thinpool LV (without VG prefix).
 	ThinPool string `json:"thinPool,omitempty"`
+
+	// PhysicalVolumeCreateArguments are arguments to pass to "pvcreate".
+	// This has no effect on an existing VG, it only applies when the VG initially gets created.
+	// +kubebuilder:validation:Optional
+	PhysicalVolumeCreateArguments []string `json:"physicalVolumeCreateArguments,omitempty"`
+
+	// VolumeGroupCreateArguments are arguments to pass to "vgcreate".
+	// This has no effect on an existing VG, it only applies when the VG initially gets created.
+	// +kubebuilder:validation:Optional
+	VolumeGroupCreateArguments []string `json:"volumeGroupCreateArguments,omitempty"`
+
+	// LogicalVolumeCreateArguments are arguments to pass to "lvcreate".
+	// This has no effect on an existing thinpool, it only applies when the thinpool initially gets created.
+	// +kubebuilder:validation:Optional
+	LogicalVolumeCreateArguments []string `json:"logicalVolumeCreateArguments,omitempty"`
 }
 
 type LinstorStoragePoolFile struct {
@@ -139,6 +217,15 @@ type LinstorStoragePoolFile struct {
 type LinstorStoragePoolZfs struct {
 	// ZPool is the name of the ZFS zpool.
 	ZPool string `json:"zPool,omitempty"`
+
+	// ZpoolCreateArguments are arguments to pass to "zpool create".
+	// This has no effect on an existing zpool, it only applies when the zpool initially gets created.
+	//
+	// If not set, "-o failmode=continue" is automatically added to ensure a failed zpool does not stop replication
+	// to and from other nodes in the cluster.
+	//
+	// +kubebuilder:validation:Optional
+	ZpoolCreateArguments []string `json:"zpoolCreateArguments,omitempty"`
 }
 
 type LinstorStoragePoolSource struct {
@@ -156,8 +243,9 @@ func (l *LinstorStoragePoolFile) DirectoryOrDefault(name string) string {
 	return l.Directory
 }
 
-func (l *LinstorStoragePoolZfs) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path, name string, thin bool) field.ErrorList {
+func (l *LinstorStoragePoolZfs) Validate(oldSP *LinstorStoragePool, fieldPrefix *field.Path, name string, thin bool) (admission.Warnings, field.ErrorList) {
 	var result field.ErrorList
+	var warnings admission.Warnings
 
 	if oldSP != nil {
 		if thin && oldSP.ZfsThinPool == nil {
@@ -167,7 +255,17 @@ func (l *LinstorStoragePoolZfs) Validate(oldSP *LinstorStoragePool, fieldPrefix 
 		}
 	}
 
-	return result
+	//nolint:govet // cannot deal with type inference on slices.Equal
+	if oldSP != nil && thin && oldSP.ZfsThinPool != nil && !slices.Equal(l.ZpoolCreateArguments, oldSP.ZfsThinPool.ZpoolCreateArguments) {
+		warnings = append(warnings, fmt.Sprintf("%s: Update will only apply to new nodes", fieldPrefix.Child("zpoolCreateArguments")))
+	}
+
+	//nolint:govet // cannot deal with type inference on slices.Equal
+	if oldSP != nil && !thin && oldSP.ZfsPool != nil && !slices.Equal(l.ZpoolCreateArguments, oldSP.ZfsPool.ZpoolCreateArguments) {
+		warnings = append(warnings, fmt.Sprintf("%s: Update will only apply to new nodes", fieldPrefix.Child("zpoolCreateArguments")))
+	}
+
+	return warnings, result
 }
 
 func (s *LinstorStoragePoolSource) Validate(oldSP *LinstorStoragePool, knownDevices sets.Set[string], fieldPrefix *field.Path) field.ErrorList {

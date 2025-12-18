@@ -81,10 +81,8 @@ func (r *LinstorSatelliteCustomValidator) validate(new, old *piraeusiov1.Linstor
 		oldSPs = old.Spec.StoragePools
 	}
 
-	var warnings admission.Warnings
-
-	errs := ValidateExternalController(new.Spec.ClusterRef.ExternalController, field.NewPath("spec", "clusterRef", "externalController"))
-	errs = append(errs, ValidateStoragePools(new.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))...)
+	warnings, errs := ValidateStoragePools(new.Spec.StoragePools, oldSPs, field.NewPath("spec", "storagePools"))
+	errs = append(errs, ValidateExternalController(new.Spec.ClusterRef.ExternalController, field.NewPath("spec", "clusterRef", "externalController"))...)
 	errs = append(errs, ValidateNodeProperties(new.Spec.Properties, field.NewPath("spec", "properties"))...)
 	for i := range new.Spec.Patches {
 		path := field.NewPath("spec", "patches", strconv.Itoa(i))
