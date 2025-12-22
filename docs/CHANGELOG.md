@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Name collision for CSI Node container ports
+- Do not block evacuation on other satellites being evacuated.
 
 ## [v2.10.3] - 2025-12-05
 

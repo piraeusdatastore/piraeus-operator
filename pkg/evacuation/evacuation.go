@@ -287,6 +287,11 @@ func waitForConfiguredSatellites(ctx context.Context, cl client.Client, nodeName
 			continue
 		}
 
+		// Ignore all satellites with a deletion timestamp set, they are probably being removed just like this one.
+		if satellite.DeletionTimestamp != nil {
+			continue
+		}
+
 		cond := meta.FindStatusCondition(satellite.Status.Conditions, string(conditions.Configured))
 		if cond == nil {
 			unreadySatellites = append(unreadySatellites, satellite.Name)

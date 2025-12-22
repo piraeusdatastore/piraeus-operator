@@ -53,6 +53,11 @@ var (
 			},
 		},
 	}
+	TestNodeC = &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "node-C",
+		},
+	}
 	MachineA = &clusterapiv1beta1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "machine-a",
@@ -238,11 +243,20 @@ func TestEvacuateSatelliteWithEvacuationActionPVs(t *testing.T) {
 
 func TestEvacuateSatelliteWaitForOtherSatellites(t *testing.T) {
 	t.Parallel()
+
+	satelliteC := createSatellite(TestNodeC, false)
+	satelliteC.Finalizers = []string{"piraeus.io/test"}
+
 	cl, lc := setupTestCluster(t,
-		TestNodeA, TestNodeB, MachineA, MachineB,
+		TestNodeA, TestNodeB, TestNodeC, MachineA, MachineB,
 		createSatellite(TestNodeA, true),
 		createSatellite(TestNodeB, false),
+		satelliteC,
 	)
+
+	// Delete satellite C. It is unavailable but deleting, so it should not block evacuation
+	err := cl.Delete(t.Context(), satelliteC)
+	assert.NoError(t, err)
 
 	// Satellite still has a local-only PV
 	msg, cont, err := runEvacuateSatellite(t, cl, lc)
@@ -251,6 +265,7 @@ func TestEvacuateSatelliteWaitForOtherSatellites(t *testing.T) {
 	assert.Contains(t, msg, "Waiting for LinstorSatellites to become ready")
 	assert.Contains(t, msg, "node-b")
 	assert.NotContains(t, msg, "node-a")
+	assert.NotContains(t, msg, "node-c")
 
 	// No evacuation, no drain, no termination
 	assert.NotContains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
