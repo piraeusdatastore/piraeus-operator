@@ -27,6 +27,7 @@ import (
 
 	lapi "github.com/LINBIT/golinstor/client"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/go-logr/logr"
 	"github.com/go-openapi/jsonpointer"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -81,6 +82,7 @@ type LinstorClusterReconciler struct {
 	Kustomizer                   *resources.Kustomizer
 	APIVersion                   *utils.APIVersion
 	SupportsVolumeGroupSnapshots bool
+	log                          logr.Logger
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorclusters,verbs=get;list;watch;create;update;patch;delete
@@ -327,13 +329,13 @@ func (r *LinstorClusterReconciler) kustomizeResources(ctx context.Context, lclus
 		// Filter out satellites based on tolerations:
 		// * If there is a NoExecute taint we do not tolerate, do not configure a satellite.
 		// * If there is a NoSchedule taint we do not tolerate, configure a satellite only if one already exists.
-		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(node.Spec.Taints, satelliteTolerations, func(taint *corev1.Taint) bool {
+		_, untolerated := schedulingcorev1.FindMatchingUntoleratedTaint(r.log, node.Spec.Taints, satelliteTolerations, func(taint *corev1.Taint) bool {
 			if existingSatellite != nil {
 				return taint.Effect == corev1.TaintEffectNoExecute
 			} else {
 				return taint.Effect == corev1.TaintEffectNoSchedule || taint.Effect == corev1.TaintEffectNoExecute
 			}
-		})
+		}, false)
 		if untolerated {
 			continue
 		}
@@ -1376,6 +1378,8 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		Version:  "v1beta2",
 		Resource: "volumegroupsnapshots",
 	})
+
+	r.log = mgr.GetLogger().WithName("LinstorClusterReconciler")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorCluster{}).
