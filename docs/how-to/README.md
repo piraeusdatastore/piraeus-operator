@@ -21,6 +21,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
     [:octicons-arrow-right-24: Guide](./install-kernel-headers.md)
 
+*   Integrate with a Cluster API Management Cluster
+
+    [:octicons-arrow-right-24: Guide](./external-cluster-api.md)
+
 </div>
 
 ## Securing Components
