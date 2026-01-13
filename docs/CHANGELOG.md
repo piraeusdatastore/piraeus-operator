@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Name collision for CSI Node container ports
 - Do not block evacuation on other satellites being evacuated.
 
+### Changed
+
+- Updated images:
+    * LINSTOR CSI 1.10.5
+
 ## [v2.10.3] - 2025-12-05
 
 ### Fixed
@@ -19,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update RBAC for `csi-resizer` sidecar.
 
 ### Changed
+
 - Updated images:
     * LINSTOR CSI 1.10.4
     * HA Controller 1.3.2

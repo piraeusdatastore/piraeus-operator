@@ -23,10 +23,10 @@ data:
         tag: v1.32.3
         image: piraeus-server
       linstor-csi:
-        tag: v1.10.4
+        tag: v1.10.5
         image: piraeus-csi
       nfs-server:
-        tag: v1.10.4
+        tag: v1.10.5
         image: piraeus-csi-nfs-server
       drbd-reactor:
         tag: v1.10.0
