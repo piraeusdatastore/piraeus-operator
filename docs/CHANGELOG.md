@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated NFS server template to work with NFS Ganesha instances with monitoring enabled.
+
 ## [v2.10.4] - 2026-01-13
 
 ### Fixed
