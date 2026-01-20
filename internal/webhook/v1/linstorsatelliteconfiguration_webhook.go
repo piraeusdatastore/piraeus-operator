@@ -18,16 +18,13 @@ package v1
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
@@ -36,7 +33,7 @@ import (
 var linstorsatelliteconfigurationlog = logf.Log.WithName("linstorsatelliteconfiguration-resource")
 
 func SetupLinstorSatelliteConfigurationWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&piraeusv1.LinstorSatelliteConfiguration{}).
+	return ctrl.NewWebhookManagedBy(mgr, &piraeusv1.LinstorSatelliteConfiguration{}).
 		WithValidator(&LinstorSatelliteConfigurationCustomValidator{}).
 		Complete()
 }
@@ -45,14 +42,9 @@ func SetupLinstorSatelliteConfigurationWebhookWithManager(mgr ctrl.Manager) erro
 
 type LinstorSatelliteConfigurationCustomValidator struct{}
 
-var _ webhook.CustomValidator = &LinstorSatelliteConfigurationCustomValidator{}
+var _ admission.Validator[*piraeusv1.LinstorSatelliteConfiguration] = &LinstorSatelliteConfigurationCustomValidator{}
 
-func (r *LinstorSatelliteConfigurationCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	satelliteConfiguration, ok := obj.(*piraeusv1.LinstorSatelliteConfiguration)
-	if !ok {
-		return nil, fmt.Errorf("expected LinstorSatelliteConfiguration but got %T", obj)
-	}
-
+func (r *LinstorSatelliteConfigurationCustomValidator) ValidateCreate(ctx context.Context, satelliteConfiguration *piraeusv1.LinstorSatelliteConfiguration) (admission.Warnings, error) {
 	linstorsatelliteconfigurationlog.Info("validate create", "name", satelliteConfiguration.GetName())
 
 	warnings, errs := r.validate(satelliteConfiguration, nil)
@@ -64,15 +56,10 @@ func (r *LinstorSatelliteConfigurationCustomValidator) ValidateCreate(ctx contex
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatelliteConfigurationCustomValidator) ValidateUpdate(ctx context.Context, obj, old runtime.Object) (admission.Warnings, error) {
-	satelliteConfiguration, ok := obj.(*piraeusv1.LinstorSatelliteConfiguration)
-	if !ok {
-		return nil, fmt.Errorf("expected LinstorSatelliteConfiguration but got %T", obj)
-	}
-
+func (r *LinstorSatelliteConfigurationCustomValidator) ValidateUpdate(ctx context.Context, oldSatelliteConfiguration, satelliteConfiguration *piraeusv1.LinstorSatelliteConfiguration) (admission.Warnings, error) {
 	linstorsatelliteconfigurationlog.Info("validate update", "name", satelliteConfiguration.GetName())
 
-	warnings, errs := r.validate(satelliteConfiguration, old.(*piraeusv1.LinstorSatelliteConfiguration))
+	warnings, errs := r.validate(satelliteConfiguration, oldSatelliteConfiguration)
 	if len(errs) != 0 {
 		return warnings, apierrors.NewInvalid(satelliteConfiguration.GroupVersionKind().GroupKind(), satelliteConfiguration.GetName(), errs)
 	}
@@ -81,12 +68,7 @@ func (r *LinstorSatelliteConfigurationCustomValidator) ValidateUpdate(ctx contex
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *LinstorSatelliteConfigurationCustomValidator) ValidateDelete(ctx context.Context, old runtime.Object) (admission.Warnings, error) {
-	satelliteConfiguration, ok := old.(*piraeusv1.LinstorSatelliteConfiguration)
-	if !ok {
-		return nil, fmt.Errorf("expected LinstorSatelliteConfiguration but got %T", old)
-	}
-
+func (r *LinstorSatelliteConfigurationCustomValidator) ValidateDelete(ctx context.Context, satelliteConfiguration *piraeusv1.LinstorSatelliteConfiguration) (admission.Warnings, error) {
 	linstorsatelliteconfigurationlog.Info("validate delete", "name", satelliteConfiguration.GetName())
 
 	return nil, nil

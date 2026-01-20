@@ -7,9 +7,6 @@ import (
 	"github.com/piraeusdatastore/linstor-csi/pkg/volume"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -18,27 +15,27 @@ import (
 
 type StorageClass struct{}
 
-func (s *StorageClass) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	warnings, errs := s.validate(nil, obj.(*storagev1.StorageClass))
+var _ admission.Validator[*storagev1.StorageClass] = &StorageClass{}
+
+func (s *StorageClass) ValidateCreate(ctx context.Context, sc *storagev1.StorageClass) (admission.Warnings, error) {
+	warnings, errs := s.validate(nil, sc)
 	if len(errs) != 0 {
-		accessor, _ := meta.Accessor(obj)
-		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: storagev1.GroupName, Kind: "StorageClass"}, accessor.GetName(), errs)
+		return warnings, apierrors.NewInvalid(sc.GroupVersionKind().GroupKind(), sc.GetName(), errs)
 	}
 
 	return warnings, nil
 }
 
-func (s *StorageClass) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	warnings, errs := s.validate(oldObj.(*storagev1.StorageClass), newObj.(*storagev1.StorageClass))
+func (s *StorageClass) ValidateUpdate(ctx context.Context, oldSC, newSC *storagev1.StorageClass) (admission.Warnings, error) {
+	warnings, errs := s.validate(oldSC, newSC)
 	if len(errs) != 0 {
-		accessor, _ := meta.Accessor(newObj)
-		return warnings, apierrors.NewInvalid(schema.GroupKind{Group: storagev1.GroupName, Kind: "StorageClass"}, accessor.GetName(), errs)
+		return warnings, apierrors.NewInvalid(newSC.GroupVersionKind().GroupKind(), newSC.GetName(), errs)
 	}
 
 	return warnings, nil
 }
 
-func (s *StorageClass) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (s *StorageClass) ValidateDelete(ctx context.Context, sc *storagev1.StorageClass) (admission.Warnings, error) {
 	return nil, nil
 }
 

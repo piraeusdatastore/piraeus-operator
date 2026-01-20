@@ -22,11 +22,9 @@ import (
 	"strconv"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	piraeusv1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
@@ -35,7 +33,7 @@ import (
 var linstornodeconnectionlog = logf.Log.WithName("linstornodeconnection-resource")
 
 func SetupLinstorNodeConnectionWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&piraeusv1.LinstorNodeConnection{}).
+	return ctrl.NewWebhookManagedBy(mgr, &piraeusv1.LinstorNodeConnection{}).
 		WithValidator(&LinstorNodeConnectionCustomValidator{}).
 		Complete()
 }
@@ -44,14 +42,9 @@ func SetupLinstorNodeConnectionWebhookWithManager(mgr ctrl.Manager) error {
 
 type LinstorNodeConnectionCustomValidator struct{}
 
-var _ webhook.CustomValidator = &LinstorNodeConnectionCustomValidator{}
+var _ admission.Validator[*piraeusv1.LinstorNodeConnection] = &LinstorNodeConnectionCustomValidator{}
 
-func (r *LinstorNodeConnectionCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	nodeConnection, ok := obj.(*piraeusv1.LinstorNodeConnection)
-	if !ok {
-		return nil, apierrors.NewBadRequest(fmt.Sprintf("expected LinstorNodeConnection, got %T", obj))
-	}
-
+func (r *LinstorNodeConnectionCustomValidator) ValidateCreate(ctx context.Context, nodeConnection *piraeusv1.LinstorNodeConnection) (admission.Warnings, error) {
 	linstornodeconnectionlog.Info("validate create", "name", nodeConnection.GetName())
 
 	warnings, errs := r.validate(nodeConnection, nil)
@@ -62,15 +55,10 @@ func (r *LinstorNodeConnectionCustomValidator) ValidateCreate(ctx context.Contex
 	return warnings, nil
 }
 
-func (r *LinstorNodeConnectionCustomValidator) ValidateUpdate(ctx context.Context, obj, old runtime.Object) (admission.Warnings, error) {
-	nodeConnection, ok := obj.(*piraeusv1.LinstorNodeConnection)
-	if !ok {
-		return nil, apierrors.NewBadRequest(fmt.Sprintf("expected LinstorNodeConnection, got %T", obj))
-	}
-
+func (r *LinstorNodeConnectionCustomValidator) ValidateUpdate(ctx context.Context, oldNodeConnection, nodeConnection *piraeusv1.LinstorNodeConnection) (admission.Warnings, error) {
 	linstornodeconnectionlog.Info("validate update", "name", nodeConnection.GetName())
 
-	warnings, errs := r.validate(nodeConnection, old.(*piraeusv1.LinstorNodeConnection))
+	warnings, errs := r.validate(nodeConnection, oldNodeConnection)
 	if len(errs) != 0 {
 		return warnings, apierrors.NewInvalid(nodeConnection.GroupVersionKind().GroupKind(), nodeConnection.GetName(), errs)
 	}
@@ -78,12 +66,7 @@ func (r *LinstorNodeConnectionCustomValidator) ValidateUpdate(ctx context.Contex
 	return warnings, nil
 }
 
-func (r *LinstorNodeConnectionCustomValidator) ValidateDelete(ctx context.Context, old runtime.Object) (admission.Warnings, error) {
-	nodeConnection, ok := old.(*piraeusv1.LinstorNodeConnection)
-	if !ok {
-		return nil, apierrors.NewBadRequest(fmt.Sprintf("expected LinstorNodeConnection, got %T", old))
-	}
-
+func (r *LinstorNodeConnectionCustomValidator) ValidateDelete(ctx context.Context, nodeConnection *piraeusv1.LinstorNodeConnection) (admission.Warnings, error) {
 	linstornodeconnectionlog.Info("validate delete", "name", nodeConnection.GetName())
 
 	return nil, nil

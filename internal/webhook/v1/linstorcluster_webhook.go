@@ -18,16 +18,13 @@ package v1
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
@@ -36,7 +33,7 @@ import (
 var linstorclusterlog = logf.Log.WithName("linstorcluster-resource")
 
 func SetupLinstorClusterWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&piraeusiov1.LinstorCluster{}).
+	return ctrl.NewWebhookManagedBy(mgr, &piraeusiov1.LinstorCluster{}).
 		WithValidator(&LinstorClusterCustomValidator{}).
 		Complete()
 }
@@ -45,14 +42,9 @@ func SetupLinstorClusterWebhookWithManager(mgr ctrl.Manager) error {
 
 type LinstorClusterCustomValidator struct{}
 
-var _ webhook.CustomValidator = &LinstorClusterCustomValidator{}
+var _ admission.Validator[*piraeusiov1.LinstorCluster] = &LinstorClusterCustomValidator{}
 
-func (r *LinstorClusterCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	linstorCluster, ok := obj.(*piraeusiov1.LinstorCluster)
-	if !ok {
-		return nil, fmt.Errorf("expected LinstorCluster but got %T", obj)
-	}
-
+func (r *LinstorClusterCustomValidator) ValidateCreate(ctx context.Context, linstorCluster *piraeusiov1.LinstorCluster) (admission.Warnings, error) {
 	linstorclusterlog.Info("validate create", "name", linstorCluster.GetName())
 
 	warnings, errs := r.validate(linstorCluster, nil)
@@ -63,15 +55,10 @@ func (r *LinstorClusterCustomValidator) ValidateCreate(ctx context.Context, obj 
 	return warnings, nil
 }
 
-func (r *LinstorClusterCustomValidator) ValidateUpdate(ctx context.Context, obj, old runtime.Object) (admission.Warnings, error) {
-	linstorCluster, ok := obj.(*piraeusiov1.LinstorCluster)
-	if !ok {
-		return nil, fmt.Errorf("expected LinstorCluster but got %T", obj)
-	}
-
+func (r *LinstorClusterCustomValidator) ValidateUpdate(ctx context.Context, oldLinstorCluster, linstorCluster *piraeusiov1.LinstorCluster) (admission.Warnings, error) {
 	linstorclusterlog.Info("validate update", "name", linstorCluster.GetName())
 
-	warnings, errs := r.validate(linstorCluster, old.(*piraeusiov1.LinstorCluster))
+	warnings, errs := r.validate(linstorCluster, oldLinstorCluster)
 	if len(errs) != 0 {
 		return warnings, apierrors.NewInvalid(linstorCluster.GroupVersionKind().GroupKind(), linstorCluster.GetName(), errs)
 	}
@@ -79,12 +66,7 @@ func (r *LinstorClusterCustomValidator) ValidateUpdate(ctx context.Context, obj,
 	return warnings, nil
 }
 
-func (r *LinstorClusterCustomValidator) ValidateDelete(ctx context.Context, old runtime.Object) (admission.Warnings, error) {
-	linstorCluster, ok := old.(*piraeusiov1.LinstorCluster)
-	if !ok {
-		return nil, fmt.Errorf("expected LinstorCluster but got %T", old)
-	}
-
+func (r *LinstorClusterCustomValidator) ValidateDelete(ctx context.Context, linstorCluster *piraeusiov1.LinstorCluster) (admission.Warnings, error) {
 	linstorclusterlog.Info("validate delete", "name", linstorCluster.GetName())
 
 	return nil, nil

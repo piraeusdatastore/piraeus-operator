@@ -5,7 +5,8 @@ linters:
     staticcheck:
       # Default: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
       # Disabled QF1008 ("Omit embedded fields from selector expression"): using embedded fields is often more readable.
-      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-QF1008"]
+      # Disabled SA1019 ("Using a deprecated function, variable, constant or field"): We need time to migrate to the new way.
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-SA1019", "-ST1020", "-ST1021", "-ST1022", "-QF1008"]
   exclusions:
     paths:
     - ".*/zz_generated.*\\.go$"

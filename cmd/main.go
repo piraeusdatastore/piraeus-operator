@@ -217,8 +217,7 @@ func main() {
 	}
 	//+kubebuilder:scaffold:builder
 
-	if err = ctrl.NewWebhookManagedBy(mgr).
-		For(&storagev1.StorageClass{}).
+	if err = ctrl.NewWebhookManagedBy(mgr, &storagev1.StorageClass{}).
 		WithValidator(&piraeuswebhook.StorageClass{}).
 		Complete(); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "StorageClass")
