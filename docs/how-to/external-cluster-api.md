@@ -41,7 +41,7 @@ The following commands create a `piraeus-clusterapi.kubeconfig` file.
 ```
 $ export KUBECONFIG=management.kubeconfig
 $ export KUBENS=workload-cluster-ns
-$ TOKEN="$(kubectl --namespace=$KUBENS create token piraeus-operator)"
+$ TOKEN="$(kubectl --namespace=$KUBENS create token piraeus-operator --duration=87600h)"
 $ kubectl config view --flatten --minify -ojson | jq --arg TOKEN "$TOKEN" '.users[0].user = {"token": $TOKEN}' > piraeus-clusterapi.kubeconfig
 ```
 
