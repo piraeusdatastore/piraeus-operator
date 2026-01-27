@@ -75,6 +75,8 @@ components:
         image: drbd9-jammy
       - osImage: Ubuntu 24\.04
         image: drbd9-noble
+      - osImage: Debian GNU/Linux 13
+        image: drbd9-trixie
       - osImage: Debian GNU/Linux 12
         image: drbd9-bookworm
       - osImage: Debian GNU/Linux 11

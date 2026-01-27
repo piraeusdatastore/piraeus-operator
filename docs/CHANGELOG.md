@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Image configuration for Debian Trixie
+
 ### Fixed
 
 - Updated NFS server template to work with NFS Ganesha instances with monitoring enabled.
