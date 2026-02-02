@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/LINBIT/golinstor v0.59.0
-	github.com/cert-manager/cert-manager v1.18.4
+	github.com/cert-manager/cert-manager v1.18.5
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/go-openapi/jsonpointer v0.22.4
