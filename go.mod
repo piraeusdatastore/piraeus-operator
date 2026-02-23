@@ -3,7 +3,7 @@ module github.com/piraeusdatastore/piraeus-operator/v2
 go 1.25.5
 
 require (
-	github.com/LINBIT/golinstor v0.59.0
+	github.com/LINBIT/golinstor v0.60.0
 	github.com/cert-manager/cert-manager v1.18.5
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
@@ -23,7 +23,7 @@ require (
 	k8s.io/client-go v0.35.1
 	k8s.io/component-helpers v0.35.1
 	k8s.io/utils v0.0.0-20260108192941-914a6e750570
-	sigs.k8s.io/cluster-api v1.12.2
+	sigs.k8s.io/cluster-api v1.12.3
 	sigs.k8s.io/controller-runtime v0.23.1
 	sigs.k8s.io/kustomize/api v0.21.1
 	sigs.k8s.io/kustomize/kyaml v0.21.1

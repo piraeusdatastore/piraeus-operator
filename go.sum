@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/LINBIT/golinstor v0.59.0 h1:zUc4zqGN3LRtEXK8v6Cy1Wuz7ETWbleWp+w5VQ3WFzo=
-github.com/LINBIT/golinstor v0.59.0/go.mod h1:TXAMGiskT4fY/koTCOt6qqF60uWobDqUHoB8srNeCnY=
+github.com/LINBIT/golinstor v0.60.0 h1:85QhDoLPQXMmqaZ9TKnGFdymu2FKb1Vj37ANVjBxHAQ=
+github.com/LINBIT/golinstor v0.60.0/go.mod h1:TXAMGiskT4fY/koTCOt6qqF60uWobDqUHoB8srNeCnY=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -302,8 +302,8 @@ k8s.io/utils v0.0.0-20260108192941-914a6e750570 h1:JT4W8lsdrGENg9W+YwwdLJxklIuKW
 k8s.io/utils v0.0.0-20260108192941-914a6e750570/go.mod h1:xDxuJ0whA3d0I4mf/C4ppKHxXynQ+fxnkmQH0vTHnuk=
 moul.io/http2curl/v2 v2.3.0 h1:9r3JfDzWPcbIklMOs2TnIFzDYvfAZvjeavG6EzP7jYs=
 moul.io/http2curl/v2 v2.3.0/go.mod h1:RW4hyBjTWSYDOxapodpNEtX0g5Eb16sxklBqmd2RHcE=
-sigs.k8s.io/cluster-api v1.12.2 h1:+b+M2IygfvFZJq7bsaloNakimMEVNf81zkGR1IiuxXs=
-sigs.k8s.io/cluster-api v1.12.2/go.mod h1:2XuF/dmN3c/1VITb6DB44N5+Ecvsvd5KOWqrY9Q53nU=
+sigs.k8s.io/cluster-api v1.12.3 h1:cuOl3fWXhlXFuQcyIH4C8i3ns8rLhtcnK+x00MVdKBs=
+sigs.k8s.io/cluster-api v1.12.3/go.mod h1:EAiTJtf/8M5eBetPwumi6t8DJJ55Ln6Fkvh2OAa7PD4=
 sigs.k8s.io/controller-runtime v0.23.1 h1:TjJSM80Nf43Mg21+RCy3J70aj/W6KyvDtOlpKf+PupE=
 sigs.k8s.io/controller-runtime v0.23.1/go.mod h1:B6COOxKptp+YaUT5q4l6LqUJTRpizbgf9KSRNdQGns0=
 sigs.k8s.io/gateway-api v1.4.1 h1:NPxFutNkKNa8UfLd2CMlEuhIPMQgDQ6DXNKG9sHbJU8=
