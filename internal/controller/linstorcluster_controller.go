@@ -973,7 +973,7 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 		})
 	}
 
-	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, tolerations.NoScheduleToleration, lcluster.Spec.Tolerations)
 	tolerationsPatches, err := TolerationsPatch("DaemonSet", "linstor-satellite", t)
 	if err != nil {
 		return nil, nil, err

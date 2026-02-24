@@ -80,6 +80,14 @@ var (
 			TolerationSeconds: &FailOverTimeOut,
 		},
 	}
+
+	// NoScheduleToleration tolerates all NoSchedule taints.
+	NoScheduleToleration = []corev1.Toleration{
+		{
+			Effect:   corev1.TaintEffectNoSchedule,
+			Operator: corev1.TolerationOpExists,
+		},
+	}
 )
 
 // MergeTolerations combines all the given tolerations.

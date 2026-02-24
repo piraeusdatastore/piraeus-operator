@@ -460,16 +460,38 @@ var _ = Describe("LinstorCluster controller", func() {
 					))),
 				))
 
-				// The Satellites, CSI nodes, and HA Controller should have a patch updating their tolerations
+				// The CSI nodes, and HA Controller should have a patch updating their tolerations.
 				Eventually(func() []appsv1.DaemonSet {
 					var daemonSets appsv1.DaemonSetList
 					err := k8sClient.List(ctx, &daemonSets)
 					Expect(err).NotTo(HaveOccurred())
-					return daemonSets.Items
+					return slices.DeleteFunc(daemonSets.Items, func(ds appsv1.DaemonSet) bool {
+						return ds.GetLabels()["app.kubernetes.io/component"] == "linstor-satellite"
+					})
 				}).Should(And(
-					HaveLen(5), // 2 Satellites DS, 1 CSI Node, 1 HA Controller, 1 NFS Server.
+					HaveLen(3), // 1 CSI Node, 1 HA Controller, 1 NFS Server.
 					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
 						append(slices.Clone(tolerations.HAControllerTolerations),
+							corev1.Toleration{
+								Key:      "example.com/manual-taint",
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectNoExecute,
+							})),
+					)),
+				))
+
+				// The Satellites should also have been patched updating the tolerations.
+				Eventually(func() []appsv1.DaemonSet {
+					var daemonSets appsv1.DaemonSetList
+					err := k8sClient.List(ctx, &daemonSets)
+					Expect(err).NotTo(HaveOccurred())
+					return slices.DeleteFunc(daemonSets.Items, func(ds appsv1.DaemonSet) bool {
+						return ds.GetLabels()["app.kubernetes.io/component"] != "linstor-satellite"
+					})
+				}).Should(And(
+					HaveLen(2), // 2 Satellites.
+					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
+						append(append(slices.Clone(tolerations.HAControllerTolerations), slices.Clone(tolerations.NoScheduleToleration)...),
 							corev1.Toleration{
 								Key:      "example.com/manual-taint",
 								Operator: corev1.TolerationOpExists,
