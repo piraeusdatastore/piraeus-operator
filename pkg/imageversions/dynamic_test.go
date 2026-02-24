@@ -251,3 +251,7 @@ func (f *FakeVersionReporter) ModifyExternalFile(ctx context.Context, name strin
 func (f *FakeVersionReporter) DeleteExternalFile(ctx context.Context, name string) error {
 	panic("unimplemented")
 }
+
+func (f *FakeVersionReporter) CheckExternalFile(ctx context.Context, name string, node string) (lclient.ExtFileCheckResult, error) {
+	panic("unimplemented")
+}
