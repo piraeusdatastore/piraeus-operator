@@ -63,6 +63,9 @@ jobs:
         # Take the digest we just pushed to the registry and sign the image using "keyless" signing:
         #   https://docs.sigstore.dev/cosign/signing/overview/
         # With this, users can verify that the image was actually created by this github workflow.
+        env:
+          BUILD_METADATA: ${{ steps.build.outputs.metadata }}
         run: |
-          jq '."containerimage.digest" as $DIGEST | ."image.name" | split(":")[0] | "\(.)@\($DIGEST)"' -r <<<'${{ steps.build.outputs.metadata }}' \
+          printf '%s' "$BUILD_METADATA" \
+            | jq '."containerimage.digest" as $DIGEST | ."image.name" | split(":")[0] | "\(.)@\($DIGEST)"' -r \
             | xargs --no-run-if-empty cosign sign --yes
