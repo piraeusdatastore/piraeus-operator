@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated NFS server template to work with NFS Ganesha instances with monitoring enabled.
 - Ensure Satellites are always rescheduled on NoScheduled nodes as long as the LinstorSatellite resource exists.
 
+### Changed
+
+- Updated images:
+    * LINSTOR 1.33.1
+    * LINSTOR CSI 1.10.6
+    * DRBD 9.3.1
+    * DRBD Reactor 1.11.0
+    * Latest CSI sidecars
+
 ## [v2.10.4] - 2026-01-13
 
 ### Fixed
