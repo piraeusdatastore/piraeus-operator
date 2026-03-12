@@ -45,6 +45,7 @@ spec:
             zcat /proc/config.gz > .config
             make olddefconfig
             make modules_prepare
+            ln -snf /usr/lib/modules/$(uname -r)/Module.symvers .
             cd /
           fi
           exec env "LB_MAKEOPTS=KDIR=/usr/src/linux-$(uname -r)" LB_HOW=compile /entry.sh
