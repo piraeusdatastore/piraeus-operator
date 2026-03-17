@@ -150,13 +150,17 @@ spec:
                       *SecretName using the issuer configured here.
                     properties:
                       group:
-                        description: Group of the resource being referred to.
+                        description: |-
+                          Group of the issuer being referred to.
+                          Defaults to 'cert-manager.io'.
                         type: string
                       kind:
-                        description: Kind of the resource being referred to.
+                        description: |-
+                          Kind of the issuer being referred to.
+                          Defaults to 'Issuer'.
                         type: string
                       name:
-                        description: Name of the resource being referred to.
+                        description: Name of the issuer being referred to.
                         type: string
                     required:
                     - name
@@ -319,13 +323,17 @@ spec:
                       issuer configured here.
                     properties:
                       group:
-                        description: Group of the resource being referred to.
+                        description: |-
+                          Group of the issuer being referred to.
+                          Defaults to 'cert-manager.io'.
                         type: string
                       kind:
-                        description: Kind of the resource being referred to.
+                        description: |-
+                          Kind of the issuer being referred to.
+                          Defaults to 'Issuer'.
                         type: string
                       name:
-                        description: Name of the resource being referred to.
+                        description: Name of the issuer being referred to.
                         type: string
                     required:
                     - name
