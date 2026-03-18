@@ -41,7 +41,7 @@ spec:
           privileged: true
           capabilities:
             drop:
-            - "*"
+            - ALL
         env:
         # Set according to https://systemd.io/CONTAINER_INTERFACE/
         - name: container

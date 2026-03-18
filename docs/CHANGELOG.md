@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed NFS Server DaemonSet capabilities.
+
 ## [v2.10.5] - 2026-03-10
 
 ### Added
