@@ -1,6 +1,6 @@
 module github.com/piraeusdatastore/piraeus-operator/v2
 
-go 1.25.5
+go 1.26.1
 
 require (
 	github.com/LINBIT/golinstor v0.60.0
