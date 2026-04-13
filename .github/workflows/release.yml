@@ -12,7 +12,7 @@ jobs:
       - name: Build release resources
         run: |
           make manifest.yaml changes.md chart
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           body_path: changes.md
           draft: true
