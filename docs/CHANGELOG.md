@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Image configuration for Ubuntu 26.04 (Resolute Raccoon)
+
 ### Fixed
 
 - Fixed NFS Server DaemonSet capabilities.
