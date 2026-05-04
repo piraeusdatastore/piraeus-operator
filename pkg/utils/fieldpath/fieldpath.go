@@ -18,10 +18,9 @@ package fieldpath
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -31,7 +30,9 @@ import (
 // wildcard values.
 //
 // Multiple keys and values are guaranteed to be sorted in key order.
-// If a wildcard path was given, keys is not nil.
+// If a wildcard path was given, keys is non-nil — even when no keys
+// match — so callers can use a non-nil keys slice as the signal that a
+// wildcard query was made.
 func ExtractFieldPath(obj interface{}, fieldPath string) ([]string, []string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -109,7 +110,13 @@ func filterPrefix(m map[string]string, prefix string) map[string]string {
 }
 
 func mapToSlices(m map[string]string) ([]string, []string) {
-	keys := maps.Keys(m)
+	// When m is empty, callers expect keys to be an empty slice, not nil,
+	// so we cannot use:
+	// keys := slices.Sorted(maps.Keys(m))
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
 	slices.Sort(keys)
 
 	values := make([]string, 0, len(keys))

@@ -17,10 +17,10 @@ limitations under the License.
 package fieldpath
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
-	"golang.org/x/exp/slices"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

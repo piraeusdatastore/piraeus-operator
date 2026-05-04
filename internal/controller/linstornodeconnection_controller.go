@@ -19,13 +19,13 @@ package controller
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"time"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"gonum.org/v1/gonum/stat/combin"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -237,8 +237,7 @@ func DesiredNodeConnections(conns []piraeusiov1.LinstorNodeConnection, satellite
 		return nil
 	}
 
-	sortedSatellites := maps.Keys(satellites)
-	sort.Strings(sortedSatellites)
+	sortedSatellites := slices.Sorted(maps.Keys(satellites))
 
 	result := make(map[string]lapi.Connection)
 

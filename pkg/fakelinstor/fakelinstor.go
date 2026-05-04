@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 
 	linstor "github.com/LINBIT/golinstor"
 	lapi "github.com/LINBIT/golinstor/client"
-	"golang.org/x/exp/slices"
 
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 )
