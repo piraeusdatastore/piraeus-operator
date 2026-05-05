@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed NFS Server DaemonSet capabilities.
 
+### Changed
+
+- Updated images:
+    * LINSTOR 1.33.2
+    * LINSTOR CSI 1.11.0
+    * DRBD 9.3.2
+    * LINSTOR Affinity Controller 1.4.0
+
 ## [v2.10.5] - 2026-03-10
 
 ### Added
