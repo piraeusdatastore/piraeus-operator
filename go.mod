@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0
 	github.com/piraeusdatastore/linstor-affinity-controller v1.4.0
-	github.com/piraeusdatastore/linstor-csi v1.10.6
+	github.com/piraeusdatastore/linstor-csi v1.11.0
 	github.com/piraeusdatastore/piraeus-ha-controller v1.3.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/time v0.15.0
