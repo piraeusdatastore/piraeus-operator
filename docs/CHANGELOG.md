@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.10.6] - 2026-05-05
 
 ### Added
 
@@ -1184,4 +1184,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v2.10.3]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.2...v2.10.3
 [v2.10.4]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.3...v2.10.4
 [v2.10.5]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.4...v2.10.5
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.5...HEAD
+[v2.10.6]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.5...v2.10.6
