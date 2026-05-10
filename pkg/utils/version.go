@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -34,12 +35,12 @@ func (ac *APIDiscoveryClient) ServerVersion() *APIVersion {
 		return ac.fallbackVersion
 	}
 
-	major, err := strconv.Atoi(version.Major)
+	major, err := parseKubernetesVersionPart(version.Major)
 	if err != nil {
 		return ac.fallbackVersion
 	}
 
-	minor, err := strconv.Atoi(version.Minor)
+	minor, err := parseKubernetesVersionPart(version.Minor)
 	if err != nil {
 		return ac.fallbackVersion
 	}
@@ -67,6 +68,10 @@ func (ac *APIDiscoveryClient) HasGroupVersionResource(gvr schema.GroupVersionRes
 	}
 
 	return false
+}
+
+func parseKubernetesVersionPart(version string) (int, error) {
+	return strconv.Atoi(strings.TrimSuffix(version, "+"))
 }
 
 type APIVersion struct {
