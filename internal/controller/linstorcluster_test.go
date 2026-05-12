@@ -677,22 +677,17 @@ var _ = Describe("LinstorCluster controller", func() {
 				},
 			})))
 			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
-				Name: "LS_USER_CERTIFICATE",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
-						Key:                  "tls.crt",
-					},
-				},
+				Name:  "LS_USER_CERTIFICATE_FILE",
+				Value: "/etc/linstor/tls/tls.crt",
 			})))
 			g.Expect(container.Env).To(ContainElement(Equal(corev1.EnvVar{
-				Name: "LS_USER_KEY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
-						Key:                  "tls.key",
-					},
-				},
+				Name:  "LS_USER_KEY_FILE",
+				Value: "/etc/linstor/tls/tls.key",
+			})))
+			g.Expect(container.VolumeMounts).To(ContainElement(Equal(corev1.VolumeMount{
+				Name:      "linstor-client-tls",
+				MountPath: "/etc/linstor/tls",
+				ReadOnly:  true,
 			})))
 		}
 

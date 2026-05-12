@@ -14,31 +14,31 @@
         spec:
           initContainers:
           - name: linstor-wait-api-online
+            volumeMounts:
+            - name: linstor-client-tls
+              mountPath: /etc/linstor/tls
+              readOnly: true
             env:
-              - name: LS_ROOT_CA
-                valueFrom: $LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE
-              - name: LS_USER_CERTIFICATE
-                valueFrom:
-                  secretKeyRef:
-                    name: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
-                    key: tls.crt
-              - name: LS_USER_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
-                    key: tls.key
+            - name: LS_ROOT_CA
+              valueFrom: $LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE
+            - name: LS_USER_CERTIFICATE_FILE
+              value: /etc/linstor/tls/tls.crt
+            - name: LS_USER_KEY_FILE
+              value: /etc/linstor/tls/tls.key
           containers:
           - name: linstor-csi
+            volumeMounts:
+            - name: linstor-client-tls
+              mountPath: /etc/linstor/tls
+              readOnly: true
             env:
-              - name: LS_ROOT_CA
-                valueFrom: $LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE
-              - name: LS_USER_CERTIFICATE
-                valueFrom:
-                  secretKeyRef:
-                    name: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
-                    key: tls.crt
-              - name: LS_USER_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
-                    key: tls.key
+            - name: LS_ROOT_CA
+              valueFrom: $LINSTOR_CSI_CONTROLLER_API_TLS_CA_SOURCE
+            - name: LS_USER_CERTIFICATE_FILE
+              value: /etc/linstor/tls/tls.crt
+            - name: LS_USER_KEY_FILE
+              value: /etc/linstor/tls/tls.key
+          volumes:
+          - name: linstor-client-tls
+            secret:
+              secretName: $LINSTOR_CSI_CONTROLLER_API_TLS_SECRET_NAME
