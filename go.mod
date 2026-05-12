@@ -3,7 +3,7 @@ module github.com/piraeusdatastore/piraeus-operator/v2
 go 1.26.1
 
 require (
-	github.com/LINBIT/golinstor v0.60.0
+	github.com/LINBIT/golinstor v0.61.0
 	github.com/cert-manager/cert-manager v1.20.2
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0
 	github.com/piraeusdatastore/linstor-affinity-controller v1.4.0
-	github.com/piraeusdatastore/linstor-csi v1.11.0
+	github.com/piraeusdatastore/linstor-csi v1.11.1
 	github.com/piraeusdatastore/piraeus-ha-controller v1.3.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/time v0.15.0
@@ -87,14 +87,14 @@ require (
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/mod v0.36.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/term v0.42.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
-	golang.org/x/tools v0.44.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/tools v0.45.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/grpc v1.81.0 // indirect

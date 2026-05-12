@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a cache for reporting `LinstorCluster` and `LinstorSatellite` status to reduce load on LINSTOR.
+
+### Changed
+
+- Updated images:
+    * LINSTOR 1.33.3
+    * LINSTOR CSI 1.11.2
+    * LINSTOR Affinity Controller 1.4.1
+- Enable automatic certificate rotation for LINSTOR CSI and LINSTOR Affinity Controller.
+
+### Fixed
+
+- Node evacuation no longer hangs, generating error reports in LINSTOR 1.33+ in a loop.
+
 ## [v2.10.6] - 2026-05-05
 
 ### Added

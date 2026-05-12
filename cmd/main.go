@@ -74,6 +74,7 @@ func main() {
 	var clusterApiKubeconfig string
 	var linstorApiQps float64
 	var nodeCacheDuration time.Duration
+	var resourceCacheDuration time.Duration
 	var requeueInterval time.Duration
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -86,6 +87,7 @@ func main() {
 	flag.StringVar(&clusterApiKubeconfig, "cluster-api-kubeconfig", os.Getenv("CLUSTER_API_KUBECONFIG"), "Path to a kubeconfig file to use for interacting with ClusterAPI resources. Setting this to '<none>' disables ClusterAPI integration.")
 	flag.Float64Var(&linstorApiQps, "linstor-api-qps", 100.0, "Limit requests to the LINSTOR API to this many queries per second")
 	flag.DurationVar(&nodeCacheDuration, "linstor-node-cache-duration", 1*time.Minute, "Duration for which the results of node and storage pool related API responses should be cached.")
+	flag.DurationVar(&resourceCacheDuration, "linstor-resource-cache-duration", 1*time.Minute, "Duration for which the results of resource and snapshot related API responses should be cached.")
 	flag.DurationVar(&requeueInterval, "requeue-interval", 1*time.Minute, "Maximum time between reconciliation, even if no Kubernetes resource change was detected.")
 	opts := zap.Options{
 		Development: true,
@@ -106,6 +108,7 @@ func main() {
 	linstorOpts := []lapi.Option{
 		linstorhelper.PerClusterRateLimiter(rate.Limit(linstorApiQps), 1),
 		linstorhelper.PerClusterNodeCache(nodeCacheDuration),
+		linstorhelper.PerClusterResourceCache(resourceCacheDuration),
 	}
 
 	restCfg := ctrl.GetConfigOrDie()

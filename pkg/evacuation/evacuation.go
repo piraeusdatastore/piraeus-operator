@@ -428,7 +428,7 @@ func evacuateNode(ctx context.Context, lclient *lapi.Client, node *lapi.Node) er
 	}
 
 	if !slices.Contains(node.Flags, linstor.FlagEvacuate) || !evacuationInProgress {
-		err := lclient.Nodes.Evacuate(ctx, node.Name, nil)
+		err := lclient.Nodes.Evacuate(ctx, node.Name, lapi.NodeEvacuate{})
 		if err != nil && !errors.Is(err, lapi.NotFoundError) {
 			return err
 		}

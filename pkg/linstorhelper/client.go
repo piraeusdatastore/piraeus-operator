@@ -35,6 +35,8 @@ type Client struct {
 var (
 	// nodeCaches stores the node cache for clients, mapping base url to cache instance.
 	nodeCaches sync.Map
+	// nodeCaches stores the resource cache for clients, mapping base url to cache instance.
+	resourceCaches sync.Map
 	// rateLimiters stores the rate limiter for clients, mapping base url to rate limiter instance.
 	rateLimiters sync.Map
 )
@@ -46,6 +48,16 @@ func PerClusterNodeCache(timeout time.Duration) lapi.Option {
 	return func(c *lapi.Client) error {
 		cache, _ := nodeCaches.LoadOrStore(c.BaseURL().String(), &lapicache.NodeCache{Timeout: timeout})
 		return lapicache.WithCaches(cache.(*lapicache.NodeCache))(c)
+	}
+}
+
+// PerClusterResourceCache creates a resource cache for each distinct cluster.
+//
+// Client(s) pointing to the same URL will share a cache.
+func PerClusterResourceCache(timeout time.Duration) lapi.Option {
+	return func(c *lapi.Client) error {
+		cache, _ := resourceCaches.LoadOrStore(c.BaseURL().String(), &lapicache.ResourceCache{Timeout: timeout})
+		return lapicache.WithCaches(cache.(*lapicache.ResourceCache))(c)
 	}
 }
 

@@ -277,7 +277,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 					g.Expect(err).NotTo(HaveOccurred())
 				}).Should(Succeed())
 
-				err := linstorClient.Nodes.Evacuate(ctx, ExampleNodeName, nil)
+				err := linstorClient.Nodes.Evacuate(ctx, ExampleNodeName, lapi.NodeEvacuate{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func(g Gomega) {
