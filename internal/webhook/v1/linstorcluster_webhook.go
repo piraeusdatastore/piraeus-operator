@@ -18,9 +18,10 @@ package v1
 
 import (
 	"context"
-	"net/url"
 	"strconv"
+	"strings"
 
+	lapi "github.com/LINBIT/golinstor/client"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -92,7 +93,7 @@ func ValidateExternalController(ref *piraeusiov1.LinstorExternalControllerRef, p
 	var result field.ErrorList
 
 	if ref != nil {
-		_, err := url.Parse(ref.URL)
+		_, err := lapi.NewClient(lapi.Controllers(strings.Split(ref.URL, ",")))
 		if err != nil {
 			result = append(result, field.Invalid(path.Child("url"), ref.URL, err.Error()))
 		}

@@ -118,4 +118,18 @@ var _ = Describe("LinstorCluster webhook", func() {
 		err := k8sClient.Patch(ctx, clusterConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).To(HaveOccurred())
 	})
+
+	It("should allow valid external controller URL failover lists", func(ctx context.Context) {
+		clusterConfig := &piraeusv1.LinstorCluster{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "external-failover"},
+			Spec: piraeusv1.LinstorClusterSpec{
+				ExternalController: &piraeusv1.LinstorExternalControllerRef{
+					URL: "http://linstor-controller.example.com:3370,linstor://backup-controller.example.com:3370",
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, clusterConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).NotTo(HaveOccurred())
+	})
 })
