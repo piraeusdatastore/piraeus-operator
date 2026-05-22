@@ -128,6 +128,26 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort).To(Equal(int32(3367)))
 		})
 
+		It("should use the configured resource name suffix separator", func(ctx context.Context) {
+			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+				TypeMeta:   TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				Spec: piraeusiov1.LinstorSatelliteSpec{
+					ResourceNameSuffixSeparator: "-",
+				},
+			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func(g Gomega) {
+				var ds appsv1.DaemonSet
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite-" + ExampleNodeName}, &ds)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				err = k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
+				g.Expect(errors.IsNotFound(err)).To(BeTrue())
+			}).Should(Succeed())
+		})
+
 		It("should create pod with ktls-utils if enabled", func(ctx context.Context) {
 			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
 				TypeMeta:   TypeMeta,

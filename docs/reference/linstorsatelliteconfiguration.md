@@ -54,6 +54,27 @@ spec:
       value: "no"
 ```
 
+### `.spec.resourceNameSuffixSeparator`
+
+Configures the separator inserted between generated Kubernetes resource names and the Satellite name.
+
+Defaults to `.`, for example `linstor-satellite.node1`. Set to `-` to generate names such as
+`linstor-satellite-node1`. This only changes the inserted separator; dots that are part of the Kubernetes Node name
+remain unchanged.
+
+#### Example
+
+This example configures Satellite resources to use `-` between the base name and node name:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorSatelliteConfiguration
+metadata:
+  name: satellite-name-separator
+spec:
+  resourceNameSuffixSeparator: "-"
+```
+
 ### `.spec.properties`
 
 Sets the given properties on the LINSTOR Satellite level.

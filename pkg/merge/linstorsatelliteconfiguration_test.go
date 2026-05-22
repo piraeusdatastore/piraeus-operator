@@ -53,6 +53,7 @@ var (
 				{Name: "prop1", Value: "config2"},
 				{Name: "prop3", Value: "config2"},
 			},
+			ResourceNameSuffixSeparator: "-",
 		},
 	}
 	Config3 = piraeusv1.LinstorSatelliteConfiguration{
@@ -159,6 +160,7 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 					InternalTLS: &piraeusv1.TLSConfigWithHandshakeDaemon{TLSConfig: piraeusv1.TLSConfig{
 						SecretName: "config3",
 					}},
+					ResourceNameSuffixSeparator: "-",
 				},
 			},
 		},
@@ -169,9 +171,10 @@ func TestMergeSatelliteConfigurations(t *testing.T) {
 			configs: []piraeusv1.LinstorSatelliteConfiguration{Config1, Config2, Config3},
 			result: &piraeusv1.LinstorSatelliteConfiguration{
 				Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
-					Patches:      Config2.Spec.Patches,
-					StoragePools: Config2.Spec.StoragePools,
-					Properties:   Config2.Spec.Properties,
+					Patches:                     Config2.Spec.Patches,
+					StoragePools:                Config2.Spec.StoragePools,
+					Properties:                  Config2.Spec.Properties,
+					ResourceNameSuffixSeparator: "-",
 				},
 			},
 		},

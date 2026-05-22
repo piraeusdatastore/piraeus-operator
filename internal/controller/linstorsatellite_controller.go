@@ -331,11 +331,19 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 		Resources:    resourceDirs,
 		Images:       imgs,
 		Replacements: SatelliteNameReplacements,
-		NameSuffix:   fmt.Sprintf(".%s", lsatellite.Name),
+		NameSuffix:   satelliteResourceNameSuffix(lsatellite.Name, lsatellite.Spec.ResourceNameSuffixSeparator),
 		Patches:      append(patches, utils.MakeKustPatches(userPatches...)...),
 	}
 
 	return r.Kustomizer.Kustomize(k)
+}
+
+func satelliteResourceNameSuffix(name, separator string) string {
+	if separator == "" {
+		separator = "."
+	}
+
+	return fmt.Sprintf("%s%s", separator, name)
 }
 
 func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node, conds conditions.Conditions, status *piraeusiov1.LinstorSatelliteStatus) error {

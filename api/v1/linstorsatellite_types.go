@@ -29,6 +29,13 @@ type LinstorSatelliteSpec struct {
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
 
+	// ResourceNameSuffixSeparator is inserted between the base resource name and the Satellite name.
+	//
+	// Defaults to ".".
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=.;-
+	ResourceNameSuffixSeparator string `json:"resourceNameSuffixSeparator,omitempty"`
+
 	// Patches is a list of kustomize patches to apply.
 	//
 	// See https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/ for how to create patches.

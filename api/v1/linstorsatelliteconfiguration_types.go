@@ -44,6 +44,13 @@ type LinstorSatelliteConfigurationSpec struct {
 	// +kubebuilder:validation:Optional
 	Patches []Patch `json:"patches,omitempty"`
 
+	// ResourceNameSuffixSeparator is inserted between the base resource name and the Satellite name.
+	//
+	// Defaults to ".".
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=.;-
+	ResourceNameSuffixSeparator string `json:"resourceNameSuffixSeparator,omitempty"`
+
 	// StoragePools is a list of storage pools to configure on the node.
 	// +kubebuilder:validation:Optional
 	StoragePools []LinstorStoragePool `json:"storagePools,omitempty"`

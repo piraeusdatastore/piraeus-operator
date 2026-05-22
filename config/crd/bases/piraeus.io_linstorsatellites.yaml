@@ -386,6 +386,15 @@ spec:
               repository:
                 description: Repository used to pull workload images.
                 type: string
+              resourceNameSuffixSeparator:
+                description: |-
+                  ResourceNameSuffixSeparator is inserted between the base resource name and the Satellite name.
+
+                  Defaults to ".".
+                enum:
+                - .
+                - '-'
+                type: string
               storagePools:
                 description: StoragePools is a list of storage pools to configure
                   on the node.

@@ -16,6 +16,16 @@ Holds the default image registry to use for all Piraeus images. Inherited from
 
 If empty (the default), the operator will use `quay.io/piraeusdatastore`.
 
+### `.spec.resourceNameSuffixSeparator`
+
+Configures the separator inserted between generated Kubernetes resource names and the Satellite name. Inherited from
+matching [`LinstorSatelliteConfiguration`](./linstorsatelliteconfiguration.md#specresourcenamesuffixseparator)
+resources.
+
+Defaults to `.`, for example `linstor-satellite.node1`. Set to `-` to generate names such as
+`linstor-satellite-node1`. This only changes the inserted separator; dots that are part of the Kubernetes Node name
+remain unchanged.
+
 ### `.spec.clusterRef`
 
 Holds a reference to the [`LinstorCluster`](./linstorcluster.md) that controls this satellite.

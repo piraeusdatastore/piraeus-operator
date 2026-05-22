@@ -417,6 +417,15 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+              resourceNameSuffixSeparator:
+                description: |-
+                  ResourceNameSuffixSeparator is inserted between the base resource name and the Satellite name.
+
+                  Defaults to ".".
+                enum:
+                - .
+                - '-'
+                type: string
               storagePools:
                 description: StoragePools is a list of storage pools to configure
                   on the node.

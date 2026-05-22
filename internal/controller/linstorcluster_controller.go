@@ -1011,6 +1011,14 @@ func (r *LinstorClusterReconciler) kustomizeLinstorSatellite(ctx context.Context
 		})
 	}
 
+	if cfg.Spec.ResourceNameSuffixSeparator != "" {
+		patches = append(patches, utils.JsonPatch{
+			Op:    utils.Add,
+			Path:  "/spec/resourceNameSuffixSeparator",
+			Value: cfg.Spec.ResourceNameSuffixSeparator,
+		})
+	}
+
 	if cfg.Spec.DeletionPolicy != "" {
 		patches = append(patches, utils.JsonPatch{
 			Op:    utils.Add,

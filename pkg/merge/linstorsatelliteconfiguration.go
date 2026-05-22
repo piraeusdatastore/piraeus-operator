@@ -66,6 +66,10 @@ func SatelliteConfigurations(ctx context.Context, node *corev1.Node, configs ...
 			result.Spec.IPFamilies = cfg.Spec.IPFamilies
 		}
 
+		if cfg.Spec.ResourceNameSuffixSeparator != "" {
+			result.Spec.ResourceNameSuffixSeparator = cfg.Spec.ResourceNameSuffixSeparator
+		}
+
 		if cfg.Spec.DeletionPolicy != "" {
 			result.Spec.DeletionPolicy = cfg.Spec.DeletionPolicy
 		}

@@ -182,7 +182,8 @@ var _ = Describe("LinstorCluster controller", func() {
 						Patches: []piraeusiov1.Patch{
 							{Target: &piraeusiov1.Selector{Kind: "Pod"}, Patch: "pod-patch1"},
 						},
-						DeletionPolicy: piraeusiov1.DeletionPolicyEvacuate,
+						ResourceNameSuffixSeparator: "-",
+						DeletionPolicy:              piraeusiov1.DeletionPolicyEvacuate,
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -235,8 +236,9 @@ var _ = Describe("LinstorCluster controller", func() {
 						{Name: "pool1", LvmPool: &piraeusiov1.LinstorStoragePoolLvm{}},
 						{Name: "pool2", LvmThinPool: &piraeusiov1.LinstorStoragePoolLvmThin{VolumeGroup: "vg1", ThinPool: "thin1"}, Source: &piraeusiov1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdb"}}},
 					},
-					InternalTLS:    &piraeusiov1.TLSConfigWithHandshakeDaemon{},
-					DeletionPolicy: piraeusiov1.DeletionPolicyEvacuate,
+					InternalTLS:                 &piraeusiov1.TLSConfigWithHandshakeDaemon{},
+					ResourceNameSuffixSeparator: "-",
+					DeletionPolicy:              piraeusiov1.DeletionPolicyEvacuate,
 					EvacuationStrategy: piraeusiov1.EvacuationStrategy{
 						AttachedVolumeReattachTimeout: metav1.Duration{Duration: 1 * time.Minute},
 						UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 2 * time.Minute},
