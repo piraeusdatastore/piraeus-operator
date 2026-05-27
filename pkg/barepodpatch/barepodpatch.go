@@ -74,8 +74,8 @@ func convertStrategicMergePatch(patch []byte) []byte {
 		return nil
 	}
 
-	spec := decoded["spec"].(map[string]any)
-	metadata := decoded["metadata"].(map[string]any)
+	spec, _ := decoded["spec"].(map[string]any)
+	metadata, _ := decoded["metadata"].(map[string]any)
 	if spec == nil && metadata == nil {
 		return nil
 	}

@@ -82,6 +82,36 @@ spec:
 			},
 		},
 		{
+			name: "convert-strategic-merge-patch-metadata-only",
+			patch: piraeusiov1.Patch{
+				Patch: `apiVersion: v1
+kind: Pod
+metadata:
+  name: satellite
+  labels:
+    example.com/foo: bar
+`,
+			},
+			expected: piraeusiov1.Patch{
+				Target: &piraeusiov1.Selector{
+					Group:   "apps",
+					Version: "v1",
+					Kind:    "DaemonSet",
+					Name:    "linstor-satellite",
+				},
+				Patch: `apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: linstor-satellite
+spec:
+  template:
+    metadata:
+      labels:
+        example.com/foo: bar
+`,
+			},
+		},
+		{
 			name: "convert-json-patch",
 			patch: piraeusiov1.Patch{
 				Target: &piraeusiov1.Selector{
