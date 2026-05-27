@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow configuring the separator between generated Satellite resource names and the Satellite name.
+
 ## [v2.10.7] - 2026-05-13
 
 ### Added
