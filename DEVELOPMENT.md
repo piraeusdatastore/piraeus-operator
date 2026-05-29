@@ -50,8 +50,12 @@ golangci-lint............................................................Failed
 Use `make test` to run our test suite. It will download the required control plane binaries to execute the webhook and
 controller tests.
 
-For basic unit testing use the basic go test framework. If something you want to test relies on the Kubernetes API,
-check out the test suite for the [`controllers`](./internal/controller/suite_test.go)
+For packages that do not rely on envtest, use the basic `go test` framework. If a test touches the Kubernetes API, use
+`make test` so the required control plane binaries are downloaded first. For example, a plain `go test ./...` will
+fail on a fresh checkout because `etcd` is not installed yet.
+
+If something you want to test relies on the Kubernetes API, check out the test suite for the
+[`controllers`](./internal/controller/suite_test.go)
 
 As of right now, there is no recommended way to end-to-end test the operator. It probably involves some
 virtual machines running a basic kubernetes cluster.
@@ -59,9 +63,9 @@ virtual machines running a basic kubernetes cluster.
 ## Automated Tests
 
 On every pull request, we run a set of tests, specified in `.github/workflows`. The checks include
-* `go test`
-* `golandci-lint`
+* `golangci-lint`
 * `pre-commit run`
+* `make compat-test`
 
 ## Commits
 
