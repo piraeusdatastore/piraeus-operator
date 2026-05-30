@@ -283,7 +283,7 @@ spec:
       name: piraeus-root
 ```
 
-### `spec.deletionPolicy`
+### `.spec.deletionPolicy`
 
 Configure how Satellite removal is handled. Possible policies are:
 
@@ -308,7 +308,7 @@ spec:
  deletionPolicy: Evacuate
 ```
 
-### `spec.evacuationStrategy`
+### `.spec.evacuationStrategy`
 
 Configure timeouts for Satellite Evacuation. To have any effect, `deletionPolicy: Delete` is required.
 

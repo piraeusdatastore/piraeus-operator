@@ -142,7 +142,7 @@ Handshake with node3.example.com (10.125.97.42) was successful
         add_key: Bad message
 
 Next, check the statistics on TLS sessions controlled by the kernel on each node. You should see an equal, nonzero
-number of `TlsRxSw` and `TlsRxSw`.
+number of `TlsTxSw` and `TlsRxSw`.
 
 ```
 $ kubectl exec node1.example.com -- cat /proc/net/tls_stat
