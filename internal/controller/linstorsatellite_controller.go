@@ -59,6 +59,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/evacuation"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/imageversions"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/podexec"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/resources/satellite"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
@@ -75,6 +76,7 @@ type LinstorSatelliteReconciler struct {
 	RequeueInterval    time.Duration
 	LinstorClientOpts  []lapi.Option
 	Kustomizer         *resources.Kustomizer
+	PodExecutor        podexec.Executor
 	log                logr.Logger
 	recorder           record.EventRecorder
 }
@@ -83,6 +85,7 @@ type LinstorSatelliteReconciler struct {
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods;configmaps;secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=pods/exec,verbs=create;get
 //+kubebuilder:rbac:groups="apps",resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
@@ -470,7 +473,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 	if lnode.ConnectionStatus == "ONLINE" {
 		conds.AddSuccess(conditions.Available, lnode.ConnectionStatus)
 
-		err := r.reconcileStoragePools(ctx, lc, lsatellite, node)
+		err := r.reconcileStoragePools(ctx, lc, lsatellite, node, pod)
 		if err != nil {
 			conds.AddError(conditions.Configured, err)
 		} else {
@@ -539,7 +542,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 	return nil
 }
 
-func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node) error {
+func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, lc *linstorhelper.Client, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node, pod *corev1.Pod) error {
 	cached := true
 	expectedPools := make(map[string]struct{})
 
@@ -547,6 +550,8 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 	if err != nil {
 		return err
 	}
+
+	var errs []error
 
 	for i := range lsatellite.Spec.StoragePools {
 		pool := &lsatellite.Spec.StoragePools[i]
@@ -567,39 +572,60 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 			}
 		}
 
-		if existingPool == nil && pool.Source != nil && len(pool.Source.HostDevices) > 0 {
-			err := lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lapi.PhysicalStorageCreate{
-				ProviderKind: pool.ProviderKind(),
-				PoolName:     pool.PoolName(),
-				DevicePaths:  pool.Source.HostDevices,
-				WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
-					Name:  pool.Name,
-					Props: linstorhelper.UpdateLastApplyProperty(expectedProperties),
-				},
-			})
-			if err != nil {
-				r.log.Error(err, "failed to create device pool", "pool", pool)
-			}
-
-			p, err := lc.Nodes.GetStoragePool(ctx, lsatellite.Name, pool.Name, &lapi.ListOpts{Cached: &cached})
-			if err == nil {
-				existingPool = &p
-			}
-		}
-
 		if existingPool == nil {
-			err := lc.Nodes.CreateStoragePool(ctx, lsatellite.Name, lapi.StoragePool{
-				StoragePoolName: pool.Name,
-				ProviderKind:    pool.ProviderKind(),
-				Props:           linstorhelper.UpdateLastApplyProperty(expectedProperties),
-			})
+			// The storage pool is not registered yet. Probe the node for the backing VG/zpool to decide whether
+			// to create it from source devices, register it directly, or wait for it to be provisioned. The
+			// satellite is already online at this point, so a failed probe is a real error: surface it and retry
+			// instead of registering a pool whose backend we could not verify.
+			backendExists, err := storagePoolBackendExists(ctx, r.PodExecutor, r.Namespace, pod.Name, pool)
 			if err != nil {
-				return err
+				errs = append(errs, fmt.Errorf("failed to probe backend for storage pool %q: %w", pool.Name, err))
+				continue
+			}
+
+			hasSource := pool.Source != nil && len(pool.Source.HostDevices) > 0
+
+			switch {
+			case backendExists:
+				// The backend already exists: register the storage pool directly against it. This also covers the
+				// case where the source devices are already set up, so we must not try to create the backend again.
+				err := lc.Nodes.CreateStoragePool(ctx, lsatellite.Name, lapi.StoragePool{
+					StoragePoolName: pool.Name,
+					ProviderKind:    pool.ProviderKind(),
+					Props:           linstorhelper.UpdateLastApplyProperty(expectedProperties),
+				})
+				if err != nil {
+					errs = append(errs, fmt.Errorf("failed to create storage pool %q: %w", pool.Name, err))
+					continue
+				}
+			case hasSource:
+				// The backend does not exist yet but source devices are configured: create the backend from them.
+				// CreateDevicePool also registers the storage pool in LINSTOR.
+				err := lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lapi.PhysicalStorageCreate{
+					ProviderKind: pool.ProviderKind(),
+					PoolName:     pool.PoolName(),
+					DevicePaths:  pool.Source.HostDevices,
+					WithStoragePool: lapi.PhysicalStorageStoragePoolCreate{
+						Name:  pool.Name,
+						Props: linstorhelper.UpdateLastApplyProperty(expectedProperties),
+					},
+				})
+				if err != nil {
+					errs = append(errs, fmt.Errorf("failed to create device pool for storage pool %q: %w", pool.Name, err))
+					continue
+				}
+			default:
+				// The backend does not exist and there are no source devices to create it from. Registering the
+				// storage pool now would only leave it stuck in the error state, so wait until the backend is
+				// provisioned. Reconciliation is retried periodically, so this heals automatically.
+				errs = append(errs, fmt.Errorf("storage pool %q not registered: backend %q (%s) does not exist on node %q yet", pool.Name, pool.PoolName(), pool.ProviderKind(), lsatellite.Name))
+				continue
 			}
 
 			p, err := lc.Nodes.GetStoragePool(ctx, lsatellite.Name, pool.Name, &lapi.ListOpts{Cached: &cached})
 			if err != nil {
-				return err
+				errs = append(errs, fmt.Errorf("failed to get storage pool %q: %w", pool.Name, err))
+				continue
 			}
 
 			existingPool = &p
@@ -609,7 +635,8 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 		if modification != nil {
 			err := lc.Nodes.ModifyStoragePool(ctx, existingPool.NodeName, existingPool.StoragePoolName, *modification)
 			if err != nil {
-				return err
+				errs = append(errs, fmt.Errorf("failed to modify storage pool %q: %w", pool.Name, err))
+				continue
 			}
 		}
 	}
@@ -624,12 +651,12 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 		if !ok {
 			err := lc.Nodes.DeleteStoragePool(ctx, lsatellite.Name, pool.StoragePoolName)
 			if err != nil {
-				return err
+				errs = append(errs, fmt.Errorf("failed to delete storage pool %q: %w", pool.StoragePoolName, err))
 			}
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // deleteSatellite tries to reconcile deletion of the satellites.

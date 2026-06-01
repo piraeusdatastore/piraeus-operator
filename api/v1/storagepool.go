@@ -104,6 +104,23 @@ func (p *LinstorStoragePool) PoolName() string {
 	return ""
 }
 
+// BackendProbeCommand returns a read-only command that lists the existing backend storage objects of the same
+// kind as this storage pool (all LVM volume groups, or all ZFS datasets), one identifier per line. It returns
+// nil for storage pools without a separate backend to probe (file based pools).
+func (p *LinstorStoragePool) BackendProbeCommand() []string {
+	switch {
+	case p.LvmPool != nil:
+		return []string{"vgs", "--noheadings", "--options", "vg_name"}
+	case p.LvmThinPool != nil:
+		// Output "<vg>/<lv>" to match the identifier returned by PoolName for thin pools.
+		return []string{"lvs", "--noheadings", "--separator", "/", "--options", "vg_name,lv_name"}
+	case p.ZfsPool != nil, p.ZfsThinPool != nil:
+		return []string{"zfs", "list", "-H", "-o", "name"}
+	default:
+		return nil
+	}
+}
+
 type LinstorStoragePoolLvm struct {
 	VolumeGroup string `json:"volumeGroup,omitempty"`
 }

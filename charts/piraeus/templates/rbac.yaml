@@ -60,6 +60,13 @@ rules:
   verbs:
     - create
 - apiGroups:
+    - ""
+  resources:
+    - pods/exec
+  verbs:
+    - create
+    - get
+- apiGroups:
     - apiextensions.k8s.io
   resources:
     - customresourcedefinitions

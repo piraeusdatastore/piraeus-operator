@@ -27,6 +27,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -47,6 +48,7 @@ import (
 	webhookv1 "github.com/piraeusdatastore/piraeus-operator/v2/internal/webhook/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/clusterapi"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/linstorhelper"
+	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/podexec"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/vars"
 	//+kubebuilder:scaffold:imports
 )
@@ -112,6 +114,12 @@ func main() {
 	}
 
 	restCfg := ctrl.GetConfigOrDie()
+
+	clientset, err := kubernetes.NewForConfig(restCfg)
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes clientset")
+		os.Exit(1)
+	}
 
 	machineClientCfg := restCfg
 	if clusterApiKubeconfig == "<none>" {
@@ -188,6 +196,7 @@ func main() {
 		ImageConfigMapName: imageConfigMapName,
 		RequeueInterval:    requeueInterval,
 		LinstorClientOpts:  linstorOpts,
+		PodExecutor:        podexec.NewExecutor(restCfg, clientset),
 	}).SetupWithManager(mgr, crtController.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "LinstorSatellite")
 		os.Exit(1)

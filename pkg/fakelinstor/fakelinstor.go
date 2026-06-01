@@ -34,6 +34,12 @@ func New() *FakeLinstor {
 	mux.Handle("GET /v1/resource-definitions/{rd}/resources/{node}", wrapHandler(f.getResource))
 	mux.Handle("POST /v1/resource-definitions/{rd}/resources/{node}", wrapHandler(f.createResource))
 	mux.Handle("GET /v1/view/resources", wrapHandler(f.viewResources))
+	mux.Handle("GET /v1/nodes/{node}/storage-pools", wrapHandler(f.getStoragePools))
+	mux.Handle("GET /v1/nodes/{node}/storage-pools/{sp}", wrapHandler(f.getStoragePool))
+	mux.Handle("POST /v1/nodes/{node}/storage-pools", wrapHandler(f.createStoragePool))
+	mux.Handle("PUT /v1/nodes/{node}/storage-pools/{sp}", wrapHandler(f.modifyStoragePool))
+	mux.Handle("DELETE /v1/nodes/{node}/storage-pools/{sp}", wrapHandler(f.deleteStoragePool))
+	mux.Handle("POST /v1/physical-storage/{node}", wrapHandler(f.createDevicePool))
 
 	f.Server = httptest.NewServer(mux)
 	return f
@@ -47,6 +53,8 @@ type FakeLinstor struct {
 	resources           []lapi.ResourceWithVolumes
 	resourceDefinitions []lapi.ResourceDefinition
 	resourceGroups      []lapi.ResourceGroup
+	storagePools        []lapi.StoragePool
+	devicePoolCreations int
 }
 
 func wrapHandler(f func(r *http.Request) (any, error)) http.Handler {
@@ -336,6 +344,160 @@ func (f *FakeLinstor) viewResources(r *http.Request) (any, error) {
 	}
 
 	return resources, nil
+}
+
+func (f *FakeLinstor) getStoragePools(r *http.Request) (any, error) {
+	node := r.PathValue("node")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	pools := make([]lapi.StoragePool, 0)
+	for i := range f.storagePools {
+		if f.storagePools[i].NodeName == node {
+			pools = append(pools, f.storagePools[i])
+		}
+	}
+
+	return pools, nil
+}
+
+func (f *FakeLinstor) getStoragePool(r *http.Request) (any, error) {
+	node := r.PathValue("node")
+	sp := r.PathValue("sp")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	for i := range f.storagePools {
+		if f.storagePools[i].NodeName == node && f.storagePools[i].StoragePoolName == sp {
+			return f.storagePools[i], nil
+		}
+	}
+
+	return nil, lapi.NotFoundError
+}
+
+func (f *FakeLinstor) createStoragePool(r *http.Request) (any, error) {
+	defer r.Body.Close() //nolint:errcheck
+
+	var sp lapi.StoragePool
+	err := json.NewDecoder(r.Body).Decode(&sp)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding storage pool: %w", err)
+	}
+
+	sp.NodeName = r.PathValue("node")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if slices.ContainsFunc(f.storagePools, func(exist lapi.StoragePool) bool {
+		return exist.NodeName == sp.NodeName && exist.StoragePoolName == sp.StoragePoolName
+	}) {
+		return nil, fmt.Errorf("storage pool '%s' already exists on node '%s'", sp.StoragePoolName, sp.NodeName)
+	}
+
+	f.storagePools = append(f.storagePools, sp)
+	return nil, nil
+}
+
+func (f *FakeLinstor) modifyStoragePool(r *http.Request) (any, error) {
+	defer r.Body.Close() //nolint:errcheck
+
+	var mod lapi.GenericPropsModify
+	err := json.NewDecoder(r.Body).Decode(&mod)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding storage pool modification: %w", err)
+	}
+
+	node := r.PathValue("node")
+	sp := r.PathValue("sp")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	for i := range f.storagePools {
+		if f.storagePools[i].NodeName == node && f.storagePools[i].StoragePoolName == sp {
+			if f.storagePools[i].Props == nil {
+				f.storagePools[i].Props = make(map[string]string)
+			}
+			for k, v := range mod.OverrideProps {
+				f.storagePools[i].Props[k] = v
+			}
+			for _, k := range mod.DeleteProps {
+				delete(f.storagePools[i].Props, k)
+			}
+			return nil, nil
+		}
+	}
+
+	return nil, lapi.NotFoundError
+}
+
+func (f *FakeLinstor) deleteStoragePool(r *http.Request) (any, error) {
+	node := r.PathValue("node")
+	sp := r.PathValue("sp")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.storagePools = slices.DeleteFunc(f.storagePools, func(exist lapi.StoragePool) bool {
+		return exist.NodeName == node && exist.StoragePoolName == sp
+	})
+
+	return nil, nil
+}
+
+func (f *FakeLinstor) createDevicePool(r *http.Request) (any, error) {
+	defer r.Body.Close() //nolint:errcheck
+
+	var psc lapi.PhysicalStorageCreate
+	err := json.NewDecoder(r.Body).Decode(&psc)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding physical storage create: %w", err)
+	}
+
+	node := r.PathValue("node")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.devicePoolCreations++
+
+	// CreateDevicePool also registers a storage pool when WithStoragePool is set.
+	if psc.WithStoragePool.Name != "" {
+		if slices.ContainsFunc(f.storagePools, func(exist lapi.StoragePool) bool {
+			return exist.NodeName == node && exist.StoragePoolName == psc.WithStoragePool.Name
+		}) {
+			return nil, fmt.Errorf("storage pool '%s' already exists on node '%s'", psc.WithStoragePool.Name, node)
+		}
+
+		f.storagePools = append(f.storagePools, lapi.StoragePool{
+			StoragePoolName: psc.WithStoragePool.Name,
+			NodeName:        node,
+			ProviderKind:    psc.ProviderKind,
+			Props:           psc.WithStoragePool.Props,
+		})
+	}
+
+	return nil, nil
+}
+
+// StoragePools returns a copy of the registered storage pools, for assertions in tests.
+func (f *FakeLinstor) StoragePools() []lapi.StoragePool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return slices.Clone(f.storagePools)
+}
+
+// DevicePoolCreations returns how many times CreateDevicePool was called, for assertions in tests.
+func (f *FakeLinstor) DevicePoolCreations() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.devicePoolCreations
 }
 
 func (f *FakeLinstor) SetConnectionStatus(name string, status string) {

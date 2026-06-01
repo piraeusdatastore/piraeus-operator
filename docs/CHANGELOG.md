@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow configuring the separator between generated Satellite resource names and the Satellite name.
 
+### Changed
+
+- Storage pools are only registered once their backing volume group or ZFS pool exists on the node, avoiding pools stuck in the `error` state.
+
 ## [v2.10.7] - 2026-05-13
 
 ### Added

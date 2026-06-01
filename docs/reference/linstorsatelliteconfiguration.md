@@ -168,6 +168,17 @@ the matching key. Available types are:
 Optionally, you can configure LINSTOR to automatically create the backing pools. `source.hostDevices` takes a list
 of raw block devices, which LINSTOR will prepare as the chosen backing pool.
 
+Before registering a storage pool, the Operator probes the node to check whether the backing Volume Group or
+ZFS pool already exists:
+
+* If it exists, the storage pool is registered as-is. This also applies when `source.hostDevices` is set but the
+  devices have already been prepared, so the backing pool is not created a second time.
+* If it does not exist and `source.hostDevices` is set, the backing pool is created from those devices.
+* If it does not exist and no `source` is configured, the storage pool is **not** registered. Instead, the
+  `Configured` condition of the `LinstorSatellite` reports that it is waiting for the backing pool to appear.
+  Once you create the Volume Group or ZFS pool on the node, the storage pool is registered automatically on the
+  next reconciliation. This prevents storage pools from getting stuck in the LINSTOR `error` state.
+
 All storage pools also can also be configured with `properties`. Properties are set on the Storage Pool level. The
 configuration values have the same form as [Satellite Properties](#specproperties).
 

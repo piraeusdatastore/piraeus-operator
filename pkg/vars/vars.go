@@ -20,13 +20,16 @@ var (
 )
 
 const (
-	FieldOwner                        = Domain + "/operator"
-	ApplyAnnotation                   = Domain + "/last-applied"
-	NodeInterfaceAnnotation           = Domain + "/configured-interfaces"
-	ManagedByLabel                    = Domain + "/managed-by"
-	AppliedConfigurationAnnotation    = Domain + "/applied-configurations"
-	SatelliteNodeLabel                = Domain + "/linstor-satellite"
-	SatelliteFinalizer                = Domain + "/satellite-protection"
+	FieldOwner                     = Domain + "/operator"
+	ApplyAnnotation                = Domain + "/last-applied"
+	NodeInterfaceAnnotation        = Domain + "/configured-interfaces"
+	ManagedByLabel                 = Domain + "/managed-by"
+	AppliedConfigurationAnnotation = Domain + "/applied-configurations"
+	SatelliteNodeLabel             = Domain + "/linstor-satellite"
+	SatelliteFinalizer             = Domain + "/satellite-protection"
+	// SatelliteContainerName is the name of the container running the LINSTOR satellite in the satellite Pod. It is
+	// used to exec backend storage probes (vgs/lvs/zfs) against the same host view the satellite itself uses.
+	SatelliteContainerName            = "linstor-satellite"
 	EvacuationActionAnnotation        = linstorcsi.DriverName + "/evacuation-action"
 	MachinePreDrainHookAnnotation     = clusterapiv1beta1.PreDrainDeleteHookAnnotationPrefix + "/linstor-prepare-for-drain"
 	MachinePreTerminateHookAnnotation = clusterapiv1beta1.PreTerminateDeleteHookAnnotationPrefix + "/linstor-wait-for-complete-evacuation"

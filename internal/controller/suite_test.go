@@ -18,6 +18,7 @@ package controller_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -150,6 +151,9 @@ var _ = BeforeSuite(func() {
 		Namespace:          Namespace,
 		ImageConfigMapName: ImageConfigMapName,
 		RequeueInterval:    defaultCheckInterval,
+		// envtest has no kubelet, so we cannot exec into Pods. The integration suite only uses file based storage
+		// pools, which are never probed, so this executor is never actually invoked; it fails loudly if it is.
+		PodExecutor: unsupportedExecutor{},
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -182,6 +186,14 @@ var _ = BeforeSuite(func() {
 		}
 	}()
 })
+
+// unsupportedExecutor is a podexec.Executor that always fails. envtest has no kubelet to exec into Pods, and the
+// integration suite only uses file based storage pools (which are never probed), so it is never actually invoked.
+type unsupportedExecutor struct{}
+
+func (unsupportedExecutor) Exec(_ context.Context, _, _, _ string, _ []string) (string, string, error) {
+	return "", "", fmt.Errorf("exec not supported in this environment")
+}
 
 var _ = AfterSuite(func() {
 	if cancelManager != nil {
