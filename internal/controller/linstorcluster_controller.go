@@ -621,7 +621,7 @@ func (r *LinstorClusterReconciler) kustomizeCSINodeResources(lcluster *piraeusio
 		patches = append(patches, p...)
 	}
 
-	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, tolerations.NoScheduleToleration, lcluster.Spec.Tolerations)
 	p, err := TolerationsPatch("DaemonSet", "linstor-csi-node", t)
 	if err != nil {
 		return nil, err
@@ -692,7 +692,7 @@ func (r *LinstorClusterReconciler) kustomizeHAControllerResources(lcluster *pira
 		patches = append(patches, p...)
 	}
 
-	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, tolerations.NoScheduleToleration, lcluster.Spec.Tolerations)
 	p, err := TolerationsPatch("DaemonSet", "ha-controller", t)
 	if err != nil {
 		return nil, err
@@ -837,7 +837,7 @@ func (r *LinstorClusterReconciler) kustomizeNFSServerResources(lcluster *piraeus
 		patches = append(patches, p...)
 	}
 
-	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, lcluster.Spec.Tolerations)
+	t := tolerations.MergeTolerations(tolerations.HAControllerTolerations, tolerations.NoScheduleToleration, lcluster.Spec.Tolerations)
 	p, err := TolerationsPatch("DaemonSet", "linstor-csi-nfs-server", t)
 	if err != nil {
 		return nil, err

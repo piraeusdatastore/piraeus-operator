@@ -473,7 +473,7 @@ var _ = Describe("LinstorCluster controller", func() {
 				}).Should(And(
 					HaveLen(3), // 1 CSI Node, 1 HA Controller, 1 NFS Server.
 					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
-						append(slices.Clone(tolerations.HAControllerTolerations),
+						append(append(slices.Clone(tolerations.HAControllerTolerations), slices.Clone(tolerations.NoScheduleToleration)...),
 							corev1.Toleration{
 								Key:      "example.com/manual-taint",
 								Operator: corev1.TolerationOpExists,
