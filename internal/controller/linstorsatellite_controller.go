@@ -600,8 +600,19 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 				}
 			case hasSource:
 				// The backend does not exist yet but source devices are configured: create the backend from them.
+				// Make sure the configured devices exist first, so a missing device is reported clearly.
+				missing, err := missingSourceDevices(ctx, r.PodExecutor, r.Namespace, pod.Name, pool.Source.HostDevices)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("failed to check source devices for storage pool %q: %w", pool.Name, err))
+					continue
+				}
+				if len(missing) > 0 {
+					errs = append(errs, fmt.Errorf("storage pool %q not created: source device(s) %v do not exist on node %q", pool.Name, missing, lsatellite.Name))
+					continue
+				}
+
 				// CreateDevicePool also registers the storage pool in LINSTOR.
-				err := lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lapi.PhysicalStorageCreate{
+				err = lc.Nodes.CreateDevicePool(ctx, lsatellite.Name, lapi.PhysicalStorageCreate{
 					ProviderKind: pool.ProviderKind(),
 					PoolName:     pool.PoolName(),
 					DevicePaths:  pool.Source.HostDevices,

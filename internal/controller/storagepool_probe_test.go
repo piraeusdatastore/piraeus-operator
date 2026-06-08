@@ -5,12 +5,14 @@ import (
 	"errors"
 	"net/url"
 	"slices"
+	"strings"
 	"testing"
 
 	lapi "github.com/LINBIT/golinstor/client"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilexec "k8s.io/client-go/util/exec"
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/fakelinstor"
@@ -30,6 +32,34 @@ func (e *fakeExecutor) Exec(_ context.Context, _, _, _ string, command []string)
 func constExecutor(stdout string, err error) func([]string) (string, string, error) {
 	return func([]string) (string, string, error) {
 		return stdout, "", err
+	}
+}
+
+// backendAndDeviceExecutor answers the backend probe with backendOut/backendErr and the source-device probe like
+// "stat" would: it echoes the requested devices that are in presentDevices and, if any are absent, also returns a
+// non-zero exit error.
+func backendAndDeviceExecutor(backendOut string, backendErr error, presentDevices []string) func([]string) (string, string, error) {
+	return func(command []string) (string, string, error) {
+		// The source-device probe is executed as `stat -L -c %n <dev>...`.
+		if len(command) >= 4 && command[0] == "stat" {
+			var present []string
+			missing := false
+			for _, dev := range command[4:] {
+				if slices.Contains(presentDevices, dev) {
+					present = append(present, dev)
+				} else {
+					missing = true
+				}
+			}
+
+			var err error
+			if missing {
+				err = utilexec.CodeExitError{Err: errors.New("exit status 1"), Code: 1}
+			}
+
+			return strings.Join(present, "\n"), "", err
+		}
+		return backendOut, "", backendErr
 	}
 }
 
@@ -82,6 +112,59 @@ func TestStoragePoolBackendExists(t *testing.T) {
 	}
 }
 
+func TestSourceDeviceProbeCommand(t *testing.T) {
+	t.Parallel()
+
+	got := sourceDeviceProbeCommand([]string{"/dev/sdb", "/dev/sdc"})
+	if !slices.Equal(got, []string{"stat", "-L", "-c", "%n", "/dev/sdb", "/dev/sdc"}) {
+		t.Errorf("unexpected command: %v", got)
+	}
+}
+
+func TestMissingSourceDevices(t *testing.T) {
+	t.Parallel()
+
+	// stat exits non-zero when some operands are absent; that is not an inconclusive probe.
+	statMissing := utilexec.CodeExitError{Err: errors.New("exit status 1"), Code: 1}
+	// A non-exit error means the probe could not run at all.
+	transportErr := errors.New("boom")
+
+	tests := []struct {
+		name        string
+		devices     []string
+		stdout      string
+		execErr     error
+		wantMissing []string
+		wantErr     bool
+		wantCalls   int
+	}{
+		{name: "none requested", devices: nil, wantCalls: 0},
+		{name: "all present", devices: []string{"/dev/sdb", "/dev/sdc"}, stdout: "/dev/sdb\n/dev/sdc\n", wantCalls: 1},
+		{name: "one missing", devices: []string{"/dev/sdb", "/dev/sdc"}, stdout: "/dev/sdb\n", execErr: statMissing, wantMissing: []string{"/dev/sdc"}, wantCalls: 1},
+		{name: "all missing", devices: []string{"/dev/sdb"}, execErr: statMissing, wantMissing: []string{"/dev/sdb"}, wantCalls: 1},
+		{name: "probe error", devices: []string{"/dev/sdb"}, execErr: transportErr, wantErr: true, wantCalls: 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			exec := &fakeExecutor{fn: constExecutor(tt.stdout, tt.execErr)}
+			missing, err := missingSourceDevices(context.Background(), exec, "ns", "pod", tt.devices)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("err = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !slices.Equal(missing, tt.wantMissing) {
+				t.Errorf("missing = %v, want %v", missing, tt.wantMissing)
+			}
+			if exec.calls != tt.wantCalls {
+				t.Errorf("exec calls = %d, want %d", exec.calls, tt.wantCalls)
+			}
+		})
+	}
+}
+
 func TestReconcileStoragePools(t *testing.T) {
 	t.Parallel()
 
@@ -113,9 +196,30 @@ func TestReconcileStoragePools(t *testing.T) {
 		{
 			name:                "backend missing with source creates device pool",
 			pool:                lvmWithSource,
-			exec:                constExecutor("  vg0\n", nil),
+			exec:                backendAndDeviceExecutor("  vg0\n", nil, []string{"/dev/sdb"}),
 			wantRegistered:      true,
 			wantDevicePoolCalls: 1,
+		},
+		{
+			name:                "backend missing with missing source device is not created",
+			pool:                lvmWithSource,
+			exec:                backendAndDeviceExecutor("  vg0\n", nil, nil),
+			wantErr:             true,
+			wantRegistered:      false,
+			wantDevicePoolCalls: 0,
+		},
+		{
+			name: "source device probe failure is reported without creating device pool",
+			pool: lvmWithSource,
+			exec: func(command []string) (string, string, error) {
+				if len(command) >= 4 && command[0] == "stat" {
+					return "", "", errors.New("device probe failed")
+				}
+				return "  vg0\n", "", nil
+			},
+			wantErr:             true,
+			wantRegistered:      false,
+			wantDevicePoolCalls: 0,
 		},
 		{
 			name:                "backend missing without source is not registered",

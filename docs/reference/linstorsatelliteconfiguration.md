@@ -173,7 +173,9 @@ ZFS pool already exists:
 
 * If it exists, the storage pool is registered as-is. This also applies when `source.hostDevices` is set but the
   devices have already been prepared, so the backing pool is not created a second time.
-* If it does not exist and `source.hostDevices` is set, the backing pool is created from those devices.
+* If it does not exist and `source.hostDevices` is set, the backing pool is created from those devices. The
+  Operator first verifies that the configured devices exist on the node, reporting any that are missing instead
+  of letting the creation fail with an unclear error.
 * If it does not exist and no `source` is configured, the storage pool is **not** registered. Instead, the
   `Configured` condition of the `LinstorSatellite` reports that it is waiting for the backing pool to appear.
   Once you create the Volume Group or ZFS pool on the node, the storage pool is registered automatically on the
