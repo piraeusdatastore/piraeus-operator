@@ -16,7 +16,7 @@ import (
 	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils/tolerations"
 )
 
-func TestNodeDaemonSetsTolerateNoSchedule(t *testing.T) {
+func TestNodeDaemonSetsSchedulingConstraints(t *testing.T) {
 	t.Parallel()
 
 	kustomizer, err := resources.NewKustomizer(&clusterresources.Resources, krusty.MakeDefaultOptions())
@@ -77,6 +77,13 @@ func TestNodeDaemonSetsTolerateNoSchedule(t *testing.T) {
 			require.Contains(t, ds.Spec.Template.Spec.Tolerations, tolerations.HAControllerTolerations[0])
 			require.Contains(t, ds.Spec.Template.Spec.Tolerations, tolerations.HAControllerTolerations[1])
 			require.Contains(t, ds.Spec.Template.Spec.Tolerations, lcluster.Spec.Tolerations[0])
+
+			require.NotNil(t, ds.Spec.Template.Spec.Affinity)
+			require.NotNil(t, ds.Spec.Template.Spec.Affinity.PodAffinity)
+			terms := ds.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+			require.Len(t, terms, 1)
+			require.Equal(t, "kubernetes.io/hostname", terms[0].TopologyKey)
+			require.Equal(t, map[string]string{"app.kubernetes.io/component": "linstor-satellite"}, terms[0].LabelSelector.MatchLabels)
 		})
 	}
 }

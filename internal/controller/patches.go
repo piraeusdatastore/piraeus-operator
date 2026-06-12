@@ -368,6 +368,27 @@ func TolerationsPatch(kind, name string, tolerations []corev1.Toleration) ([]kus
 	return patches, nil
 }
 
+func SatellitePodAffinityPatch(kind, name string) ([]kusttypes.Patch, error) {
+	patches, err := render(
+		cluster.Resources,
+		"patches/satellite-pod-affinity.yaml",
+		map[string]any{
+			"KIND": kind,
+			"NAME": name,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range patches {
+		patches[i].Target = &kusttypes.Selector{
+			ResId: resid.NewResIdKindOnly(kind, name),
+		}
+	}
+
+	return patches, nil
+}
+
 func ComponentPodTemplate(kind, name string, template json.RawMessage) ([]kusttypes.Patch, error) {
 	patches, err := render(
 		cluster.Resources,

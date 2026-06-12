@@ -1,0 +1,17 @@
+---
+- target: {}
+  patch: |
+    apiVersion: apps/v1
+    kind: $KIND
+    metadata:
+      name: $NAME
+    spec:
+      template:
+        spec:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/component: linstor-satellite
+                  topologyKey: kubernetes.io/hostname

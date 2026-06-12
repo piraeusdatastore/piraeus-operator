@@ -462,7 +462,7 @@ var _ = Describe("LinstorCluster controller", func() {
 					))),
 				))
 
-				// The CSI nodes, and HA Controller should have a patch updating their tolerations.
+				// The CSI nodes, and HA Controller should have a patch updating their tolerations and pod affinity.
 				Eventually(func() []appsv1.DaemonSet {
 					var daemonSets appsv1.DaemonSetList
 					err := k8sClient.List(ctx, &daemonSets)
@@ -472,13 +472,20 @@ var _ = Describe("LinstorCluster controller", func() {
 					})
 				}).Should(And(
 					HaveLen(3), // 1 CSI Node, 1 HA Controller, 1 NFS Server.
-					HaveEach(HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
-						append(append(slices.Clone(tolerations.HAControllerTolerations), slices.Clone(tolerations.NoScheduleToleration)...),
-							corev1.Toleration{
-								Key:      "example.com/manual-taint",
-								Operator: corev1.TolerationOpExists,
-								Effect:   corev1.TaintEffectNoExecute,
-							})),
+					HaveEach(And(
+						HaveField("Spec.Template.Spec.Tolerations", ConsistOf(
+							append(append(slices.Clone(tolerations.HAControllerTolerations), slices.Clone(tolerations.NoScheduleToleration)...),
+								corev1.Toleration{
+									Key:      "example.com/manual-taint",
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoExecute,
+								})),
+						),
+						HaveField("Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution",
+							ContainElement(HaveField("LabelSelector.MatchLabels",
+								HaveKeyWithValue("app.kubernetes.io/component", "linstor-satellite"),
+							)),
+						),
 					)),
 				))
 
