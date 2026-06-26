@@ -392,7 +392,7 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 
 					GinkgoWriter.Println("checking that Satellite status reports evacuation progress")
 					Eventually(func() *metav1.Condition {
-						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "SatelliteDeleted")
+						return GetSatelliteCondition(ctx, k8sClient, ExampleNodeName, "SatelliteEvacuated")
 					}).Should(And(
 						HaveField("Status", metav1.ConditionFalse),
 						HaveField("Reason", string(conditions.ReasonInProgress)),

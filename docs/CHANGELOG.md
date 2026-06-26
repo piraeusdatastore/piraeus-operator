@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow configuring the separator between generated Satellite resource names and the Satellite name.
+- Add `LinstorCluster.spec.maxConcurrentEvacuations` to limit how many Satellites are evacuated at the same time, for both direct and ClusterAPI-driven node removals.
 
 ### Changed
 

@@ -565,6 +565,31 @@ spec:
       key: root.crt
 ```
 
+### `.spec.maxConcurrentEvacuations`
+
+Limits how many Satellites are evacuated at the same time when using the
+[`Evacuate` deletion policy](../explanation/deletion-policies.md#evacuate-policy).
+
+This applies both to Satellites removed because their node no longer matches the cluster, and to nodes removed
+through ClusterAPI. While the limit is reached, additional Satellites wait for a free slot before their volumes
+are moved and, for ClusterAPI managed nodes, before the node is allowed to drain. A Satellite that is waiting
+reports a `SatelliteEvacuated` condition with reason `Waiting`.
+
+A value of `0` (the default) places no limit on the number of concurrent evacuations.
+
+#### Example
+
+This example allows at most two Satellites to evacuate simultaneously:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  maxConcurrentEvacuations: 2
+```
+
 ## `.status`
 
 Reports the actual state of the cluster.

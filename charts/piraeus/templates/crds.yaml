@@ -353,6 +353,18 @@ spec:
                   * Store credentials for accessing remotes for backups.
                   See https://linbit.com/drbd-user-guide/linstor-guide-1_0-en/#s-encrypt_commands for more information.
                 type: string
+              maxConcurrentEvacuations:
+                description: |-
+                  MaxConcurrentEvacuations limits how many Satellites are evacuated at the same time when using the
+                  "Evacuate" deletion policy.
+
+                  This applies both to Satellites removed because their node no longer matches the cluster, and to nodes
+                  removed through ClusterAPI. While the limit is reached, additional Satellites wait for a free slot before
+                  their volumes are moved and, for ClusterAPI managed nodes, before the node is allowed to drain.
+                  A value of 0 (the default) places no limit on the number of concurrent evacuations.
+                format: int32
+                minimum: 0
+                type: integer
               nfsServer:
                 description: NFSServer controls the deployment of the LINSTOR CSI
                   NFS Server DaemonSet.

@@ -117,6 +117,17 @@ type LinstorClusterSpec struct {
 	// NFSServer controls the deployment of the LINSTOR CSI NFS Server DaemonSet.
 	// +kubebuilder:validation:Optional
 	NFSServer *ComponentSpec `json:"nfsServer,omitempty"`
+
+	// MaxConcurrentEvacuations limits how many Satellites are evacuated at the same time when using the
+	// "Evacuate" deletion policy.
+	//
+	// This applies both to Satellites removed because their node no longer matches the cluster, and to nodes
+	// removed through ClusterAPI. While the limit is reached, additional Satellites wait for a free slot before
+	// their volumes are moved and, for ClusterAPI managed nodes, before the node is allowed to drain.
+	// A value of 0 (the default) places no limit on the number of concurrent evacuations.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	MaxConcurrentEvacuations int32 `json:"maxConcurrentEvacuations,omitempty"`
 }
 
 type LinstorExternalControllerRef struct {

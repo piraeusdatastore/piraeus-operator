@@ -127,12 +127,12 @@ func (r *LinstorSatelliteReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	var status piraeusiov1.LinstorSatelliteStatus
 	var deleteErr, stateErr error
 	if lsatellite.GetDeletionTimestamp() != nil {
-		msg, done, err := r.deleteSatellite(ctx, lsatellite, &node, conds)
+		done, err := r.deleteSatellite(ctx, lsatellite, &node, conds)
 		if err != nil {
 			conds.AddError("SatelliteDeleted", err)
 			deleteErr = err
 		} else if !done {
-			conds.AddInProgress("SatelliteDeleted", msg)
+			conds.AddInProgress("SatelliteDeleted", fmt.Sprintf("deletion using '%s' policy in progress", lsatellite.Spec.DeletionPolicy))
 		} else {
 			conds.AddCompleted("SatelliteDeleted", fmt.Sprintf("deletion using '%s' policy complete", lsatellite.Spec.DeletionPolicy))
 		}
@@ -521,13 +521,17 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 
 		if clusterapi.ShouldEvacuateNode(machine) && lsatellite.Spec.DeletionPolicy == piraeusiov1.DeletionPolicyEvacuate {
 			r.log.Info("Request to evacuate node from ClusterAPI")
-			msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
+			// EvacuateSatellite records its progress (including waiting for a free slot) on the
+			// SatelliteEvacuatedCondition. While the Satellite waits, the Machine pre-drain hook stays in
+			// place, so ClusterAPI keeps the node running until it is admitted.
+			limit, err := r.maxConcurrentEvacuations(ctx, lsatellite)
 			if err != nil {
-				conds.AddError("SatelliteEvacuated", err)
-			} else if !done {
-				conds.AddInProgress("SatelliteEvacuated", msg)
-			} else {
-				conds.AddCompleted("SatelliteEvacuated", "LINSTOR Satellite evacuated")
+				return err
+			}
+
+			_, err = evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy, conds, limit)
+			if err != nil {
+				return err
 			}
 		} else if slices.Contains(lnode.Flags, linstor.FlagEvacuate) || slices.Contains(lnode.Flags, linstor.FlagEvicted) {
 			err := lc.Nodes.Restore(ctx, lnode.Name, lapi.NodeRestore{})
@@ -674,20 +678,37 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 	return errors.Join(errs...)
 }
 
+// maxConcurrentEvacuations returns the cluster-wide limit on simultaneous Satellite evacuations.
+// A value of 0 means no limit.
+func (r *LinstorSatelliteReconciler) maxConcurrentEvacuations(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite) (int, error) {
+	cluster := &piraeusiov1.LinstorCluster{}
+	err := r.Get(ctx, types.NamespacedName{Name: lsatellite.Spec.ClusterRef.Name}, cluster)
+	if k8serrors.IsNotFound(err) {
+		// No LinstorCluster (e.g. an external controller, or the cluster is being torn down) means there is
+		// no configured limit, so evacuation must not be blocked.
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+
+	return int(cluster.Spec.MaxConcurrentEvacuations), nil
+}
+
 // deleteSatellite tries to reconcile deletion of the satellites.
 //
 // Because this might take some time, and needs several attempts, this method returns
 // * A human-readable message of what is currently preventing satellite removal.
 // * true if the satellite was deleted, false otherwise.
 // * Any errors that prevented further progress.
-func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node, conds conditions.Conditions) (string, bool, error) {
+func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatellite *piraeusiov1.LinstorSatellite, node *corev1.Node, conds conditions.Conditions) (bool, error) {
 	if !controllerutil.ContainsFinalizer(lsatellite, vars.SatelliteFinalizer) {
-		return "", true, nil
+		return true, nil
 	}
 
 	machine, err := r.MachineClient.GetMachineForNode(ctx, node)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 
 	lc, err := linstorhelper.NewClientForCluster(
@@ -698,30 +719,30 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 		r.LinstorClientOpts...,
 	)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 
 	if lc == nil {
 		r.log.Info("Allow Machine to drain for Satellite without cluster")
 		err := r.MachineClient.AllowMachineDrain(ctx, r.recorder, machine)
 		if err != nil {
-			return "", false, err
+			return false, err
 		}
 
 		r.log.Info("Allow Machine to terminate for Satellite without cluster")
 		err = r.MachineClient.AllowMachineTermination(ctx, r.recorder, machine)
 		if err != nil {
-			return "", false, err
+			return false, err
 		}
 
 		r.log.Info("Removing finalizer from Satellite without cluster")
 		controllerutil.RemoveFinalizer(lsatellite, vars.SatelliteFinalizer)
 		err = r.Client.Update(ctx, lsatellite)
 		if err != nil {
-			return "", false, err
+			return false, err
 		}
 
-		return "", true, nil
+		return true, nil
 	}
 
 	r.log.Info("Deleting Satellite", "Policy", lsatellite.Spec.DeletionPolicy)
@@ -734,28 +755,30 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 				break
 			}
 
-			return "", false, err
+			return false, err
 		}
 
-		msg, done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, &lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy)
+		limit, err := r.maxConcurrentEvacuations(ctx, lsatellite)
 		if err != nil {
-			conds.AddError("SatelliteEvacuated", err)
-			return "", false, err
-		} else if !done {
-			conds.AddInProgress("SatelliteEvacuated", msg)
-			return msg, done, nil
-		} else {
-			err = lc.Nodes.Delete(ctx, lsatellite.Name)
-			if err != nil && !errors.Is(err, lapi.NotFoundError) {
-				return "", false, err
-			}
+			return false, err
+		}
 
-			conds.AddCompleted("SatelliteEvacuated", "LINSTOR Satellite evacuated")
+		done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, &lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy, conds, limit)
+		if err != nil {
+			return false, err
+		}
+		if !done {
+			return false, nil
+		}
+
+		err = lc.Nodes.Delete(ctx, lsatellite.Name)
+		if err != nil && !errors.Is(err, lapi.NotFoundError) {
+			return false, err
 		}
 	case piraeusiov1.DeletionPolicyDelete:
 		err := lc.Nodes.Lost(ctx, lsatellite.Name)
 		if err != nil && !errors.Is(err, lapi.NotFoundError) {
-			return "", false, err
+			return false, err
 		}
 	case "", piraeusiov1.DeletionPolicyRetain:
 		r.log.Info("Nothing to do for deletion of satellite with 'Retain' deletion policy")
@@ -764,10 +787,10 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 	controllerutil.RemoveFinalizer(lsatellite, vars.SatelliteFinalizer)
 	err = r.Client.Update(ctx, lsatellite)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 
-	return "", true, nil
+	return true, nil
 }
 
 func (r *LinstorSatelliteReconciler) kustomLabels(uuid types.UID, instance string) []kusttypes.Label {

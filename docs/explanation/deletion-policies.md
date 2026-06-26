@@ -102,6 +102,15 @@ In order to keep potential fail-over times short, Piraeus Datastore performs the
    annotation on the Machine is removed, letting ClusterAPI proceed with shutting down the node.
 9. The Satellite is removed from LINSTOR.
 
+#### Limiting Concurrent Evacuations
+
+By default, all Satellites that need to be evacuated start their evacuation at the same time. On larger clusters
+this can move a lot of data at once. Set [`LinstorCluster.spec.maxConcurrentEvacuations`](../reference/linstorcluster.md#specmaxconcurrentevacuations)
+to limit how many Satellites evacuate simultaneously. While the limit is reached, additional Satellites wait for
+a free slot (reported through a `SatelliteEvacuated` condition with reason `Waiting`) before any of their volumes
+are moved. Already running evacuations are always allowed to finish first, so increasing the data movement never
+abandons work that has already started.
+
 ### `Delete` Policy
 
 When using the `Delete` policy, Piraeus Datastore will remove the Satellite from the LINSTOR Cluster in addition to
@@ -124,6 +133,12 @@ hook into the [Machine deletion process](https://cluster-api.sigs.k8s.io/tasks/a
 
 In particular, if the Satellites are using the `Evacuate` deletion policy, Piraeus Datastore will instruct ClusterAPI
 to wait at the appropriate times, keeping the Machine running until all resources have been evacuated.
+
+When [`LinstorCluster.spec.maxConcurrentEvacuations`](../reference/linstorcluster.md#specmaxconcurrentevacuations) is set,
+this limit also applies to ClusterAPI-driven removals: a Machine that is marked for deletion but not yet admitted keeps
+its pre-drain hook in place, so ClusterAPI keeps the node running until a free evacuation slot becomes available. This
+composes with ClusterAPI's own rollout settings (such as `maxUnavailable`); the effective concurrency is the smaller of
+the two.
 
 By default, Piraeus Operator will search the Cluster it is deployed in for the Machine resources. If the Machine is
 managed by a different Cluster, set the `CLUSTER_API_KUBECONFIG` environment variable in the Operator Deployment to

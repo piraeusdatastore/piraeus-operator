@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	linstor "github.com/LINBIT/golinstor"
@@ -36,11 +37,133 @@ const (
 	VolumeAttachedForEvacuationEvent        = "VolumeAttachedForEvacuation"
 )
 
-// EvacuateSatellite by ensuring all LINSTOR Resource have been moved to other nodes.
+// SatelliteEvacuatedCondition tracks the progress of evacuating volumes off a Satellite.
+const SatelliteEvacuatedCondition = "SatelliteEvacuated"
+
+// admissionMu serializes evacuation admission decisions so concurrent reconciles compute a consistent view
+// of how many Satellites are currently evacuating.
+var admissionMu sync.Mutex
+
+// EvacuateSatellite ensures all LINSTOR Resources have been moved to other nodes, honoring the cluster-wide
+// evacuation concurrency limit, and records the progress on the SatelliteEvacuatedCondition.
+//
+// Returns a message indicating the current progress and a bool indicating if evacuation is complete. The
+// function should be called repeatedly until completion of the evacuation.
+func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy, conds conditions.Conditions, maxConcurrent int) (bool, error) {
+	// Gate evacuation progress on the cluster-wide concurrency limit.
+	admitted, position, total, err := admitEvacuation(ctx, cl, node.Name, maxConcurrent)
+	if err != nil {
+		conds.AddError(SatelliteEvacuatedCondition, err)
+		return false, err
+	}
+
+	if !admitted {
+		msg := fmt.Sprintf("Waiting for a free evacuation slot (position %d of %d candidates, limit %d)", position+1, total, maxConcurrent)
+		conds.AddWaiting(SatelliteEvacuatedCondition, msg)
+		return false, nil
+	}
+
+	msg, done, err := evacuateSatellite(ctx, cl, lclient, recorder, node, machineClient, machine, evacuationStrategy)
+	switch {
+	case err != nil:
+		conds.AddError(SatelliteEvacuatedCondition, err)
+		return false, err
+	case !done:
+		conds.AddInProgress(SatelliteEvacuatedCondition, msg)
+		return false, nil
+	default:
+		conds.AddCompleted(SatelliteEvacuatedCondition, "LINSTOR Satellite evacuated")
+		return true, nil
+	}
+}
+
+// admitEvacuation decides whether the Satellite with the given name may start (or continue) evacuating,
+// honoring the cluster-wide maxConcurrent budget.
+//
+// Admission is derived from the cluster state on every call: all Satellites currently evacuating or waiting
+// for a slot are ordered deterministically - already in-progress evacuations first (so started work is never
+// interrupted), then waiting Satellites by the time they started waiting, then by name - and the first
+// maxConcurrent are admitted. Because every call computes the same order, Satellites converge on the same
+// admitted set without a central lock. A limit of 0 means unlimited.
+//
+// Returns whether the Satellite is admitted, its zero-based position in the ordering, and the total number
+// of candidates.
+func admitEvacuation(ctx context.Context, cl client.Client, name string, maxConcurrent int) (bool, int, int, error) {
+	if maxConcurrent <= 0 {
+		return true, 0, 0, nil
+	}
+
+	admissionMu.Lock()
+	defer admissionMu.Unlock()
+
+	var satellites piraeusiov1.LinstorSatelliteList
+	err := cl.List(ctx, &satellites)
+	if err != nil {
+		return false, 0, 0, err
+	}
+
+	type candidate struct {
+		name       string
+		inProgress bool
+		since      time.Time
+	}
+
+	now := time.Now()
+	var candidates []candidate
+	seenSelf := false
+	for i := range satellites.Items {
+		sat := &satellites.Items[i]
+
+		cond := meta.FindStatusCondition(sat.Status.Conditions, SatelliteEvacuatedCondition)
+		inProgress := cond != nil && cond.Reason == string(conditions.ReasonInProgress)
+		waiting := cond != nil && cond.Reason == string(conditions.ReasonWaiting)
+
+		// Only Satellites that are actively evacuating or already waiting for a slot consume budget. The
+		// Satellite being evacuated is always included, even before it has recorded a condition.
+		if !inProgress && !waiting && sat.Name != name {
+			continue
+		}
+
+		since := now
+		if cond != nil {
+			since = cond.LastTransitionTime.Time
+		}
+
+		candidates = append(candidates, candidate{name: sat.Name, inProgress: inProgress, since: since})
+		if sat.Name == name {
+			seenSelf = true
+		}
+	}
+
+	if !seenSelf {
+		candidates = append(candidates, candidate{name: name, since: now})
+	}
+
+	slices.SortFunc(candidates, func(a, b candidate) int {
+		if a.inProgress != b.inProgress {
+			if a.inProgress {
+				return -1
+			}
+			return 1
+		}
+		if !a.since.Equal(b.since) {
+			return a.since.Compare(b.since)
+		}
+		return strings.Compare(a.name, b.name)
+	})
+
+	position := slices.IndexFunc(candidates, func(c candidate) bool {
+		return c.name == name
+	})
+
+	return position < maxConcurrent, position, len(candidates), nil
+}
+
+// evacuateSatellite runs the evacuation steps, ensuring all LINSTOR Resources have been moved to other nodes.
 //
 // Returns a message indicating the current progress and a bool indicating if evacuation is complete.
 // The function should be called repeatedly until completion of the evacuation.
-func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
+func evacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
 	// Step 1: ensure PVs can be rescheduled to other nodes
 	msg, done, err := preparePVsforEvacuation(ctx, cl, lclient, recorder, node.Name)
 	if err != nil || !done {

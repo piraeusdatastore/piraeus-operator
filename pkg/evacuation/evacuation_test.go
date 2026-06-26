@@ -85,7 +85,7 @@ func TestEvacuateEmptySatellite(t *testing.T) {
 	cl, lc := setupTestCluster(t, TestNodeA, TestNodeB, MachineA, MachineB)
 
 	// Satellite has no resources, no PVs, no nothing, so evacuation should just complete
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.True(t, cont)
 	assert.Equal(t, "", msg)
@@ -116,7 +116,7 @@ func TestEvacuateSatelliteWithLocalPVs(t *testing.T) {
 	createResource(t, lc, "remote-pv-unattached", "rg1", nil, TestNodeA.Name, TestNodeB.Name)
 
 	// Satellite still has a local-only PV
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.False(t, cont)
 	assert.Contains(t, msg, "Waiting for PVs to be schedulable on other nodes")
@@ -215,7 +215,7 @@ func TestEvacuateSatelliteWithEvacuationActionPVs(t *testing.T) {
 	createResource(t, lc, "local-pv-action-delete-on-rg", "test-rg-delete", nil, TestNodeA.Name)
 
 	// Satellite still has a local-only PV
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.False(t, cont)
 	assert.Contains(t, msg, "Waiting for PVs to be schedulable on other nodes")
@@ -259,7 +259,7 @@ func TestEvacuateSatelliteWaitForOtherSatellites(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Satellite still has a local-only PV
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.False(t, cont)
 	assert.Contains(t, msg, "Waiting for LinstorSatellites to become ready")
@@ -296,7 +296,7 @@ func TestEvacuateSatelliteWaitForReattach(t *testing.T) {
 	)
 
 	// Node A still has a local-only PV attached
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.False(t, cont)
 	assert.Contains(t, msg, "Waiting for PVs to reattach on other nodes")
@@ -346,7 +346,7 @@ func TestEvacuateSatelliteWaitForLinstorEvacuation(t *testing.T) {
 	createResource(t, lc, "remote-pv-unattached", "rg1", nil, TestNodeA.Name)
 
 	// PVs already attached on other Nodes, now waiting for LINSTOR to clear the resource
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.False(t, cont)
 	assert.Contains(t, msg, "Waiting on remaining resources and snapshots: resources")
@@ -390,7 +390,7 @@ func TestEvacuateSatelliteComplete(t *testing.T) {
 	createResource(t, lc, "remote-pv-unattached", "rg1", nil, TestNodeB.Name)
 
 	// PVs already attached on other Nodes, LINSTOR resources cleaned up
-	msg, cont, err := runEvacuateSatellite(t, cl, lc)
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conditions.New(), 0)
 	assert.NoError(t, err)
 	assert.True(t, cont)
 	assert.Equal(t, "", msg)
@@ -405,6 +405,55 @@ func TestEvacuateSatelliteComplete(t *testing.T) {
 	assert.Contains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
 	assert.NotContains(t, getMachine(t, cl, "machine-a").Annotations, vars.MachinePreDrainHookAnnotation)
 	assert.NotContains(t, getMachine(t, cl, "machine-a").Annotations, vars.MachinePreTerminateHookAnnotation)
+}
+
+func TestEvacuateSatelliteUnderLimitProceeds(t *testing.T) {
+	t.Parallel()
+	cl, lc := setupTestCluster(t, TestNodeA, TestNodeB, MachineA, MachineB)
+
+	// node-a is the only candidate, so a limit of 1 still admits it and evacuation completes.
+	conds := conditions.New()
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conds, 1)
+	assert.NoError(t, err)
+	assert.True(t, cont)
+	assert.Equal(t, "", msg)
+	assert.Contains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
+}
+
+func TestEvacuateSatelliteAtLimitWaits(t *testing.T) {
+	t.Parallel()
+	// node-b is already evacuating and the limit is 1, so node-a must wait for a free slot.
+	cl, lc := setupTestCluster(t,
+		TestNodeA, TestNodeB, MachineA, MachineB,
+		createEvacuatingSatellite("node-b", conditions.ReasonInProgress, time.Now()),
+	)
+
+	conds := conditions.New()
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conds, 1)
+	assert.NoError(t, err)
+	assert.False(t, cont)
+	assert.Contains(t, msg, "Waiting for a free evacuation slot")
+	assert.Equal(t, string(conditions.ReasonWaiting), evacuatedConditionReason(conds))
+
+	// No evacuation step ran: the node is not flagged for evacuation and the Machine keeps its drain hook.
+	assert.NotContains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
+	assert.Contains(t, getMachine(t, cl, "machine-a").Annotations, vars.MachinePreDrainHookAnnotation)
+}
+
+func TestEvacuateSatelliteBelowLimitWithOtherInProgress(t *testing.T) {
+	t.Parallel()
+	// node-b is evacuating but the limit is 2, so node-a is also admitted and completes.
+	cl, lc := setupTestCluster(t,
+		TestNodeA, TestNodeB, MachineA, MachineB,
+		createEvacuatingSatellite("node-b", conditions.ReasonInProgress, time.Now()),
+	)
+
+	conds := conditions.New()
+	msg, cont, err := runEvacuateSatellite(t, cl, lc, conds, 2)
+	assert.NoError(t, err)
+	assert.True(t, cont)
+	assert.Equal(t, "", msg)
+	assert.Contains(t, getSatellite(t, lc, "node-a").Flags, linstor.FlagEvacuate)
 }
 
 func createPV(name, accessPolicy string, annotations map[string]string, nodes ...string) *corev1.PersistentVolume {
@@ -537,7 +586,7 @@ func createResource(t *testing.T, lc *lapi.Client, name, resourceGroup string, p
 	}
 }
 
-func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client) (string, bool, error) {
+func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client, conds conditions.Conditions, limit int) (string, bool, error) {
 	machineCl := clusterapi.NewClient(cl)
 
 	var node corev1.Node
@@ -550,10 +599,66 @@ func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client) (stri
 	machine, err := machineCl.GetMachineForNode(t.Context(), &node)
 	assert.NoError(t, err)
 
-	return evacuation.EvacuateSatellite(t.Context(), cl, lc, &record.FakeRecorder{}, &satellite, machineCl, machine, &piraeusv1.EvacuationStrategy{
+	done, err := evacuation.EvacuateSatellite(t.Context(), cl, lc, &record.FakeRecorder{}, &satellite, machineCl, machine, &piraeusv1.EvacuationStrategy{
 		AttachedVolumeReattachTimeout: metav1.Duration{Duration: 5 * time.Second},
 		UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 10 * time.Second},
-	})
+	}, conds, limit)
+
+	// EvacuateSatellite now reports progress on the condition; surface it as the message while evacuation is
+	// still ongoing so the tests can assert on it.
+	var msg string
+	if !done && err == nil {
+		msg = evacuatedConditionMessage(conds)
+	}
+
+	return msg, done, err
+}
+
+// createEvacuatingSatellite builds a LinstorSatellite that already carries a SatelliteEvacuated condition,
+// as if it were mid-evacuation (or queued), so it counts against the concurrency budget. It is still
+// reported as Configured so it does not block other Satellites waiting for peers to become ready.
+func createEvacuatingSatellite(name string, reason conditions.Reason, since time.Time) *piraeusv1.LinstorSatellite {
+	return &piraeusv1.LinstorSatellite{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Generation: 1},
+		Spec:       piraeusv1.LinstorSatelliteSpec{DeletionPolicy: piraeusv1.DeletionPolicyEvacuate},
+		Status: piraeusv1.LinstorSatelliteStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:               string(conditions.Configured),
+					Status:             metav1.ConditionTrue,
+					Reason:             string(conditions.ReasonAsExpected),
+					Message:            "configured",
+					ObservedGeneration: 1,
+				},
+				{
+					Type:               evacuation.SatelliteEvacuatedCondition,
+					Status:             metav1.ConditionFalse,
+					Reason:             string(reason),
+					Message:            "evacuating",
+					LastTransitionTime: metav1.NewTime(since),
+					ObservedGeneration: 1,
+				},
+			},
+		},
+	}
+}
+
+func evacuatedConditionReason(conds conditions.Conditions) string {
+	for _, c := range conds.ToConditions(1) {
+		if c.Type == evacuation.SatelliteEvacuatedCondition {
+			return c.Reason
+		}
+	}
+	return ""
+}
+
+func evacuatedConditionMessage(conds conditions.Conditions) string {
+	for _, c := range conds.ToConditions(1) {
+		if c.Type == evacuation.SatelliteEvacuatedCondition {
+			return c.Message
+		}
+	}
+	return ""
 }
 
 func getSatellite(t *testing.T, lc *lapi.Client, name string) *lapi.Node {
