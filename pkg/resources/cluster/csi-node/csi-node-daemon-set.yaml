@@ -42,10 +42,10 @@ spec:
         - name: linstor-csi
           image: linstor-csi
           args:
-            - --csi-endpoint=unix:///csi/csi.sock
+            - --csi-endpoint=unix://$(ADDRESS)
             - --node=$(KUBE_NODE_NAME)
-            - --property-namespace=Aux/topology
-            - --label-by-storage-pool=false
+            - --property-namespace=$(PROPERTY_NAMESPACE)
+            - --label-by-storage-pool=$(LABEL_BY_STORAGE_POOL)
           securityContext:
             readOnlyRootFilesystem: true
             privileged: true
@@ -55,6 +55,12 @@ spec:
               add:
                 - SYS_ADMIN
           env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: PROPERTY_NAMESPACE
+              value: Aux/topology
+            - name: LABEL_BY_STORAGE_POOL
+              value: 'false'
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -93,10 +99,19 @@ spec:
         - name: csi-node-driver-registrar
           image: csi-node-driver-registrar
           args:
-            - '--v=5'
-            - '--csi-address=/csi/csi.sock'
-            - '--kubelet-registration-path=/var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock'
-            - '--health-port=9809'
+            - '--v=$(VERBOSE)'
+            - '--csi-address=$(ADDRESS)'
+            - '--kubelet-registration-path=$(KUBELET_REGISTRATION_PATH)'
+            - '--health-port=$(HEALTH_PORT)'
+          env:
+            - name: VERBOSE
+              value: "5"
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: KUBELET_REGISTRATION_PATH
+              value: /var/lib/kubelet/plugins/linstor.csi.linbit.com/csi.sock
+            - name: HEALTH_PORT
+              value: "9809"
           securityContext:
             readOnlyRootFilesystem: true
             capabilities:
@@ -127,7 +142,10 @@ spec:
             - name: plugin-dir
               mountPath: /csi
           args:
-            - '--csi-address=/csi/csi.sock'
+            - '--csi-address=$(ADDRESS)'
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
       volumes:
         - name: device-dir
           hostPath:

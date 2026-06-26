@@ -29,11 +29,9 @@ spec:
               name: publish-dir
               mountPropagation: Bidirectional
           - name: csi-node-driver-registrar
-            args:
-            - --v=5
-            - --csi-address=/csi/csi.sock
-            - --kubelet-registration-path=/var/lib/k0s/kubelet/plugins/linstor.csi.linbit.com/csi.sock
-            - --health-port=9809
+            env:
+              - name: KUBELET_REGISTRATION_PATH
+                value: /var/lib/k0s/kubelet/plugins/linstor.csi.linbit.com/csi.sock
         volumes:
          - name: publish-dir
            hostPath:
