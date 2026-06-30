@@ -40,18 +40,29 @@ const (
 // SatelliteEvacuatedCondition tracks the progress of evacuating volumes off a Satellite.
 const SatelliteEvacuatedCondition = "SatelliteEvacuated"
 
-// admissionMu serializes evacuation admission decisions so concurrent reconciles compute a consistent view
-// of how many Satellites are currently evacuating.
-var admissionMu sync.Mutex
+// Evacuator moves LINSTOR resources off a Satellite that is being removed. It bundles the Kubernetes and
+// ClusterAPI clients, which are stable for the lifetime of the reconciler; the per-cluster LINSTOR client is
+// passed to EvacuateSatellite instead.
+type Evacuator struct {
+	// Client reads and updates PVs, VolumeAttachments and LinstorSatellites.
+	Client client.Client
+	// Recorder records events on the affected PVCs/PVs.
+	Recorder record.EventRecorder
+	// MachineClient releases the ClusterAPI Machine drain/terminate hooks as evacuation progresses.
+	MachineClient *clusterapi.Client
+
+	// admissionMu serializes evacuation admission decisions so concurrent reconciles compute a consistent
+	// view of how many Satellites are currently evacuating.
+	admissionMu sync.Mutex
+}
 
 // EvacuateSatellite ensures all LINSTOR Resources have been moved to other nodes, honoring the cluster-wide
 // evacuation concurrency limit, and records the progress on the SatelliteEvacuatedCondition.
 //
-// Returns a message indicating the current progress and a bool indicating if evacuation is complete. The
-// function should be called repeatedly until completion of the evacuation.
-func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy, conds conditions.Conditions, maxConcurrent int) (bool, error) {
+// Returns true once evacuation is complete. The function should be called repeatedly until then.
+func (e *Evacuator) EvacuateSatellite(ctx context.Context, lclient *lapi.Client, node *lapi.Node, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy, conds conditions.Conditions, maxConcurrent int) (bool, error) {
 	// Gate evacuation progress on the cluster-wide concurrency limit.
-	admitted, position, total, err := admitEvacuation(ctx, cl, node.Name, maxConcurrent)
+	admitted, position, total, err := e.admitEvacuation(ctx, node.Name, maxConcurrent)
 	if err != nil {
 		conds.AddError(SatelliteEvacuatedCondition, err)
 		return false, err
@@ -63,7 +74,7 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 		return false, nil
 	}
 
-	msg, done, err := evacuateSatellite(ctx, cl, lclient, recorder, node, machineClient, machine, evacuationStrategy)
+	msg, done, err := e.evacuateSatellite(ctx, lclient, node, machine, evacuationStrategy)
 	switch {
 	case err != nil:
 		conds.AddError(SatelliteEvacuatedCondition, err)
@@ -88,16 +99,16 @@ func EvacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 //
 // Returns whether the Satellite is admitted, its zero-based position in the ordering, and the total number
 // of candidates.
-func admitEvacuation(ctx context.Context, cl client.Client, name string, maxConcurrent int) (bool, int, int, error) {
+func (e *Evacuator) admitEvacuation(ctx context.Context, name string, maxConcurrent int) (bool, int, int, error) {
 	if maxConcurrent <= 0 {
 		return true, 0, 0, nil
 	}
 
-	admissionMu.Lock()
-	defer admissionMu.Unlock()
+	e.admissionMu.Lock()
+	defer e.admissionMu.Unlock()
 
 	var satellites piraeusiov1.LinstorSatelliteList
-	err := cl.List(ctx, &satellites)
+	err := e.Client.List(ctx, &satellites)
 	if err != nil {
 		return false, 0, 0, err
 	}
@@ -163,51 +174,51 @@ func admitEvacuation(ctx context.Context, cl client.Client, name string, maxConc
 //
 // Returns a message indicating the current progress and a bool indicating if evacuation is complete.
 // The function should be called repeatedly until completion of the evacuation.
-func evacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, node *lapi.Node, machineClient *clusterapi.Client, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
+func (e *Evacuator) evacuateSatellite(ctx context.Context, lclient *lapi.Client, node *lapi.Node, machine *clusterapi.Machine, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
 	// Step 1: ensure PVs can be rescheduled to other nodes
-	msg, done, err := preparePVsforEvacuation(ctx, cl, lclient, recorder, node.Name)
+	msg, done, err := e.preparePVsforEvacuation(ctx, lclient, node.Name)
 	if err != nil || !done {
 		return msg, done, err
 	}
 
 	// Step 2: wait for all Satellites to be online, so rescheduled workloads can attach the volumes
-	msg, done, err = waitForConfiguredSatellites(ctx, cl, node.Name)
+	msg, done, err = e.waitForConfiguredSatellites(ctx, node.Name)
 	if err != nil || !done {
 		return msg, done, err
 	}
 
 	// Step 3: Node is now ready to be drained
-	err = machineClient.AllowMachineDrain(ctx, recorder, machine)
+	err = e.MachineClient.AllowMachineDrain(ctx, e.Recorder, machine)
 	if err != nil {
 		return "", false, err
 	}
 
 	// Step 4: Wait for PVs that have been active on this node to be reattached
-	msg, done, err = waitForReattach(ctx, cl, recorder, node.Name, evacuationStrategy)
+	msg, done, err = e.waitForReattach(ctx, node.Name, evacuationStrategy)
 	if err != nil || !done {
 		return msg, done, err
 	}
 
 	// Step 5: Start evacuating the Satellite
-	err = evacuateNode(ctx, lclient, node)
+	err = e.evacuateNode(ctx, lclient, node)
 	if err != nil {
 		return "", false, err
 	}
 
 	// Step 6: Wait for Satellite to be completely evacuated
-	msg, done, err = waitForEvacuation(ctx, lclient, node.Name)
+	msg, done, err = e.waitForEvacuation(ctx, lclient, node.Name)
 	if err != nil || !done {
 		return msg, done, err
 	}
 
 	// Step 7: Remove temporary PV annotations
-	err = cleanPVsAfterEvacuation(ctx, cl, node.Name)
+	err = e.cleanPVsAfterEvacuation(ctx, node.Name)
 	if err != nil {
 		return "", false, err
 	}
 
 	// Step 8: Allow Machine to be terminated
-	err = machineClient.AllowMachineTermination(ctx, recorder, machine)
+	err = e.MachineClient.AllowMachineTermination(ctx, e.Recorder, machine)
 	if err != nil {
 		return "", false, err
 	}
@@ -220,9 +231,9 @@ func evacuateSatellite(ctx context.Context, cl client.Client, lclient *lapi.Clie
 // It checks for PVs that are either only accessible from the local node or are currently attached and:
 // * marks them with annotations so later steps can find them.
 // * ensures that "local" PVs are temporarily reschedulable during evacuation.
-func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lapi.Client, recorder record.EventRecorder, nodeName string) (string, bool, error) {
+func (e *Evacuator) preparePVsforEvacuation(ctx context.Context, lclient *lapi.Client, nodeName string) (string, bool, error) {
 	var volumeAttachmentList storagev1.VolumeAttachmentList
-	err := cl.List(ctx, &volumeAttachmentList)
+	err := e.Client.List(ctx, &volumeAttachmentList)
 	if err != nil {
 		return "", false, err
 	}
@@ -230,13 +241,13 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 	attachments := AttachmentsByPV(volumeAttachmentList.Items)
 
 	var nodeList corev1.NodeList
-	err = cl.List(ctx, &nodeList)
+	err = e.Client.List(ctx, &nodeList)
 	if err != nil {
 		return "", false, err
 	}
 
 	var persistentVolumeList corev1.PersistentVolumeList
-	err = cl.List(ctx, &persistentVolumeList)
+	err = e.Client.List(ctx, &persistentVolumeList)
 	if err != nil {
 		return "", false, err
 	}
@@ -261,7 +272,7 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 		rds[rd.Name] = rd.ResourceDefinition
 	}
 
-	resourceList, err := getDiskfulResourcesOnNode(ctx, lclient, nodeName)
+	resourceList, err := e.getDiskfulResourcesOnNode(ctx, lclient, nodeName)
 	if err != nil {
 		return "", false, err
 	}
@@ -292,7 +303,7 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 				pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] = "false"
 			}
 
-			PVCOrPVEventf(recorder, pv, corev1.EventTypeNormal, VolumeEvacuatingEvent, "Volume is being evacuated from Node '%s'", nodeName)
+			e.pvcOrPVEventf(pv, corev1.EventTypeNormal, VolumeEvacuatingEvent, "Volume is being evacuated from Node '%s'", nodeName)
 		}
 
 		switch evacuationActionForPV(pv, rds, rgs, nodeName, nodeList.Items) {
@@ -304,7 +315,7 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 				toUpdate = true
 				pv.Annotations[affinity.OverrideAnnotationPrefix+"/"+nodeName] = "true"
 
-				PVCOrPVEventf(recorder, pv, corev1.EventTypeNormal, VolumeTemporarilyMadeReschedulableEvent, "Volume is made reschedulable to attach on replacement node")
+				e.pvcOrPVEventf(pv, corev1.EventTypeNormal, VolumeTemporarilyMadeReschedulableEvent, "Volume is made reschedulable to attach on replacement node")
 			}
 
 			unschedulablePVs = append(unschedulablePVs, pv.Name)
@@ -318,15 +329,15 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 					},
 				}
 
-				PVCOrPVEventf(recorder, pv, corev1.EventTypeNormal, VolumeDeletedForEvacuationEvent, "Volume deleted on node according to evacuation action")
+				e.pvcOrPVEventf(pv, corev1.EventTypeNormal, VolumeDeletedForEvacuationEvent, "Volume deleted on node according to evacuation action")
 
-				if err := cl.Delete(ctx, pvc, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.Spec.ClaimRef.UID)))); err != nil && !k8serrors.IsNotFound(err) {
+				if err := e.Client.Delete(ctx, pvc, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.Spec.ClaimRef.UID)))); err != nil && !k8serrors.IsNotFound(err) {
 					errs = append(errs, err)
 				}
 			}
 
 			if pv.DeletionTimestamp == nil {
-				if err := cl.Delete(ctx, pv, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.UID)))); err != nil && !k8serrors.IsNotFound(err) {
+				if err := e.Client.Delete(ctx, pv, client.Preconditions(*metav1.NewUIDPreconditions(string(pv.UID)))); err != nil && !k8serrors.IsNotFound(err) {
 					errs = append(errs, err)
 				}
 			}
@@ -335,7 +346,7 @@ func preparePVsforEvacuation(ctx context.Context, cl client.Client, lclient *lap
 		}
 
 		if toUpdate {
-			if err := cl.Update(ctx, pv); err != nil && !k8serrors.IsNotFound(err) {
+			if err := e.Client.Update(ctx, pv); err != nil && !k8serrors.IsNotFound(err) {
 				errs = append(errs, err)
 			}
 		}
@@ -396,9 +407,9 @@ func evacuationActionForPV(pv *corev1.PersistentVolume, rds map[string]lapi.Reso
 	return PVEvacuationActionNone
 }
 
-func waitForConfiguredSatellites(ctx context.Context, cl client.Client, nodeName string) (string, bool, error) {
+func (e *Evacuator) waitForConfiguredSatellites(ctx context.Context, nodeName string) (string, bool, error) {
 	var satellites piraeusiov1.LinstorSatelliteList
-	err := cl.List(ctx, &satellites)
+	err := e.Client.List(ctx, &satellites)
 	if err != nil {
 		return "", false, err
 	}
@@ -439,17 +450,17 @@ func waitForConfiguredSatellites(ctx context.Context, cl client.Client, nodeName
 	return "", true, nil
 }
 
-func waitForReattach(ctx context.Context, cl client.Client, recorder record.EventRecorder, nodeName string, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
+func (e *Evacuator) waitForReattach(ctx context.Context, nodeName string, evacuationStrategy *piraeusiov1.EvacuationStrategy) (string, bool, error) {
 	now := time.Now()
 
 	var pvs corev1.PersistentVolumeList
-	err := cl.List(ctx, &pvs)
+	err := e.Client.List(ctx, &pvs)
 	if err != nil {
 		return "", false, err
 	}
 
 	var volumeAttachmentList storagev1.VolumeAttachmentList
-	err = cl.List(ctx, &volumeAttachmentList)
+	err = e.Client.List(ctx, &volumeAttachmentList)
 	if err != nil {
 		return "", false, err
 	}
@@ -469,12 +480,12 @@ func waitForReattach(ctx context.Context, cl client.Client, recorder record.Even
 		switch pv.Annotations[vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName] {
 		case "true":
 			if now.Sub(waitedForReattachSince) >= evacuationStrategy.AttachedVolumeReattachTimeout.Duration {
-				PVCOrPVEventf(recorder, &pv, corev1.EventTypeNormal, VolumeNotAttachedForEvacuationEvent, "Timed out waiting for Volume to reattach (limit: %s), proceeding with evacuation", evacuationStrategy.AttachedVolumeReattachTimeout.Duration)
+				e.pvcOrPVEventf(&pv, corev1.EventTypeNormal, VolumeNotAttachedForEvacuationEvent, "Timed out waiting for Volume to reattach (limit: %s), proceeding with evacuation", evacuationStrategy.AttachedVolumeReattachTimeout.Duration)
 				continue
 			}
 		case "false":
 			if now.Sub(waitedForReattachSince) >= evacuationStrategy.UnattachedVolumeAttachTimeout.Duration {
-				PVCOrPVEventf(recorder, &pv, corev1.EventTypeNormal, VolumeNotAttachedForEvacuationEvent, "Timed out waiting for Volume to attach (limit: %s), proceeding with evacuation", evacuationStrategy.UnattachedVolumeAttachTimeout.Duration)
+				e.pvcOrPVEventf(&pv, corev1.EventTypeNormal, VolumeNotAttachedForEvacuationEvent, "Timed out waiting for Volume to attach (limit: %s), proceeding with evacuation", evacuationStrategy.UnattachedVolumeAttachTimeout.Duration)
 				continue
 			}
 		default:
@@ -491,11 +502,11 @@ func waitForReattach(ctx context.Context, cl client.Client, recorder record.Even
 			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName)
 			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName)
 
-			if err := cl.Update(ctx, &pv); err != nil {
+			if err := e.Client.Update(ctx, &pv); err != nil {
 				return "", false, err
 			}
 
-			PVCOrPVEventf(recorder, &pv, corev1.EventTypeNormal, VolumeAttachedForEvacuationEvent, "Volume successfully attached on Node(s) [%s], proceeding with evacuation", strings.Join(attachedNodes, ", "))
+			e.pvcOrPVEventf(&pv, corev1.EventTypeNormal, VolumeAttachedForEvacuationEvent, "Volume successfully attached on Node(s) [%s], proceeding with evacuation", strings.Join(attachedNodes, ", "))
 		}
 	}
 
@@ -506,7 +517,7 @@ func waitForReattach(ctx context.Context, cl client.Client, recorder record.Even
 				// NB: pv.Annotations cannot be null, as only PVs with the "wait-for-reattach" annotation are considered
 				pv.Annotations[vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName] = now.Format(time.RFC3339)
 
-				if err := cl.Update(ctx, pv); err != nil {
+				if err := e.Client.Update(ctx, pv); err != nil {
 					return "", false, err
 				}
 			}
@@ -520,7 +531,7 @@ func waitForReattach(ctx context.Context, cl client.Client, recorder record.Even
 	return "", true, nil
 }
 
-func evacuateNode(ctx context.Context, lclient *lapi.Client, node *lapi.Node) error {
+func (e *Evacuator) evacuateNode(ctx context.Context, lclient *lapi.Client, node *lapi.Node) error {
 	ress, err := lclient.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{node.Name}})
 	if err != nil && !errors.Is(err, lapi.NotFoundError) {
 		return err
@@ -560,7 +571,7 @@ func evacuateNode(ctx context.Context, lclient *lapi.Client, node *lapi.Node) er
 	return nil
 }
 
-func waitForEvacuation(ctx context.Context, lclient *lapi.Client, nodeName string) (string, bool, error) {
+func (e *Evacuator) waitForEvacuation(ctx context.Context, lclient *lapi.Client, nodeName string) (string, bool, error) {
 	ress, err := lclient.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{nodeName}})
 	if err != nil && !errors.Is(err, lapi.NotFoundError) {
 		return "", false, err
@@ -588,9 +599,9 @@ func waitForEvacuation(ctx context.Context, lclient *lapi.Client, nodeName strin
 	return "", true, nil
 }
 
-func cleanPVsAfterEvacuation(ctx context.Context, cl client.Client, nodeName string) error {
+func (e *Evacuator) cleanPVsAfterEvacuation(ctx context.Context, nodeName string) error {
 	var pvs corev1.PersistentVolumeList
-	err := cl.List(ctx, &pvs)
+	err := e.Client.List(ctx, &pvs)
 	if err != nil {
 		return err
 	}
@@ -605,14 +616,14 @@ func cleanPVsAfterEvacuation(ctx context.Context, cl client.Client, nodeName str
 			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachSinceAnnotationPrefix+"/"+nodeName)
 			delete(pv.Annotations, vars.PersistentVolumeWaitForReattachAnnotationPrefix+"/"+nodeName)
 			delete(pv.Annotations, affinity.OverrideAnnotationPrefix+"/"+nodeName)
-			errs = append(errs, cl.Update(ctx, &pv))
+			errs = append(errs, e.Client.Update(ctx, &pv))
 		}
 	}
 
 	return errors.Join(errs...)
 }
 
-func getDiskfulResourcesOnNode(ctx context.Context, lclient *lapi.Client, nodeName string) ([]string, error) {
+func (e *Evacuator) getDiskfulResourcesOnNode(ctx context.Context, lclient *lapi.Client, nodeName string) ([]string, error) {
 	ress, err := lclient.Resources.GetResourceView(ctx, &lapi.ListOpts{Node: []string{nodeName}})
 	if err != nil && !errors.Is(err, lapi.NotFoundError) {
 		return nil, err
@@ -709,11 +720,11 @@ func isAttachableOnOtherNode(pv *corev1.PersistentVolume, currentNodeName string
 	return false
 }
 
-// PVCOrPVEventf records an event, either for the PVC or for the PV, if no PVC is currently bound.
-func PVCOrPVEventf(recorder record.EventRecorder, pv *corev1.PersistentVolume, eventtype, reason, message string, args ...interface{}) {
+// pvcOrPVEventf records an event, either for the PVC or for the PV, if no PVC is currently bound.
+func (e *Evacuator) pvcOrPVEventf(pv *corev1.PersistentVolume, eventtype, reason, message string, args ...interface{}) {
 	if pv.Spec.ClaimRef != nil {
-		recorder.Eventf(pv.Spec.ClaimRef, eventtype, reason, message, args...)
+		e.Recorder.Eventf(pv.Spec.ClaimRef, eventtype, reason, message, args...)
 	} else {
-		recorder.Eventf(pv, eventtype, reason, message, args...)
+		e.Recorder.Eventf(pv, eventtype, reason, message, args...)
 	}
 }

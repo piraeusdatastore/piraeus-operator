@@ -79,6 +79,7 @@ type LinstorSatelliteReconciler struct {
 	PodExecutor        podexec.Executor
 	log                logr.Logger
 	recorder           record.EventRecorder
+	evacuator          *evacuation.Evacuator
 }
 
 //+kubebuilder:rbac:groups=piraeus.io,resources=linstorsatellites,verbs=get;list;watch;create;update;patch;delete
@@ -529,7 +530,7 @@ func (r *LinstorSatelliteReconciler) reconcileLinstorSatelliteState(ctx context.
 				return err
 			}
 
-			_, err = evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy, conds, limit)
+			_, err = r.evacuator.EvacuateSatellite(ctx, lc.Client, lnode, machine, &lsatellite.Spec.EvacuationStrategy, conds, limit)
 			if err != nil {
 				return err
 			}
@@ -763,7 +764,7 @@ func (r *LinstorSatelliteReconciler) deleteSatellite(ctx context.Context, lsatel
 			return false, err
 		}
 
-		done, err := evacuation.EvacuateSatellite(ctx, r.Client, lc.Client, r.recorder, &lnode, r.MachineClient, machine, &lsatellite.Spec.EvacuationStrategy, conds, limit)
+		done, err := r.evacuator.EvacuateSatellite(ctx, lc.Client, &lnode, machine, &lsatellite.Spec.EvacuationStrategy, conds, limit)
 		if err != nil {
 			return false, err
 		}
@@ -850,6 +851,11 @@ func (r *LinstorSatelliteReconciler) SetupWithManager(mgr ctrl.Manager, opts con
 
 	r.log = mgr.GetLogger().WithName("LinstorSatelliteReconciler")
 	r.recorder = mgr.GetEventRecorderFor("LinstorSatelliteReconciler")
+	r.evacuator = &evacuation.Evacuator{
+		Client:        r.Client,
+		Recorder:      r.recorder,
+		MachineClient: r.MachineClient,
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&piraeusiov1.LinstorSatellite{}).

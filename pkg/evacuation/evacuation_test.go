@@ -599,7 +599,12 @@ func runEvacuateSatellite(t *testing.T, cl client.Client, lc *lapi.Client, conds
 	machine, err := machineCl.GetMachineForNode(t.Context(), &node)
 	assert.NoError(t, err)
 
-	done, err := evacuation.EvacuateSatellite(t.Context(), cl, lc, &record.FakeRecorder{}, &satellite, machineCl, machine, &piraeusv1.EvacuationStrategy{
+	evac := &evacuation.Evacuator{
+		Client:        cl,
+		Recorder:      &record.FakeRecorder{},
+		MachineClient: machineCl,
+	}
+	done, err := evac.EvacuateSatellite(t.Context(), lc, &satellite, machine, &piraeusv1.EvacuationStrategy{
 		AttachedVolumeReattachTimeout: metav1.Duration{Duration: 5 * time.Second},
 		UnattachedVolumeAttachTimeout: metav1.Duration{Duration: 10 * time.Second},
 	}, conds, limit)
