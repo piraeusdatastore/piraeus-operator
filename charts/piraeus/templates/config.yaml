@@ -18,10 +18,10 @@ data:
     #   quay.io/piraeusdatastore/piraeus-server:v1.24.2
     components:
       linstor-controller:
-        tag: v1.33.3
+        tag: v1.34.0
         image: piraeus-server
       linstor-satellite:
-        tag: v1.33.3
+        tag: v1.34.0
         image: piraeus-server
       linstor-csi:
         tag: v1.11.2
@@ -98,25 +98,25 @@ data:
     base: registry.k8s.io/sig-storage
     components:
       csi-attacher:
-        tag: v4.11.0
+        tag: v4.12.0
         image: csi-attacher
       csi-livenessprobe:
-        tag: v2.18.0
+        tag: v2.19.0
         image: livenessprobe
       csi-provisioner:
-        tag: v6.2.0
+        tag: v6.3.0
         image: csi-provisioner
       csi-snapshotter:
-        tag: v8.5.0
+        tag: v8.6.0
         image: csi-snapshotter
       csi-resizer:
-        tag: v2.1.0
+        tag: v2.2.1
         image: csi-resizer
       csi-external-health-monitor-controller:
-        tag: v0.17.0
+        tag: v0.18.0
         image: csi-external-health-monitor-controller
       csi-node-driver-registrar:
-        tag: v2.16.0
+        tag: v2.17.0
         image: csi-node-driver-registrar
   {{- range $idx, $value := .Values.imageConfigOverride }}
   {{ add $idx 1 }}_helm_override.yaml: |

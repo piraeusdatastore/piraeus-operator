@@ -8,10 +8,10 @@ base: quay.io/piraeusdatastore
 #   quay.io/piraeusdatastore/piraeus-server:v1.24.2
 components:
   linstor-controller:
-    tag: v1.33.3
+    tag: v1.34.0
     image: piraeus-server
   linstor-satellite:
-    tag: v1.33.3
+    tag: v1.34.0
     image: piraeus-server
   linstor-csi:
     tag: v1.11.2
