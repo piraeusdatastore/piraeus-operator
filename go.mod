@@ -3,7 +3,7 @@ module github.com/piraeusdatastore/piraeus-operator/v2
 go 1.26.1
 
 require (
-	github.com/LINBIT/golinstor v0.63.0
+	github.com/LINBIT/golinstor v0.64.0
 	github.com/cert-manager/cert-manager v1.20.3
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3

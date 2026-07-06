@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/LINBIT/golinstor v0.63.0 h1:UyMWCg45p8bk/uBAaN+Oki6jkmzEnLh7TA5KhevAkj0=
-github.com/LINBIT/golinstor v0.63.0/go.mod h1:XrBZ/is88K8Bw3QDZaxlwJDSgeMkiiATpv81dlZEOIk=
+github.com/LINBIT/golinstor v0.64.0 h1:WFrpnlGru56gsvLVrJOXmeC2DiVlyUbBemycWcrAr/I=
+github.com/LINBIT/golinstor v0.64.0/go.mod h1:XrBZ/is88K8Bw3QDZaxlwJDSgeMkiiATpv81dlZEOIk=
 github.com/Masterminds/semver/v3 v3.5.0 h1:kQceYJfbupGfZOKZQg0kou0DgAKhzDg2NZPAwZ/2OOE=
 github.com/Masterminds/semver/v3 v3.5.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=

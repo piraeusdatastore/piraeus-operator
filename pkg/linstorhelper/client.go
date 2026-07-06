@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,7 +19,7 @@ import (
 	lapi "github.com/LINBIT/golinstor/client"
 	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -203,7 +204,7 @@ func caReferenceToCert(ctx context.Context, caRef *piraeusv1.CAReference, namesp
 		var secret corev1.Secret
 		err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: caRef.Name}, &secret)
 		if err != nil {
-			if errors.IsNotFound(err) && caRef.Optional != nil && *caRef.Optional {
+			if apierrors.IsNotFound(err) && caRef.Optional != nil && *caRef.Optional {
 				return nil, nil
 			}
 
@@ -215,7 +216,7 @@ func caReferenceToCert(ctx context.Context, caRef *piraeusv1.CAReference, namesp
 		var cm corev1.ConfigMap
 		err := cl.Get(ctx, types.NamespacedName{Namespace: namespace, Name: caRef.Name}, &cm)
 		if err != nil {
-			if errors.IsNotFound(err) && caRef.Optional != nil && *caRef.Optional {
+			if apierrors.IsNotFound(err) && caRef.Optional != nil && *caRef.Optional {
 				return nil, nil
 			}
 
@@ -240,7 +241,7 @@ func (c *Client) CreateOrUpdateNode(ctx context.Context, node lapi.Node) (*lapi.
 	existingNode, err := c.Nodes.Get(ctx, node.Name)
 	if err != nil {
 		// For 404
-		if err != lapi.NotFoundError {
+		if !errors.Is(err, lapi.NotFoundError) {
 			return nil, fmt.Errorf("unable to get node %s: %w", node.Name, err)
 		}
 
