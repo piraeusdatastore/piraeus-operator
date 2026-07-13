@@ -12,6 +12,12 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       id-token: write
+    env:
+      # Keep the SLSA provenance out of the build metadata output, otherwise the
+      # BUILD_METADATA env var in the "Sign images" step grows large enough to
+      # blow past ARG_MAX ("Argument list too long"). The provenance attestation
+      # is still pushed to the registry; this only trims the metadata output.
+      BUILDX_METADATA_PROVENANCE: disabled
     steps:
       - name: Checkout
         uses: actions/checkout@v7
