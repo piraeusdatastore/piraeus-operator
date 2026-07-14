@@ -102,6 +102,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 ## Maintenance Tasks
 <div class="cards grid" markdown>
 
+*   Troubleshoot Piraeus Datastore
+
+    [:octicons-arrow-right-24: Guide](./troubleshooting.md)
+
 *   Monitor Piraeus Datastore with Prometheus Operator
 
     [:octicons-arrow-right-24: Guide](./monitoring.md)

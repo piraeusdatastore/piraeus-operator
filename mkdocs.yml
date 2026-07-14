@@ -43,6 +43,7 @@ nav:
       - Deploy a NetworkPolicy for Piraeus Datastore: how-to/network-policy.md
       - Use the Host Network for DRBD Replication: how-to/drbd-host-networking.md
     - Maintenance Tasks:
+      - Troubleshoot Piraeus Datastore: how-to/troubleshooting.md
       - Monitor Piraeus Datastore with Prometheus Operator: how-to/monitoring.md
       - Keep Persistent Volume Affinity Updated with LINSTOR Affinity Controller: how-to/linstor-affinity-controller.md
       - Restore a LINSTOR Database Backup: how-to/restore-linstor-db.md
