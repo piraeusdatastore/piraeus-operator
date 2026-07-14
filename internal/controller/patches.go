@@ -38,7 +38,7 @@ func ClusterLinstorInternalTLSPatch(secretName string, caRef *piraeusiov1.CARefe
 	)
 }
 
-func ClusterLinstorInternalTLSCertManagerPatch(secretName string, issuer *cmmetav1.ObjectReference) ([]kusttypes.Patch, error) {
+func ClusterLinstorInternalTLSCertManagerPatch(secretName string, issuer *cmmetav1.IssuerReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/internal-tls-cert-manager.yaml",
@@ -169,7 +169,7 @@ func ClusterApiTLSPatch(apiSecretName, clientSecretName string, caRef *piraeusio
 		})
 }
 
-func ClusterApiTLSCertManagerPatch(secretName string, issuer *cmmetav1.ObjectReference, dnsNames []string) ([]kusttypes.Patch, error) {
+func ClusterApiTLSCertManagerPatch(secretName string, issuer *cmmetav1.IssuerReference, dnsNames []string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/api-tls-cert-manager.yaml",
@@ -257,7 +257,7 @@ func ClusterNFSServerApiTLSPatch(serverSecret string, caRef *piraeusiov1.CARefer
 		})
 }
 
-func ClusterApiTLSClientCertManagerPatch(certName, secretName string, issuer *cmmetav1.ObjectReference) ([]kusttypes.Patch, error) {
+func ClusterApiTLSClientCertManagerPatch(certName, secretName string, issuer *cmmetav1.IssuerReference) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,
 		"patches/api-tls-client-cert-manager.yaml",
@@ -288,7 +288,7 @@ func SatelliteLinstorInternalTLSPatch(secretName string, caRef *piraeusiov1.CARe
 	)
 }
 
-func SatelliteLinstorInternalTLSCertManagerPatch(secretName string, issuer *cmmetav1.ObjectReference) ([]kusttypes.Patch, error) {
+func SatelliteLinstorInternalTLSCertManagerPatch(secretName string, issuer *cmmetav1.IssuerReference) ([]kusttypes.Patch, error) {
 	return render(
 		satellite.Resources,
 		"patches/internal-tls-cert-manager.yaml",

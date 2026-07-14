@@ -36,7 +36,7 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterLinstorInternalTLSCertManagerPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterLinstorInternalTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
+				return controller.ClusterLinstorInternalTLSCertManagerPatch("secret", &cmmetav1.IssuerReference{
 					Name: "issuer",
 				})
 			},
@@ -212,7 +212,7 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterApiTLSCertManagerPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterApiTLSCertManagerPatch("secret", &cmmetav1.ObjectReference{
+				return controller.ClusterApiTLSCertManagerPatch("secret", &cmmetav1.IssuerReference{
 					Name: "issuer",
 				}, []string{"api.ns.svc"})
 			},
@@ -282,7 +282,7 @@ func TestPatches(t *testing.T) {
 		{
 			name: "ClusterApiTLSClientCertManagerPatch",
 			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterApiTLSClientCertManagerPatch("cert", "secret", &cmmetav1.ObjectReference{
+				return controller.ClusterApiTLSClientCertManagerPatch("cert", "secret", &cmmetav1.IssuerReference{
 					Name: "issuer",
 				})
 			},

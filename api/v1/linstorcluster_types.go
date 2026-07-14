@@ -171,7 +171,7 @@ type LinstorClusterApiTLS struct {
 	// If set, cert-manager.io/Certificate resources will be created, provisioning the secrets referenced in
 	// *SecretName using the issuer configured here.
 	//+kubebuilder:validation:Optional
-	CertManager *cmmetav1.ObjectReference `json:"certManager,omitempty"`
+	CertManager *cmmetav1.IssuerReference `json:"certManager,omitempty"`
 
 	// CAReference configures the CA certificate to use when validating TLS certificates.
 	// If not set, the TLS secret is expected to contain a "ca.crt" containing the CA certificate.

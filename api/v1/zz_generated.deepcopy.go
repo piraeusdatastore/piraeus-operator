@@ -163,7 +163,7 @@ func (in *LinstorClusterApiTLS) DeepCopyInto(out *LinstorClusterApiTLS) {
 	*out = *in
 	if in.CertManager != nil {
 		in, out := &in.CertManager, &out.CertManager
-		*out = new(metav1.ObjectReference)
+		*out = new(metav1.IssuerReference)
 		**out = **in
 	}
 	if in.CAReference != nil {
@@ -1159,7 +1159,7 @@ func (in *TLSConfig) DeepCopyInto(out *TLSConfig) {
 	*out = *in
 	if in.CertManager != nil {
 		in, out := &in.CertManager, &out.CertManager
-		*out = new(metav1.ObjectReference)
+		*out = new(metav1.IssuerReference)
 		**out = **in
 	}
 	if in.CAReference != nil {
