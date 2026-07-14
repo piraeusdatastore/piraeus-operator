@@ -110,10 +110,6 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
     [:octicons-arrow-right-24: Guide](./monitoring.md)
 
-*   Keep Persistent Volume Affinity Updated with LINSTOR Affinity Controller
-
-    [:octicons-arrow-right-24: Guide](./linstor-affinity-controller.md)
-
 *   Restore a LINSTOR Database Backup
 
     [:octicons-arrow-right-24: Guide](./restore-linstor-db.md)
