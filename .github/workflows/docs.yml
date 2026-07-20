@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: 3.x
     - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
@@ -45,7 +45,7 @@ jobs:
         # Deployed docs are in another repo for nice URLs
         git remote add gh-pages git@github.com:piraeusdatastore/docs.git
         git fetch gh-pages gh-pages --depth=1
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: 3.x
     - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
