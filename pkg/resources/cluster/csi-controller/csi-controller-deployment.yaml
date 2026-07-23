@@ -42,6 +42,7 @@ spec:
             - --property-namespace=$(PROPERTY_NAMESPACE)
             - --label-by-storage-pool=$(LABEL_BY_STORAGE_POOL)
             - --enable-rwx=$(ENABLE_RWX)
+            - --enable-consistency-groups=$(ENABLE_CONSISTENCY_GROUPS)
             - --nfs-reactor-config-map-name=$(NFS_REACTOR_CONFIG_MAP_NAME)
           env:
             - name: ADDRESS
@@ -51,6 +52,8 @@ spec:
             - name: LABEL_BY_STORAGE_POOL
               value: 'false'
             - name: ENABLE_RWX
+              value: 'true'
+            - name: ENABLE_CONSISTENCY_GROUPS
               value: 'true'
             - name: NFS_REACTOR_CONFIG_MAP_NAME
               value: linstor-csi-nfs-server-reactor-config

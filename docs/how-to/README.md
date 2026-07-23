@@ -99,6 +99,15 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
 </div>
 
+## Volumes and Snapshots
+<div class="cards grid" markdown>
+
+*   Use Consistency Groups
+
+    [:octicons-arrow-right-24: Guide](./consistency-groups.md)
+
+</div>
+
 ## Maintenance Tasks
 <div class="cards grid" markdown>
 

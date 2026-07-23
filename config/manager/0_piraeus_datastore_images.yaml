@@ -14,10 +14,10 @@ components:
     tag: v1.34.0
     image: piraeus-server
   linstor-csi:
-    tag: v1.11.3
+    tag: v1.12.0
     image: piraeus-csi
   nfs-server:
-    tag: v1.11.3
+    tag: v1.12.0
     image: piraeus-csi-nfs-server
   drbd-reactor:
     tag: v1.11.0

@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow configuring the separator between generated Satellite resource names and the Satellite name.
 - Add `LinstorCluster.spec.maxConcurrentEvacuations` to limit how many Satellites are evacuated at the same time, for both direct and ClusterAPI-driven node removals.
+- Enable consistency groups in LINSTOR CSI: PersistentVolumeClaims sharing a `linstor.csi.linbit.com/consistency-group` label are placed as separate volumes of one LINSTOR resource, ensuring a fail-over node always sees a consistent view across the whole set of volumes.
 
 ### Changed
 
 - Updated images:
     * LINSTOR 1.34.0
+    * LINSTOR CSI 1.12.0
 
 ## [v2.10.8] - 2026-07-08
 
