@@ -16,8 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated images:
-    * LINSTOR 1.34.0
+    * LINSTOR 1.34.1
     * LINSTOR CSI 1.12.0
+    * LINSTOR Affinity Controller 1.5.0
+    * DRBD Reactor 1.12.0
 
 ## [v2.10.8] - 2026-07-08
 
