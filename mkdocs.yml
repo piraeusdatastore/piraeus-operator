@@ -25,6 +25,7 @@ nav:
       - Configure the DRBD Module Loader: how-to/drbd-loader.md
       - Install Kernel Headers to build DRBD: how-to/install-kernel-headers.md
       - Integrate with a Cluster API Management Cluster: how-to/external-cluster-api.md
+      - Configure Volume IO Limits (QoS): how-to/volume-qos.md
     - Securing Components:
       - Configure TLS Between LINSTOR Controller and LINSTOR Satellite: how-to/internal-tls.md
       - Configure TLS for the LINSTOR API: how-to/api-tls.md

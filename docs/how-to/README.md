@@ -25,6 +25,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
     [:octicons-arrow-right-24: Guide](./external-cluster-api.md)
 
+*   Configure Volume IO Limits (QoS)
+
+    [:octicons-arrow-right-24: Guide](./volume-qos.md)
+
 </div>
 
 ## Securing Components
