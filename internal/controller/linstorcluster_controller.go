@@ -1384,7 +1384,7 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 	r.APIVersion = apiDiscovery.ServerVersion()
 	r.SupportsVolumeGroupSnapshots = apiDiscovery.HasGroupVersionResource(schema.GroupVersionResource{
 		Group:    "groupsnapshot.storage.k8s.io",
-		Version:  "v1beta2",
+		Version:  "v1",
 		Resource: "volumegroupsnapshots",
 	})
 
