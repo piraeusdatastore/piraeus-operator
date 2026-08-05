@@ -74,7 +74,12 @@ spec:
               # Looks like the host has LVM configured:
               # * disable monitoring via dmeventd
               # * do not look at DRBD devices
-              lvmconfig --type current --mergedconfig --config 'activation { monitoring = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf
+              # lvmconfig merges the hosts lvm.conf and lvmlocal.conf into the
+              # generated config; profiles are separate files, so copy them.
+              if [ -d /host/etc/lvm/profile ]; then
+                cp -r /host/etc/lvm/profile /etc/lvm/
+              fi
+              LVM_SYSTEM_DIR=/host/etc/lvm lvmconfig --type current --mergedconfig --config 'activation { monitoring = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf
             else
               # Most likely, no LVM installed, which also means no udev rules
               # * disable udev sync and rules
