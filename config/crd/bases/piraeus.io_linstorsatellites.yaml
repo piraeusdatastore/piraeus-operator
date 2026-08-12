@@ -421,6 +421,11 @@ spec:
                     lvmPool:
                       description: Configures a LVM Volume Group as storage pool.
                       properties:
+                        externalLocking:
+                          description: |-
+                            ExternalLocking skips LINSTOR's internal locking for the shared VG, relying on an external
+                            lock manager such as lvmlockd on the hosts instead.
+                          type: boolean
                         physicalVolumeCreateArguments:
                           description: |-
                             PhysicalVolumeCreateArguments are arguments to pass to "pvcreate".
@@ -428,6 +433,12 @@ spec:
                           items:
                             type: string
                           type: array
+                        sharedSpace:
+                          description: |-
+                            SharedSpace marks the VG as shared between multiple nodes, identified by the given name.
+                            All storage pools backed by the same physical storage must use the same shared space name.
+                            A shared VG must be set up manually on the hosts, it cannot be created from source devices.
+                          type: string
                         volumeGroup:
                           description: VolumeGroup is the name of the Volume Group
                             (VG) to use.

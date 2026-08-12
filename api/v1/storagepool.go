@@ -128,6 +128,20 @@ func (p *LinstorStoragePool) VgCreateArguments() []string {
 	}
 }
 
+// SharedSpace returns the name of the shared space this storage pool belongs to, if any.
+func (p *LinstorStoragePool) SharedSpace() string {
+	if p.LvmPool != nil {
+		return p.LvmPool.SharedSpace
+	}
+
+	return ""
+}
+
+// ExternalLocking reports whether locking of the shared backing storage is managed outside of LINSTOR.
+func (p *LinstorStoragePool) ExternalLocking() bool {
+	return p.LvmPool != nil && p.LvmPool.ExternalLocking
+}
+
 func (p *LinstorStoragePool) LvCreateArguments() []string {
 	switch {
 	case p.LvmThinPool != nil:
@@ -186,6 +200,17 @@ type LinstorStoragePoolLvm struct {
 	// This has no effect on an existing VG, it only applies when the VG initially gets created.
 	// +kubebuilder:validation:Optional
 	VolumeGroupCreateArguments []string `json:"volumeGroupCreateArguments,omitempty"`
+
+	// SharedSpace marks the VG as shared between multiple nodes, identified by the given name.
+	// All storage pools backed by the same physical storage must use the same shared space name.
+	// A shared VG must be set up manually on the hosts, it cannot be created from source devices.
+	// +kubebuilder:validation:Optional
+	SharedSpace string `json:"sharedSpace,omitempty"`
+
+	// ExternalLocking skips LINSTOR's internal locking for the shared VG, relying on an external
+	// lock manager such as lvmlockd on the hosts instead.
+	// +kubebuilder:validation:Optional
+	ExternalLocking bool `json:"externalLocking,omitempty"`
 }
 
 type LinstorStoragePoolLvmThin struct {

@@ -17,6 +17,10 @@ import (
 var (
 	SPRegexp = regexp.MustCompile("^[A-Za-z0-9][A-Za-z0-9_-]{1,46}[A-Za-z0-9]$")
 	VGRegexp = regexp.MustCompile("^[A-Za-z0-9.+_-]+$")
+	// SharedSpaceRegexp matches valid LINSTOR shared storage pool names, which additionally
+	// must contain at least one letter (see SharedSpaceLetterRegexp).
+	SharedSpaceRegexp       = regexp.MustCompile("^[A-Za-z0-9_][A-Za-z0-9._-]{0,47}$")
+	SharedSpaceLetterRegexp = regexp.MustCompile("[A-Za-z]")
 )
 
 func ValidateStoragePools(curSPs, oldSPs []piraeusv1.LinstorStoragePool, fieldPrefix *field.Path) (admission.Warnings, field.ErrorList) {
@@ -216,6 +220,42 @@ func validateLinstorStoragePoolLvm(newSP *piraeusv1.LinstorStoragePoolLvm, oldSP
 		errs = append(errs, field.Forbidden(
 			fieldPrefix.Child("volumeGroup"),
 			"Cannot change VG name",
+		))
+	}
+
+	if newSP.SharedSpace != "" && (!SharedSpaceRegexp.MatchString(newSP.SharedSpace) || !SharedSpaceLetterRegexp.MatchString(newSP.SharedSpace)) {
+		errs = append(errs, field.Invalid(
+			fieldPrefix.Child("sharedSpace"),
+			newSP.SharedSpace,
+			"Not a valid shared storage pool name",
+		))
+	}
+
+	if newSP.SharedSpace != "" && src != nil {
+		errs = append(errs, field.Forbidden(
+			fieldPrefix.Child("sharedSpace"),
+			"Cannot create a shared VG from source devices, it must be set up manually",
+		))
+	}
+
+	if newSP.ExternalLocking && newSP.SharedSpace == "" {
+		errs = append(errs, field.Forbidden(
+			fieldPrefix.Child("externalLocking"),
+			"External locking requires a shared VG",
+		))
+	}
+
+	if oldSP != nil && oldSP.LvmPool != nil && newSP.SharedSpace != oldSP.LvmPool.SharedSpace {
+		errs = append(errs, field.Forbidden(
+			fieldPrefix.Child("sharedSpace"),
+			"Cannot change shared space name",
+		))
+	}
+
+	if oldSP != nil && oldSP.LvmPool != nil && newSP.ExternalLocking != oldSP.LvmPool.ExternalLocking {
+		errs = append(errs, field.Forbidden(
+			fieldPrefix.Child("externalLocking"),
+			"Cannot change external locking",
 		))
 	}
 

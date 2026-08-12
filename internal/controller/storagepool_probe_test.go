@@ -295,3 +295,61 @@ func TestReconcileStoragePools(t *testing.T) {
 		})
 	}
 }
+
+func TestReconcileStoragePoolsSharedSpace(t *testing.T) {
+	t.Parallel()
+
+	fake := fakelinstor.New()
+	defer fake.Server.Close()
+
+	u, err := url.Parse(fake.Server.URL)
+	if err != nil {
+		t.Fatalf("failed to parse fake server URL: %v", err)
+	}
+
+	lapiClient, err := lapi.NewClient(lapi.BaseURL(u))
+	if err != nil {
+		t.Fatalf("failed to create LINSTOR client: %v", err)
+	}
+
+	r := &LinstorSatelliteReconciler{
+		Namespace:   "ns",
+		log:         logr.Discard(),
+		PodExecutor: &fakeExecutor{fn: constExecutor("  vg1\n", nil)},
+	}
+
+	node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns"}}
+	lsatellite := &piraeusiov1.LinstorSatellite{
+		ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+		Spec: piraeusiov1.LinstorSatelliteSpec{
+			StoragePools: []piraeusiov1.LinstorStoragePool{{
+				Name:    "pool1",
+				LvmPool: &piraeusiov1.LinstorStoragePoolLvm{VolumeGroup: "vg1", SharedSpace: "shared", ExternalLocking: true},
+			}},
+		},
+	}
+
+	err = r.reconcileStoragePools(context.Background(), &linstorhelper.Client{Client: lapiClient}, lsatellite, node, pod)
+	if err != nil {
+		t.Fatalf("reconcileStoragePools() err = %v", err)
+	}
+
+	var registered *lapi.StoragePool
+	for _, sp := range fake.StoragePools() {
+		if sp.StoragePoolName == "pool1" && sp.NodeName == "node1" {
+			registered = &sp
+			break
+		}
+	}
+	if registered == nil {
+		t.Fatalf("storage pool not registered")
+	}
+
+	if registered.FreeSpaceMgrName != "shared" {
+		t.Errorf("free space manager = %q, want %q", registered.FreeSpaceMgrName, "shared")
+	}
+	if !registered.ExternalLocking {
+		t.Errorf("external locking not set on registered storage pool")
+	}
+}

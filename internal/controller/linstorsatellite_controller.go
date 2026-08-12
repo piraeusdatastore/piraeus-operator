@@ -259,8 +259,11 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 	}
 
 	var bindMountPaths []string
+	externalLocking := false
 	for i := range lsatellite.Spec.StoragePools {
 		pool := &lsatellite.Spec.StoragePools[i]
+
+		externalLocking = externalLocking || pool.ExternalLocking()
 
 		if pool.FilePool == nil && pool.FileThinPool == nil {
 			continue
@@ -282,6 +285,15 @@ func (r *LinstorSatelliteReconciler) kustomizeNodeResources(ctx context.Context,
 
 	if len(bindMountPaths) > 0 {
 		p, err := SatelliteHostPathVolumeEnvPatch(bindMountPaths)
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
+	if externalLocking {
+		p, err := SatelliteLvmlockdPatch()
 		if err != nil {
 			return nil, err
 		}
@@ -598,6 +610,11 @@ func (r *LinstorSatelliteReconciler) reconcileStoragePools(ctx context.Context, 
 					StoragePoolName: pool.Name,
 					ProviderKind:    pool.ProviderKind(),
 					Props:           linstorhelper.UpdateLastApplyProperty(expectedProperties),
+					// LINSTOR only honors the free space manager name when creating a storage pool,
+					// it ignores the dedicated shared_space field on this endpoint.
+					FreeSpaceMgrName: pool.SharedSpace(),
+					SharedSpace:      pool.SharedSpace(),
+					ExternalLocking:  pool.ExternalLocking(),
 				})
 				if err != nil {
 					errs = append(errs, fmt.Errorf("failed to create storage pool %q: %w", pool.Name, err))

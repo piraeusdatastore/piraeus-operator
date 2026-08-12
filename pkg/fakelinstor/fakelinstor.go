@@ -389,6 +389,14 @@ func (f *FakeLinstor) createStoragePool(r *http.Request) (any, error) {
 
 	sp.NodeName = r.PathValue("node")
 
+	// Mirror the LINSTOR controller: only the free space manager name is honored when creating a
+	// storage pool, the shared_space field is ignored and never set in responses. Without an
+	// explicit shared space, the pool gets the reserved per-node "<node>;<pool>" name.
+	sp.SharedSpace = ""
+	if sp.FreeSpaceMgrName == "" {
+		sp.FreeSpaceMgrName = sp.NodeName + ";" + sp.StoragePoolName
+	}
+
 	f.mu.Lock()
 	defer f.mu.Unlock()
 

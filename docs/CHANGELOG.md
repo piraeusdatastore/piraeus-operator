@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support shared LVM storage pools: setting `lvmPool.sharedSpace` registers the storage pool as backed by storage
+  shared between nodes, optionally using an external lock manager such as lvmlockd (`lvmPool.externalLocking`).
+
 ### Changed
 
 - The minimum supported Kubernetes version is now v1.30.

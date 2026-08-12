@@ -280,6 +280,72 @@ var _ = Describe("LinstorSatelliteConfiguration webhook", func() {
 		Expect(statusErr.ErrStatus.Details.Causes[3].Field).To(Equal("spec.properties.3.expandFrom"))
 	})
 
+	It("should reject invalid shared storage pools", func(ctx context.Context) {
+		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "shared-storage-pools"},
+			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+				StoragePools: []piraeusv1.LinstorStoragePool{
+					{
+						Name:    "invalid-name",
+						LvmPool: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg1", SharedSpace: "not;a;valid;name"},
+					},
+					{
+						Name:    "locking-without-shared",
+						LvmPool: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg2", ExternalLocking: true},
+					},
+					{
+						Name:    "shared-with-source",
+						LvmPool: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg3", SharedSpace: "space3"},
+						Source:  &piraeusv1.LinstorStoragePoolSource{HostDevices: []string{"/dev/vdc"}},
+					},
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, satelliteConfig, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).To(HaveOccurred())
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
+		Expect(statusErr).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details.Causes).To(ConsistOf(
+			HaveField("Field", Equal("spec.storagePools.0.lvmPool.sharedSpace")),
+			HaveField("Field", Equal("spec.storagePools.1.lvmPool.externalLocking")),
+			HaveField("Field", Equal("spec.storagePools.2.lvmPool.sharedSpace")),
+		))
+	})
+
+	It("should reject changing shared storage pool settings", func(ctx context.Context) {
+		satelliteConfig := &piraeusv1.LinstorSatelliteConfiguration{
+			TypeMeta:   typeMeta,
+			ObjectMeta: metav1.ObjectMeta{Name: "shared-storage-pools"},
+			Spec: piraeusv1.LinstorSatelliteConfigurationSpec{
+				StoragePools: []piraeusv1.LinstorStoragePool{
+					{
+						Name:    "shared-pool",
+						LvmPool: &piraeusv1.LinstorStoragePoolLvm{VolumeGroup: "vg1", SharedSpace: "space1", ExternalLocking: true},
+					},
+				},
+			},
+		}
+		err := k8sClient.Patch(ctx, satelliteConfig.DeepCopy(), client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).NotTo(HaveOccurred())
+
+		satelliteConfigCopy := satelliteConfig.DeepCopy()
+		satelliteConfigCopy.Spec.StoragePools[0].LvmPool.SharedSpace = "space2"
+		satelliteConfigCopy.Spec.StoragePools[0].LvmPool.ExternalLocking = false
+		err = k8sClient.Patch(ctx, satelliteConfigCopy, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+		Expect(err).To(HaveOccurred())
+		var statusErr *k8serrors.StatusError
+		errors.As(err, &statusErr)
+		Expect(statusErr).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details).NotTo(BeNil())
+		Expect(statusErr.ErrStatus.Details.Causes).To(ConsistOf(
+			HaveField("Field", Equal("spec.storagePools.0.lvmPool.sharedSpace")),
+			HaveField("Field", Equal("spec.storagePools.0.lvmPool.externalLocking")),
+		))
+	})
+
 	It("should reject storage pool changes", func(ctx context.Context) {
 		err := k8sClient.Patch(ctx, complexSatelliteConfig.DeepCopy(), client.Apply, client.FieldOwner("test"), client.ForceOwnership)
 		Expect(err).NotTo(HaveOccurred())

@@ -159,6 +159,14 @@ the matching key. Available types are:
       pool is first set up from a `source`.
     * `volumeGroupCreateArguments`: Additional arguments to pass to the `vgcreate` command. Only applies when the
       pool is first set up from a `source`.
+    * `sharedSpace`: Mark the Volume Group as shared between multiple nodes, for example when backed by a SAN.
+      The given name identifies the shared space in LINSTOR: all storage pools backed by the same physical storage
+      must use the same shared space name. A shared VG must be set up manually on the hosts, it cannot be created
+      from a `source`.
+    * `externalLocking`: Skip LINSTOR's internal locking for the shared VG, relying on an external lock manager
+      such as [`lvmlockd`](https://man7.org/linux/man-pages/man8/lvmlockd.8.html) running on the hosts instead.
+      The Operator mounts the host's lvmlockd pid file and sockets into the satellite container, so the pod only
+      starts once `lvmlockd` is running on the host. Requires `sharedSpace` to be set.
 *   `lvmThinPool`: Configures a [LVM Thin Pool](https://man7.org/linux/man-pages/man7/lvmthin.7.html) as storage pool.
 
     Arguments:

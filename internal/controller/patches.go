@@ -313,6 +313,18 @@ func SatellitePrecompiledModulePatch() ([]kusttypes.Patch, error) {
 	)
 }
 
+// SatelliteLvmlockdPatch mounts the host's lvmlockd pid file into the satellite container.
+// The lvmlockd sockets are covered by the /run/lvm mount in the base resources, which LVM
+// always requires. The pid file lives directly in /run; it is patched in separately so we
+// don't have to expose the host's entire /run tmpfs just for this one optional file.
+func SatelliteLvmlockdPatch() ([]kusttypes.Patch, error) {
+	return render(
+		satellite.Resources,
+		"patches/lvmlockd.yaml",
+		nil,
+	)
+}
+
 func SatelliteHostPathVolumePatch(volumeName, hostPath string) ([]kusttypes.Patch, error) {
 	return render(
 		satellite.Resources,

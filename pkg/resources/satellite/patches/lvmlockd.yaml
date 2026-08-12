@@ -1,0 +1,25 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: DaemonSet
+    name: linstor-satellite
+  patch: |
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: linstor-satellite
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: run-lvmlockd-pid
+              hostPath:
+                path: /run/lvmlockd.pid
+                type: File
+          containers:
+            - name: linstor-satellite
+              volumeMounts:
+                - name: run-lvmlockd-pid
+                  mountPath: /run/lvmlockd.pid
+                  readOnly: true

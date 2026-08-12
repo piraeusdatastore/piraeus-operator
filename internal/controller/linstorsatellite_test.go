@@ -194,6 +194,32 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			}).Should(Succeed())
 		})
 
+		It("should mount lvmlockd files for shared storage pools with external locking", func(ctx context.Context) {
+			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
+				TypeMeta:   TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{Name: ExampleNodeName},
+				Spec: piraeusiov1.LinstorSatelliteSpec{
+					StoragePools: []piraeusiov1.LinstorStoragePool{
+						{
+							Name:    "shared-pool",
+							LvmPool: &piraeusiov1.LinstorStoragePoolLvm{VolumeGroup: "vg1", SharedSpace: "space1", ExternalLocking: true},
+						},
+					},
+				},
+			}, client.Apply, client.FieldOwner("test"), client.ForceOwnership)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(func(g Gomega) {
+				var ds appsv1.DaemonSet
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-satellite." + ExampleNodeName}, &ds)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ds.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("HostPath.Path", "/run/lvmlockd.pid")))
+				container := GetContainer(ds.Spec.Template.Spec.Containers, "linstor-satellite")
+				g.Expect(container).NotTo(BeNil())
+				g.Expect(container.VolumeMounts).To(ContainElement(HaveField("Name", "run-lvmlockd-pid")))
+			}).Should(Succeed())
+		})
+
 		It("should convert bare pod patches to daemonset patches", func(ctx context.Context) {
 			err := k8sClient.Patch(ctx, &piraeusiov1.LinstorSatellite{
 				TypeMeta:   TypeMeta,
