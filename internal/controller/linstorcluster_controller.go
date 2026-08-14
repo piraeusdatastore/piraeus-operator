@@ -80,7 +80,6 @@ type LinstorClusterReconciler struct {
 	RequeueInterval              time.Duration
 	LinstorClientOpts            []lapi.Option
 	Kustomizer                   *resources.Kustomizer
-	APIVersion                   *utils.APIVersion
 	SupportsVolumeGroupSnapshots bool
 	log                          logr.Logger
 }
@@ -499,12 +498,7 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 		return nil, err
 	}
 
-	selinuxPatches, err := ClusterCSIDriverSeLinuxPatch(r.APIVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	patches = append(patches, append(endpointPatches, selinuxPatches...)...)
+	patches = append(patches, endpointPatches...)
 
 	if lcluster.Spec.NodeAffinity != nil {
 		p, err := ClusterCSIControllerNodeAffinityPatch(lcluster.Spec.NodeAffinity)
@@ -1380,8 +1374,7 @@ func (r *LinstorClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		opts.RateLimiter = DefaultRateLimiter[reconcile.Request]()
 	}
 
-	apiDiscovery := utils.NewAPIDiscoveryClient(mgr.GetConfig(), &vars.FallbackAPIVersion)
-	r.APIVersion = apiDiscovery.ServerVersion()
+	apiDiscovery := utils.NewAPIDiscoveryClient(mgr.GetConfig())
 	r.SupportsVolumeGroupSnapshots = apiDiscovery.HasGroupVersionResource(schema.GroupVersionResource{
 		Group:    "groupsnapshot.storage.k8s.io",
 		Version:  "v1",

@@ -3,8 +3,6 @@ package vars
 import (
 	linstorcsi "github.com/piraeusdatastore/linstor-csi/pkg/linstor"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/core/v1beta1" //nolint:staticcheck
-
-	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )
 
 var (
@@ -12,10 +10,6 @@ var (
 	ExtraLabels = map[string]string{
 		"app.kubernetes.io/version":    Version,
 		"app.kubernetes.io/managed-by": OperatorName,
-	}
-	FallbackAPIVersion = utils.APIVersion{
-		Major: 1,
-		Minor: 20,
 	}
 )
 

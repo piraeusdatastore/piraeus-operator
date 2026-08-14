@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The minimum supported Kubernetes version is now v1.30.
+
 ## [v2.11.0] - 2026-08-04
 
 ### Added

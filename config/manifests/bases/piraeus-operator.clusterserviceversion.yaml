@@ -71,7 +71,7 @@ spec:
   - name: Source Code
     url: https://github.com/piraeusdatastore/piraeus-operator
   maturity: alpha
-  minKubeVersion: 1.22.0
+  minKubeVersion: 1.30.0
   provider:
     name: Piraeus Datastore
     url: https://piraeus.io

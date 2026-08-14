@@ -53,7 +53,7 @@ IMG ?= quay.io/piraeusdatastore/piraeus-operator:v$(VERSION)
 ENVTEST_K8S_VERSION = $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 # ENVTEST_K8S_COMPAT_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary for
 # checking compatibility with older kubernetes versions.
-ENVTEST_K8S_COMPAT_VERSION = 1.20
+ENVTEST_K8S_COMPAT_VERSION = 1.30
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -116,8 +116,8 @@ test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: compat-test
-compat-test: manifests generate fmt vet envtest-compat ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use --use-deprecated-gcs $(ENVTEST_K8S_COMPAT_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
+compat-test: manifests generate fmt vet envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_COMPAT_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
 
 ##@ Build
 
@@ -174,7 +174,6 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
-ENVTEST_COMPAT ?= $(LOCALBIN)/setup-envtest-compat
 YQ ?= $(LOCALBIN)/yq
 
 ## Tool Versions
@@ -210,11 +209,6 @@ $(YQ): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $@ || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-
-.PHONY: envtest-compat
-envtest-compat: $(ENVTEST_COMPAT) ## Download envtest-setup locally if necessary.
-$(ENVTEST_COMPAT): $(LOCALBIN)
-	test -s $@ || GOBIN=$(LOCALBIN) go install -installsuffix -compat sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.17
 
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.

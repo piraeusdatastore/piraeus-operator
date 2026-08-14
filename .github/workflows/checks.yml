@@ -49,7 +49,7 @@ jobs:
       - name: Cache envtest assets
         uses: actions/cache@v6
         with:
-          key: envtest-compat
+          key: envtest-compat-1.30
           path: |
             bin/k8s
       - name: Run compat test

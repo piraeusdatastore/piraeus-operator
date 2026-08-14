@@ -5,7 +5,7 @@ Learn about the ways to get started with Piraeus Datastore by deploying Piraeus 
 ## Prerequisites
 
 * [Install the Linux kernel headers on the hosts](../how-to/install-kernel-headers.md).
-* [Install `kubectl` version `>= 1.22`](https://kubernetes.io/docs/tasks/tools/)
+* [Install `kubectl` version `>= 1.30`](https://kubernetes.io/docs/tasks/tools/)
 
 ## Install Piraeus Operator
 

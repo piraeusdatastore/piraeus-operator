@@ -11,7 +11,6 @@ import (
 
 	piraeusiov1 "github.com/piraeusdatastore/piraeus-operator/v2/api/v1"
 	"github.com/piraeusdatastore/piraeus-operator/v2/internal/controller"
-	"github.com/piraeusdatastore/piraeus-operator/v2/pkg/utils"
 )
 
 func TestPatches(t *testing.T) {
@@ -215,12 +214,6 @@ func TestPatches(t *testing.T) {
 				return controller.ClusterApiTLSCertManagerPatch("secret", &cmmetav1.IssuerReference{
 					Name: "issuer",
 				}, []string{"api.ns.svc"})
-			},
-		},
-		{
-			name: "ClusterCSIDriverSeLinuxPatch",
-			call: func() ([]kusttypes.Patch, error) {
-				return controller.ClusterCSIDriverSeLinuxPatch(&utils.APIVersion{Major: 1, Minor: 24})
 			},
 		},
 		{
