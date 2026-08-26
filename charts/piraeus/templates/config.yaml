@@ -112,9 +112,6 @@ data:
       csi-resizer:
         tag: v2.2.1
         image: csi-resizer
-      csi-external-health-monitor-controller:
-        tag: v0.18.0
-        image: csi-external-health-monitor-controller
       csi-node-driver-registrar:
         tag: v2.17.0
         image: csi-node-driver-registrar

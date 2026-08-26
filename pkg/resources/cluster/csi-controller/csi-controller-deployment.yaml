@@ -276,46 +276,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-        - name: csi-health-monitor
-          image: csi-external-health-monitor-controller
-          args:
-            - '--v=$(VERBOSE)'
-            - '--csi-address=$(ADDRESS)'
-            - '--timeout=$(TIMEOUT)'
-            - '--leader-election=$(LEADER_ELECTION)'
-            - '--leader-election-namespace=$(NAMESPACE)'
-            - '--worker-threads=$(WORKER_THREADS)'
-            - '--http-endpoint=$(HTTP_ENDPOINT)'
-          env:
-            - name: VERBOSE
-              value: "5"
-            - name: ADDRESS
-              value: /csi/csi.sock
-            - name: TIMEOUT
-              value: "1m"
-            - name: LEADER_ELECTION
-              value: "true"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-            - name: WORKER_THREADS
-              value: "10"
-            - name: HTTP_ENDPOINT
-              value: :9813
-          livenessProbe:
-            httpGet:
-              port: 9813
-              path: /healthz/leader-election
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-          securityContext:
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
       volumes:
         - name: socket-dir
           emptyDir: {}

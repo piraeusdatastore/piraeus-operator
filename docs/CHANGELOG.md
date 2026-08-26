@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The minimum supported Kubernetes version is now v1.30.
 
+### Removed
+
+- Removed the deprecated `csi-health-monitor` sidecar (csi-external-health-monitor-controller) from the CSI controller
+  deployment, along with its RBAC rules and default image.
+
 ### Fixed
 
 - Actually merge the host's `lvm.conf` and `lvmlocal.conf` into the LVM configuration used by the satellite, and copy over LVM profiles from the host.
