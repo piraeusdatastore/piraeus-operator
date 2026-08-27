@@ -14,6 +14,76 @@ $ kubectl apply --server-side -f "https://github.com/piraeusdatastore/piraeus-op
 $ kubectl wait pod --for=condition=Ready -n piraeus-datastore --all
 ```
 
+# Upgrades from v2.11 to v2.12
+
+The CSI controller no longer has cluster-wide permission to read Secrets. This permission was only used by the
+`csi-snapshotter` sidecar to read the Secrets referenced in a `VolumeSnapshotClass`, for example S3 credentials
+for [backups to S3](../how-to/s3-backup.md).
+
+To list all `VolumeSnapshotClass` resources along with the Secrets they reference, run:
+
+```
+$ kubectl get volumesnapshotclasses -o custom-columns='NAME:.metadata.name,SECRET-NAMESPACE:.parameters.csi\.storage\.k8s\.io/snapshotter-secret-namespace,SECRET-NAME:.parameters.csi\.storage\.k8s\.io/snapshotter-secret-name'
+NAME                SECRET-NAMESPACE    SECRET-NAME
+piraeus-s3-backup   piraeus-datastore   s3-backup-credentials
+piraeus-snapshots   <none>              <none>
+```
+
+If any Secret is referenced, grant the `linstor-csi-controller` ServiceAccount access to it **before**
+upgrading, otherwise creating new snapshots and deleting existing ones will fail. Create the following
+resources, replacing `NAMESPACE` with the namespace containing the Secret and `SECRET-NAME` with the name of
+the Secret:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-snapshot-secret
+  namespace: NAMESPACE
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    resourceNames: [ SECRET-NAME ]
+    verbs: [ "get" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-snapshot-secret
+  namespace: NAMESPACE
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: read-snapshot-secret
+subjects:
+  - kind: ServiceAccount
+    name: linstor-csi-controller
+    # Must be the namespace of the Piraeus Datastore deployment.
+    namespace: piraeus-datastore
+```
+
+Alternatively, restore the previous cluster-wide access by patching the ClusterRole through the
+`LinstorCluster` resource:
+
+```yaml
+apiVersion: piraeus.io/v1
+kind: LinstorCluster
+metadata:
+  name: linstorcluster
+spec:
+  patches:
+    - target:
+        kind: ClusterRole
+        name: linstor-csi-controller
+      patch: |-
+        - op: add
+          path: /rules/-
+          value:
+            apiGroups: [ "" ]
+            resources: [ "secrets" ]
+            verbs: [ "get" ]
+```
+
 # Upgrades from v2.8 to v2.9
 
 Generally, no special steps required.

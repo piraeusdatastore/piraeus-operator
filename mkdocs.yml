@@ -45,6 +45,7 @@ nav:
       - Use the Host Network for DRBD Replication: how-to/drbd-host-networking.md
     - Volumes and Snapshots:
       - Use Consistency Groups: how-to/consistency-groups.md
+      - Back Up Volumes to S3: how-to/s3-backup.md
     - Maintenance Tasks:
       - Troubleshoot Piraeus Datastore: how-to/troubleshooting.md
       - Monitor Piraeus Datastore with Prometheus Operator: how-to/monitoring.md

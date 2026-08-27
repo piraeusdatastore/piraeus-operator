@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed the cluster-wide permission to read Secrets from the CSI controller: access to Secrets referenced in a `VolumeSnapshotClass`, such as S3 credentials, now needs to be [granted explicitly](./how-to/s3-backup.md).
+- Removed the cluster-wide permission to read and modify Secrets from the Operator: it now manages Secrets only in its own namespace, using a namespaced Role.
 - Removed the deprecated `csi-health-monitor` sidecar (csi-external-health-monitor-controller) from the CSI controller
   deployment, along with its RBAC rules and default image.
 

@@ -110,6 +110,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
     [:octicons-arrow-right-24: Guide](./consistency-groups.md)
 
+*   Back Up Volumes to S3
+
+    [:octicons-arrow-right-24: Guide](./s3-backup.md)
+
 </div>
 
 ## Maintenance Tasks

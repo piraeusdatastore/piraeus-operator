@@ -25,6 +25,20 @@ EOF
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: {{ include "piraeus-operator.fullname" . }}-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "piraeus-operator.labels" . | nindent 4 }}
+rules:
+EOF
+
+	${KUSTOMIZE} build config/default | ${YQ} eval 'select(.kind=="Role" and .metadata.name=="piraeus-operator-controller-manager").rules'
+
+	cat <<EOF
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: {{ include "piraeus-operator.fullname" . }}-leader-election
   namespace: {{ .Release.Namespace }}
   labels:
