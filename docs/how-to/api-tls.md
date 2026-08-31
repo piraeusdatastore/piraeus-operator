@@ -172,5 +172,12 @@ curl: (60) SSL: no alternative certificate subject name matches target host name
 
 In this case, make sure you have specified the right subject names when provisioning the certificates.
 
+## Certificate Rotation
+
+The LINSTOR Controller only reads the API TLS certificates during start-up. To ensure rotated certificates are picked
+up, the Operator deploys the Controller with a liveness probe that compares the certificates used during container start-up,
+which is what the Controller loads, with the certificates on disk. When the certificates no longer match, for example after
+cert-manager renewed the certificate, the probe fails and the Controller container is restarted, loading the new certificate.
+
 All available options are documented in the reference for
 [`LinstorCluster`](../reference/linstorcluster.md#specapitls).

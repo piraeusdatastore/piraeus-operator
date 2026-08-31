@@ -177,8 +177,8 @@ k8s_secret_trusted_by satellite-tls controller-tls
 ## Certificate Rotation
 
 LINSTOR only reads certificates during start-up. To ensure rotated certificates are picked up, for example after
-cert-manager renewed a certificate, the Operator deploys the Satellite with a liveness probe that detects
-stale certificates. When the probe fails, the container is restarted, loading the new certificates.
+cert-manager renewed a certificate, the Operator deploys the Satellite and Controller with liveness probes that detect
+stale certificates. When a probe fails, the container is restarted, loading the new certificates.
 
 The restart does not interrupt replication: DRBD® connections are handled entirely in the kernel and remain up while
 the Satellite container restarts.

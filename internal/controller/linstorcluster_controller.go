@@ -462,6 +462,15 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		}
 	}
 
+	if lcluster.Spec.InternalTLS != nil || lcluster.Spec.ApiTLS != nil {
+		p, err := ClusterControllerCertRotationPatch()
+		if err != nil {
+			return nil, err
+		}
+
+		patches = append(patches, p...)
+	}
+
 	if lcluster.Spec.Controller.GetTemplate() != nil {
 		p, err := ComponentPodTemplate("Deployment", "linstor-controller", lcluster.Spec.Controller.GetTemplate())
 		if err != nil {
