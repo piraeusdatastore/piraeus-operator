@@ -581,6 +581,13 @@ var _ = Describe("LinstorCluster controller", func() {
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "linstor-controller", Namespace: Namespace}, &controllerDeployment)
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-controller-internal-tls")))))
+
+			container := GetContainer(controllerDeployment.Spec.Template.Spec.Containers, "linstor-controller")
+			g.Expect(container).NotTo(BeNil())
+			g.Expect(container.LivenessProbe).NotTo(BeNil())
+			g.Expect(container.LivenessProbe.HTTPGet).To(BeNil())
+			g.Expect(container.LivenessProbe.Exec).NotTo(BeNil())
+			g.Expect(container.LivenessProbe.Exec.Command).To(ContainElement(ContainSubstring("/etc/linstor/ssl-pem")))
 		}).Should(Succeed())
 	})
 
@@ -661,6 +668,13 @@ var _ = Describe("LinstorCluster controller", func() {
 			g.Expect(err).NotTo(HaveOccurred())
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-api-tls")))))
 			g.Expect(controllerDeployment.Spec.Template.Spec.Volumes).To(ContainElement(HaveField("Projected.Sources", ContainElement(HaveField("Secret.Name", "my-client-tls")))))
+
+			container := GetContainer(controllerDeployment.Spec.Template.Spec.Containers, "linstor-controller")
+			g.Expect(container).NotTo(BeNil())
+			g.Expect(container.LivenessProbe).NotTo(BeNil())
+			g.Expect(container.LivenessProbe.HTTPGet).To(BeNil())
+			g.Expect(container.LivenessProbe.Exec).NotTo(BeNil())
+			g.Expect(container.LivenessProbe.Exec.Command).To(ContainElement(ContainSubstring("/etc/linstor/https-pem")))
 		}).Should(Succeed())
 
 		envCheck := func(g Gomega, container *corev1.Container, secretName string) {

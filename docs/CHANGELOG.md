@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared between nodes, optionally using an external lock manager such as lvmlockd (`lvmPool.externalLocking`).
 - Support rotation of Satellite TLS certificates: with `internalTLS` enabled, the Satellite container will restart
   to pick up a rotated certificate.
+- Support rotation of Controller TLS certificates: with `internalTLS` or `apiTLS` enabled, restarting the Controller
+  container to pick up a rotated certificate.
 
 ### Changed
 

@@ -169,6 +169,14 @@ func ClusterApiTLSPatch(apiSecretName, clientSecretName string, caRef *piraeusio
 		})
 }
 
+func ClusterControllerCertRotationPatch() ([]kusttypes.Patch, error) {
+	return render(
+		cluster.Resources,
+		"patches/controller-cert-rotation.yaml",
+		nil,
+	)
+}
+
 func ClusterApiTLSCertManagerPatch(secretName string, issuer *cmmetav1.IssuerReference, dnsNames []string) ([]kusttypes.Patch, error) {
 	return render(
 		cluster.Resources,

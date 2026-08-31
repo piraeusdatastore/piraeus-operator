@@ -1,0 +1,44 @@
+---
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: linstor-controller
+  patch: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: linstor-controller
+    spec:
+      template:
+        spec:
+          containers:
+            - name: linstor-controller
+              livenessProbe:
+                httpGet: null
+                periodSeconds: 30
+                timeoutSeconds: 10
+                exec:
+                  command:
+                    - /bin/sh
+                    - -ec
+                    # The controller only loads certificates on startup: the container
+                    # entrypoint converts the PEM certificates into Java keystores,
+                    # which the JVM reads once. Comparing the keystores with the PEM
+                    # files detects rotated certificates, failing the probe so the
+                    # restarted container picks them up. Unlike a TLS handshake check,
+                    # this also covers the internal TLS certificate, which is only used
+                    # as a client certificate for connections to the satellites.
+                    - |
+                      compare_cert() {
+                        [ -d "$1" ] || return 0
+                        ON_DISK="$(openssl x509 -in "$1/tls.crt" -noout -fingerprint -sha256)"
+                        IN_USE="$(keytool -exportcert -rfc -alias linstor -keystore "$2" -storepass linstor | openssl x509 -noout -fingerprint -sha256)"
+                        if [ "$IN_USE" != "$ON_DISK" ]; then
+                          echo "TLS certificate $1/tls.crt was rotated (loaded: $IN_USE, on disk: $ON_DISK), restarting to load the new certificate"
+                          return 1
+                        fi
+                      }
+                      curl -fsS -o /dev/null http://localhost:3370/health
+                      compare_cert /etc/linstor/ssl-pem /etc/linstor/ssl/keystore.jks
+                      compare_cert /etc/linstor/https-pem /etc/linstor/https/keystore.jks
