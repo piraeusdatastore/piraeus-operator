@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support shared LVM storage pools: setting `lvmPool.sharedSpace` registers the storage pool as backed by storage
   shared between nodes, optionally using an external lock manager such as lvmlockd (`lvmPool.externalLocking`).
+- Support rotation of Satellite TLS certificates: with `internalTLS` enabled, the Satellite container will restart
+  to pick up a rotated certificate.
 
 ### Changed
 

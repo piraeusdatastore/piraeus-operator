@@ -30,6 +30,28 @@
                 - containerPort: 3367
                   name: linstor
                   protocol: TCP
+              livenessProbe:
+                tcpSocket: null
+                periodSeconds: 30
+                timeoutSeconds: 10
+                exec:
+                  command:
+                    - /bin/sh
+                    - -ec
+                    # The satellite only loads certificates on startup: the container
+                    # entrypoint converts the PEM certificates into a Java keystore,
+                    # which the JVM reads once. Comparing the keystore with the PEM
+                    # file detects rotated certificates, failing the probe so the
+                    # restarted container picks them up. The socat call keeps the
+                    # connectivity check of the replaced tcpSocket probe.
+                    - |
+                      socat -u OPEN:/dev/null TCP:localhost:3367
+                      IN_USE="$(keytool -exportcert -rfc -alias linstor -keystore /etc/linstor/ssl/keystore.jks -storepass linstor | openssl x509 -noout -fingerprint -sha256)"
+                      ON_DISK="$(openssl x509 -in /etc/linstor/ssl-pem/tls.crt -noout -fingerprint -sha256)"
+                      if [ "$IN_USE" != "$ON_DISK" ]; then
+                        echo "TLS certificate /etc/linstor/ssl-pem/tls.crt was rotated (loaded: $IN_USE, on disk: $ON_DISK), restarting to load the new certificate"
+                        exit 1
+                      fi
               volumeMounts:
                 - name: internal-tls
                   mountPath: /etc/linstor/ssl-pem

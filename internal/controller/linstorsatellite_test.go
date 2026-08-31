@@ -126,6 +126,12 @@ var _ = Describe("LinstorSatelliteReconciler", func() {
 			Expect(ds.Spec.Template.Spec.Containers[0].Ports).To(HaveLen(1))
 			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].Name).To(Equal("linstor"))
 			Expect(ds.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort).To(Equal(int32(3367)))
+
+			Expect(ds.Spec.Template.Spec.Containers[0].LivenessProbe).NotTo(BeNil())
+			Expect(ds.Spec.Template.Spec.Containers[0].LivenessProbe.TCPSocket).To(BeNil())
+			Expect(ds.Spec.Template.Spec.Containers[0].LivenessProbe.Exec).NotTo(BeNil())
+			Expect(ds.Spec.Template.Spec.Containers[0].LivenessProbe.Exec.Command).To(ContainElement(ContainSubstring("/etc/linstor/ssl/keystore.jks")))
+			Expect(ds.Spec.Template.Spec.Containers[0].LivenessProbe.Exec.Command).To(ContainElement(ContainSubstring("/etc/linstor/ssl-pem/tls.crt")))
 		})
 
 		It("should use the configured resource name suffix separator", func(ctx context.Context) {
