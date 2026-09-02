@@ -18,22 +18,22 @@ data:
     #   quay.io/piraeusdatastore/piraeus-server:v1.24.2
     components:
       linstor-controller:
-        tag: v1.34.2
+        tag: v1.35.0
         image: piraeus-server
       linstor-satellite:
-        tag: v1.34.2
+        tag: v1.35.0
         image: piraeus-server
       linstor-csi:
-        tag: v1.12.0
+        tag: v1.13.0
         image: piraeus-csi
       nfs-server:
-        tag: v1.12.0
+        tag: v1.13.0
         image: piraeus-csi-nfs-server
       drbd-reactor:
         tag: v1.12.0
         image: drbd-reactor
       ha-controller:
-        tag: v1.3.3
+        tag: v1.3.4
         image: piraeus-ha-controller
       drbd-shutdown-guard:
         tag: v1.1.2
