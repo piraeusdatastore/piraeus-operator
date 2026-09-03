@@ -5,7 +5,7 @@ metadata:
   name: linstor.csi.linbit.com
 spec:
   attachRequired: true
-  fsGroupPolicy: ReadWriteOnceWithFSType
+  fsGroupPolicy: File
   podInfoOnMount: true
   volumeLifecycleModes:
     - Persistent

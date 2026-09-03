@@ -16,6 +16,12 @@ $ kubectl wait pod --for=condition=Ready -n piraeus-datastore --all
 
 # Upgrades from v2.11 to v2.12
 
+The CSIDriver now uses `fsGroupPolicy: File`. Previously, a Pod's `fsGroup` was only applied to `ReadWriteOnce`
+volumes. Now it is also applied to `ReadWriteMany` volumes in `Filesystem` mode, changing the ownership of all files on
+the NFS export when a Pod with `fsGroup` starts. For large volumes, set `fsGroupChangePolicy: OnRootMismatch` in the
+Pod's `securityContext` to skip the recursive ownership change when the root directory already has the expected owner.
+Applying `fsGroup` requires the default `no_root_squash` NFS export setting.
+
 The CSI controller no longer has cluster-wide permission to read Secrets. This permission was only used by the
 `csi-snapshotter` sidecar to read the Secrets referenced in a `VolumeSnapshotClass`, for example S3 credentials
 for [backups to S3](../how-to/s3-backup.md).
