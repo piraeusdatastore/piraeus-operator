@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * LINSTOR 1.35.1
     * LINSTOR CSI 1.13.1
 
+### Fixed
+
+- Mount an `emptyDir` volume at `/var/lib/linstor` in the LINSTOR Controller, so the periodic database export works
+  with the read-only root filesystem.
+
 ## [v2.12.0-rc.1] - 2026-09-02
 
 ### Added

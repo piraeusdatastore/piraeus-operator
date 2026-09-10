@@ -95,6 +95,8 @@ spec:
           volumeMounts:
             - mountPath: /var/log/linstor-controller
               name: var-log-linstor-controller
+            - mountPath: /var/lib/linstor
+              name: var-lib-linstor
             - mountPath: /etc/linstor
               name: etc-linstor
               readOnly: true
@@ -109,6 +111,8 @@ spec:
           configMap:
             name: linstor-controller-config
         - name: var-log-linstor-controller
+          emptyDir: { }
+        - name: var-lib-linstor
           emptyDir: { }
         - name: tmp
           emptyDir: { }
