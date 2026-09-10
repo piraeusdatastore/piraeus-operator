@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Set `fsGroupPolicy: File` on the CSIDriver, so `fsGroup` is also applied to `ReadWriteMany` volumes in `Filesystem`
   mode.
+- Updated images:
+    * LINSTOR 1.35.1
+    * LINSTOR CSI 1.13.1
 
 ## [v2.12.0-rc.1] - 2026-09-02
 
