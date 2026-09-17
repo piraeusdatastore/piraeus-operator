@@ -7,30 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Updated images:
-    * LINSTOR 1.35.2
-    * DRBD 9.3.4
-    * Latest CSI sidecars
-
-## [v2.12.0-rc.2] - 2026-09-10
-
-### Changed
-
-- Set `fsGroupPolicy: File` on the CSIDriver, so `fsGroup` is also applied to `ReadWriteMany` volumes in `Filesystem`
-  mode.
-- Updated images:
-    * LINSTOR 1.35.1
-    * LINSTOR CSI 1.13.1
-
-### Fixed
-
-- Mount an `emptyDir` volume at `/var/lib/linstor` in the LINSTOR Controller, so the periodic database export works
-  with the read-only root filesystem.
-
-## [v2.12.0-rc.1] - 2026-09-02
-
 ### Added
 
 - Support shared LVM storage pools: setting `lvmPool.sharedSpace` registers the storage pool as backed by storage
@@ -43,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The minimum supported Kubernetes version is now v1.30.
+- Set `fsGroupPolicy: File` on the CSIDriver, so `fsGroup` is also applied to `ReadWriteMany` volumes in `Filesystem`
+  mode.
+- Updated images:
+    * LINSTOR 1.35.2
+    * LINSTOR CSI 1.13.1
+    * DRBD 9.3.4
+    * Latest CSI sidecars
 
 ### Removed
 
@@ -54,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Actually merge the host's `lvm.conf` and `lvmlocal.conf` into the LVM configuration used by the satellite, and copy over LVM profiles from the host.
+- Mount an `emptyDir` volume at `/var/lib/linstor` in the LINSTOR Controller, so the periodic database export works
+  with the read-only root filesystem.
 
 ## [v2.11.0] - 2026-08-04
 
@@ -1289,6 +1274,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [v2.10.7]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.6...v2.10.7
 [v2.10.8]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.7...v2.10.8
 [v2.11.0]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.10.8...v2.11.0
-[v2.12.0-rc.1]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.11.0...v2.12.0-rc.1
-[v2.12.0-rc.2]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.12.0-rc.1...v2.12.0-rc.2
-[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.12.0-rc.2...HEAD
+[Unreleased]: https://github.com/piraeusdatastore/piraeus-operator/compare/v2.11.0...HEAD
