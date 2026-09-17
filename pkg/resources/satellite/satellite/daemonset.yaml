@@ -50,6 +50,9 @@ spec:
             - mountPath: /usr/src
               name: usr-src
               readOnly: true
+            - name: usr-lib
+              mountPath: /usr/lib
+              readOnly: true
             - mountPath: /tmp
               name: tmp
         - name: drbd-shutdown-guard
@@ -182,6 +185,10 @@ spec:
         - name: usr-src
           hostPath:
             path: /usr/src
+            type: Directory
+        - name: usr-lib
+          hostPath:
+            path: /usr/lib
             type: Directory
         - name: dev
           hostPath:
