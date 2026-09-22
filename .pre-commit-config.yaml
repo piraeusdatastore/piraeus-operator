@@ -49,3 +49,12 @@ repos:
         language: system
         pass_filenames: false
         entry: mkdocs build -s
+      - id: check-docs-lists
+        name: check docs lists render the same in mkdocs and on GitHub
+        language: python
+        files: ^docs/.*\.md$
+        entry: python3 tools/check-docs-lists.py
+        additional_dependencies:
+          - markdown
+          - markdown-it-py
+          - pymdown-extensions
