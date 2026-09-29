@@ -10,7 +10,8 @@ This is a (probably incomplete) list of software used to develop the operator:
 * [`operator-sdk`](https://sdk.operatorframework.io/) Provides all the plumbing and project structure
 * [`pre-commit`](https://pre-commit.com/) Used to ensure all files are formatted, generated code is up to date and more
 * [`gofumpt`](https://github.com/mvdan/gofumpt) Used for code formatting
-* [`golangci-lint`](https://github.com/golangci/golangci-lint) Lints for go code
+* [`golangci-lint`](https://github.com/golangci/golangci-lint) Lints for go code. Run it via `make lint`, which downloads
+  the version pinned in `.golangci-lint-version` (also used by CI) to `bin/`.
 
 Some additional software you may find useful:
 

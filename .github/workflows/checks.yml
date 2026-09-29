@@ -17,6 +17,7 @@ jobs:
           go-version-file: 'go.mod'
       - uses: golangci/golangci-lint-action@v9
         with:
+          version-file: .golangci-lint-version
           args: --timeout=3m
 
   pre-commit:
