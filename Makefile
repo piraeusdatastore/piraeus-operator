@@ -111,6 +111,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint against code. Pass extra flags via LINT_ARGS.
+	$(GOLANGCI_LINT) run $(LINT_ARGS)
+
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
@@ -175,11 +179,19 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 YQ ?= $(LOCALBIN)/yq
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.6.0
 CONTROLLER_TOOLS_VERSION ?= v0.18.0
 YQ_VERSION ?= v4.45.4
+# Shared with the golangci-lint GitHub action, so local and CI runs use the same version.
+# Pick a release built with the Go version from go.mod, or its gofumpt disagrees with go fmt.
+GOLANGCI_LINT_VERSION ?= $(strip $(file <.golangci-lint-version))
+ifeq ($(GOLANGCI_LINT_VERSION),)
+# The installer treats an empty tag as "latest", which would silently defeat the pin.
+$(error GOLANGCI_LINT_VERSION is empty; check .golangci-lint-version)
+endif
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -203,6 +215,12 @@ $(YQ): $(LOCALBIN)
 	@if ! test -x $(YQ) || ! $(YQ) --version | grep -q $(YQ_VERSION); then \
 		curl -sSLo "$(YQ)" https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(shell go env GOOS)_$(shell go env GOARCH); \
 		chmod +x $(YQ); \
+	fi
+
+.PHONY: golangci-lint
+golangci-lint: $(LOCALBIN) ## Download golangci-lint locally if necessary. If wrong version is installed, it will be overwritten.
+	@if ! test -x $(GOLANGCI_LINT) || ! $(GOLANGCI_LINT) version --short | grep -qx '$(GOLANGCI_LINT_VERSION:v%=%)'; then \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/$(GOLANGCI_LINT_VERSION)/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI_LINT_VERSION); \
 	fi
 
 .PHONY: envtest

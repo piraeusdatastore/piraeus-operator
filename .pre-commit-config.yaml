@@ -33,7 +33,7 @@ repos:
         types: [go]
         language: system
         pass_filenames: false
-        entry: golangci-lint run --new-from-rev=HEAD
+        entry: make lint LINT_ARGS=--new-from-rev=HEAD
       - id: run-tests
         name: Run go tests
         language: system
