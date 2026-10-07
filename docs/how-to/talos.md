@@ -28,6 +28,11 @@ machine:
       - name: drbd_transport_tcp
       # LVM_THIN storage pools require this module
       #- name: dm-thin-pool
+      # Snapshots on LVM storage pools require this module
+      #- name: dm-snapshot
+      # The LINSTOR writecache and cache layers require these modules
+      #- name: dm-writecache
+      #- name: dm-cache
       # ZFS storage pools require this module from the ZFS extension
       #- name: zfs
 ```
@@ -88,5 +93,7 @@ Explanation:
 - `/etc/lvm/*` is read-only in Talos and therefore can't be used. Let's use `/var/etc/lvm/*` instead.
 - Talos does not ship with Systemd, so everything Systemd related needs to be removed
 - `/usr/lib/modules` and `/usr/src` are not needed as the Kernel module is already compiled and needs just to be used.
+  As a consequence, the LINSTOR Satellite cannot load any kernel modules itself: all required modules need to be listed
+  in the machine config.
 
 [Talos Linux]: https://talos.dev

@@ -12,7 +12,7 @@ snapshot, and how to restore in the case of accidental deletion of your data.
 ## Prerequisites
 
 * An installed and configured Piraeus Datastore. Learn how to get started in our [introduction tutorial](./get-started.md)
-* A storage pool supporting snapshots. LINSTOR supports snapshots for `LVM_THIN`, `FILE_THIN`, `ZFS` and `ZFS_THIN` pools.
+* A storage pool supporting snapshots. LINSTOR supports snapshots for `LVM`, `LVM_THIN`, `FILE_THIN`, `ZFS` and `ZFS_THIN` pools.
   If you followed [the introduction tutorial](./get-started.md), you are using the supported `FILE_THIN` pool.
 * A cluster with [`snapshot-controller`](https://github.com/kubernetes-csi/external-snapshotter/) deployed. To check if
   it is already deployed, try running:
