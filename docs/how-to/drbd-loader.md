@@ -40,6 +40,29 @@ spec:
           $patch: delete
 ```
 
+Without the DRBD Module Loader, the LINSTOR Satellite can no longer load kernel modules on its own, as the host
+`/lib/modules` directory is only mounted for the DRBD Module Loader. In addition to DRBD itself, you need to load the
+[modules listed above](#how-to-configure-the-drbd-module-loader) for the LINSTOR features you use on the host, and
+ensure they are loaded again after a reboot. On most distributions, you can use a `modules-load.d` configuration file:
+
+```
+# /etc/modules-load.d/piraeus.conf
+drbd
+drbd_transport_tcp
+dm_snapshot
+dm_thin_pool
+dm_writecache
+dm_cache
+dm_crypt
+```
+
+If a module is missing, LINSTOR does not offer the matching layer on that node. For example, without `dm_writecache`
+the `writecache` layer is unavailable, and without `dm_snapshot` creating snapshots on `LVM` storage pools fails with:
+
+```
+snapshot: Required device-mapper target(s) not detected in your kernel.
+```
+
 ## Select a Different DRBD Loader Version
 
 By default, the Operator will try to find a DRBD Module Loader matching the host operating system. The host distribution
