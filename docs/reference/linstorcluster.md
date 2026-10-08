@@ -244,7 +244,20 @@ spec:
 Controls the LINSTOR Controller Deployment:
 
 * Setting `enabled: false` disables the controller deployment entirely. See also [`.spec.externalController`](#specexternalcontroller).
+* Setting `replicas:` sets the desired number of Pods for the Deployment.
 * Setting a `podTemplate:` allows for simple modification of the LINSTOR Controller Deployment.
+
+#### Warning
+
+Running more than one LINSTOR Controller replica is possible, but not recommended.
+
+Only one LINSTOR Controller is active at any time. The additional Pods act as standby: they remain
+in the `Init:0/1` state until the active Controller Pod is removed, at which point one of them takes
+over. The takeover still involves starting the LINSTOR Controller, so the LINSTOR API remains
+unavailable for a short time.
+
+Because the standby Pods never become ready, the Deployment does not report `Available` and
+`kubectl rollout status deployment linstor-controller` does not complete.
 
 #### Example
 

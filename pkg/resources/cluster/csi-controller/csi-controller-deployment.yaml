@@ -20,6 +20,15 @@ spec:
       serviceAccountName: linstor-csi-controller
       shareProcessNamespace: true
       priorityClassName: system-node-critical
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: linstor-csi-controller
       initContainers:
         - name: linstor-wait-api-online
           image: linstor-csi

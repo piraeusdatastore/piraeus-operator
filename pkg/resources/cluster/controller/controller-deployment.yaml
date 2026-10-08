@@ -106,6 +106,15 @@ spec:
       serviceAccountName: linstor-controller
       shareProcessNamespace: true
       priorityClassName: system-node-critical
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: linstor-controller
       volumes:
         - name: etc-linstor
           configMap:

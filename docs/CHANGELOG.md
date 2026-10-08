@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add option to set the replica count for the LINSTOR Controller Deployment.
+
 ### Changed
 
 - Document the kernel modules required on the host when the DRBD Module Loader is disabled.
+- Prefer spreading Pods of the same Deployment across different nodes.
 
 ## [v2.12.0] - 2026-09-17
 

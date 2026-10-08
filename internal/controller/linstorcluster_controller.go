@@ -480,6 +480,13 @@ func (r *LinstorClusterReconciler) kustomizeControllerResources(lcluster *piraeu
 		patches = append(patches, p...)
 	}
 
+	replicasPatch, err := ComponentDeploymentReplicasPatch("Deployment", "linstor-controller", lcluster.Spec.Controller)
+	if err != nil {
+		return nil, err
+	}
+
+	patches = append(patches, replicasPatch...)
+
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
 
@@ -576,14 +583,12 @@ func (r *LinstorClusterReconciler) kustomizeCSIControllerResources(lcluster *pir
 		patches = append(patches, p...)
 	}
 
-	if lcluster.Spec.CSIController.GetReplicas() != nil {
-		p, err := ComponentReplicasPatch("Deployment", "linstor-csi-controller", *lcluster.Spec.CSIController.Replicas)
-		if err != nil {
-			return nil, err
-		}
-
-		patches = append(patches, p...)
+	replicasPatch, err := ComponentDeploymentReplicasPatch("Deployment", "linstor-csi-controller", lcluster.Spec.CSIController)
+	if err != nil {
+		return nil, err
 	}
+
+	patches = append(patches, replicasPatch...)
 
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }
@@ -792,14 +797,12 @@ func (r *LinstorClusterReconciler) kustomizeAffinityControllerResources(lcluster
 		patches = append(patches, p...)
 	}
 
-	if lcluster.Spec.AffinityController.GetReplicas() != nil {
-		p, err := ComponentReplicasPatch("Deployment", "linstor-affinity-controller", *lcluster.Spec.AffinityController.Replicas)
-		if err != nil {
-			return nil, err
-		}
-
-		patches = append(patches, p...)
+	replicasPatch, err := ComponentDeploymentReplicasPatch("Deployment", "linstor-affinity-controller", lcluster.Spec.AffinityController)
+	if err != nil {
+		return nil, err
 	}
+
+	patches = append(patches, replicasPatch...)
 
 	return r.kustomize(resourceDirs, lcluster, imgs, patches...)
 }

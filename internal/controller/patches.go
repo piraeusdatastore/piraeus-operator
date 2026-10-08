@@ -399,6 +399,15 @@ func ComponentPodTemplate(kind, name string, template json.RawMessage) ([]kustty
 	return patches, nil
 }
 
+func ComponentDeploymentReplicasPatch(kind, name string, spec *piraeusiov1.DeploymentComponentSpec) ([]kusttypes.Patch, error) {
+	replicas := spec.GetReplicas()
+	if replicas == nil {
+		return nil, nil
+	}
+
+	return ComponentReplicasPatch(kind, name, *replicas)
+}
+
 func ComponentReplicasPatch(kind, name string, replicas int32) ([]kusttypes.Patch, error) {
 	patches, err := render(
 		cluster.Resources,

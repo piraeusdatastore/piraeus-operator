@@ -204,6 +204,11 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                     x-kubernetes-preserve-unknown-fields: true
+                  replicas:
+                    description: Number of desired pods. Defaults to 1.
+                    format: int32
+                    minimum: 0
+                    type: integer
                 type: object
               csiController:
                 description: CSIController controls the deployment of the CSI Controller

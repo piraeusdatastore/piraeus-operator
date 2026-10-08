@@ -96,7 +96,7 @@ type LinstorClusterSpec struct {
 
 	// Controller controls the deployment of the LINSTOR Controller Deployment.
 	// +kubebuilder:validation:Optional
-	Controller *ComponentSpec `json:"controller,omitempty"`
+	Controller *DeploymentComponentSpec `json:"controller,omitempty"`
 
 	// CSIController controls the deployment of the CSI Controller Deployment.
 	// +kubebuilder:validation:Optional
