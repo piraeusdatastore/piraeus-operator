@@ -71,4 +71,13 @@ spec:
       enableServiceLinks: false
       serviceAccountName: linstor-affinity-controller
       priorityClassName: system-cluster-critical
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: linstor-affinity-controller
       shareProcessNamespace: true

@@ -266,7 +266,7 @@ func (in *LinstorClusterSpec) DeepCopyInto(out *LinstorClusterSpec) {
 	}
 	if in.Controller != nil {
 		in, out := &in.Controller, &out.Controller
-		*out = new(ComponentSpec)
+		*out = new(DeploymentComponentSpec)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.CSIController != nil {

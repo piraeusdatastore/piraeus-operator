@@ -75,6 +75,9 @@ var _ = Describe("LinstorCluster controller", func() {
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: "default"}, &cluster)
 			Expect(err).NotTo(HaveOccurred())
 
+			cluster.Spec.Controller = &piraeusiov1.DeploymentComponentSpec{
+				Replicas: ptr.To(int32(2)),
+			}
 			cluster.Spec.AffinityController = &piraeusiov1.DeploymentComponentSpec{
 				Replicas: ptr.To(int32(2)),
 			}
@@ -87,7 +90,11 @@ var _ = Describe("LinstorCluster controller", func() {
 
 			Eventually(func(g Gomega) {
 				var deployment appsv1.Deployment
-				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-affinity-controller"}, &deployment)
+				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-controller"}, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(deployment.Spec.Replicas).To(Equal(ptr.To(int32(2))))
+
+				err = k8sClient.Get(ctx, types.NamespacedName{Namespace: Namespace, Name: "linstor-affinity-controller"}, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(deployment.Spec.Replicas).To(Equal(ptr.To(int32(2))))
 

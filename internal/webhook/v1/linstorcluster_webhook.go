@@ -76,7 +76,7 @@ func (r *LinstorClusterCustomValidator) ValidateDelete(ctx context.Context, lins
 func (r *LinstorClusterCustomValidator) validate(current, old *piraeusiov1.LinstorCluster) (admission.Warnings, field.ErrorList) {
 	errs := ValidateExternalController(current.Spec.ExternalController, field.NewPath("spec", "externalController"))
 	errs = append(errs, ValidateNodeSelector(current.Spec.NodeSelector, field.NewPath("spec", "nodeSelector"))...)
-	errs = append(errs, ValidateComponentSpec(current.Spec.Controller, field.NewPath("spec", "controller"))...)
+	errs = append(errs, ValidateDeploymentSpec(current.Spec.Controller, field.NewPath("spec", "controller"))...)
 	errs = append(errs, ValidateComponentSpec(current.Spec.CSINode, field.NewPath("spec", "csiNode"))...)
 	errs = append(errs, ValidateComponentSpec(current.Spec.HighAvailabilityController, field.NewPath("spec", "highAvailabilityController"))...)
 	errs = append(errs, ValidateDeploymentSpec(current.Spec.CSIController, field.NewPath("spec", "csiController"))...)
