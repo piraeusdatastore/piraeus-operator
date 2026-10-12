@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document the kernel modules required on the host when the DRBD Module Loader is disabled.
 - Prefer spreading Pods of the same Deployment across different nodes.
 
+### Fixed
+
+- Grant the CSI Controller `watch` and `update` on `VolumeSnapshots`, required by the snapshot finalizer controller
+  of csi-provisioner v6.3.0.
+
 ## [v2.12.0] - 2026-09-17
 
 ### Added
