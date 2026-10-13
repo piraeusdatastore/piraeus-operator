@@ -165,6 +165,12 @@ spec:
             - name: prometheus
               containerPort: 9942
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: prometheus
+            periodSeconds: 30
+            timeoutSeconds: 5
           securityContext:
             readOnlyRootFilesystem: true
             capabilities:
