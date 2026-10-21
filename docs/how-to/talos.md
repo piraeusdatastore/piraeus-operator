@@ -52,9 +52,22 @@ disabled
 
 ## Configure the DRBD Module Loader
 
-To change the DRBD Module Loader, so that it uses the modules provided by system extension, apply the following `LinstorSatelliteConfiguration`:
+To change the DRBD Module Loader, so that it uses the modules provided by system extension, apply the following
+`ConfigMap` and `LinstorSatelliteConfiguration`:
 
 ```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: talos-lvm-config
+  namespace: piraeus-datastore
+data:
+  lvm.conf: |
+    backup {
+      backup = 1
+      archive = 1
+    }
+---
 apiVersion: piraeus.io/v1
 kind: LinstorSatelliteConfiguration
 metadata:
@@ -78,6 +91,10 @@ spec:
           $patch: delete
         - name: usr-src
           $patch: delete
+        - name: etc-lvm
+          hostPath: null
+          configMap:
+            name: talos-lvm-config
         - name: etc-lvm-backup
           hostPath:
             path: /var/etc/lvm/backup
@@ -91,6 +108,8 @@ spec:
 Explanation:
 
 - `/etc/lvm/*` is read-only in Talos and therefore can't be used. Let's use `/var/etc/lvm/*` instead.
+- The LVM configuration shipped with Talos disables LVM metadata backups. The `talos-lvm-config` ConfigMap replaces the
+  host configuration, so that the LINSTOR Satellite keeps writing backups to `/var/etc/lvm/*`.
 - Talos does not ship with Systemd, so everything Systemd related needs to be removed
 - `/usr/lib/modules` and `/usr/src` are not needed as the Kernel module is already compiled and needs just to be used.
   As a consequence, the LINSTOR Satellite cannot load any kernel modules itself: all required modules need to be listed
