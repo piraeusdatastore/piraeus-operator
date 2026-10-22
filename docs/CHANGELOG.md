@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Grant the CSI Controller `watch` and `update` on `VolumeSnapshots`, required by the snapshot finalizer controller
   of csi-provisioner v6.3.0.
+- Grant the CSI Controller `patch` instead of `update` on the NFS reactor ConfigMap, required by LINSTOR CSI 1.13.2.
 
 ## [v2.12.0] - 2026-09-17
 
