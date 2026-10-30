@@ -10,7 +10,7 @@ Piraeus Operator installed.
 
 	Please read the upgrade instructions at:
 
-		https://github.com/piraeusdatastore/piraeus-operator/blob/v2/docs/how-to/upgrade/index.md
+		https://piraeus.io/docs/stable/upgrade/migration/
 ` }}
 {{- end }}
 
