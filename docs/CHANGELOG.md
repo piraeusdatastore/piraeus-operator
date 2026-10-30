@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix the dead link to the v1 to v2 upgrade guide in the Helm chart's "Refusing to upgrade from v1 deployment" error.
+
 ## [v2.12.1] - 2026-10-28
 
 ### Added

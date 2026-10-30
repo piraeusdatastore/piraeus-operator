@@ -196,7 +196,7 @@ the matching key. Available types are:
 *   `fileThinPool`: Configures a file system based storage pool. Behaves the same as `filePool`, except the files will
     be thinly allocated on file systems that support sparse files. Supports the same arguments as `filePool`.
 
-*   `zfsPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Defaults to using the storage
+*   `zfsPool`: Configure a [ZFS ZPool](https://openzfs.github.io/openzfs-docs/man/master/8/zpool.8.html) as storage pool. Defaults to using the storage
     pool name as name for the zpool. Can be overridden by setting `zPool`.
 
     Arguments:
@@ -205,7 +205,7 @@ the matching key. Available types are:
     * `zPoolCreateArguments`: Additional arguments to pass to the `zpool create` command. Only applies when the pool
       is first set up from a `source`.
 
-*   `zfsThinPool`: Configure a [ZFS ZPool](https://wiki.ubuntu.com/ZFS/ZPool) as storage pool. Behaves the same as `zfsPool`, except the contained
+*   `zfsThinPool`: Configure a [ZFS ZPool](https://openzfs.github.io/openzfs-docs/man/master/8/zpool.8.html) as storage pool. Behaves the same as `zfsPool`, except the contained
     zVol will be created using sparse reservation. Supports the same arguments as `zfsPool`.
 
 Optionally, you can configure LINSTOR to automatically create the backing pools. `source.hostDevices` takes a list

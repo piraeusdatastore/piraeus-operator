@@ -8,7 +8,7 @@ To complete this guide, you should be familiar with:
 
 ## Configure the CSI Driver
 
-MicroK8s is distributed as a [Snap](https://ubuntu.com/core/services/guide/snaps-intro). Because Snaps store their state
+MicroK8s is distributed as a [Snap](https://snapcraft.io/about). Because Snaps store their state
 in a separate directory (`/var/snap`) the LINSTOR CSI Driver needs to be updated to use a new path for mounting volumes.
 
 To change the LINSTOR CSI Driver, so that it uses the MicroK8s state paths, apply the following `LinstorCluster`:
