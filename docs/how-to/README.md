@@ -75,6 +75,10 @@ These guides show you how to configure a specific aspect or achieve a specific t
 
     [:octicons-arrow-right-24: Guide](./k0s.md)
 
+*   Deploy Piraeus Datastore on Kubermatic Kubernetes Platform
+
+    [:octicons-arrow-right-24: Guide](./kubermatic.md)
+
 *   Deploy Piraeus Datastore on Raspberry Pi OS / Raspian
 
     [:octicons-arrow-right-24: Guide](./raspian.md)
