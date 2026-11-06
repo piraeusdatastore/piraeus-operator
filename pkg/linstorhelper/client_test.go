@@ -262,14 +262,17 @@ func testTlsConfig(t *testing.T) (*tls.Config, map[string][]byte) {
 	pemCert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rawCert})
 	pemKey := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 
-	return &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			RootCAs:      caPool,
-		}, map[string][]byte{
-			"ca.crt":  pemCert,
-			"tls.key": pemKey,
-			"tls.crt": pemCert,
-		}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caPool,
+	}
+	secretData := map[string][]byte{
+		"ca.crt":  pemCert,
+		"tls.key": pemKey,
+		"tls.crt": pemCert,
+	}
+
+	return tlsConfig, secretData
 }
 
 func TestCreateOrUpdateNode(t *testing.T) {
