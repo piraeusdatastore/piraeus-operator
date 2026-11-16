@@ -28,7 +28,7 @@ $ export KUBECONFIG=management.kubeconfig
 $ export KUBENS=workload-cluster-ns
 $ kubectl --namespace=$KUBENS create serviceaccount piraeus-operator
 serviceaccount/piraeus-operator created
-$ kubectl --namespace=$KUBENS role piraeus-operator --verb=get,update --resource=machines.cluster.x-k8s.io
+$ kubectl --namespace=$KUBENS create role piraeus-operator --verb=get,update --resource=machines.cluster.x-k8s.io
 role.rbac.authorization.k8s.io/piraeus-operator created
 $ kubectl --namespace=$KUBENS create rolebinding piraeus-operator --role=piraeus-operator --serviceaccount=$KUBENS:piraeus-operator
 rolebinding.rbac.authorization.k8s.io/piraeus-operator created
