@@ -78,8 +78,7 @@ project's github page.
 
 ## Building and Development
 
-This project is built using the operator-sdk. Please refer to
-the [documentation for the sdk](https://github.com/operator-framework/operator-sdk).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow, tools, and tests.
 
 ## License
 
