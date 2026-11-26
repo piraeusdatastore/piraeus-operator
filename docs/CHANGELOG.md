@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add the Helm chart values `tls.caBundle`, `tls.certificate` and `tls.key` to set a fixed webhook certificate, or
+  only the CA of a Secret created outside the chart, so `helm template` and Argo CD render the same output every time.
+
 ### Fixed
 
 - Fix the dead link to the v1 to v2 upgrade guide in the Helm chart's "Refusing to upgrade from v1 deployment" error.

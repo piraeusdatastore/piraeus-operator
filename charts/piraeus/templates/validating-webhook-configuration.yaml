@@ -22,7 +22,14 @@ spec:
     rotationPolicy: Always
 ---
 {{- else if .Values.tls.autogenerate }}
-  {{- if and $secret (not .Values.tls.renew) }}
+  {{- if or .Values.tls.caBundle .Values.tls.certificate .Values.tls.key }}
+    {{- if not (and .Values.tls.caBundle .Values.tls.certificate .Values.tls.key) }}
+      {{- fail "tls.caBundle, tls.certificate and tls.key must be set together when tls.autogenerate is true" }}
+    {{- end }}
+    {{- $ca = b64enc .Values.tls.caBundle }}
+    {{- $key = b64enc .Values.tls.key }}
+    {{- $crt = b64enc .Values.tls.certificate }}
+  {{- else if and $secret (not .Values.tls.renew) }}
     {{- $ca = get $secret.data "ca.crt" }}
     {{- $key = get $secret.data "tls.key" }}
     {{- $crt = get $secret.data "tls.crt" }}
@@ -45,6 +52,10 @@ data:
   ca.crt: {{ $ca }}
   tls.key: {{ $key }}
   tls.crt: {{ $crt }}
+{{- else if or .Values.tls.certificate .Values.tls.key }}
+  {{- fail "tls.certificate and tls.key need tls.autogenerate; without it, create the Secret yourself and set only tls.caBundle" }}
+{{- else if .Values.tls.caBundle }}
+  {{- $ca = b64enc .Values.tls.caBundle }}
 {{- end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -65,7 +76,7 @@ webhooks:
       name: '{{ include "piraeus-operator.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-piraeus-io-v1-linstorcluster
-    {{- if not .Values.tls.certManagerIssuerRef }}
+    {{- if $ca }}
     caBundle: {{ $ca }}
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -89,7 +100,7 @@ webhooks:
       name: '{{ include "piraeus-operator.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-piraeus-io-v1-linstornodeconnection
-    {{- if not .Values.tls.certManagerIssuerRef }}
+    {{- if $ca }}
     caBundle: {{ $ca }}
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -113,7 +124,7 @@ webhooks:
       name: '{{ include "piraeus-operator.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-piraeus-io-v1-linstorsatellite
-    {{- if not .Values.tls.certManagerIssuerRef }}
+    {{- if $ca }}
     caBundle: {{ $ca }}
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -137,7 +148,7 @@ webhooks:
       name: '{{ include "piraeus-operator.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-piraeus-io-v1-linstorsatelliteconfiguration
-    {{- if not .Values.tls.certManagerIssuerRef }}
+    {{- if $ca }}
     caBundle: {{ $ca }}
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -161,7 +172,7 @@ webhooks:
       name: '{{ include "piraeus-operator.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
       path: /validate-storage-k8s-io-v1-storageclass
-    {{- if not .Values.tls.certManagerIssuerRef }}
+    {{- if $ca }}
     caBundle: {{ $ca }}
     {{- end }}
   failurePolicy: {{ .Values.webhook.failurePolicy }}
