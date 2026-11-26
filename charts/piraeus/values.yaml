@@ -79,6 +79,15 @@ tls:
   autogenerate: true
   renew: false
   certManagerIssuerRef: {}
+  # PEM-encoded CA bundle, certificate and key of the webhook, for output that does not change between renders, for
+  # example with "helm template" or Argo CD. Ignored with "certManagerIssuerRef".
+  # * Without "autogenerate", create the Secret yourself and set only "caBundle". This keeps the key out of the values.
+  # * With "autogenerate", set all three: Helm writes them to the Secret instead of generating a certificate.
+  # The certificate must be valid for "<fullname>-webhook-service.<namespace>.svc", with any intermediate
+  # certificates after it. The chart does not renew it.
+  caBundle: ""
+  certificate: ""
+  key: ""
 
 imagePullSecrets: [ ]
 nameOverride: ""
